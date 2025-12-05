@@ -1,0 +1,37 @@
+{
+  "version": 3.1,
+  "output": {
+    "dir": "prodex",
+    "versioned": true,
+    "prefix": "combined",
+    "format": "md"
+  },
+  "entry": {
+    "files": ["src/components/sort-tree/index.ts"],
+    "ui": {
+      "roots": [
+
+      ],
+      "scanDepth": 2,
+      "priority": [
+      ]
+    }
+  },
+  "resolve": {
+    "include": [
+      "**/*.d.ts",
+      "**/*.css"
+    ],
+    "aliases": {
+      "@hooks": "resources/js/hooks",
+      "@data": "resources/js/data"
+    },
+    "exclude": [
+      "node_modules/**",
+      "@shadcn/**",
+      "**/components/ui/**"
+    ],
+    "depth": 10,
+    "limit": 200
+  }
+}

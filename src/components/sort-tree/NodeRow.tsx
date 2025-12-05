@@ -13,6 +13,8 @@ export interface NodeRowProps<T = unknown> {
     matched: boolean;
     isDragging: boolean;
 
+    hasChildren?: boolean;
+
     onToggle(): void;
 
     renderNode?: (args: {
@@ -31,43 +33,55 @@ export interface NodeRowProps<T = unknown> {
         show: boolean;
         guides: boolean[]; // length = depth - 1 (true => draw vertical in that ancestor column)
         isLast: boolean;   // is last among siblings
-
-        /** Optional styling */
         lineStyle?: "solid" | "dashed" | "dotted";
         lineWidth?: number; // px
         color?: string;     // CSS color
     };
+
+    /** Optional extra class for the row, supplied by SortTree */
+    rowClassName?: string;
 }
 
 export function NodeRow<T = unknown>({
-    node,
-    path,
-    depth,
-    indent,
-    matched,
-    isDragging,
-    onToggle,
-    renderNode,
-    onContextMenu,
-    binding,
-}: NodeRowProps<T>) {
+                                         node,
+                                         path,
+                                         depth,
+                                         indent,
+                                         matched,
+                                         isDragging,
+                                         onToggle,
+                                         renderNode,
+                                         onContextMenu,
+                                         binding,
+                                         rowClassName,
+                                     }: NodeRowProps<T>) {
     const hasParent = depth > 1;
     const showBinding = !!binding?.show && hasParent;
 
-    // CSS variables for theming the lines (safe cast for custom props)
     const lineVars = {
         ["--tree-line-color" as any]: binding?.color ?? "var(--tree-line, #d1d5db)",
         ["--tree-line-width" as any]: `${binding?.lineWidth ?? 1}px`,
         ["--tree-line-style" as any]: binding?.lineStyle ?? "solid",
-        // elbow vertical height: 50% if last sibling, else full
         ["--elbow-v-h" as any]: binding?.isLast ? "50%" : "100%",
     } as React.CSSProperties;
 
     const pad = Math.max(0, depth - 1) * indent;
 
+    const stopPropagation = (e: React.MouseEvent, callback?: (e?: any) => void) => {
+        e.stopPropagation()
+        callback?.(e)
+    };
+
     return (
-        <div className="tree-row" style={lineVars} onContextMenu={onContextMenu}>
-            {/* === Binding columns (ancestors) via ::before === */}
+        <div
+            className={["tree-row", rowClassName || "", isDragging ? "is-dragging" : ""].join(" ")}
+            style={{
+                ...lineVars,
+                // Your request: prevent the dragged row itself from catching pointer events
+                pointerEvents: isDragging ? "none" : undefined,
+            }}
+            onContextMenu={onContextMenu}
+        >
             {showBinding ? (
                 <div className="tree-rail" style={{ width: pad }}>
                     {binding!.guides.map((g, i) => (
@@ -82,16 +96,45 @@ export function NodeRow<T = unknown>({
             ) : (
                 <div style={{ width: pad }} />
             )}
-            {/* === Elbow for this node (vertical + horizontal via ::before/::after) === */}
-            {showBinding && (
-                <div className="tree-elbow" style={{ width: indent }}>
-                    {/* pseudo-elements draw the elbow; nothing needed here */}
-                </div>
-            )}
 
-            {/* === Content === */}
+            {showBinding && <div className="tree-elbow" style={{ width: indent }} />}
+
             <div className="flex-1 min-w-0">
-                {renderNode ? (
+                {isDragging ? (
+                    <div
+                        aria-hidden="true"
+                        style={{
+                            height: "100%",
+                            border: "2px dashed var(--tree-line-color, #cbd5e1)",
+                            borderRadius: 8,
+                            padding: "10px 12px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            background:
+                                "linear-gradient(90deg, rgba(148,163,184,0.12), rgba(148,163,184,0.06) 50%, rgba(148,163,184,0.12))",
+                        }}
+                    >
+            <span
+                style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: 4,
+                    background: "rgba(148,163,184,0.35)",
+                    flex: "0 0 auto",
+                }}
+            />
+                        <span
+                            style={{
+                                height: 10,
+                                width: "40%",
+                                borderRadius: 4,
+                                background: "rgba(148,163,184,0.35)",
+                                display: "inline-block",
+                            }}
+                        />
+                    </div>
+                ) : renderNode ? (
                     renderNode({
                         node,
                         depth,
@@ -105,17 +148,20 @@ export function NodeRow<T = unknown>({
                 )}
             </div>
 
-            {/* Right-side toggle as in your screenshot */}
-            <button
-                type="button"
-                onClick={onToggle}
-                className="inline-flex items-center justify-center w-5 h-5 rounded hover:bg-black/5"
-                aria-label={node.expanded ? "Collapse" : "Expand"}
-                title={node.expanded ? "Collapse" : "Expand"}
-                style={{ position: "relative", zIndex: 1 }}
-            >
-                {node.children?.length ? (!node.expanded ? <VscChevronRight /> : <TbChevronDownRight />) : ""}
-            </button>
+            {!isDragging && Boolean(node.children) && (
+                <button
+                    type="button"
+                    onClick={e => stopPropagation(e, onToggle)}
+                    onMouseDown={stopPropagation}
+                    onPointerDown={stopPropagation}
+                    className="inline-flex items-center justify-center w-7 h-5 rounded hover:font-black cursor-pointer"
+                    aria-label={node.expanded ? "Collapse" : "Expand"}
+                    title={node.expanded ? "Collapse" : "Expand"}
+                    style={{ position: "relative", zIndex: 1 }}
+                >
+                    {node.children?.length ? (!node.expanded ? <VscChevronRight className={'pointer-events-none'} /> : <TbChevronDownRight className={'pointer-events-none'} />) : ""}
+                </button>
+            )}
         </div>
     );
 }

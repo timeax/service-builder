@@ -6,7 +6,7 @@ import {
     AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
-    AlertDialogTitle,
+    AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 import {
     DropdownMenu,
@@ -22,7 +22,7 @@ import {
     DropdownMenuSub,
     DropdownMenuSubContent,
     DropdownMenuSubTrigger,
-    DropdownMenuTrigger,
+    DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -41,7 +41,7 @@ import type {
     RadioGroupItem,
     RenderItemCtx,
     SubmenuItem,
-    VisibilityCtx,
+    VisibilityCtx
 } from './types';
 
 /* ———————————————————————————————————————————————
@@ -557,18 +557,17 @@ const RowInner: React.FC<{
     renderItem?: (ctx: RenderItemCtx) => React.ReactNode;
     right: React.ReactNode;
 }> = ({ node, size, renderItem, right }) => {
-    const label = (
+    const defaultContent = (
         <div className="flex min-w-0 flex-col">
             <div className="flex min-w-0 items-center gap-0.5">
                 <IconNode icon={node.icon} />
                 <span className="truncate">{node.label}</span>
                 {right}
             </div>
-            {node.description ? <span className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{node.description}</span> : null}
+            {node.description ?
+                <span className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{node.description}</span> : null}
         </div>
     );
-
-    const defaultContent = label;
     return <>{renderItem?.({ node, defaultContent, size }) ?? defaultContent}</>;
 };
 

@@ -1,0 +1,515 @@
+<!doctype html>
+<html class="light" lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+        <title>Client Account Management</title>
+        <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+            rel="stylesheet"
+        />
+        <style>
+            .material-symbols-outlined {
+                font-variation-settings:
+                    'FILL' 0,
+                    'wght' 400,
+                    'GRAD' 0,
+                    'opsz' 24;
+                line-height: 1;
+            }
+            .group.has-selection .bulk-actions-disabled {
+                display: none;
+            }
+            .group:not(.has-selection) .bulk-actions-enabled {
+                display: none;
+            }
+            ::-webkit-scrollbar {
+                width: 6px;
+            }
+            ::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #dbe6e2;
+                border-radius: 3px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #c5d3ce;
+            }
+        </style>
+        <script id="tailwind-config">
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: '#11d493',
+                            'background-light': '#f6f8f7',
+                            'background-dark': '#10221c',
+                        },
+                        fontFamily: {
+                            display: ['Inter', 'sans-serif'],
+                        },
+                        borderRadius: {
+                            DEFAULT: '0.25rem',
+                            lg: '0.5rem',
+                            xl: '0.75rem',
+                            full: '9999px',
+                        },
+                    },
+                },
+            };
+        </script>
+    </head>
+    <body class="bg-gray-100 font-display">
+        <div class="bg-background-light dark:bg-background-dark group/design-root relative flex h-screen w-full flex-col" id="main-container">
+            <div class="flex h-full w-full justify-center p-4">
+                <div
+                    class="group flex h-full max-h-[95vh] w-full max-w-sm flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700/50 dark:bg-gray-900/50"
+                >
+                    <div class="flex flex-col border-b border-gray-200 p-4 dark:border-gray-700/50">
+                        <div class="flex w-full items-center gap-2">
+                            <div class="relative flex-1">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="material-symbols-outlined text-gray-400 dark:text-gray-500">search</span>
+                                </div>
+                                <input
+                                    class="form-input block w-full rounded-lg border-gray-200 bg-gray-50 py-2.5 pr-4 pl-10 text-sm text-gray-800 placeholder:text-gray-400 focus:border-primary/50 focus:ring-primary/50 dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-200 dark:placeholder:text-gray-500"
+                                    placeholder="Search by name or ID..."
+                                    type="text"
+                                />
+                            </div>
+                            <button
+                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-400 dark:hover:bg-gray-800"
+                            >
+                                <span class="material-symbols-outlined !text-xl">filter_list</span>
+                            </button>
+                        </div>
+                        <div class="group-has-selection:hidden pt-3">
+                            <div class="flex h-10 items-center justify-between rounded-lg bg-gray-100 px-3 dark:bg-gray-800/60">
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Select accounts for bulk actions.</p>
+                            </div>
+                        </div>
+                        <div
+                            class="group-has-selection:flex hidden h-10 items-center justify-between rounded-lg bg-primary/10 px-3 pt-3 dark:bg-primary/20"
+                        >
+                            <div class="flex items-center gap-3">
+                                <input
+                                    class="form-checkbox h-4 w-4 rounded border-gray-400 bg-transparent text-primary focus:ring-primary/50 dark:border-gray-500"
+                                    type="checkbox"
+                                />
+                                <span class="text-primary-700 dark:text-primary-200 text-sm font-medium">Select All</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button
+                                    class="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-900/10 dark:text-gray-300 dark:hover:bg-white/10"
+                                    title="Send Notification"
+                                >
+                                    <span class="material-symbols-outlined !text-xl">notifications</span>
+                                </button>
+                                <button
+                                    class="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-900/10 dark:text-gray-300 dark:hover:bg-white/10"
+                                    title="Deactivate/Reactivate"
+                                >
+                                    <span class="material-symbols-outlined !text-xl">toggle_off</span>
+                                </button>
+                                <button
+                                    class="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-900/10 dark:text-gray-300 dark:hover:bg-white/10"
+                                    title="Flag/Unflag"
+                                >
+                                    <span class="material-symbols-outlined !text-xl">flag</span>
+                                </button>
+                                <button
+                                    class="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-900/10 dark:text-gray-300 dark:hover:bg-white/10"
+                                    title="Award Reward"
+                                >
+                                    <span class="material-symbols-outlined !text-xl">military_tech</span>
+                                </button>
+                                <button
+                                    class="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-900/10 dark:text-gray-300 dark:hover:bg-white/10"
+                                    title="More Actions"
+                                >
+                                    <span class="material-symbols-outlined !text-xl">more_vert</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-2">
+                        <div class="flex flex-col gap-2">
+                            <details
+                                class="group/item flex flex-col rounded-lg border border-primary/50 bg-white ring-2 ring-primary/20 has-[:checked]:bg-primary/5 dark:border-primary/70 dark:bg-gray-800/60 dark:has-[:checked]:bg-primary/10"
+                                open=""
+                            >
+                                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-3">
+                                    <div class="flex flex-1 items-center gap-3">
+                                        <input
+                                            checked=""
+                                            class="form-checkbox h-4 w-4 rounded border-gray-300 bg-gray-100 text-primary focus:ring-primary/50 dark:border-gray-600 dark:bg-gray-900"
+                                            type="checkbox"
+                                        />
+                                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">Timmy Anderson</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="group/menu relative">
+                                            <button
+                                                class="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50"
+                                                onclick="event.stopPropagation(); event.preventDefault();"
+                                            >
+                                                <span class="material-symbols-outlined !text-xl">more_vert</span>
+                                            </button>
+                                            <div
+                                                class="ring-opacity-5 absolute right-0 z-10 mt-1 hidden w-40 origin-top-right rounded-lg bg-white shadow-lg ring-1 ring-black group-hover/menu:block focus:outline-none dark:bg-gray-800 dark:ring-gray-700"
+                                            >
+                                                <div class="py-1">
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">notifications</span>
+                                                        Notify
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">toggle_off</span>
+                                                        Disable
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">flag</span>
+                                                        Flag
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">military_tech</span>
+                                                        Reward
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span
+                                            class="material-symbols-outlined text-gray-500 transition-transform duration-200 group-open/item:rotate-180 dark:text-gray-400"
+                                            >expand_more</span
+                                        >
+                                    </div>
+                                </summary>
+                                <div class="space-y-2 border-t border-gray-200 px-3 pt-2 pb-3 dark:border-gray-700/50">
+                                    <nav class="flex flex-col gap-1">
+                                        <a
+                                            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                            href="#"
+                                        >
+                                            <span class="material-symbols-outlined !text-xl text-gray-500">space_dashboard</span> Overview
+                                        </a>
+                                        <a
+                                            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                            href="#"
+                                        >
+                                            <span class="material-symbols-outlined !text-xl text-gray-500">badge</span> Profile &amp; Localisation
+                                        </a>
+                                        <a
+                                            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                            href="#"
+                                        >
+                                            <span class="material-symbols-outlined !text-xl text-gray-500">account_balance_wallet</span> Wallet &amp;
+                                            Payments
+                                        </a>
+                                        <a
+                                            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                            href="#"
+                                        >
+                                            <span class="material-symbols-outlined !text-xl text-gray-500">shopping_bag</span> Orders &amp; Services
+                                        </a>
+                                        <a
+                                            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                            href="#"
+                                        >
+                                            <span class="material-symbols-outlined !text-xl text-gray-500">support_agent</span> Support &amp; Messages
+                                        </a>
+                                        <a
+                                            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                            href="#"
+                                        >
+                                            <span class="material-symbols-outlined !text-xl text-gray-500">redeem</span> Referrals &amp; Rewards
+                                        </a>
+                                        <a
+                                            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                            href="#"
+                                        >
+                                            <span class="material-symbols-outlined !text-xl text-gray-500">security</span> Security &amp; Devices
+                                        </a>
+                                        <a
+                                            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                            href="#"
+                                        >
+                                            <span class="material-symbols-outlined !text-xl text-gray-500">verified_user</span> KYC &amp; Compliance
+                                        </a>
+                                    </nav>
+                                </div>
+                            </details>
+                            <details
+                                class="group/item flex flex-col rounded-lg border border-gray-200 bg-white has-[:checked]:border-primary/50 has-[:checked]:bg-primary/5 dark:border-gray-700/50 dark:bg-gray-800/60 dark:has-[:checked]:border-primary/70 dark:has-[:checked]:bg-primary/10"
+                            >
+                                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-3">
+                                    <div class="flex flex-1 items-center gap-3">
+                                        <input
+                                            class="form-checkbox h-4 w-4 rounded border-gray-300 bg-gray-100 text-primary focus:ring-primary/50 dark:border-gray-600 dark:bg-gray-900"
+                                            type="checkbox"
+                                        />
+                                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">John Doe</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800 dark:bg-orange-900/50 dark:text-orange-300"
+                                            >Deactivated</span
+                                        >
+                                        <div class="group/menu relative">
+                                            <button
+                                                class="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50"
+                                                onclick="event.stopPropagation(); event.preventDefault();"
+                                            >
+                                                <span class="material-symbols-outlined !text-xl">more_vert</span>
+                                            </button>
+                                            <div
+                                                class="ring-opacity-5 absolute right-0 z-10 mt-1 hidden w-40 origin-top-right rounded-lg bg-white shadow-lg ring-1 ring-black group-hover/menu:block focus:outline-none dark:bg-gray-800 dark:ring-gray-700"
+                                            >
+                                                <div class="py-1">
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">notifications</span>
+                                                        Notify
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">toggle_off</span>
+                                                        Disable
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">flag</span>
+                                                        Flag
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">military_tech</span>
+                                                        Reward
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span
+                                            class="material-symbols-outlined text-gray-500 transition-transform duration-200 group-open/item:rotate-180 dark:text-gray-400"
+                                            >expand_more</span
+                                        >
+                                    </div>
+                                </summary>
+                            </details>
+                            <details
+                                class="group/item flex flex-col rounded-lg border border-gray-200 bg-white has-[:checked]:border-primary/50 has-[:checked]:bg-primary/5 dark:border-gray-700/50 dark:bg-gray-800/60 dark:has-[:checked]:border-primary/70 dark:has-[:checked]:bg-primary/10"
+                            >
+                                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-3">
+                                    <div class="flex flex-1 items-center gap-3">
+                                        <input
+                                            class="form-checkbox h-4 w-4 rounded border-gray-300 bg-gray-100 text-primary focus:ring-primary/50 dark:border-gray-600 dark:bg-gray-900"
+                                            type="checkbox"
+                                        />
+                                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">Jane Smith</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/50 dark:text-red-300"
+                                            >Flagged</span
+                                        >
+                                        <div class="group/menu relative">
+                                            <button
+                                                class="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50"
+                                                onclick="event.stopPropagation(); event.preventDefault();"
+                                            >
+                                                <span class="material-symbols-outlined !text-xl">more_vert</span>
+                                            </button>
+                                            <div
+                                                class="ring-opacity-5 absolute right-0 z-10 mt-1 hidden w-40 origin-top-right rounded-lg bg-white shadow-lg ring-1 ring-black group-hover/menu:block focus:outline-none dark:bg-gray-800 dark:ring-gray-700"
+                                            >
+                                                <div class="py-1">
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">notifications</span>
+                                                        Notify
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">toggle_off</span>
+                                                        Disable
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">flag</span>
+                                                        Flag
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">military_tech</span>
+                                                        Reward
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span
+                                            class="material-symbols-outlined text-gray-500 transition-transform duration-200 group-open/item:rotate-180 dark:text-gray-400"
+                                            >expand_more</span
+                                        >
+                                    </div>
+                                </summary>
+                            </details>
+                            <details
+                                class="group/item flex flex-col rounded-lg border border-gray-200 bg-white has-[:checked]:border-primary/50 has-[:checked]:bg-primary/5 dark:border-gray-700/50 dark:bg-gray-800/60 dark:has-[:checked]:border-primary/70 dark:has-[:checked]:bg-primary/10"
+                            >
+                                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-3">
+                                    <div class="flex flex-1 items-center gap-3">
+                                        <input
+                                            class="form-checkbox h-4 w-4 rounded border-gray-300 bg-gray-100 text-primary focus:ring-primary/50 dark:border-gray-600 dark:bg-gray-900"
+                                            type="checkbox"
+                                        />
+                                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">Michael Chen</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="group/menu relative">
+                                            <button
+                                                class="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50"
+                                                onclick="event.stopPropagation(); event.preventDefault();"
+                                            >
+                                                <span class="material-symbols-outlined !text-xl">more_vert</span>
+                                            </button>
+                                            <div
+                                                class="ring-opacity-5 absolute right-0 z-10 mt-1 hidden w-40 origin-top-right rounded-lg bg-white shadow-lg ring-1 ring-black group-hover/menu:block focus:outline-none dark:bg-gray-800 dark:ring-gray-700"
+                                            >
+                                                <div class="py-1">
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">notifications</span>
+                                                        Notify
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">toggle_off</span>
+                                                        Disable
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">flag</span>
+                                                        Flag
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">military_tech</span>
+                                                        Reward
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span
+                                            class="material-symbols-outlined text-gray-500 transition-transform duration-200 group-open/item:rotate-180 dark:text-gray-400"
+                                            >expand_more</span
+                                        >
+                                    </div>
+                                </summary>
+                            </details>
+                            <details
+                                class="group/item flex flex-col rounded-lg border border-gray-200 bg-white has-[:checked]:border-primary/50 has-[:checked]:bg-primary/5 dark:border-gray-700/50 dark:bg-gray-800/60 dark:has-[:checked]:border-primary/70 dark:has-[:checked]:bg-primary/10"
+                            >
+                                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-3">
+                                    <div class="flex flex-1 items-center gap-3">
+                                        <input
+                                            class="form-checkbox h-4 w-4 rounded border-gray-300 bg-gray-100 text-primary focus:ring-primary/50 dark:border-gray-600 dark:bg-gray-900"
+                                            type="checkbox"
+                                        />
+                                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">Sarah Johnson</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="group/menu relative">
+                                            <button
+                                                class="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50"
+                                                onclick="event.stopPropagation(); event.preventDefault();"
+                                            >
+                                                <span class="material-symbols-outlined !text-xl">more_vert</span>
+                                            </button>
+                                            <div
+                                                class="ring-opacity-5 absolute right-0 z-10 mt-1 hidden w-40 origin-top-right rounded-lg bg-white shadow-lg ring-1 ring-black group-hover/menu:block focus:outline-none dark:bg-gray-800 dark:ring-gray-700"
+                                            >
+                                                <div class="py-1">
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">notifications</span>
+                                                        Notify
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">toggle_off</span>
+                                                        Disable
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">flag</span>
+                                                        Flag
+                                                    </a>
+                                                    <a
+                                                        class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                                                        href="#"
+                                                    >
+                                                        <span class="material-symbols-outlined !text-lg">military_tech</span>
+                                                        Reward
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span
+                                            class="material-symbols-outlined text-gray-500 transition-transform duration-200 group-open/item:rotate-180 dark:text-gray-400"
+                                            >expand_more</span
+                                        >
+                                    </div>
+                                </summary>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

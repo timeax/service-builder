@@ -1,18 +1,22 @@
-import {Panel} from "@/components/ui/panel.tsx";
-import Left from "@/panels/left";
+import { Panel } from '@/components/ui/panel.tsx';
+import Left from '@/panels/left';
+import RightPanel from '@/panels/right';
 
 function App() {
     return (
-        <div className={'flex flex-col h-screen p-4'}>
-            <div className={'flex grow'}>
-                <Left/>
-                <div className={'border m-auto grow'}>
-                    fill
-                </div>
+        <div className={'relative flex h-screen flex-col overflow-hidden *:font-display'}>
+            <div className={'flex grow overflow-hidden'}>
+                <Left />
+                <div className={'m-auto grow border'}>fill</div>
+                <RightPanel />
             </div>
-            <Panel className={'border'}>Bottom</Panel>
+            <div className={'relative hidden'}>
+                <Panel className={'absolute bottom-0 w-full border'} maintainPosition>
+                    Bottom
+                </Panel>
+            </div>
         </div>
-    )
+    );
 }
 
-export default App
+export default App;

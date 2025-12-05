@@ -65,3 +65,8 @@
     width: 50%;
     border-top: var(--tree-line-width) var(--tree-line-style) var(--tree-line-color);
 }
+
+/* apply to the element that receives selectedRowClassName / rowClassName */
+.tree-row-clip {
+    background-clip: content-box; /* don’t paint under the left padding (indent) */
+}

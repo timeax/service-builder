@@ -8,12 +8,12 @@ import {CiGrid32} from "react-icons/ci";
 
 const Left = () => {
     return (
-        <Panel className={'w-80 border shadow-lg'} edges={['right']}>
+        <Panel className={'w-80 shadow-lg rounded-none!'} edges={['right']}>
             <div className="flex h-full flex-col">
                 <Header/>
-                <div className={'grow overflow-y-auto pt-4 gap-4 flex flex-col'}>
+                <div className={'grow overflow-y-hidden pt-4 gap-4 flex flex-col'}>
                     <Drafts/>
-                    <Tabs defaultValue="layers" className={'px-0'}>
+                    <Tabs defaultValue="layers" className={'px-0 grow overflow-hidden'}>
                         <div className={'px-3'}>
                             <TabsList className={'w-full h-fit'}>
                                 <TabsTrigger className={'py-1.5!'} value="layers">
@@ -30,7 +30,7 @@ const Left = () => {
                                 </TabsTrigger>
                             </TabsList>
                         </div>
-                        <TabsContent className={'px-0'} value="layers">
+                        <TabsContent className={'px-0 grow overflow-hidden'} value="layers">
                             <Layers/>
                         </TabsContent>
                         <TabsContent value="assets" className={'px-3'}>No assets available.</TabsContent>
