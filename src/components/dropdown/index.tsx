@@ -505,8 +505,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
                             </div>
 
                             {/* top / bottom shadow gradients */}
-                            <div className="pointer-events-none absolute inset-x-0 top-0 h-3 bg-gradient-to-b from-black/5 to-transparent" />
-                            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-3 bg-gradient-to-t from-black/5 to-transparent" />
+                            <div className="pointer-events-none absolute inset-x-0 top-0 h-3 bg-linear-to-b from-black/5 to-transparent" />
+                            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-3 bg-linear-to-t from-black/5 to-transparent" />
                         </div>
                     </DropdownMenuContent>
                 </DropdownMenuPortal>
@@ -698,7 +698,7 @@ const RenderNode: React.FC<{
                     onCheckedChange={async (v) => {
                         try {
                             setLoading((node as any).id, true);
-                            await node.onCheckedChange?.(!!v);
+                            await node.onCheckedChange?.(v);
                             onItemSelect?.({ node, event: new Event('change') as unknown as Event });
                         } finally {
                             setLoading((node as any).id, false);
