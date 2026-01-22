@@ -1,0 +1,23 @@
+backend/
+  index.ts
+  memory/
+    index.ts
+    create-backend.ts
+    initial.ts
+    seed/
+      index.ts
+      authors.ts
+      permissions.ts
+      branches.ts
+      participants.ts
+      services.ts
+      templates.ts
+      snapshots.ts
+      comments.ts
+      policies.ts
+      meta.ts
+    utils/
+      index.ts
+      time.ts
+src/
+  App.tsx

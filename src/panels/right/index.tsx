@@ -12,10 +12,10 @@ const RightPanel = () => {
         'data-[state=active]:-mb-px! data-[state=active]:border-blue-500!',
     );
     return (
-        <Panel edges={['left']} maxWidth={400} minWidth={300} className={'w-[350px] rounded-none! border'}>
-            <div className="flex flex-col">
+        <Panel edges={['left']} maxWidth={400} minWidth={300} className={'w-[400px] rounded-none! flex flex-col border max-h-dvh h-dvh'}>
+            <div className="flex flex-col h-full">
                 <Header />
-                <Tabs className={'gap-0'} defaultValue="wireframe">
+                <Tabs className={'gap-0 grow overflow-hidden'} defaultValue="wireframe">
                     <TabsList className="grid h-fit w-full grid-cols-3 rounded-none! border-b bg-transparent p-0">
                         <TabsTrigger className={tabClassName} value="comments">
                             Comments
@@ -27,7 +27,7 @@ const RightPanel = () => {
                             Wireframe
                         </TabsTrigger>
                     </TabsList>
-                    <TabsContent value="comments">
+                    <TabsContent className={"grow overflow-hidden"} value="comments">
                         <Comments />
                     </TabsContent>
                     <TabsContent value="properties">Change your password here.</TabsContent>

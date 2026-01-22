@@ -1,0 +1,48 @@
+import type { FieldTemplate } from '@timeax/digital-service-engine/workspace';
+import { isoNow } from '../utils';
+
+export const templates: readonly FieldTemplate[] = [
+    {
+        id: 'tpl:url',
+        key: 'url',
+        name: 'Target URL',
+        kind: 'text',
+        definition: { variant: 'text', props: { placeholder: 'https://...', mode: 'url' } },
+        defaults: { value: '' },
+        ui: { icon: 'link', width: 'full' },
+        tags: ['core', 'input'],
+        published: true,
+        version: 1,
+        createdAt: isoNow(),
+        updatedAt: isoNow(),
+    },
+    {
+        id: 'tpl:quantity',
+        key: 'quantity',
+        name: 'Quantity',
+        kind: 'number',
+        definition: { variant: 'number', props: { min: 1, step: 1 } },
+        defaults: { value: 100 },
+        ui: { icon: 'hash', width: 'half' },
+        tags: ['core', 'pricing'],
+        published: true,
+        version: 1,
+        createdAt: isoNow(),
+        updatedAt: isoNow(),
+    },
+    {
+        id: 'tpl:promo',
+        key: 'promo_code',
+        name: 'Promo Code',
+        kind: 'text',
+        branchId: 'branch:experiment',
+        definition: { variant: 'text', props: { placeholder: 'OPTIONAL', uppercase: true } },
+        defaults: { value: '' },
+        ui: { icon: 'ticket', width: 'half' },
+        tags: ['experiment'],
+        published: false,
+        version: 1,
+        createdAt: isoNow(),
+        updatedAt: isoNow(),
+    },
+];

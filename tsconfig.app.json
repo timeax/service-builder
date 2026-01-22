@@ -8,7 +8,7 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "module": "ESNext",
+    "module": "NodeNext",
     "types": [
       "vite/client"
     ],
@@ -34,6 +34,6 @@
     }
   },
   "include": [
-    "src"
+    "src", "backend"
   ]
 }

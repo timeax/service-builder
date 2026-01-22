@@ -298,7 +298,7 @@ export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(function Panel
             ref={panelRef}
             data-ui="panel"
             data-resizable={resizable ? 'true' : 'false'}
-            className={cn('relative rounded-paper', { 'select-none *:select-none': hoverEdge }, className)}
+            className={cn('relative rounded-paper overflow-hidden', { 'select-none *:select-none': hoverEdge }, className)}
             style={{
                 ...style,
                 ...sizeStyle,

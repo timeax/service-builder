@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "entries": {
+    "backend/index.ts": {
+      "path": "backend/index.ts",
+      "createdAt": "2026-01-22T09:40:05.841Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/index.ts": {
+      "path": "backend/memory/index.ts",
+      "createdAt": "2026-01-22T09:40:05.844Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/create-backend.ts": {
+      "path": "backend/memory/create-backend.ts",
+      "createdAt": "2026-01-22T09:40:05.847Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/initial.ts": {
+      "path": "backend/memory/initial.ts",
+      "createdAt": "2026-01-22T09:40:05.849Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/seed/index.ts": {
+      "path": "backend/memory/seed/index.ts",
+      "createdAt": "2026-01-22T09:40:05.850Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/seed/authors.ts": {
+      "path": "backend/memory/seed/authors.ts",
+      "createdAt": "2026-01-22T09:40:05.851Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/seed/permissions.ts": {
+      "path": "backend/memory/seed/permissions.ts",
+      "createdAt": "2026-01-22T09:40:05.853Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/seed/branches.ts": {
+      "path": "backend/memory/seed/branches.ts",
+      "createdAt": "2026-01-22T09:40:05.854Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/seed/participants.ts": {
+      "path": "backend/memory/seed/participants.ts",
+      "createdAt": "2026-01-22T09:40:05.855Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/seed/services.ts": {
+      "path": "backend/memory/seed/services.ts",
+      "createdAt": "2026-01-22T09:40:05.857Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/seed/templates.ts": {
+      "path": "backend/memory/seed/templates.ts",
+      "createdAt": "2026-01-22T09:40:05.863Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/seed/snapshots.ts": {
+      "path": "backend/memory/seed/snapshots.ts",
+      "createdAt": "2026-01-22T09:40:05.864Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/seed/comments.ts": {
+      "path": "backend/memory/seed/comments.ts",
+      "createdAt": "2026-01-22T09:40:05.865Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/seed/policies.ts": {
+      "path": "backend/memory/seed/policies.ts",
+      "createdAt": "2026-01-22T09:40:05.866Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/seed/meta.ts": {
+      "path": "backend/memory/seed/meta.ts",
+      "createdAt": "2026-01-22T09:40:05.867Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/utils/index.ts": {
+      "path": "backend/memory/utils/index.ts",
+      "createdAt": "2026-01-22T09:40:05.868Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "backend/memory/utils/time.ts": {
+      "path": "backend/memory/utils/time.ts",
+      "createdAt": "2026-01-22T09:40:05.869Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    }
+  }
+}
