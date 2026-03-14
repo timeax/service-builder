@@ -740,8 +740,8 @@ const RenderNode: React.FC<{
                                 value={opt.value}
                                 disabled={opt.disabled}
                                 className={rowClass(size, opt)}
-                                onSelect={(ev) => onItemSelect?.({ node: opt as MenuNode, event: ev as unknown as Event })}
-                                onPointerMove={() => onItemHover?.(opt as MenuNode)}
+                                onSelect={(ev) => onItemSelect?.({ node: opt as unknown as MenuNode, event: ev as unknown as Event })}
+                                onPointerMove={() => onItemHover?.(opt as unknown as MenuNode)}
                                 data-testid={opt.testId}
                             >
                                 {inner}

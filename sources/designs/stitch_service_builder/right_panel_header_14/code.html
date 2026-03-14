@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Right Panel Header with Tabs</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#135bec",
+            "background-light": "#f6f6f8",
+            "background-dark": "#101622",
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+</head>
+<body class="font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden" style='font-family: Inter, "Noto Sans", sans-serif;'>
+<div class="layout-container flex h-full grow flex-col">
+<div class="flex flex-1 justify-center py-5">
+<div class="layout-content-container flex flex-col w-full max-w-lg flex-1">
+<div class="flex flex-col bg-white dark:bg-[#1C2431] rounded-lg">
+<div class="flex items-center justify-between p-2.5 border-b border-gray-200 dark:border-gray-700">
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+<div class="w-8 h-8 rounded-full bg-cover bg-center" data-alt="User avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCPAmmPl50IUuDxBCR3H-gkL0aDeNrIYyAp1OmOAgdDw89gQbO8f9LzLdo1PCxCuIcB4vFJ-xN0B1BGEeJpCJ3zKjwzsP6yhPLlssTwWF6DIl6hhVWjmMs2431D_kzdKcWko9CMg9W8iNBpg2ssa3XoEG5_8ysqdp-uUBReYy64TiWsnj887U-y7ojpmpz9b9-O4gdlbuuKHd8GYZ_UecK7P_ki01Ccfu28sLJ4CCIrMO0cx1RlMmgW3vECJGFby1njgqlCsQ6g9XY");'></div>
+<span class="material-symbols-outlined text-xl">arrow_drop_down</span>
+</button>
+<div class="relative group">
+<button class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+<span class="material-symbols-outlined text-3xl">play_arrow</span>
+</button>
+<div class="absolute bottom-full left-1/2 mb-2 w-max -translate-x-1/2 transform rounded-md bg-gray-800 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                    Preview file
+                    <div class="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
+</div>
+</div>
+</div>
+<div class="relative group">
+<button class="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-[#0095FF] text-white hover:bg-[#007edc]">
+<span class="material-symbols-outlined text-xl">ios_share</span>
+</button>
+<div class="absolute bottom-full left-1/2 mb-2 w-max -translate-x-1/2 transform rounded-md bg-gray-800 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  Share this file
+                  <div class="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
+</div>
+</div>
+</div>
+<div class="flex border-b border-gray-200 dark:border-gray-700">
+<button class="flex-1 py-2.5 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600">Comments</button>
+<button class="flex-1 py-2.5 px-4 text-sm font-medium text-gray-800 dark:text-white border-b-2 border-primary">Properties</button>
+<button class="flex-1 py-2.5 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600">Wireframe</button>
+</div>
+<div class="p-4 space-y-6">
+<div class="space-y-4">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300">Custom</span>
+<span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">Component</span>
+</div>
+<input class="w-full bg-transparent text-lg font-semibold text-gray-900 dark:text-white border-none focus:ring-primary p-0" type="text" value="Customer Address"/>
+<div class="flex items-center gap-2">
+<p class="text-xs font-mono text-gray-500 dark:text-gray-400">field_customer_address</p>
+<button class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+<span class="material-symbols-outlined text-sm">content_copy</span>
+</button>
+</div>
+</div>
+<hr class="border-gray-200 dark:border-gray-700"/>
+<div class="space-y-4">
+<h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Basics</h3>
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1" for="name">Name</label>
+<input class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm" id="name" type="text" value="customer_address"/>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<input class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-primary" id="required" type="checkbox"/>
+<label class="text-sm font-medium text-gray-700 dark:text-gray-300" for="required">Required</label>
+</div>
+<div>
+<label class="sr-only" for="pricing-role">Pricing Role</label>
+<select class="rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm" id="pricing-role">
+<option>Base</option>
+<option>Utility</option>
+</select>
+</div>
+</div>
+</div>
+<hr class="border-gray-200 dark:border-gray-700"/>
+<div class="space-y-4">
+<h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Custom Component</h3>
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1" for="component">Component</label>
+<input class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm" id="component" type="text" value="AddressField"/>
+<p class="mt-1 flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400"><span class="material-symbols-outlined text-sm">warning</span> Component cannot be empty.</p>
+</div>
+</div>
+<hr class="border-gray-200 dark:border-gray-700"/>
+<div class="space-y-4">
+<h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">UI Editor</h3>
+<div class="space-y-3">
+<h4 class="text-xs font-medium text-gray-600 dark:text-gray-400">UI definition (read-only)</h4>
+<div class="space-y-2 rounded-md border border-gray-200 dark:border-gray-700 p-3">
+<div class="flex items-center justify-between text-sm">
+<span class="font-mono text-gray-500 dark:text-gray-400">placeholder</span>
+<span class="font-mono text-gray-800 dark:text-gray-200">Ui.Text</span>
+</div>
+<div class="flex items-center justify-between text-sm">
+<span class="font-mono text-gray-500 dark:text-gray-400">helperText</span>
+<span class="font-mono text-gray-800 dark:text-gray-200">Ui.Text</span>
+</div>
+<div class="flex items-center justify-between text-sm">
+<span class="font-mono text-gray-500 dark:text-gray-400">maxLength</span>
+<span class="font-mono text-gray-800 dark:text-gray-200">Ui.Number</span>
+</div>
+<div class="flex items-center justify-between text-sm">
+<span class="font-mono text-gray-500 dark:text-gray-400">showCountry</span>
+<span class="font-mono text-gray-800 dark:text-gray-200">Ui.Checkbox</span>
+</div>
+<div class="flex items-center justify-between text-sm">
+<span class="font-mono text-gray-500 dark:text-gray-400">format</span>
+<span class="font-mono text-gray-800 dark:text-gray-200">Ui.Enum</span>
+</div>
+</div>
+</div>
+<div class="space-y-2 pt-2">
+<h4 class="text-xs font-medium text-gray-600 dark:text-gray-400">Defaults</h4>
+<div class="space-y-4">
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1" for="default-placeholder">placeholder</label>
+<input class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm" id="default-placeholder" type="text" value="123 Main St, Anytown, USA"/>
+</div>
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1" for="default-helperText">helperText</label>
+<input class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm" id="default-helperText" placeholder="Not set" type="text" value="Please enter a valid US address."/>
+</div>
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1" for="default-maxLength">maxLength</label>
+<input class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm" id="default-maxLength" placeholder="Not set" type="number" value="255"/>
+</div>
+<div class="flex items-center gap-2">
+<input checked="" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-primary" id="default-showCountry" type="checkbox"/>
+<label class="text-sm font-medium text-gray-700 dark:text-gray-300" for="default-showCountry">showCountry</label>
+</div>
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1" for="default-format">format</label>
+<select class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm" id="default-format">
+<option>US</option>
+<option selected="">International</option>
+<option>Canadian</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+<hr class="border-gray-200 dark:border-gray-700"/>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Options</h3>
+<button class="flex items-center gap-1 text-sm font-medium text-primary hover:text-blue-700 dark:hover:text-blue-400">
+<span class="material-symbols-outlined text-lg">add</span>
+<span>Add option</span>
+</button>
+</div>
+<div class="text-center py-4">
+<p class="text-sm text-gray-500 dark:text-gray-400">No options defined.</p>
+<p class="text-xs text-gray-400 dark:text-gray-500">Click 'Add option' to create one.</p>
+</div>
+</div>
+<hr class="border-gray-200 dark:border-gray-700"/>
+<div class="space-y-4">
+<h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Button Behavior &amp; Service</h3>
+<div class="flex items-center gap-2">
+<input checked="" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-primary" id="button-toggle" type="checkbox"/>
+<label class="text-sm font-medium text-gray-700 dark:text-gray-300" for="button-toggle">Show as Button</label>
+</div>
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1" for="service-chooser">Service</label>
+<select class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm" id="service-chooser">
+<option>Select a service</option>
+<option selected="">Address Validation (AV-123)</option>
+</select>
+</div>
+<div class="border rounded-md border-gray-200 dark:border-gray-700">
+<button class="w-full flex justify-between items-center p-3 text-left">
+<span class="text-sm font-medium text-gray-800 dark:text-gray-200">Service Details</span>
+<span class="material-symbols-outlined text-xl text-gray-500 dark:text-gray-400">expand_less</span>
+</button>
+<div class="p-3 border-t border-gray-200 dark:border-gray-700 space-y-3 text-xs">
+<div class="grid grid-cols-2 gap-2">
+<div><span class="font-medium text-gray-600 dark:text-gray-400">Provider:</span> <span class="text-gray-800 dark:text-gray-200">GeoLocate Inc.</span></div>
+<div><span class="font-medium text-gray-600 dark:text-gray-400">Pricing:</span> <span class="text-gray-800 dark:text-gray-200">$0.05/req</span></div>
+<div><span class="font-medium text-gray-600 dark:text-gray-400">Min/Max:</span> <span class="text-gray-800 dark:text-gray-200">1 / 100</span></div>
+<div><span class="font-medium text-gray-600 dark:text-gray-400">ETA:</span> <span class="text-gray-800 dark:text-gray-200">~250ms</span></div>
+</div>
+<div>
+<span class="font-medium text-gray-600 dark:text-gray-400">Status:</span>
+<span class="inline-flex items-center gap-1.5 text-green-700 dark:text-green-400"><span class="h-2 w-2 rounded-full bg-green-500"></span>Available</span>
+</div>
+<div>
+<span class="font-medium text-gray-600 dark:text-gray-400">Capabilities:</span>
+<div class="flex flex-wrap gap-1.5 mt-1">
+<span class="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">USPS</span>
+<span class="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">International</span>
+<span class="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">PO Box</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<hr class="border-gray-200 dark:border-gray-700"/>
+<div class="space-y-4">
+<details>
+<summary class="flex justify-between items-center cursor-pointer list-none">
+<h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Advanced</h3>
+<span class="material-symbols-outlined text-xl text-gray-500 dark:text-gray-400">expand_more</span>
+</summary>
+<div class="mt-4 space-y-6">
+<div class="space-y-4">
+<h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Quantity</h4>
+<div class="space-y-4">
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Mode (valueBy)</label>
+<div class="flex items-center space-x-4">
+<div class="flex items-center">
+<input class="h-4 w-4 border-gray-300 text-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600" id="quantity-value" name="quantity-mode" type="radio"/>
+<label class="ml-2 block text-sm text-gray-700 dark:text-gray-300" for="quantity-value">value</label>
+</div>
+<div class="flex items-center">
+<input class="h-4 w-4 border-gray-300 text-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600" id="quantity-length" name="quantity-mode" type="radio"/>
+<label class="ml-2 block text-sm text-gray-700 dark:text-gray-300" for="quantity-length">length</label>
+</div>
+<div class="flex items-center">
+<input checked="" class="h-4 w-4 border-gray-300 text-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600" id="quantity-eval" name="quantity-mode" type="radio"/>
+<label class="ml-2 block text-sm text-gray-700 dark:text-gray-300" for="quantity-eval">eval</label>
+</div>
+</div>
+</div>
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1" for="quantity-eval-code">Eval code (code)</label>
+<textarea class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white sm:text-sm font-mono" id="quantity-eval-code" placeholder="e.g. value &gt; 10 ? 1 : 0" rows="3"></textarea>
+</div>
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1" for="quantity-multiply">Multiply (multiply)</label>
+<input class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white sm:text-sm" id="quantity-multiply" placeholder="e.g. 1.15" type="number"/>
+</div>
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Clamp (clamp)</label>
+<div class="flex items-center space-x-2">
+<input class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white sm:text-sm" id="quantity-clamp-min" placeholder="Min" type="number"/>
+<span class="text-gray-400 dark:text-gray-500">-</span>
+<input class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white sm:text-sm" id="quantity-clamp-max" placeholder="Max" type="number"/>
+</div>
+</div>
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1" for="quantity-fallback">Fallback (fallback)</label>
+<input class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white sm:text-sm" id="quantity-fallback" placeholder="e.g. 1" type="number"/>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Utility (Surcharges / Fees)</h4>
+<div class="space-y-4">
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1" for="utility-rate">Rate (rate)</label>
+<input class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white sm:text-sm" id="utility-rate" placeholder="e.g. 2.50" type="number"/>
+</div>
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1" for="utility-mode">Mode (mode)</label>
+<select class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white sm:text-sm" id="utility-mode">
+<option value="flat">flat</option>
+<option value="per_quantity">per_quantity</option>
+<option value="per_value">per_value</option>
+<option selected="" value="percent">percent</option>
+</select>
+</div>
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1" for="utility-percent-base">Percent base (percentBase)</label>
+<select class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white sm:text-sm" id="utility-percent-base">
+<option value="service_total">service_total</option>
+<option value="base_service">base_service</option>
+<option value="all">all</option>
+</select>
+</div>
+<div>
+<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1" for="utility-label">Label (label)</label>
+<input class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white sm:text-sm" id="utility-label" placeholder="e.g. Processing Fee" type="text"/>
+</div>
+</div>
+</div>
+</div>
+</details>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>

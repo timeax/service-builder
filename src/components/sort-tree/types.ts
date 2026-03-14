@@ -1,11 +1,13 @@
-import * as React from "react";
+import type { SelectionMeta } from '@/components/sort-tree/core/use-selection.ts';
+import { type TreeNode as LayerNode } from '@timeax/digital-service-engine/workspace';
+import * as React from 'react';
 
 /** Primitives */
 export type NodeKey = string | number;
 export type NodePath = NodeKey[];
 
 /** Tree node */
-export interface TreeNode<T = unknown> {
+export interface TreeNode<T = unknown> extends LayerNode {
     id: NodeKey;
     title: string;
     icon?: React.ReactNode;
@@ -14,25 +16,23 @@ export interface TreeNode<T = unknown> {
      *  - a materialized array
      *  - a lazy loader that returns children (sync or async)
      */
-    children?:
-        | Array<TreeNode<T>>
-        | (() => Array<TreeNode<T>> | Promise<Array<TreeNode<T>>>);
+    children?: Array<TreeNode<T>> | (() => Array<TreeNode<T>> | Promise<Array<TreeNode<T>>>);
     expanded?: boolean;
     data?: T;
 }
 
 /** Selection */
-export type SelectionMode = "none" | "single" | "multiple";
+export type SelectionMode = 'none' | 'single' | 'multiple';
 
 /** Change event kinds */
 export type ChangeType =
-    | "reorder"   // among siblings
-    | "move"      // to a different parent
-    | "insert"    // programmatic insert
-    | "remove"    // programmatic remove
-    | "toggle"    // expand/collapse
-    | "update"    // programmatic update (rename, etc.)
-    | "selection"; // selection changed
+    | 'reorder' // among siblings
+    | 'move' // to a different parent
+    | 'insert' // programmatic insert
+    | 'remove' // programmatic remove
+    | 'toggle' // expand/collapse
+    | 'update' // programmatic update (rename, etc.)
+    | 'selection'; // selection changed
 
 export interface PositionInfo<T = unknown> {
     parent: TreeNode<T> | null;
@@ -43,41 +43,47 @@ export interface PositionInfo<T = unknown> {
 
 /** Fine-grained change payloads (better typing than a single catch-all) */
 export interface ChangeDetailMove<T = unknown> {
-    type: "move" | "reorder";
+    type: 'move' | 'reorder';
     node: TreeNode<T>;
     from: PositionInfo<T>;
     to: PositionInfo<T>;
+    preventDefault(): void;
     context?: Record<string, unknown>;
 }
 export interface ChangeDetailInsert<T = unknown> {
-    type: "insert";
+    type: 'insert';
     node: TreeNode<T>;
     to: PositionInfo<T>;
     /** Optional convenience when you want both to & parent on insert events */
     parent?: TreeNode<T> | null;
+    preventDefault(): void;
     context?: Record<string, unknown>;
 }
 export interface ChangeDetailRemove<T = unknown> {
-    type: "remove";
+    type: 'remove';
     node: TreeNode<T>;
     from: PositionInfo<T>;
     context?: Record<string, unknown>;
+    preventDefault(): void;
 }
 export interface ChangeDetailToggle<T = unknown> {
-    type: "toggle";
+    type: 'toggle';
     node: TreeNode<T>;
     from: PositionInfo<T>;
     context?: Record<string, unknown>; // e.g. { expanded: boolean }
+    preventDefault(): void;
 }
 export interface ChangeDetailUpdate<T = unknown> {
-    type: "update";
+    type: 'update';
     node: TreeNode<T>;
+    preventDefault(): void;
     context?: Record<string, unknown>;
 }
 export interface ChangeDetailSelection {
-    type: "selection";
+    type: 'selection';
     selection: string[]; // selected node ids (as strings)
-    context?: { via?: "click" | "keyboard" | "api" } & Record<string, unknown>;
+    context?: SortTreeSelectionContext & Record<string, unknown>;
+    preventDefault(): void;
 }
 
 export type ChangeDetail<T = unknown> =
@@ -102,18 +108,52 @@ export interface ContextMenuDetail<T = unknown> {
 }
 
 /** Drop zones */
-export type DropZone = "before" | "on" | "after";
+export type DropZone = 'before' | 'on' | 'after';
 
 /** Component props */
 export interface SortTreeProps<T = unknown> {
     data: Array<TreeNode<T>>;
+    maxDepth?: number; // default: Infinity
+    indent?: number; // px per depth, default: 24
+    // Search
+    searchQuery?: string; // default: ''
+    autoExpandSearchResults?: boolean; // default: true
+    // Virtualization
+    height?: number; // if set, uses react-window
+    rowHeight?: number; // default: 44
+    overscanCount?: number; // default: 8
+    /**
+     * Optional row-level class. Accepts a fixed string or a function to compute per-node.
+     * nodeClassName → applied to the inner NodeRow container
+     * rowClassName  → applied to the outer row wrapper
+     */
+    nodeClassName?: string | ((args: { node: TreeNode<T>; depth: number; path: NodePath; matched: boolean; isDragging: boolean }) => string);
+    rowClassName?: string | ((args: { node: TreeNode<T>; depth: number; path: NodePath; matched: boolean; isDragging: boolean }) => string);
+    className?: string;
+    style?: React.CSSProperties;
+    /** Prevent native browser context menu on rows (default: true) */
+    preventNativeContextMenu?: boolean;
+    /** Show ASCII-style binding lines for ancestors/siblings (default: false) */
+    showBinding?: boolean;
+    /** NEW — treat every node as a valid parent target even if it currently has no children */
+    allSupportSubnodes?: boolean;
+    /** NEW — selection API */
+    selectionMode?: SelectionMode; // default: "none"
+    value?: string | string[]; // controlled selected ids
+    defaultValue?: string | string[]; // uncontrolled initial selected ids
+    /** Selected-state classes */
+    activeClassName?: string | ((args: { node: TreeNode<T>; depth: number; path: NodePath; matched: boolean }) => string);
+    selectedRowClassName?: string | ((args: { node: TreeNode<T>; depth: number; path: NodePath; matched: boolean }) => string);
+    selectedNodeClassName?: string | ((args: { node: TreeNode<T>; depth: number; path: NodePath; matched: boolean }) => string);
+    skinClassName?: string | ((args: { node: TreeNode<T>; depth: number; path: NodePath; matched: boolean; isDragging: boolean }) => string);
+    selectedSkinClassName?: string | ((args: { node: TreeNode<T>; depth: number; path: NodePath; matched: boolean }) => string);
+    defaultNodeIcon?: React.ReactNode | ((node: TreeNode<T>) => React.ReactNode);
 
     onChange(next: Array<TreeNode<T>>, detail: ChangeDetail<T>): void;
 
     // Controls
     getNodeKey?(node: TreeNode<T>): NodeKey; // default: node.id
-    maxDepth?: number; // default: Infinity
-    indent?: number; // px per depth, default: 24
+
     canDrag?(node: TreeNode<T>): boolean; // default: true
 
     /**
@@ -124,19 +164,11 @@ export interface SortTreeProps<T = unknown> {
         dragged?: TreeNode<T> | null;
         from?: PositionInfo<T> | null;
         to: PositionInfo<T>;
-        origin?: "internal" | "external";
+        origin?: 'internal' | 'external';
         hint?: { willExceedMaxDepth?: boolean };
     }): boolean; // default: true
 
-    // Search
-    searchQuery?: string; // default: ''
     searchMatch?(node: TreeNode<T>, query: string): boolean; // default: title includes
-    autoExpandSearchResults?: boolean; // default: true
-
-    // Virtualization
-    height?: number; // if set, uses react-window
-    rowHeight?: number; // default: 44
-    overscanCount?: number; // default: 8
 
     // Custom UI (row content)
     renderNode?(args: {
@@ -146,94 +178,31 @@ export interface SortTreeProps<T = unknown> {
         path: NodePath;
         toggle(): void;
         matched: boolean;
+        isEditing?: boolean;
+        onCommit?: (newTitle: string) => void;
+        onCancel?: () => void;
     }): React.ReactNode;
-
-    /**
-     * Optional row-level class. Accepts a fixed string or a function to compute per-node.
-     * nodeClassName → applied to the inner NodeRow container
-     * rowClassName  → applied to the outer row wrapper
-     */
-    nodeClassName?:
-        | string
-        | ((args: {
-        node: TreeNode<T>;
-        depth: number;
-        path: NodePath;
-        matched: boolean;
-        isDragging: boolean;
-    }) => string);
-
-    rowClassName?:
-        | string
-        | ((args: {
-        node: TreeNode<T>;
-        depth: number;
-        path: NodePath;
-        matched: boolean;
-        isDragging: boolean;
-    }) => string);
-
-    className?: string;
-    style?: React.CSSProperties;
 
     // Context menu
     onContextMenu?(detail: ContextMenuDetail<T>): void;
-
-    /** Prevent native browser context menu on rows (default: true) */
-    preventNativeContextMenu?: boolean;
-
-    /** Show ASCII-style binding lines for ancestors/siblings (default: false) */
-    showBinding?: boolean;
 
     /**
      * Called when a native (external) item is dropped onto a zone (files, text, images, etc.).
      * Use this to insert nodes based on DataTransfer contents.
      */
-    onExternalDrop?(detail: {
-        zone: DropZone;
-        over: TreeNode<T>;
-        to: PositionInfo<T>;
-        dataTransfer: DataTransfer;
-    }): void;
+    onExternalDrop?(detail: { zone: DropZone; over: TreeNode<T>; to: PositionInfo<T>; dataTransfer: DataTransfer }): void;
 
-    /** NEW — treat every node as a valid parent target even if it currently has no children */
-    allSupportSubnodes?: boolean;
-
-    /** NEW — selection API */
-    selectionMode?: SelectionMode;                 // default: "none"
-    value?: string | string[];                     // controlled selected ids
-    defaultValue?: string | string[];              // uncontrolled initial selected ids
-    onSelect?(ids: string[], meta?: { via: "click" | "keyboard" | "api" }): void;
+    onSelect?(ids: string[], meta?: SortTreeSelectionContext): void;
 
     /** NEW — factory used by createUI(title) → node */
     makeNodeFromTitle?(title: string): TreeNode<T>;
-
-    /** Selected-state classes */
-    selectedRowClassName?:
-        | string
-        | ((args: { node: TreeNode<T>; depth: number; path: NodePath; matched: boolean }) => string);
-    selectedNodeClassName?:
-        | string
-        | ((args: { node: TreeNode<T>; depth: number; path: NodePath; matched: boolean }) => string);
-    skinClassName?: | string
-        | ((args: {
-        node: TreeNode<T>;
-        depth: number;
-        path: NodePath;
-        matched: boolean;
-        isDragging: boolean;
-    }) => string);
-
-    selectedSkinClassName?: | string
-        | ((args: {
-        node: TreeNode<T>;
-        depth: number;
-        path: NodePath;
-        matched: boolean;
-    }) => string);
-
-    defaultNodeIcon?: React.ReactNode | ((node: TreeNode<T>) => React.ReactNode);
 }
+type Via = 'click' | 'keyboard' | 'api';
+
+export type SortTreeSelectionContext = {
+    via: Via;
+    selection: SelectionMeta;
+};
 
 /** Imperative API (use with React.forwardRef) */
 export interface SortTreeRef<T = unknown> {
@@ -254,9 +223,10 @@ export interface SortTreeRef<T = unknown> {
     createUI(at: NodePath | NodeKey): void;
     cancelCreateUI(): void;
 
-
     /** Clear lazy cache globally or for a specific node (by id/path). */
     refresh(target?: NodePath | NodeKey): void;
     invalidate(target?: NodePath | NodeKey): void;
     remove(target: NodePath | NodeKey): void;
+    getSelectionNodes: () => Array<TreeNode<T>>;
+    getSelectionLocated?: () => Array<{ id: string; path: NodePath; node: TreeNode<T> }>;
 }

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Right Panel Header</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden" style='font-family: Inter, "Noto Sans", sans-serif;'>
+<div class="layout-container flex h-full grow flex-col">
+<div class="flex flex-1 justify-center py-5">
+<div class="layout-content-container flex flex-col w-full max-w-lg flex-1">
+<div class="flex items-center justify-between p-2.5 bg-white dark:bg-[#1C2431] border-b border-gray-200 dark:border-gray-700 rounded-lg">
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+<div class="w-8 h-8 rounded-full bg-cover bg-center" data-alt="User avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCPAmmPl50IUuDxBCR3H-gkL0aDeNrIYyAp1OmOAgdDw89gQbO8f9LzLdo1PCxCuIcB4vFJ-xN0B1BGEeJpCJ3zKjwzsP6yhPLlssTwWF6DIl6hhVWjmMs2431D_kzdKcWko9CMg9W8iNBpg2ssa3XoEG5_8ysqdp-uUBReYy64TiWsnj887U-y7ojpmpz9b9-O4gdlbuuKHd8GYZ_UecK7P_ki01Ccfu28sLJ4CCIrMO0cx1RlMmgW3vECJGFby1njgqlCsQ6g9XY");'></div>
+<span class="material-symbols-outlined text-xl">arrow_drop_down</span>
+</button>
+<button class="flex items-center gap-1 text-gray-700 dark:text-gray-300">
+<span class="material-symbols-outlined text-3xl">play_arrow</span>
+<span class="material-symbols-outlined text-xl">arrow_drop_down</span>
+</button>
+</div>
+<button class="flex h-9 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg bg-[#0095FF] px-4 text-white text-base font-semibold leading-normal hover:bg-[#007edc]">
+<span class="truncate">Share</span>
+</button>
+</div>
+<div class="mt-8 flex items-center justify-between p-2.5 bg-white dark:bg-[#1C2431] border-b border-gray-200 dark:border-gray-700 rounded-lg">
+<div class="flex items-center min-h-[32px]">
+<span class="text-sm text-gray-500 dark:text-gray-400">Only you are viewing</span>
+</div>
+<div class="flex flex-1 gap-2 justify-end">
+<button class="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-0 text-gray-800 dark:text-gray-200 text-sm font-semibold leading-normal">
+<span class="material-symbols-outlined text-xl">play_arrow</span>
+</button>
+<button class="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-0 text-gray-800 dark:text-gray-200 text-sm font-semibold leading-normal">
+<span class="material-symbols-outlined text-xl">ios_share</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>

@@ -12,4 +12,7 @@ export default defineConfig({
         preserveSymlinks: true,
         dedupe: ['react', 'react-dom'],
     },
+    optimizeDeps: {
+        exclude: ['@timeax/digital-service-engine'],
+    },
 });

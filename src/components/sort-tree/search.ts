@@ -1,16 +1,18 @@
-import type {NodePath, TreeNode} from "./types";
-import { pathToString } from "./utils";
+import type { NodePath, TreeNode } from './types';
+import { pathToString } from './utils';
 
 export function defaultMatch<T>(node: TreeNode<T>, q: string): boolean {
     if (!q) return false;
-    return String((node as any).title).toLowerCase().includes(q.toLowerCase());
+    return String((node as any).title)
+        .toLowerCase()
+        .includes(q.toLowerCase());
 }
 
 export function buildSearchSets<T>(
     data: Array<TreeNode<T>>,
     getKey: (n: TreeNode<T>) => string | number,
     match: (n: TreeNode<T>, q: string) => boolean,
-    q: string
+    q: string,
 ) {
     const matchedPaths = new Set<string>();
     const expandPaths = new Set<string>();
@@ -37,7 +39,7 @@ export function buildSearchSets<T>(
             const rawChildren = (n as any).children;
             const childrenIsArray = Array.isArray(rawChildren);
             const childrenArray = childrenIsArray ? (rawChildren as Array<TreeNode<T>>) : null;
-            const childrenIsLazy = typeof rawChildren === "function";
+            const childrenIsLazy = typeof rawChildren === 'function';
 
             let childMatched = false;
             if (childrenArray && childrenArray.length) {

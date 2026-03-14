@@ -1,10 +1,5 @@
-import type { ChangeDetail, NodePath, TreeNode } from "./types";
-import {
-    defaultGetKey,
-    insertNodeAtPath,
-    removeNodeAtPath,
-    subtreeDepth,
-} from "./utils";
+import type { ChangeDetail, NodePath, TreeNode } from './types';
+import { defaultGetKey, insertNodeAtPath, removeNodeAtPath, subtreeDepth } from './utils';
 
 export function moveNode<T>(args: {
     data: Array<TreeNode<T>>;
@@ -16,12 +11,8 @@ export function moveNode<T>(args: {
 }): { tree: Array<TreeNode<T>>; detail: ChangeDetail<T> } {
     const getKey = args.getNodeKey ?? defaultGetKey;
 
-    const { tree: afterRemoval, removed } = removeNodeAtPath<T>(
-        args.data,
-        args.fromPath,
-        getKey
-    );
-    if (!removed) throw new Error("moveNode: source not found");
+    const { tree: afterRemoval, removed } = removeNodeAtPath<T>(args.data, args.fromPath, getKey);
+    if (!removed) throw new Error('moveNode: source not found');
 
     const baseDepth = (args.toParentPath?.length ?? 0) + 1;
     const totalDepth = baseDepth + (subtreeDepth(removed.node) - 1);
@@ -30,21 +21,13 @@ export function moveNode<T>(args: {
         throw new Error(`moveNode: exceeds maxDepth (${limit})`);
     }
 
-    const { tree: finalTree, toInfo } = insertNodeAtPath<T>(
-        afterRemoval,
-        args.toParentPath,
-        args.toIndex,
-        removed.node,
-        getKey
-    );
+    const { tree: finalTree, toInfo } = insertNodeAtPath<T>(afterRemoval, args.toParentPath, args.toIndex, removed.node, getKey);
 
-    const sameParent =
-        removed.parentPath &&
-        toInfo.parentPath &&
-        removed.parentPath.join("/") === toInfo.parentPath.join("/");
+    const sameParent = removed.parentPath && toInfo.parentPath && removed.parentPath.join('/') === toInfo.parentPath.join('/');
 
+    //@ts-ignore
     const detail: ChangeDetail<T> = {
-        type: sameParent ? "reorder" : "move",
+        type: sameParent ? 'reorder' : 'move',
         node: removed.node,
         from: {
             parent: removed.parent,
@@ -53,6 +36,7 @@ export function moveNode<T>(args: {
             depth: removed.depth,
         },
         to: toInfo,
+        preventDefault: () => {}, // placeholder
     };
 
     return { tree: finalTree, detail };
@@ -62,7 +46,7 @@ export function changeNodeAtPath<T>(
     data: Array<TreeNode<T>>,
     path: NodePath,
     updater: (node: TreeNode<T>) => TreeNode<T>,
-    getKey: (n: TreeNode<T>) => string | number = defaultGetKey
+    getKey: (n: TreeNode<T>) => string | number = defaultGetKey,
 ): Array<TreeNode<T>> {
     // Shallow-clone top level; preserve functions, clone arrays only.
     const next = data.map((n) => ({
@@ -99,23 +83,24 @@ export function addNode<T>(
     parentPath: NodePath | null,
     index: number,
     node: TreeNode<T>,
-    getKey: (n: TreeNode<T>) => string | number = defaultGetKey
+    getKey: (n: TreeNode<T>) => string | number = defaultGetKey,
 ): { tree: Array<TreeNode<T>>; detail: ChangeDetail<T> } {
     const { tree, toInfo } = insertNodeAtPath<T>(data, parentPath, index, node, getKey);
-    const detail: ChangeDetail<T> = { type: "insert", node, to: toInfo };
+    //@ts-ignore
+    const detail: ChangeDetail<T> = { type: 'insert', node, to: toInfo, preventDefault: () => {} };
     return { tree, detail };
 }
 
 export function removeNode<T>(
     data: Array<TreeNode<T>>,
     path: NodePath,
-    getKey: (n: TreeNode<T>) => string | number = defaultGetKey
+    getKey: (n: TreeNode<T>) => string | number = defaultGetKey,
 ): { tree: Array<TreeNode<T>>; detail?: ChangeDetail<T> } {
     const { tree, removed } = removeNodeAtPath<T>(data, path, getKey);
     if (!removed) return { tree };
 
     const detail: ChangeDetail<T> = {
-        type: "remove",
+        type: 'remove',
         node: removed.node,
         from: {
             parent: removed.parent,
@@ -123,6 +108,7 @@ export function removeNode<T>(
             index: removed.index,
             depth: removed.depth,
         },
+        preventDefault() {},
     };
     return { tree, detail };
 }

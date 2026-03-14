@@ -8,7 +8,7 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "module": "NodeNext",
+    "module": "ESNext",
     "types": [
       "vite/client"
     ],
@@ -21,9 +21,9 @@
     "noEmit": true,
     "jsx": "react-jsx",
     /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,

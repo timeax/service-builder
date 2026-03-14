@@ -1,6 +1,7 @@
 import { Panel } from '@/components/ui/panel.tsx';
 import Left from '@/panels/left';
 import RightPanel from '@/panels/right';
+import BuilderCanvas from '@/workspace/builder-canvas.tsx';
 
 import { Workspace } from '@timeax/digital-service-engine/workspace';
 import { workspaceActor, workspaceBackend, workspaceInitial } from '../backend';
@@ -12,7 +13,7 @@ function App() {
                 <div className={'relative flex h-screen flex-col overflow-hidden *:font-display'}>
                     <div className={'flex grow overflow-hidden'}>
                         <Left />
-                        <div className={'m-auto grow border'}>fill</div>
+                        <BuilderCanvas />
                         <RightPanel />
                     </div>
 

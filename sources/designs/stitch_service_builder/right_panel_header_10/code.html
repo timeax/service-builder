@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Right Panel Header with Tabs</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden" style='font-family: Inter, "Noto Sans", sans-serif;'>
+<div class="layout-container flex h-full grow flex-col">
+<div class="flex flex-1 justify-center py-5">
+<div class="layout-content-container flex flex-col w-full max-w-lg flex-1">
+<div class="flex flex-col bg-white dark:bg-[#1C2431] rounded-lg">
+<div class="flex items-center justify-between p-2.5 border-b border-gray-200 dark:border-gray-700">
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+<div class="w-8 h-8 rounded-full bg-cover bg-center" data-alt="User avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCPAmmPl50IUuDxBCR3H-gkL0aDeNrIYyAp1OmOAgdDw89gQbO8f9LzLdo1PCxCuIcB4vFJ-xN0B1BGEeJpCJ3zKjwzsP6yhPLlssTwWF6DIl6hhVWjmMs2431D_kzdKcWko9CMg9W8iNBpg2ssa3XoEG5_8ysqdp-uUBReYy64TiWsnj887U-y7ojpmpz9b9-O4gdlbuuKHd8GYZ_UecK7P_ki01Ccfu28sLJ4CCIrMO0cx1RlMmgW3vECJGFby1njgqlCsQ6g9XY");'></div>
+<span class="material-symbols-outlined text-xl">arrow_drop_down</span>
+</button>
+<div class="relative group">
+<button class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+<span class="material-symbols-outlined text-3xl">play_arrow</span>
+</button>
+<div class="absolute bottom-full left-1/2 mb-2 w-max -translate-x-1/2 transform rounded-md bg-gray-800 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                                        Preview file
+                                        <div class="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
+</div>
+</div>
+</div>
+<div class="relative group">
+<button class="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-[#0095FF] text-white hover:bg-[#007edc]">
+<span class="material-symbols-outlined text-xl">ios_share</span>
+</button>
+<div class="absolute bottom-full left-1/2 mb-2 w-max -translate-x-1/2 transform rounded-md bg-gray-800 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                                    Share this file
+                                    <div class="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
+</div>
+</div>
+</div>
+<div class="flex border-b border-gray-200 dark:border-gray-700">
+<button class="flex-1 py-2.5 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600">Comments</button>
+<button class="flex-1 py-2.5 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600">Properties</button>
+<button class="flex-1 py-2.5 px-4 text-sm font-medium text-gray-800 dark:text-white border-b-2 border-primary">Wireframe</button>
+</div>
+<div class="p-4 space-y-3">
+<div class="flex flex-wrap items-center gap-2">
+<span class="text-sm font-medium text-gray-500 dark:text-gray-400 shrink-0">Tags:</span>
+<div class="flex flex-wrap items-center gap-1.5">
+<div class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 rounded-full px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+<span>Products</span>
+</div>
+<div class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 rounded-full px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+<span>Electronics</span>
+</div>
+<div class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 rounded-full px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+<span>Audio</span>
+</div>
+<div class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 rounded-full px-2.5 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200">
+<span>Headphones</span>
+<span class="text-[10px] bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 font-medium px-1.5 py-0.5 rounded-full">Hot</span>
+</div>
+</div>
+</div>
+<div class="flex flex-wrap items-start gap-2 pt-1">
+<span class="text-sm font-medium text-gray-500 dark:text-gray-400 shrink-0 mt-1">Also in:</span>
+<div class="flex flex-wrap items-center gap-1.5">
+<div class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 rounded-full px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+<span>On Sale</span>
+</div>
+<div class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 rounded-full px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+<span>Accessories</span>
+<span class="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-medium px-1.5 py-0.5 rounded-full">Most used</span>
+</div>
+<div class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 rounded-full px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+<span>New Arrivals</span>
+</div>
+<div class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 rounded-full px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+<span>(Unknown)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>

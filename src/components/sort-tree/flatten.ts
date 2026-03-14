@@ -1,7 +1,7 @@
 // noinspection PointlessBooleanExpressionJS
 
-import type {NodePath, TreeNode} from "./types";
-import {pathToString} from "./utils";
+import type { NodePath, TreeNode } from './types';
+import { pathToString } from './utils';
 
 export interface FlatRow<T> {
     node: TreeNode<T>;
@@ -18,7 +18,7 @@ export interface FlatRow<T> {
     guides: boolean[];
 }
 
-type IconValue<T> = TreeNode<T>["icon"];
+type IconValue<T> = TreeNode<T>['icon'];
 type IconSource<T> = IconValue<T> | ((node: TreeNode<T>) => IconValue<T>);
 
 export function flatten<T>(
@@ -32,7 +32,7 @@ export function flatten<T>(
         ancestorGuides?: boolean[];
         /** If a node’s icon is undefined/null, use this value or resolver */
         defaultNodeIcon?: IconSource<T>;
-    }
+    },
 ) {
     const {
         parentPath = [],
@@ -50,7 +50,7 @@ export function flatten<T>(
 
         const rawChildren = (n as any).children;
         const childrenIsArray = Array.isArray(rawChildren);
-        const childrenIsLazy = typeof rawChildren === "function";
+        const childrenIsLazy = typeof rawChildren === 'function';
 
         const isExpanded = !!(n as any).expanded || forcedExpand.has(pathStr);
         const count = list.length;
@@ -60,18 +60,13 @@ export function flatten<T>(
         // hasChildren:
         // - true if array with length
         // - true if lazy function (we assume potential children exist)
-        const hasChildren = childrenIsArray
-            ? (rawChildren as Array<TreeNode<T>>).length > 0
-            : Boolean(childrenIsLazy);
+        const hasChildren = childrenIsArray ? (rawChildren as Array<TreeNode<T>>).length > 0 : Boolean(childrenIsLazy);
 
         // Apply default icon *only* to the flattened row payload (no source mutation)
         let nodeForRow: TreeNode<T> = n;
         const missingIcon = (n as any).icon == null; // treat undefined/null as missing
         if (missingIcon && defaultNodeIcon !== undefined) {
-            const icon =
-                typeof defaultNodeIcon === "function"
-                    ? (defaultNodeIcon as (node: TreeNode<T>) => IconValue<T>)(n)
-                    : defaultNodeIcon;
+            const icon = typeof defaultNodeIcon === 'function' ? (defaultNodeIcon as (node: TreeNode<T>) => IconValue<T>)(n) : defaultNodeIcon;
             nodeForRow = { ...n, icon };
         }
 

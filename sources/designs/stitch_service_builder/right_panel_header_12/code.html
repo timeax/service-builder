@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Field Variants: Advanced Editors</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --primary: #135bec;
+            --background-light: #f6f6f8;
+            --background-dark: #101622;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 10px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #374151;
+        }
+    </style>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-gray-900 dark:text-gray-100">
+<div class="flex h-screen overflow-hidden">
+<aside class="w-64 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111827] shrink-0">
+<div class="p-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+<h2 class="font-bold text-sm tracking-tight flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                    CONTENT_WORKSPACE
+                </h2>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-symbols-outlined text-lg">vertical_align_center</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-6">
+<div>
+<div class="flex items-center justify-between px-2 mb-2">
+<span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Drafts</span>
+<span class="bg-gray-100 dark:bg-gray-800 text-[10px] px-1.5 py-0.5 rounded text-gray-500">12</span>
+</div>
+<div class="space-y-1">
+<div class="flex items-center gap-2 px-2 py-1.5 text-sm bg-blue-50 dark:bg-blue-900/20 text-primary rounded-md">
+<span class="material-symbols-outlined text-lg">description</span>
+<span>Product_Hero_v2</span>
+</div>
+</div>
+</div>
+<div>
+<div class="flex items-center justify-between px-2 mb-2">
+<span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tags</span>
+<span class="material-symbols-outlined text-sm cursor-pointer hover:text-primary">search</span>
+</div>
+<div class="space-y-0.5 text-sm">
+<div class="flex items-center gap-2 px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<span>Global</span>
+</div>
+<div class="flex items-center gap-2 px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
+<span class="material-symbols-outlined text-sm rotate-90">chevron_right</span>
+<span>Components</span>
+</div>
+<div class="pl-6 space-y-0.5">
+<div class="px-2 py-1 text-primary bg-blue-50/50 dark:bg-blue-900/10 rounded">Fields</div>
+<div class="px-2 py-1 text-gray-500 hover:text-gray-700">Modals</div>
+</div>
+</div>
+</div>
+<div class="pt-4 border-t border-gray-100 dark:border-gray-800">
+<div class="flex gap-1 mb-4 p-1 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+<button class="flex-1 text-[11px] font-semibold py-1 bg-white dark:bg-gray-700 shadow-sm rounded">Layers</button>
+<button class="flex-1 text-[11px] font-semibold py-1 text-gray-500">Assets</button>
+</div>
+<div class="px-2 flex items-center justify-between mb-2">
+<span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider italic">Fields in View</span>
+<span class="text-[10px] text-primary font-medium">under components</span>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 relative flex flex-col bg-[#F3F4F6] dark:bg-[#0F172A] overflow-hidden">
+<div class="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-1 p-1.5 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 z-10">
+<button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400"><span class="material-symbols-outlined">near_me</span></button>
+<button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400"><span class="material-symbols-outlined">add_box</span></button>
+<div class="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1"></div>
+<button class="flex items-center gap-1 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-400">
+                    Add Edge <span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+<div class="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1"></div>
+<div class="flex items-center gap-2 px-2">
+<span class="text-[10px] font-bold text-gray-400">100%</span>
+</div>
+<button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400"><span class="material-symbols-outlined text-lg">unfold_less</span></button>
+</div>
+<div class="absolute top-4 right-4 flex items-center gap-2 z-10">
+<div class="flex bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+<button class="px-3 py-1.5 text-xs font-semibold bg-primary text-white">Save</button>
+<button class="px-1.5 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 border-l border-white/20">
+<span class="material-symbols-outlined text-sm text-white">expand_more</span>
+</button>
+</div>
+<button class="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold shadow-sm">Autolayout</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold shadow-sm">
+                    Visuals <span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+<button class="relative flex items-center px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold shadow-sm">
+                    Logs
+                    <span class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] flex items-center justify-center rounded-full font-bold">3</span>
+</button>
+</div>
+<div class="flex-1 flex items-center justify-center p-8 relative overflow-hidden">
+<div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 24px 24px;"></div>
+<div class="w-full max-w-2xl bg-white dark:bg-[#1C2431] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+<div class="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">edit_note</span>
+<span class="font-bold text-sm">Field Variants: Advanced Editors</span>
+</div>
+<span class="text-[10px] font-bold px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded uppercase">Variant 5 of 5</span>
+</div>
+<div class="p-6 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold uppercase tracking-wider text-gray-500">Rich Text Editor</label>
+<span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[10px] font-bold rounded">editor</span>
+</div>
+<div class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+<div class="bg-gray-50 dark:bg-gray-800/50 p-2 flex items-center gap-1 border-b border-gray-200 dark:border-gray-700">
+<button class="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"><span class="material-symbols-outlined text-lg">format_bold</span></button>
+<button class="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"><span class="material-symbols-outlined text-lg">format_italic</span></button>
+<button class="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"><span class="material-symbols-outlined text-lg">format_list_bulleted</span></button>
+<div class="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+<button class="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"><span class="material-symbols-outlined text-lg">link</span></button>
+<button class="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded ml-auto"><span class="material-symbols-outlined text-lg">code</span></button>
+</div>
+<div class="p-4 min-h-[100px] text-sm text-gray-600 dark:text-gray-300">
+                                    Start typing your content here...
+                                </div>
+</div>
+<p class="text-[11px] text-gray-400 italic">Advanced markdown support enabled with auto-saving.</p>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold uppercase tracking-wider text-gray-500">Structured Data View</label>
+<span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-[10px] font-bold rounded">json-editor</span>
+</div>
+<div class="bg-[#1e1e1e] rounded-xl p-4 font-mono text-[12px] text-blue-300 border border-gray-800">
+<div class="flex gap-2">
+<span class="text-gray-500">1</span>
+<span>{</span>
+</div>
+<div class="flex gap-2">
+<span class="text-gray-500">2</span>
+<span class="pl-4">"<span class="text-emerald-400">metadata</span>": {</span>
+</div>
+<div class="flex gap-2">
+<span class="text-gray-500">3</span>
+<span class="pl-8">"<span class="text-emerald-400">version</span>": <span class="text-amber-400">"2.1.0"</span>,</span>
+</div>
+<div class="flex gap-2">
+<span class="text-gray-500">4</span>
+<span class="pl-8">"<span class="text-emerald-400">tags</span>": [<span class="text-amber-400">"api"</span>, <span class="text-amber-400">"core"</span>]</span>
+</div>
+<div class="flex gap-2">
+<span class="text-gray-500">5</span>
+<span class="pl-4">}</span>
+</div>
+<div class="flex gap-2">
+<span class="text-gray-500">6</span>
+<span>}</span>
+</div>
+</div>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold uppercase tracking-wider text-gray-500">Remote Entity Picker</label>
+<div class="flex gap-1.5">
+<span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold rounded">lister</span>
+<span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold rounded italic">External Service</span>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700 rounded-xl">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-gray-500">database</span>
+</div>
+<div>
+<div class="text-sm font-semibold">User_Service_Main</div>
+<div class="text-[10px] text-gray-500 font-medium">32 Entities Selected</div>
+</div>
+</div>
+<button class="text-xs font-bold text-primary hover:underline">Manage List</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<aside class="w-80 flex flex-col border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111827] shrink-0">
+<div class="p-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<button class="flex items-center gap-0.5 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+<div class="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-[10px] text-white font-bold border-2 border-white dark:border-gray-900">JD</div>
+<span class="material-symbols-outlined text-lg text-gray-400">arrow_drop_down</span>
+</button>
+<div class="relative group">
+<button class="p-1.5 text-gray-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">play_arrow</span>
+</button>
+<div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap shadow-xl">Preview Page</div>
+</div>
+</div>
+<div class="relative group">
+<button class="p-1.5 text-gray-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">share</span>
+</button>
+<div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap shadow-xl">Share Changes</div>
+</div>
+</div>
+<div class="flex border-b border-gray-100 dark:border-gray-800">
+<button class="flex-1 py-3 text-[11px] font-bold text-gray-400 hover:text-gray-600 transition-colors uppercase tracking-tight">Comments</button>
+<button class="flex-1 py-3 text-[11px] font-bold text-gray-400 hover:text-gray-600 transition-colors uppercase tracking-tight">Properties</button>
+<button class="flex-1 py-3 text-[11px] font-bold text-primary border-b-2 border-primary uppercase tracking-tight">Wireframe</button>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-8">
+<div class="space-y-3">
+<h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Active Layout Tags</h4>
+<div class="flex flex-wrap gap-1.5">
+<span class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-md text-[11px] font-medium">
+                            Forms <button class="material-symbols-outlined text-[14px]">close</button>
+</span>
+<span class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-md text-[11px] font-medium">
+                            Editors <button class="material-symbols-outlined text-[14px]">close</button>
+</span>
+<span class="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-primary px-2 py-1 rounded-md text-[11px] font-bold">
+                            Advanced <button class="material-symbols-outlined text-[14px]">close</button>
+</span>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<h4 class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Fields Layout</h4>
+<span class="text-[10px] font-bold text-primary">MULTI_SELECT</span>
+</div>
+<div class="border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+<div class="p-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+<span class="text-xs font-bold">Configuration Presets</span>
+<span class="material-symbols-outlined text-sm text-gray-400">expand_less</span>
+</div>
+<div class="p-2 space-y-1">
+<label class="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/80 cursor-pointer">
+<div class="flex items-center gap-3">
+<input checked="" class="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+<span class="text-xs font-semibold">Standard Editor</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[9px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-bold uppercase">Basic</span>
+<span class="text-[10px] text-gray-400">v1.2</span>
+</div>
+</label>
+<label class="flex items-center justify-between p-2.5 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 cursor-pointer">
+<div class="flex items-center gap-3">
+<input checked="" class="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+<span class="text-xs font-semibold">Technical View</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[9px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded font-bold uppercase">Pro Svc</span>
+<span class="text-[10px] text-gray-400">Max: 1</span>
+</div>
+</label>
+<label class="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/80 cursor-pointer">
+<div class="flex items-center gap-3">
+<input class="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+<span class="text-xs font-semibold">Legacy Lister</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] text-gray-400 italic">Deprecated</span>
+</div>
+</label>
+</div>
+</div>
+</div>
+<div class="pt-6 border-t border-gray-100 dark:border-gray-800">
+<button class="w-full py-2.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-xl text-xs font-bold shadow-lg shadow-gray-200 dark:shadow-none transition-transform active:scale-95">
+                        Apply Wireframe to Canvas
+                    </button>
+</div>
+</div>
+</aside>
+</div>
+
+</body></html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html class="" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CMS Navigation Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>tailwind.config = {darkMode: "class", theme: {extend: {colors: {primary: "#135bec", "background-light": "#f6f6f8", "background-dark": "#101622", "surface-light": "#FFFFFF", "surface-dark": "#111111", "text-light-primary": "#111827", "text-dark-primary": "#F9FAFB", "text-light-secondary": "#6B7280", "text-dark-secondary": "#A1A1AA", "border-light": "#E5E7EB", "border-dark": "#27272A", "hover-light": "#F3F4F6", "hover-dark": "#18181B", "selected-light": "#EEF2FF", "selected-dark": "#222144"}, fontFamily: {display: "Inter"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}}}};</script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings:
+      'FILL' 0,
+      'wght' 300,
+      'GRAD' 0,
+      'opsz' 20;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased">
+<div class="flex h-screen w-full items-center justify-center p-4">
+<aside class="flex h-full w-full max-w-[280px] flex-col bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl shadow-2xl shadow-black/20">
+<div class="flex-shrink-0 border-b border-border-light dark:border-border-dark p-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-600">
+<span class="material-symbols-outlined text-white" style="font-size: 16px; font-variation-settings: 'wght' 400;">space_dashboard</span>
+</div>
+<h1 class="text-base font-semibold text-text-light-primary dark:text-text-dark-primary">Workspace</h1>
+</div>
+<button class="text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary p-1.5 rounded-md hover:bg-hover-light dark:hover:bg-hover-dark transition-colors">
+<span class="material-symbols-outlined">menu_open</span>
+</button>
+</div>
+</div>
+<nav class="flex-grow flex flex-col overflow-y-auto pt-4">
+<div class="px-3">
+<a class="flex items-center gap-3 rounded-lg py-2.5 px-3 text-sm font-medium text-text-light-primary dark:text-text-dark-primary bg-selected-light dark:bg-primary/20" href="#">
+<span class="material-symbols-outlined text-primary dark:text-indigo-300">drafts</span>
+Drafts
+<span class="ml-auto text-xs font-semibold bg-white dark:bg-surface-dark text-slate-700 dark:text-slate-200 rounded-full px-2 py-0.5 border border-border-light dark:border-border-dark">5</span>
+</a>
+</div>
+<div class="px-3 pt-4 pb-2">
+<div class="flex items-center rounded-lg bg-hover-light dark:bg-hover-dark p-1">
+<a class="flex flex-1 items-center justify-center gap-2 rounded-md py-1.5 text-sm font-medium text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary" href="#">
+<span class="material-symbols-outlined !font-light text-text-light-secondary dark:text-text-dark-secondary">layers</span>
+Layers
+</a>
+<a class="flex flex-1 items-center justify-center gap-2 rounded-md bg-surface-light dark:bg-surface-dark py-1.5 text-sm font-medium text-text-light-primary dark:text-text-dark-primary shadow-sm" href="#">
+<span class="material-symbols-outlined !font-light text-text-light-primary dark:text-text-dark-primary">grid_view</span>
+Assets
+</a>
+</div>
+</div>
+<div class="flex flex-col flex-grow px-3 space-y-4 overflow-y-auto">
+<div class="relative pt-2">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 transform text-text-light-secondary dark:text-text-dark-secondary" style="font-size: 18px;">search</span>
+<input class="w-full rounded-lg border-border-light dark:border-border-dark bg-hover-light dark:bg-hover-dark py-2 pl-9 pr-3 text-sm text-text-light-primary dark:text-text-dark-primary placeholder-text-light-secondary dark:placeholder-text-dark-secondary focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Search fields..." type="text"/>
+</div>
+<div class="space-y-4">
+<div>
+<h2 class="px-2 mb-2 text-xs font-semibold uppercase tracking-wider text-text-light-secondary dark:text-text-dark-secondary">Basic Fields</h2>
+<div class="grid grid-cols-2 gap-2">
+<div class="group flex cursor-grab flex-col items-center justify-center gap-2 rounded-lg border border-border-light dark:border-border-dark p-3 hover:bg-hover-light dark:hover:bg-hover-dark hover:border-primary/50 dark:hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-text-light-secondary dark:text-text-dark-secondary group-hover:text-primary dark:group-hover:text-indigo-300">title</span>
+<span class="text-xs font-medium text-center text-text-light-primary dark:text-text-dark-primary">Text Field</span>
+</div>
+<div class="group flex cursor-grab flex-col items-center justify-center gap-2 rounded-lg border border-border-light dark:border-border-dark p-3 hover:bg-hover-light dark:hover:bg-hover-dark hover:border-primary/50 dark:hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-text-light-secondary dark:text-text-dark-secondary group-hover:text-primary dark:group-hover:text-indigo-300">image</span>
+<span class="text-xs font-medium text-center text-text-light-primary dark:text-text-dark-primary">Image</span>
+</div>
+<div class="group flex cursor-grab flex-col items-center justify-center gap-2 rounded-lg border border-border-light dark:border-border-dark p-3 hover:bg-hover-light dark:hover:bg-hover-dark hover:border-primary/50 dark:hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-text-light-secondary dark:text-text-dark-secondary group-hover:text-primary dark:group-hover:text-indigo-300">123</span>
+<span class="text-xs font-medium text-center text-text-light-primary dark:text-text-dark-primary">Number</span>
+</div>
+<div class="group flex cursor-grab flex-col items-center justify-center gap-2 rounded-lg border border-border-light dark:border-border-dark p-3 hover:bg-hover-light dark:hover:bg-hover-dark hover:border-primary/50 dark:hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-text-light-secondary dark:text-text-dark-secondary group-hover:text-primary dark:group-hover:text-indigo-300">calendar_today</span>
+<span class="text-xs font-medium text-center text-text-light-primary dark:text-text-dark-primary">Date</span>
+</div>
+</div>
+</div>
+<div>
+<h2 class="px-2 mb-2 text-xs font-semibold uppercase tracking-wider text-text-light-secondary dark:text-text-dark-secondary">Advanced Fields</h2>
+<div class="grid grid-cols-2 gap-2">
+<div class="group flex cursor-grab flex-col items-center justify-center gap-2 rounded-lg border border-border-light dark:border-border-dark p-3 hover:bg-hover-light dark:hover:bg-hover-dark hover:border-primary/50 dark:hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-text-light-secondary dark:text-text-dark-secondary group-hover:text-primary dark:group-hover:text-indigo-300">format_color_text</span>
+<span class="text-xs font-medium text-center text-text-light-primary dark:text-text-dark-primary">Rich Text</span>
+</div>
+<div class="group flex cursor-grab flex-col items-center justify-center gap-2 rounded-lg border border-border-light dark:border-border-dark p-3 hover:bg-hover-light dark:hover:bg-hover-dark hover:border-primary/50 dark:hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-text-light-secondary dark:text-text-dark-secondary group-hover:text-primary dark:group-hover:text-indigo-300">link</span>
+<span class="text-xs font-medium text-center text-text-light-primary dark:text-text-dark-primary">Link</span>
+</div>
+</div>
+</div>
+<div>
+<h2 class="px-2 mb-2 text-xs font-semibold uppercase tracking-wider text-text-light-secondary dark:text-text-dark-secondary">Custom Fields</h2>
+<div class="grid grid-cols-2 gap-2">
+<div class="group flex cursor-grab flex-col items-center justify-center gap-2 rounded-lg border border-border-light dark:border-border-dark p-3 hover:bg-hover-light dark:hover:bg-hover-dark hover:border-primary/50 dark:hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-text-light-secondary dark:text-text-dark-secondary group-hover:text-primary dark:group-hover:text-indigo-300">data_object</span>
+<span class="text-xs font-medium text-center text-text-light-primary dark:text-text-dark-primary">JSON</span>
+</div>
+<div class="group flex cursor-grab flex-col items-center justify-center gap-2 rounded-lg border border-border-light dark:border-border-dark p-3 hover:bg-hover-light dark:hover:bg-hover-dark hover:border-primary/50 dark:hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-text-light-secondary dark:text-text-dark-secondary group-hover:text-primary dark:group-hover:text-indigo-300">location_on</span>
+<span class="text-xs font-medium text-center text-text-light-primary dark:text-text-dark-primary">Geolocation</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</nav>
+<div class="flex-shrink-0 border-t border-border-light dark:border-border-dark p-3">
+<button class="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 px-3 text-sm font-medium bg-primary text-white hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">add_circle</span>
+Add Field
+</button>
+</div>
+</aside>
+</div>
+
+</body></html>

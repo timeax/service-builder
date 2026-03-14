@@ -2,18 +2,16 @@
 import Dropdown from '@/components/dropdown';
 import type { MenuData, MenuNode } from '@/components/dropdown/types'; // adjust path to where you defined the types
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { type BranchParticipant } from '@timeax/digital-service-engine/workspace';
 import type { FC } from 'react';
 import * as React from 'react';
 import { GoChevronDown } from 'react-icons/go';
 
-interface User {
+export interface User extends BranchParticipant {
     name: string;
     avatar: string;
-    isMain?: boolean;
-    isOnline?: boolean;
-    isAdmin?: boolean;
+    isOnline: boolean;
 }
-
 interface UsersProps {
     users: User[];
 
@@ -55,7 +53,7 @@ function buildUsersMenu(
         type: 'submenu',
         id: idx,
         label: u.name,
-        description: u.isMain ? 'Owner' : u.isAdmin ? 'Admin' : 'Collaborator',
+        description: u.roles?.join(','),
         icon: (
             <Avatar data-slot="avatar" className="h-6 w-6">
                 <AvatarImage src={u.avatar} alt={u.name} />
@@ -71,13 +69,13 @@ function buildUsersMenu(
             {
                 type: 'checkbox',
                 label: 'Main owner',
-                checked: !!u.isMain,
+                checked: !!u.roles?.includes('owner'),
                 onCheckedChange: () => onSetMain?.(u),
             },
             {
                 type: 'checkbox',
                 label: 'Administrator',
-                checked: !!u.isAdmin,
+                checked: !!u.roles?.includes('admin'),
                 onCheckedChange: () => onToggleAdmin?.(u),
             },
             {
@@ -100,7 +98,7 @@ function buildUsersMenu(
         {
             type: 'action',
             label: 'Invite member…',
-            shortcut: 'I',
+            shortcut: 'alt+I',
             command: () => onInviteUser?.(),
         },
     ];
@@ -123,27 +121,30 @@ const Users: FC<UsersProps> = ({ users, onViewUser, onSetMain, onToggleAdmin, on
     );
 
     return (
-        <Dropdown  menu={menu}>
+        <Dropdown menu={menu}>
             <div className="flex items-center gap-2">
                 <div className="flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-background *:data-[slot=avatar]:grayscale">
                     {visibleUsers.map((u, idx) => (
-                        <Avatar key={`${u.name}-${idx}`} data-slot="avatar" className="relative h-8 w-8">
-                            <AvatarImage src={u.avatar} alt={u.name} />
-                            <AvatarFallback>{getInitials(u.name)}</AvatarFallback>
-
+                        <span className={'relative size-fit'}>
+                            <Avatar key={`${u.name}-${idx}`} data-slot="avatar" className="relative h-8 w-8">
+                                <AvatarImage src={u.avatar} alt={u.name} />
+                                <AvatarFallback>{getInitials(u.name)}</AvatarFallback>
+                            </Avatar>
                             {/* Online indicator */}
                             {u.isOnline && <span className="absolute right-0 bottom-0 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-background" />}
 
                             {/* Main / Admin badge (tiny corner tag) */}
-                            {u.isMain && (
+                            {u.roles?.includes('owner') && !u.roles?.includes('admin') && (
                                 <span className="absolute -top-0.5 -right-0.5 rounded-full bg-amber-500 px-1 text-[9px] font-semibold text-amber-50">
-                                M
-                            </span>
+                                    M
+                                </span>
                             )}
-                            {!u.isMain && u.isAdmin && (
-                                <span className="absolute -top-0.5 -right-0.5 rounded-full bg-sky-500 px-1 text-[9px] font-semibold text-sky-50">A</span>
+                            {u.roles?.includes('admin') && (
+                                <span className="absolute -top-0.5 -right-0.5 rounded-full bg-sky-500 px-1 text-[9px] font-semibold text-sky-50">
+                                    A
+                                </span>
                             )}
-                        </Avatar>
+                        </span>
                     ))}
 
                     {extra > 0 && (
@@ -162,38 +163,3 @@ const Users: FC<UsersProps> = ({ users, onViewUser, onSetMain, onToggleAdmin, on
 };
 
 export default Users;
-
-
-export const mockUsers: User[] = [
-    {
-        name: 'Davy Okafor',
-        avatar: 'https://api.dicebear.com/9.x/thumbs/svg?seed=davy-okafor',
-        isMain: true,
-        isOnline: true,
-        isAdmin: true,
-    },
-    {
-        name: 'Amaka Johnson',
-        avatar: 'https://api.dicebear.com/9.x/thumbs/svg?seed=amaka-johnson',
-        isOnline: true,
-        isAdmin: true,
-    },
-    {
-        name: 'Mustapha Bello',
-        avatar: 'https://api.dicebear.com/9.x/thumbs/svg?seed=mustapha-bello',
-        isOnline: false,
-        isAdmin: false,
-    },
-    {
-        name: 'Chioma Ade',
-        avatar: 'https://api.dicebear.com/9.x/thumbs/svg?seed=chioma-ade',
-        isOnline: true,
-        isAdmin: false,
-    },
-    {
-        name: 'Kelvin Adebayo',
-        avatar: 'https://api.dicebear.com/9.x/thumbs/svg?seed=kelvin-adebayo',
-        isOnline: false,
-        isAdmin: false,
-    },
-];

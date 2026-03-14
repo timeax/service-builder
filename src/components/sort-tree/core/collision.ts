@@ -1,6 +1,6 @@
-import type { Collision, CollisionDetection } from "@dnd-kit/core";
-import { pointerWithin, rectIntersection } from "@dnd-kit/core";
-import { parseZoneId } from "../dnd-ids";
+import type { Collision, CollisionDetection } from '@dnd-kit/core';
+import { pointerWithin, rectIntersection } from '@dnd-kit/core';
+import { parseZoneId } from '../dnd-ids';
 
 /**
  * Prefer droppable directly under pointer, then:
@@ -25,8 +25,8 @@ export function buildCollisionDetection(): CollisionDetection {
                 const dy = Math.abs(pointerCoordinates.y - centerY);
 
                 const parsed = parseZoneId(String(id));
-                const zone = parsed?.zone ?? "on";
-                const priority = zone === "on" ? 0 : zone === "before" ? 1 : 2;
+                const zone = parsed?.zone ?? 'on';
+                const priority = zone === 'on' ? 0 : zone === 'before' ? 1 : 2;
                 const depth = parsed?.path.length ?? 0;
 
                 return { id, dy, priority, depth };
@@ -35,6 +35,6 @@ export function buildCollisionDetection(): CollisionDetection {
 
         scored.sort((a, b) => a.dy - b.dy || a.priority - b.priority || a.depth - b.depth);
         const winner = scored[0];
-        return winner ? [{ id: winner.id }] as Collision[] : [];
+        return winner ? ([{ id: winner.id }] as Collision[]) : [];
     };
 }

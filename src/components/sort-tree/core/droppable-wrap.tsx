@@ -1,5 +1,5 @@
-import * as React from "react";
-import { useDroppable } from "@dnd-kit/core";
+import { useDroppable } from '@dnd-kit/core';
+import * as React from 'react';
 
 export function OnDroppableWrap(props: {
     id: string;
@@ -16,17 +16,17 @@ export function OnDroppableWrap(props: {
     return (
         <div
             ref={setNodeRef}
-    onDragOver={onNativeDrop ? (e) => e.preventDefault() : undefined}
-    onDrop={
-        onNativeDrop
-        ? (e) => {
-            e.preventDefault();
-            onNativeDrop(e, id);
-        }
-        : undefined
-}
->
-    {children}
-    </div>
-);
+            onDragOver={onNativeDrop ? (e) => e.preventDefault() : undefined}
+            onDrop={
+                onNativeDrop
+                    ? (e) => {
+                          e.preventDefault();
+                          onNativeDrop(e, id);
+                      }
+                    : undefined
+            }
+        >
+            {children}
+        </div>
+    );
 }

@@ -1,4 +1,4 @@
-import type { NodeKey, NodePath, TreeNode } from "../types";
+import type { NodeKey, NodePath, TreeNode } from '../types';
 
 export function isPrefix(a: NodePath, b: NodePath) {
     if (!a || !b) return false;
@@ -15,12 +15,7 @@ export function samePath(a?: NodePath | null, b?: NodePath | null) {
 }
 
 /** Depth-first path finder by id (works even if the node isn’t visible in flattened rows). */
-export function findPathById<T>(
-    nodes: Array<TreeNode<T>>,
-    getKey: (n: TreeNode<T>) => NodeKey,
-    id: NodeKey,
-    acc: NodePath = []
-): NodePath | null {
+export function findPathById<T>(nodes: Array<TreeNode<T>>, getKey: (n: TreeNode<T>) => NodeKey, id: NodeKey, acc: NodePath = []): NodePath | null {
     const wanted = String(id);
     for (const n of nodes) {
         const here = [...acc, getKey(n)];

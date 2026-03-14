@@ -119,6 +119,82 @@
       "sizeAtCreate": 0,
       "groupName": "default",
       "groupRoot": "."
+    },
+    "src/components/sort-tree/internal/expanded-cache.ts": {
+      "path": "src/components/sort-tree/internal/expanded-cache.ts",
+      "createdAt": "2026-01-23T16:52:47.311Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "src/components/sort-tree/internal/lazy.ts": {
+      "path": "src/components/sort-tree/internal/lazy.ts",
+      "createdAt": "2026-01-23T16:52:47.314Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "src/components/sort-tree/internal/dnd.ts": {
+      "path": "src/components/sort-tree/internal/dnd.ts",
+      "createdAt": "2026-01-23T16:52:47.316Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "src/components/sort-tree/internal/render-row.tsx": {
+      "path": "src/components/sort-tree/internal/render-row.tsx",
+      "createdAt": "2026-01-23T16:52:47.318Z",
+      "sizeAtCreate": 0,
+      "groupName": "default",
+      "groupRoot": "."
+    },
+    "src/panels/right/partials/properties/tag.tsx": {
+      "path": "src/panels/right/partials/properties/tag.tsx",
+      "createdAt": "2026-01-24T10:06:49.245Z",
+      "sizeAtCreate": 305,
+      "createdByStub": "page",
+      "groupName": "panel",
+      "groupRoot": "src/panels"
+    },
+    "src/panels/right/tabs/wireframe.tsx": {
+      "path": "src/panels/right/tabs/wireframe.tsx",
+      "createdAt": "2026-01-24T10:08:48.502Z",
+      "sizeAtCreate": 326,
+      "createdByStub": "page",
+      "groupName": "panel",
+      "groupRoot": "src/panels"
+    },
+    "src/panels/right/partials/properties/option-properties.tsx": {
+      "path": "src/panels/right/partials/properties/option-properties.tsx",
+      "createdAt": "2026-01-24T11:00:07.419Z",
+      "sizeAtCreate": 384,
+      "createdByStub": "page",
+      "groupName": "panel",
+      "groupRoot": "src/panels"
+    },
+    "src/panels/right/partials/properties/field-properties.tsx": {
+      "path": "src/panels/right/partials/properties/field-properties.tsx",
+      "createdAt": "2026-01-24T11:00:07.420Z",
+      "sizeAtCreate": 378,
+      "createdByStub": "page",
+      "groupName": "panel",
+      "groupRoot": "src/panels"
+    },
+    "src/panels/right/components/text.tsx": {
+      "path": "src/panels/right/components/text.tsx",
+      "createdAt": "2026-01-24T13:00:42.415Z",
+      "sizeAtCreate": 302,
+      "createdByStub": "page",
+      "groupName": "panel",
+      "groupRoot": "src/panels"
+    },
+    "src/panels/right/partials/global/add-service.tsx": {
+      "path": "src/panels/right/partials/global/add-service.tsx",
+      "createdAt": "2026-03-12T21:23:28.982Z",
+      "sizeAtCreate": 344,
+      "createdByStub": "page",
+      "groupName": "panel",
+      "groupRoot": "src/panels"
     }
   }
 }

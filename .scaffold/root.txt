@@ -1,0 +1,68 @@
+assets/
+  react.svg
+components/
+  dropdown/
+    index.tsx
+    types.ts
+  sort-tree/
+    core/
+      collision.ts
+      droppable-wrap.tsx
+      paths.ts
+      use-create-ui.ts
+      use-edit-ui.ts
+      use-selection.ts
+    internal/
+      dnd.ts
+      expanded-cache.ts
+      lazy.ts
+      render-row.tsx
+    dnd-ids.ts
+    draggable-row.tsx
+    drop-zone.tsx
+    flatten.ts
+    helpers.ts
+    index.ts
+    node-row.css
+    node-row.tsx
+    node.tsx
+    search.ts
+    sort-tree.tsx
+    types.ts
+    utils.ts
+  ui/
+    alert-dialog.tsx
+    alert.tsx
+    avatar.tsx
+    button.tsx
+    collapsible.tsx
+    dropdown-menu.tsx
+    panel.tsx
+    paper.tsx
+    scroll-area.tsx
+    tabs.tsx
+    tooltip.tsx
+lib/
+  utils.ts
+panels/
+  left/
+    components/
+      drafts.tsx
+      header.tsx
+    layers/
+      data.ts
+      index.tsx
+    index.tsx
+  right/
+    components/
+      comments/
+        comments.tsx
+      header.tsx
+      users.tsx
+    tabs/
+      comments.tsx
+      properties.tsx
+    index.tsx
+App.tsx
+index.css
+main.tsx

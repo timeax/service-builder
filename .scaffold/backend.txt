@@ -1,0 +1,20 @@
+memory/
+  seed/
+    authors.ts
+    branches.ts
+    comments.ts
+    index.ts
+    meta.ts
+    participants.ts
+    permissions.ts
+    policies.ts
+    services.ts
+    snapshots.ts
+    templates.ts
+  utils/
+    index.ts
+    time.ts
+  create-backend.ts
+  index.ts
+  initial.ts
+index.ts

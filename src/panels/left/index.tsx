@@ -1,45 +1,60 @@
-import {Panel} from "@/components/ui/panel.tsx";
-import Header from "@/panels/left/components/header.tsx";
-import Drafts from "@/panels/left/components/drafts.tsx";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
-import Layers from "@/panels/left/layers";
-import {MdOutlineLayers} from "react-icons/md";
-import {CiGrid32} from "react-icons/ci";
+import { cn } from '@/lib/utils.ts';
+import Header from '@/panels/left/components/header.tsx';
+import Drafts from '@/panels/left/components/drafts.tsx';
+import Layers from '@/panels/left/layers';
+import { Panel } from '@/components/ui/panel.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
+import { CiGrid32 } from 'react-icons/ci';
+import { MdOutlineLayers } from 'react-icons/md';
 
 const Left = () => {
+    const tabClassName = cn(
+        'rounded-xl! py-2! shadow-none!',
+        'text-slate-500 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm',
+        'dark:data-[state=active]:bg-slate-950 dark:data-[state=active]:text-slate-100',
+    );
+
     return (
-        <Panel className={'w-80 border-r rounded-none!'} edges={['right']}>
+        <Panel
+            className="w-[360px] rounded-none! border-r border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] dark:border-slate-800 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.98),rgba(15,23,42,0.98))]"
+            edges={['right']}
+            maxWidth={420}
+            minWidth={320}
+        >
             <div className="flex h-full flex-col">
-                <Header/>
-                <div className={'grow overflow-y-hidden pt-4 gap-4 flex flex-col'}>
-                    <Drafts/>
-                    <Tabs defaultValue="layers" className={'px-0 grow overflow-hidden'}>
-                        <div className={'px-3'}>
-                            <TabsList className={'w-full h-fit'}>
-                                <TabsTrigger className={'py-1.5!'} value="layers">
+                <Header />
+                <div className="flex min-h-0 flex-1 flex-col gap-2 py-2">
+                    <Drafts />
+
+                    <Tabs defaultValue="layers" className="flex min-h-0 flex-1 flex-col px-3">
+                        <TabsList className="grid h-auto grid-cols-2 rounded-2xl bg-slate-100 p-1 dark:bg-slate-900">
+                            <TabsTrigger className={tabClassName} value="layers">
                                 <span className="flex items-center gap-2">
-                                    <MdOutlineLayers/>
+                                    <MdOutlineLayers />
                                     <span>Layers</span>
                                 </span>
-                                </TabsTrigger>
-                                <TabsTrigger className={'py-1.5!'} value="assets">
+                            </TabsTrigger>
+                            <TabsTrigger className={tabClassName} value="assets">
                                 <span className="flex items-center gap-2">
-                                    <CiGrid32/>
+                                    <CiGrid32 />
                                     <span>Assets</span>
                                 </span>
-                                </TabsTrigger>
-                            </TabsList>
-                        </div>
-                        <TabsContent className={'px-0 grow overflow-hidden'} value="layers">
-                            <Layers/>
+                            </TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent className="mt-2 min-h-0 flex-1 overflow-hidden" value="layers">
+                            <Layers />
                         </TabsContent>
-                        <TabsContent value="assets" className={'px-3'}>No assets available.</TabsContent>
+                        <TabsContent className="mt-2 min-h-0 flex-1 overflow-hidden" value="assets">
+                            <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/70 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-400">
+                                Assets will surface templates, reusable field groups, and service presets in this panel.
+                            </div>
+                        </TabsContent>
                     </Tabs>
                 </div>
             </div>
         </Panel>
-    )
-}
-
+    );
+};
 
 export default Left;
