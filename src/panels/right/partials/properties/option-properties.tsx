@@ -6,6 +6,8 @@ import { AddService } from '@/panels/right/partials/global/add-service.tsx';
 import type { OptionNode } from '@timeax/digital-service-engine/core';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
+import QuantitySection from './components/quantity-section.tsx';
+import UtilitySection from './components/utility-section.tsx';
 import { IncExcludeSection } from './components/Union';
 
 export interface OptionPropertiesProps {
@@ -58,6 +60,12 @@ export function OptionProperties({ className, node }: OptionPropertiesProps) {
                 </Section>
                 <Separator />
 
+                <QuantitySection node={node} />
+                <Separator />
+
+                <UtilitySection node={node} />
+                <Separator />
+
                 <Section>
                     <Section.Header>
                         <Section.Title>Option mapping</Section.Title>
@@ -80,7 +88,11 @@ export function OptionProperties({ className, node }: OptionPropertiesProps) {
 
                 <IncExcludeSection node={node} mode="excludes" />
                 <Separator />
-                <AddService data={node} />
+                <AddService
+                    data={node}
+                    disabled={(node.raw.pricing_role ?? 'base') === 'utility'}
+                    disabledMessage="Utility-priced options cannot connect to services."
+                />
             </div>
         </div>
     );

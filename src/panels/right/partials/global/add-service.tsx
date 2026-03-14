@@ -13,6 +13,8 @@ import { BsPlus } from 'react-icons/bs';
 export interface AddServiceProps {
     className?: string;
     data: FieldNode | TagNode | OptionNode;
+    disabled?: boolean;
+    disabledMessage?: string;
 }
 
 type ServiceOption = {
@@ -22,7 +24,7 @@ type ServiceOption = {
     service: DgpServiceCapability;
 };
 
-export function AddService({ className, data }: AddServiceProps) {
+export function AddService({ className, data, disabled, disabledMessage }: AddServiceProps) {
     const ws = useWorkspace();
     const canvas = useCanvas();
     const services = useMemo(() => ws.services.data ?? {}, [ws.services.data]);
@@ -33,42 +35,46 @@ export function AddService({ className, data }: AddServiceProps) {
             <Section.Header>
                 <Section.Title>Service</Section.Title>
                 <Section.Actions>
-                    <AddServicePopover data={data} services={Object.values(services)} />
+                    {!disabled ? <AddServicePopover data={data} services={Object.values(services)} /> : null}
                 </Section.Actions>
             </Section.Header>
 
             <Section.Content>
-                <RenderIf data={connectedService} emptyMessage="None">
+                {disabled && disabledMessage && !connectedService ? <p className="text-xs text-slate-500 dark:text-slate-400">{disabledMessage}</p> : null}
+                <RenderIf data={connectedService} emptyMessage={disabled ? null : 'None'}>
                     {(service) => (
-                        <IncludesItem
-                            title={service.name ?? `Service ${service.id}`}
-                            className="items-start!"
-                            badge={
-                                <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                                    #{service.id}
-                                </span>
-                            }
-                            actions={
-                                data.raw.service_id != null
-                                    ? [
-                                          {
-                                              kind: 'remove',
-                                              title: 'Clear service',
-                                              onClick: () => canvas.api.editor.setService(data.id, { service_id: undefined }),
-                                          },
-                                      ]
-                                    : undefined
-                            }
-                        />
+                        <>
+                            {disabled && disabledMessage ? <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{disabledMessage}</p> : null}
+                            <IncludesItem
+                                title={service.name ?? `Service ${service.id}`}
+                                className="items-start!"
+                                badge={
+                                    <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                        #{service.id}
+                                    </span>
+                                }
+                                actions={
+                                    !disabled && data.raw.service_id != null
+                                        ? [
+                                              {
+                                                  kind: 'remove',
+                                                  title: 'Clear service',
+                                                  onClick: () => canvas.api.editor.setService(data.id, { service_id: undefined }),
+                                              },
+                                          ]
+                                        : undefined
+                                }
+                            />
+                        </>
                     )}
                 </RenderIf>
-                {connectedService ? <ServiceSummary service={connectedService} nodeId={data.id} /> : null}
+                {connectedService ? <ServiceSummary service={connectedService} nodeId={data.id} disabled={disabled} /> : null}
             </Section.Content>
         </Section>
     );
 }
 
-function ServiceSummary({ service, nodeId }: { service: DgpServiceCapability; nodeId: string }) {
+function ServiceSummary({ service, nodeId, disabled }: { service: DgpServiceCapability; nodeId: string; disabled?: boolean }) {
     const canvas = useCanvas();
 
     return (
@@ -84,15 +90,17 @@ function ServiceSummary({ service, nodeId }: { service: DgpServiceCapability; no
                     <span className="font-medium text-gray-800 dark:text-gray-200">Range:</span> {service.min ?? 0} - {service.max ?? '∞'}
                 </p>
             </div>
-            <div className="mt-3 flex justify-end">
-                <button
-                    type="button"
-                    onClick={() => canvas.api.editor.setService(nodeId, { service_id: undefined })}
-                    className="text-xs font-medium text-red-500 transition hover:text-red-600 dark:hover:text-red-400"
-                >
-                    Clear
-                </button>
-            </div>
+            {!disabled ? (
+                <div className="mt-3 flex justify-end">
+                    <button
+                        type="button"
+                        onClick={() => canvas.api.editor.setService(nodeId, { service_id: undefined })}
+                        className="text-xs font-medium text-red-500 transition hover:text-red-600 dark:hover:text-red-400"
+                    >
+                        Clear
+                    </button>
+                </div>
+            ) : null}
         </div>
     );
 }

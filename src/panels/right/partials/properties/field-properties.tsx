@@ -6,6 +6,8 @@ import { AddService } from '@/panels/right/partials/global/add-service.tsx';
 import type { FieldNode } from '@timeax/digital-service-engine/core';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
+import QuantitySection from './components/quantity-section.tsx';
+import UtilitySection from './components/utility-section.tsx';
 import { IncExcludeSection } from './components/Union';
 
 export interface FieldPropertiesProps {
@@ -106,6 +108,12 @@ export function FieldProperties({ className, node }: FieldPropertiesProps) {
                         </div>
                     </Section.Content>
                 </Section>
+                <Separator />
+
+                <QuantitySection node={node} />
+                <Separator />
+
+                <UtilitySection node={node} />
                 <Separator />
 
                 <Section>
