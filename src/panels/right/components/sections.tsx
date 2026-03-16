@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { MdOutlineOpenInNew, MdOutlineRemoveCircleOutline } from 'react-icons/md';
 import { TiWarning } from 'react-icons/ti';
 
@@ -126,22 +127,52 @@ export const Section = Object.assign(SectionRoot, {
 
 export type SectionActionButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
     icon?: React.ReactNode;
+    tooltip?: React.ReactNode;
+    iconOnly?: boolean;
+    badge?: React.ReactNode;
 };
 
-export function SectionActionButton({ className, icon, children, ...props }: SectionActionButtonProps) {
-    return (
+export function SectionActionButton({ className, icon, tooltip, iconOnly = false, badge, children, ...props }: SectionActionButtonProps) {
+    const derivedAriaLabel =
+        props['aria-label'] ??
+        (typeof tooltip === 'string'
+            ? tooltip
+            : typeof children === 'string'
+              ? children
+              : typeof props.title === 'string'
+                ? props.title
+                : undefined);
+
+    const button = (
         <button
             type="button"
             className={cn(
                 'flex cursor-pointer items-center gap-1 text-sm font-medium text-primary',
                 'hover:text-blue-700 dark:hover:text-blue-400',
+                iconOnly ? 'relative size-7 justify-center rounded-md text-base' : undefined,
                 className,
             )}
+            aria-label={derivedAriaLabel}
+            title={typeof tooltip === 'string' ? tooltip : props.title}
             {...props}
         >
             {icon}
-            <span>{children}</span>
+            {iconOnly && badge ? (
+                <span className="pointer-events-none absolute -right-1 -bottom-1 rounded-full bg-slate-900 size-4 flex items-center justify-center text-[9px] leading-none font-semibold text-white dark:bg-slate-100 dark:text-slate-900">
+                    {badge}
+                </span>
+            ) : null}
+            {!iconOnly && children ? <span>{children}</span> : null}
         </button>
+    );
+
+    if (!tooltip) return button;
+
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>{button}</TooltipTrigger>
+            <TooltipContent side="bottom">{tooltip}</TooltipContent>
+        </Tooltip>
     );
 }
 

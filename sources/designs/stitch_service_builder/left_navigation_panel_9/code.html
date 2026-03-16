@@ -209,7 +209,7 @@ Assets
 </div>
 </main>
 <div class="w-full max-w-[280px] hidden lg:block"></div>
-<div class="absolute bottom-4 left-4 right-4 z-20 flex flex-col h-1/3 max-h-[400px] min-h-[200px] bg-surface-light border border-border-light rounded-xl shadow-2xl shadow-black/20" x-cloak="" x-data="{ activeTab: 'active' }" x-show="isPanelOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-end="opacity-100 translate-y-0" x-transition:enter-start="opacity-0 translate-y-full" x-transition:leave="transition ease-in duration-200" x-transition:leave-end="opacity-0 translate-y-full" x-transition:leave-start="opacity-100 translate-y-0">
+<div class="absolute bottom-4 left-4 right-4 z-20 flex flex-col h-1/3 max-h-[400px] min-h-[200px] bg-surface-light border border-border-light rounded-xl shadow-2xl shadow-black/20" x-cloak="" x-data="{ activeTab: 'all', showFilterPopover: false }" x-show="isPanelOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-end="opacity-100 translate-y-0" x-transition:enter-start="opacity-0 translate-y-full" x-transition:leave="transition ease-in duration-200" x-transition:leave-end="opacity-0 translate-y-full" x-transition:leave-start="opacity-100 translate-y-0">
 <div class="flex-shrink-0 flex items-center justify-between border-b border-border-light px-2">
 <div class="flex items-center">
 <div class="py-2 px-1">
@@ -350,97 +350,270 @@ Assets
 </div>
 <div class="h-full" x-show="activeTab === 'active'">
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1fr_2fr] h-full">
-<div class="flex flex-col border-r border-border-light">
+<div class="flex flex-col border-r border-border-light bg-white">
 <div class="p-3 border-b border-border-light flex-shrink-0">
-<div class="flex items-center gap-2">
+<div class="flex items-center gap-2 bg-hover-light p-1 rounded-lg">
 <div class="relative flex-grow">
-<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-light-secondary" style="font-size: 18px;">search</span>
-<input class="w-full rounded-md border-border-light bg-white pl-9 pr-3 py-2 text-sm focus:border-primary focus:ring-primary" placeholder="Filter services..." type="search"/>
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-text-light-secondary" style="font-size: 18px;">search</span>
+<input class="w-full rounded-md border-0 bg-transparent pl-8 pr-3 py-1.5 text-sm placeholder:text-text-light-secondary focus:ring-0" placeholder="Filter services..." type="search"/>
 </div>
-<select class="rounded-md border-border-light bg-white text-sm focus:border-primary focus:ring-primary">
+<div class="h-5 w-px bg-border-light mx-1"></div>
+<select class="rounded-md border-0 bg-transparent text-sm text-text-light-primary font-medium focus:ring-0 pr-8">
 <option>In visible group</option>
 <option>All</option>
 </select>
 </div>
 </div>
 <div class="flex-grow overflow-y-auto">
-<ul class="divide-y divide-border-light">
-<li><a class="block p-3 hover:bg-hover-light bg-selected-light" href="#">
+<ul class="py-1">
+<li><a class="flex items-center gap-3 p-3 mx-2 rounded-lg hover:bg-hover-light bg-selected-light" href="#">
+<span class="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 ring-4 ring-green-100"></span>
+<div class="flex-1">
 <p class="font-medium text-sm text-primary">Instagram Likes</p>
-<p class="text-xs text-text-light-secondary">ID: 101 - Fast Delivery</p>
+<p class="text-xs text-text-light-secondary truncate">ID: 101 - Fast Delivery</p>
+</div>
 </a></li>
-<li><a class="block p-3 hover:bg-hover-light" href="#">
+<li><a class="flex items-center gap-3 p-3 mx-2 rounded-lg hover:bg-hover-light" href="#">
+<span class="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 ring-4 ring-green-100"></span>
+<div class="flex-1">
 <p class="font-medium text-sm text-text-light-primary">YouTube Views</p>
-<p class="text-xs text-text-light-secondary">ID: 205 - High Retention</p>
+<p class="text-xs text-text-light-secondary truncate">ID: 205 - High Retention</p>
+</div>
 </a></li>
-<li><a class="block p-3 hover:bg-hover-light" href="#">
+<li><a class="flex items-center gap-3 p-3 mx-2 rounded-lg hover:bg-hover-light" href="#">
+<span class="flex h-5 w-5 items-center justify-center rounded-full bg-yellow-500 ring-4 ring-yellow-100"></span>
+<div class="flex-1">
 <p class="font-medium text-sm text-text-light-primary">Twitter Followers</p>
-<p class="text-xs text-text-light-secondary">ID: 312 - Real Users</p>
+<p class="text-xs text-text-light-secondary truncate">ID: 312 - Real Users</p>
+</div>
 </a></li>
-<li><a class="block p-3 hover:bg-hover-light" href="#">
+<li><a class="flex items-center gap-3 p-3 mx-2 rounded-lg hover:bg-hover-light" href="#">
+<span class="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 ring-4 ring-green-100"></span>
+<div class="flex-1">
 <p class="font-medium text-sm text-text-light-primary">Facebook Page Likes</p>
-<p class="text-xs text-text-light-secondary">ID: 401 - Targeted</p>
+<p class="text-xs text-text-light-secondary truncate">ID: 401 - Targeted</p>
+</div>
 </a></li>
-<li><a class="block p-3 hover:bg-hover-light" href="#">
+<li><a class="flex items-center gap-3 p-3 mx-2 rounded-lg hover:bg-hover-light" href="#">
+<span class="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 ring-4 ring-red-100"></span>
+<div class="flex-1">
 <p class="font-medium text-sm text-text-light-primary">TikTok Video Shares</p>
-<p class="text-xs text-text-light-secondary">ID: 550 - Viral Boost</p>
+<p class="text-xs text-text-light-secondary truncate">ID: 550 - Viral Boost</p>
+</div>
 </a></li>
 </ul>
 </div>
 </div>
-<div class="flex-grow overflow-y-auto p-4">
-<div class="space-y-6">
+<div class="flex-grow overflow-y-auto p-6">
+<div class="space-y-8">
+<header>
+<h3 class="text-lg font-semibold text-text-light-primary">Instagram Likes</h3>
+<p class="text-sm text-text-light-secondary font-mono">ID: 101 • INSTA_LIKES_HQ</p>
+</header>
+<div class="grid grid-cols-1 @md:grid-cols-2 gap-8">
+<section>
+<h4 class="text-xs font-semibold uppercase tracking-wider text-text-light-secondary mb-3">Pricing</h4>
+<div class="rounded-lg bg-white border border-border-light divide-y divide-border-light">
+<div class="p-3 flex justify-between items-center text-sm"><span class="text-text-light-secondary">Rate</span><span class="font-semibold text-text-light-primary font-mono">$0.50</span></div>
+<div class="p-3 flex justify-between items-center text-sm"><span class="text-text-light-secondary">Min Quantity</span><span class="font-semibold text-text-light-primary font-mono">100</span></div>
+<div class="p-3 flex justify-between items-center text-sm"><span class="text-text-light-secondary">Max Quantity</span><span class="font-semibold text-text-light-primary font-mono">10,000</span></div>
+</div>
+</section>
+<section>
+<h4 class="text-xs font-semibold uppercase tracking-wider text-text-light-secondary mb-3">Capabilities</h4>
+<div class="rounded-lg bg-white border border-border-light divide-y divide-border-light">
+<div class="p-3 flex justify-between items-center text-sm"><span class="text-text-light-secondary">Dripfeed</span><span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-green-100 text-green-700"><span class="material-symbols-outlined" style="font-size: 16px;">check</span></span></div>
+<div class="p-3 flex justify-between items-center text-sm"><span class="text-text-light-secondary">Refill</span><span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-green-100 text-green-700"><span class="material-symbols-outlined" style="font-size: 16px;">check</span></span></div>
+<div class="p-3 flex justify-between items-center text-sm"><span class="text-text-light-secondary">Cancel</span><span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-700"><span class="material-symbols-outlined" style="font-size: 16px;">close</span></span></div>
+</div>
+</section>
+</div>
+<section>
+<h4 class="text-xs font-semibold uppercase tracking-wider text-text-light-secondary mb-3">Estimates</h4>
+<div class="bg-white border border-border-light rounded-lg grid grid-cols-3 divide-x divide-border-light text-center">
+<div class="p-3"><p class="text-xs text-text-light-secondary mb-0.5">Start Time</p><p class="font-semibold text-text-light-primary">0-1 hr</p></div>
+<div class="p-3"><p class="text-xs text-text-light-secondary mb-0.5">Speed</p><p class="font-semibold text-text-light-primary">5k/day</p></div>
+<div class="p-3"><p class="text-xs text-text-light-secondary mb-0.5">Average</p><p class="font-semibold text-text-light-primary">23 min</p></div>
+</div>
+</section>
+<section>
+<h4 class="text-xs font-semibold uppercase tracking-wider text-text-light-secondary mb-3">Bound To Nodes</h4>
+<div class="flex flex-wrap gap-2">
+<a class="inline-flex items-center gap-2 text-sm bg-white border border-border-light rounded-full py-1 pl-2 pr-3 hover:bg-hover-light hover:border-gray-300 transition-colors" href="#">
+<span class="material-symbols-outlined !font-light text-primary" style="font-size: 18px;">folder</span>
+<span class="font-medium text-text-light-primary">Social Media Boost</span>
+</a>
+<a class="inline-flex items-center gap-2 text-sm bg-white border border-border-light rounded-full py-1 pl-2 pr-3 hover:bg-hover-light hover:border-gray-300 transition-colors" href="#">
+<span class="material-symbols-outlined !font-light text-text-light-secondary" style="font-size: 18px;">tune</span>
+<span class="font-medium text-text-light-primary">Instagram Services</span>
+</a>
+<a class="inline-flex items-center gap-2 text-sm bg-white border border-border-light rounded-full py-1 pl-2 pr-3 hover:bg-hover-light hover:border-gray-300 transition-colors" href="#">
+<span class="material-symbols-outlined !font-light text-text-light-secondary" style="font-size: 18px;">toggle_on</span>
+<span class="font-medium text-text-light-primary">High Quality Likes</span>
+</a>
+</div>
+</section>
+</div>
+</div>
+</div>
+</div>
+<div class="h-full" x-show="activeTab === 'all'">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_3fr] h-full" x-data="{ selectedService: '123' }">
+<div class="flex flex-col border-r border-border-light bg-white">
+<div class="p-3 border-b border-border-light flex-shrink-0 space-y-3">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-light-secondary" style="font-size: 20px;">search</span>
+<input class="w-full rounded-lg border-border-light bg-hover-light pl-10 pr-4 py-2 text-sm placeholder:text-text-light-secondary focus:ring-2 focus:ring-primary focus:border-primary" placeholder="Search by name, key, or ID..." type="search"/>
+</div>
+<div class="flex items-center justify-between gap-3">
+<label class="flex items-center gap-2 text-sm text-text-light-primary cursor-pointer">
+<input class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox"/>
+Hide active services
+</label>
+<div class="relative">
+<button @click="showFilterPopover = !showFilterPopover" class="flex items-center gap-1.5 rounded-md border border-border-light bg-white px-3 py-1.5 text-sm font-medium text-text-light-primary hover:bg-hover-light transition-colors">
+<span class="material-symbols-outlined !font-light text-text-light-secondary" style="font-size: 16px;">filter_list</span>
+Filter
+</button>
+<div @click.outside="showFilterPopover = false" class="absolute top-full right-0 mt-2 w-80 max-h-[calc(100vh-250px)] overflow-y-auto bg-white border border-border-light rounded-lg shadow-xl z-30 flex flex-col" x-cloak="" x-show="showFilterPopover" x-transition:enter="transition ease-out duration-100" x-transition:enter-end="opacity-100 scale-100" x-transition:enter-start="opacity-0 scale-95" x-transition:leave="transition ease-in duration-75" x-transition:leave-end="opacity-0 scale-95" x-transition:leave-start="opacity-100 scale-100">
+<div class="p-4 space-y-4">
 <div>
-<h3 class="text-base font-semibold text-text-light-primary">Instagram Likes</h3>
-<p class="text-sm text-text-light-secondary font-mono">ID: 101</p>
-</div>
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-<div class="space-y-4">
-<div><span class="font-medium text-text-light-secondary">Key:</span><span class="ml-2 font-mono text-text-light-primary">INSTA_LIKES_HQ</span></div>
-<div><span class="font-medium text-text-light-secondary">Rate:</span><span class="ml-2 font-mono text-text-light-primary">$0.50</span></div>
-<div><span class="font-medium text-text-light-secondary">Min:</span><span class="ml-2 font-mono text-text-light-primary">100</span></div>
-<div><span class="font-medium text-text-light-secondary">Max:</span><span class="ml-2 font-mono text-text-light-primary">10000</span></div>
-</div>
-<div class="space-y-4">
-<div class="flex items-center gap-2"><span class="font-medium text-text-light-secondary">Dripfeed:</span><span class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-green-100 text-green-700"><span class="material-symbols-outlined" style="font-size: 14px;">check</span></span></div>
-<div class="flex items-center gap-2"><span class="font-medium text-text-light-secondary">Refill:</span><span class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-green-100 text-green-700"><span class="material-symbols-outlined" style="font-size: 14px;">check</span></span></div>
-<div class="flex items-center gap-2"><span class="font-medium text-text-light-secondary">Cancel:</span><span class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-100 text-red-700"><span class="material-symbols-outlined" style="font-size: 14px;">close</span></span></div>
+<div class="flex items-center justify-between mb-2">
+<h4 class="text-sm font-medium text-text-light-primary">Tags</h4>
+<div class="flex items-center rounded-md bg-gray-100 p-0.5 text-xs">
+<button class="px-2 py-0.5 rounded-sm bg-white shadow-sm font-semibold">All selected</button>
+<button class="px-2 py-0.5 text-text-light-secondary">Any selected</button>
 </div>
 </div>
-<div class="text-sm">
-<h4 class="font-medium text-text-light-secondary mb-1">Estimate</h4>
-<div class="bg-white border border-border-light rounded-lg p-3 grid grid-cols-3 divide-x divide-border-light text-center">
-<div><p class="text-xs text-text-light-secondary">Start</p><p class="font-medium">0-1 hr</p></div>
-<div><p class="text-xs text-text-light-secondary">Speed</p><p class="font-medium">5k/day</p></div>
-<div><p class="text-xs text-text-light-secondary">Average</p><p class="font-medium">23 min</p></div>
+<div class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+<label class="flex items-center gap-2 text-sm"><input checked="" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox"/> Site Builder</label>
+<label class="flex items-center gap-2 text-sm"><input class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox"/> Content Management</label>
+<label class="flex items-center gap-2 text-sm"><input class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox"/> E-commerce</label>
+<label class="flex items-center gap-2 text-sm"><input class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox"/> Extras</label>
 </div>
 </div>
 <div>
-<h4 class="text-sm font-medium text-text-light-secondary mb-2">Bound To Nodes</h4>
+<h4 class="text-sm font-medium text-text-light-primary mb-2">Context Options</h4>
 <div class="space-y-2">
-<div class="flex items-center gap-2 text-xs bg-white border border-border-light rounded-lg p-2.5">
+<details class="group">
+<summary class="flex items-center gap-2 cursor-pointer list-none text-sm"><span class="material-symbols-outlined text-text-light-secondary transition-transform duration-200 group-open:rotate-90" style="font-size: 18px;">chevron_right</span> CMS Features</summary>
+<div class="pl-6 pt-1 space-y-1.5"><label class="flex items-center gap-2 text-sm"><input class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox"/> Basic CMS</label><label class="flex items-center gap-2 text-sm"><input class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox"/> Advanced CMS</label></div>
+</details>
+<label class="flex items-center gap-2 text-sm pl-2.5"><input class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox"/> Payment Gateway (Assume selected)</label>
+</div>
+</div>
+<div>
+<h4 class="text-sm font-medium text-text-light-primary mb-2">Safety Toggles</h4>
+<div class="space-y-1.5">
+<label class="flex items-center gap-2 text-sm"><input class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox"/> Strict safety</label>
+<label class="flex items-center gap-2 text-sm"><input class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox"/> Enforce policies</label>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-end gap-2 p-3 bg-gray-50 border-t border-border-light"><button class="px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100">Reset</button><button class="px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-white hover:bg-blue-700">Apply</button></div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex-grow overflow-y-auto">
+<ul class="divide-y divide-border-light">
+<li :class="{'bg-selected-light': selectedService === '123'}" @click="selectedService = '123'" class="p-3 cursor-pointer hover:bg-hover-light">
+<div class="flex items-start justify-between gap-3">
+<div>
+<p class="font-medium text-sm text-primary">Instagram Likes</p>
+<p class="text-xs text-text-light-secondary font-mono">123 • INSTA_LIKES_HQ</p>
+</div>
+<div class="flex items-center gap-2">
+<p class="text-sm font-semibold text-text-light-primary font-mono">$0.50</p>
+<div class="flex items-center gap-1 text-text-light-secondary"><span class="material-symbols-outlined" style="font-size: 14px;" title="Refill">published_with_changes</span><span class="material-symbols-outlined" style="font-size: 14px;" title="Dripfeed">hourglass_top</span></div>
+</div>
+</div>
+<div class="mt-2 flex items-center justify-between">
+<p class="text-xs text-text-light-secondary font-mono">100 / 10,000</p>
+<span class="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"><span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>Active</span>
+</div>
+</li>
+<li :class="{'bg-selected-light': selectedService === '456'}" @click="selectedService = '456'" class="p-3 cursor-pointer hover:bg-hover-light">
+<div class="flex items-start justify-between gap-3">
+<div>
+<p class="font-medium text-sm text-text-light-primary">YouTube Subscribers</p>
+<p class="text-xs text-text-light-secondary font-mono">456 • YT_SUBS_LQ</p>
+</div>
+<div class="flex items-center gap-2">
+<p class="text-sm font-semibold text-text-light-primary font-mono">$15.00</p>
+<div class="flex items-center gap-1 text-text-light-secondary"><span class="material-symbols-outlined" style="font-size: 14px;" title="Cancel">cancel</span></div>
+</div>
+</div>
+<div class="mt-2 flex flex-wrap items-center gap-2">
+<p class="text-xs text-text-light-secondary font-mono">10 / 500</p>
+<span class="inline-flex items-center gap-1.5 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800"><span class="h-1.5 w-1.5 rounded-full bg-yellow-500"></span>Hidden: Constraint</span>
+<span class="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">Rate mismatch</span>
+</div>
+</li>
+<li :class="{'bg-selected-light': selectedService === '789'}" @click="selectedService = '789'" class="p-3 cursor-pointer hover:bg-hover-light">
+<div class="flex items-start justify-between gap-3">
+<div>
+<p class="font-medium text-sm text-text-light-primary">API Utility: Geo-Target</p>
+<p class="text-xs text-text-light-secondary font-mono">789 • API_GEO_TARGET</p>
+</div>
+<div class="flex items-center gap-2"><p class="text-sm font-semibold text-text-light-primary font-mono">$0.02</p></div>
+</div>
+<div class="mt-2 flex flex-wrap items-center gap-2">
+<p class="text-xs text-text-light-secondary font-mono">1 / 1</p>
+<span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800"><span class="h-1.5 w-1.5 rounded-full bg-gray-500"></span>Hidden: No binding</span>
+<span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">Utility needs base</span>
+<span class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">Policy</span>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="flex-grow overflow-y-auto p-6">
+<div class="space-y-6">
+<header>
+<h3 class="text-lg font-semibold text-text-light-primary">Instagram Likes</h3>
+<p class="text-sm text-text-light-secondary font-mono">ID: 123 • INSTA_LIKES_HQ</p>
+</header>
+<div class="grid grid-cols-1 @md:grid-cols-2 gap-x-8 gap-y-6">
+<div class="flex justify-between items-center text-sm border-b border-border-light pb-2"><span class="text-text-light-secondary">Rate</span><span class="font-medium text-text-light-primary font-mono">$0.50</span></div>
+<div class="flex justify-between items-center text-sm border-b border-border-light pb-2"><span class="text-text-light-secondary">Dripfeed</span><span class="inline-flex items-center gap-1 font-medium text-green-700"><span class="material-symbols-outlined" style="font-size: 16px;">check_circle</span> Yes</span></div>
+<div class="flex justify-between items-center text-sm border-b border-border-light pb-2"><span class="text-text-light-secondary">Min Quantity</span><span class="font-medium text-text-light-primary font-mono">100</span></div>
+<div class="flex justify-between items-center text-sm border-b border-border-light pb-2"><span class="text-text-light-secondary">Refill</span><span class="inline-flex items-center gap-1 font-medium text-green-700"><span class="material-symbols-outlined" style="font-size: 16px;">check_circle</span> Yes</span></div>
+<div class="flex justify-between items-center text-sm border-b border-border-light pb-2"><span class="text-text-light-secondary">Max Quantity</span><span class="font-medium text-text-light-primary font-mono">10,000</span></div>
+<div class="flex justify-between items-center text-sm border-b border-border-light pb-2"><span class="text-text-light-secondary">Cancel</span><span class="inline-flex items-center gap-1 font-medium text-red-700"><span class="material-symbols-outlined" style="font-size: 16px;">cancel</span> No</span></div>
+<div class="flex justify-between items-center text-sm border-b border-border-light pb-2"><span class="text-text-light-secondary">Avg. Time</span><span class="font-medium text-text-light-primary">23 min</span></div>
+<div class="flex justify-between items-center text-sm border-b border-border-light pb-2"><span class="text-text-light-secondary">Estimate</span><span class="font-medium text-text-light-primary">0-1 hr start</span></div>
+</div>
+<section>
+<h4 class="text-xs font-semibold uppercase tracking-wider text-text-light-secondary mb-3">Bindings</h4>
+<div class="space-y-3">
+<div class="p-3 bg-white border border-border-light rounded-lg">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2 text-sm">
 <span class="material-symbols-outlined !font-light text-primary" style="font-size: 18px;">folder</span>
 <span class="text-text-light-secondary">Tag:</span>
 <span class="font-medium text-text-light-primary">Social Media Boost</span>
 </div>
-<div class="flex items-center gap-2 text-xs bg-white border border-border-light rounded-lg p-2.5">
-<span class="material-symbols-outlined !font-light text-text-light-secondary" style="font-size: 18px;">tune</span>
-<span class="text-text-light-secondary">Field:</span>
-<span class="font-medium text-text-light-primary">Instagram Services</span>
+<span class="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"><span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>Active</span>
 </div>
-<div class="flex items-center gap-2 text-xs bg-white border border-border-light rounded-lg p-2.5">
+</div>
+<div class="p-3 bg-white border border-border-light rounded-lg">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2 text-sm">
 <span class="material-symbols-outlined !font-light text-text-light-secondary" style="font-size: 18px;">toggle_on</span>
-<span class="text-text-light-secondary">Option:</span>
-<span class="font-medium text-text-light-primary">High Quality Likes</span>
+<span class="text-text-light-secondary">Field:</span>
+<span class="font-medium text-text-light-primary">Service Quality</span>
+<span class="material-symbols-outlined text-text-light-secondary" style="font-size: 14px;">arrow_right_alt</span>
+<span class="font-medium text-text-light-primary">High Quality</span>
+</div>
+<span class="inline-flex items-center gap-1.5 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800"><span class="h-1.5 w-1.5 rounded-full bg-yellow-500"></span>Hidden: Constraint</span>
 </div>
 </div>
 </div>
+</section>
 </div>
 </div>
 </div>
-</div>
-<div class="p-4 h-full" x-show="activeTab === 'all'">
-<p class="text-sm text-text-light-secondary">A list of all available services will be shown here.</p>
 </div>
 </div>
 </div>

@@ -6,6 +6,7 @@ import { AddService } from '@/panels/right/partials/global/add-service.tsx';
 import type { OptionNode } from '@timeax/digital-service-engine/core';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
+import { getOptionPropertyCapabilities } from './components/node-capabilities.ts';
 import QuantitySection from './components/quantity-section.tsx';
 import UtilitySection from './components/utility-section.tsx';
 import { IncExcludeSection } from './components/Union';
@@ -17,6 +18,7 @@ export interface OptionPropertiesProps {
 
 export function OptionProperties({ className, node }: OptionPropertiesProps) {
     const canvas = useCanvas();
+    const capabilities = getOptionPropertyCapabilities(node);
     const field = node.field();
     const options = field.raw.options ?? [];
 
@@ -73,26 +75,26 @@ export function OptionProperties({ className, node }: OptionPropertiesProps) {
                     <Section.Content>
                         <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">How this option participates in visible field mappings.</p>
                         <PropertyList
-                            items={[
-                                { label: 'Parent field', value: field.raw.label },
-                                { label: 'Binding', value: describeBinding(node) },
-                                { label: 'Service id', value: String(node.raw.service_id ?? 'None') },
-                            ]}
+                            items={
+                                [
+                                    { label: 'Parent field', value: field.raw.label },
+                                    { label: 'Binding', value: describeBinding(node) },
+                                    capabilities.service.canEdit
+                                        ? { label: 'Service id', value: String(node.raw.service_id ?? 'None') }
+                                        : null,
+                                ].filter(Boolean) as Array<{ label: string; value: string }>
+                            }
                         />
                     </Section.Content>
                 </Section>
                 <Separator />
 
-                <IncExcludeSection node={node} mode="includes" />
+                <IncExcludeSection node={node} mode="includes" capability={capabilities.triggerMappings} />
                 <Separator />
 
-                <IncExcludeSection node={node} mode="excludes" />
+                <IncExcludeSection node={node} mode="excludes" capability={capabilities.triggerMappings} />
                 <Separator />
-                <AddService
-                    data={node}
-                    disabled={(node.raw.pricing_role ?? 'base') === 'utility'}
-                    disabledMessage="Utility-priced options cannot connect to services."
-                />
+                <AddService data={node} readOnly={!capabilities.service.canEdit} readOnlyMessage={capabilities.service.message} />
             </div>
         </div>
     );

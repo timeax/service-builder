@@ -7,13 +7,18 @@ import {
     StatusDot,
     ToolbarGroup,
 } from '@/components/builder/index.tsx';
+import { buildServiceSummaries, useBottomConsolePanel } from '@/builder/bottom-panel.ts';
 import { buildCanvasNodeViewModels, getServiceDetails } from '@/builder/view-models.tsx';
-import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
-import { startTransition, useMemo } from 'react';
+import { getNodePropertyCapabilities } from '@/panels/right/partials/properties/components/node-capabilities.ts';
+import { useCanvas, useErrors, useWorkspace } from '@timeax/digital-service-engine/workspace';
+import { startTransition, useEffect, useMemo, useState } from 'react';
 import { BsChatSquareQuote } from 'react-icons/bs';
-import { FiCrosshair } from 'react-icons/fi';
+import { FiCrosshair, FiTerminal } from 'react-icons/fi';
 import { LuLayoutGrid, LuMousePointer2, LuPlus } from 'react-icons/lu';
 import { MdOutlineFitScreen, MdOutlineVisibility } from 'react-icons/md';
+import { BottomConsolePanel } from './bottom-console-panel.tsx';
+
+const SERVICE_DRAG_MIME = 'application/x-service-builder-service';
 
 function FieldCardDetails({ nodeId }: { nodeId: string }) {
     const canvas = useCanvas();
@@ -55,15 +60,35 @@ function FieldCardDetails({ nodeId }: { nodeId: string }) {
 export default function BuilderCanvas() {
     const canvas = useCanvas();
     const ws = useWorkspace();
+    const errors = useErrors();
+    const bottomPanel = useBottomConsolePanel();
+    const [draggingServiceId, setDraggingServiceId] = useState<string | null>(null);
+    const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+    const [highlightedIds, setHighlightedIds] = useState<Set<string>>(() => new Set());
+    const [pendingServiceDrop, setPendingServiceDrop] = useState<{
+        nodeId: string;
+        serviceId: string;
+        x: number;
+        y: number;
+        currentServiceId?: number | string;
+    } | null>(null);
 
     const nodes = useMemo(() => buildCanvasNodeViewModels(canvas, ws.comments.threads.data ?? []), [canvas.graph, canvas.activeId, canvas.selection, ws.comments.threads.data]);
     const freeThreads = (ws.comments.threads.data ?? []).filter((thread) => thread.anchor?.type === 'free');
+    const serviceSummary = useMemo(() => buildServiceSummaries(canvas, ws), [canvas.graph, canvas.selectionInfo, canvas.activeId, ws.services.data]);
 
     const stats = {
         tags: canvas.layers.tags.length,
         fields: canvas.layers.fields.length,
         comments: (ws.comments.threads.data ?? []).length,
     };
+
+    useEffect(() => {
+        const off = canvas.api.on('state:change', (snap: { highlighted?: ReadonlySet<string> }) => {
+            setHighlightedIds(new Set(Array.from(snap.highlighted ?? [])));
+        });
+        return () => off?.();
+    }, [canvas.api]);
 
     if (!nodes.length) {
         return (
@@ -99,6 +124,16 @@ export default function BuilderCanvas() {
                     </BuilderIconButton>
                     <BuilderIconButton title="Fit">
                         <MdOutlineFitScreen />
+                    </BuilderIconButton>
+                    <BuilderIconButton active={bottomPanel.isOpen} title={`Toggle console (${bottomPanel.shortcutLabel})`} onClick={() => bottomPanel.toggle()}>
+                        <div className="relative">
+                            <FiTerminal />
+                            {errors.merged.counts.total ? (
+                                <span className="absolute -top-1.5 -right-2 inline-flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-semibold text-white">
+                                    {errors.merged.counts.total}
+                                </span>
+                            ) : null}
+                        </div>
                     </BuilderIconButton>
                 </ToolbarGroup>
             </div>
@@ -147,9 +182,43 @@ export default function BuilderCanvas() {
                                 top: `${node.y}px`,
                                 width: `${node.width ?? 220}px`,
                             }}
+                            onDragOver={(event) => {
+                                if (!canAssignService(canvas, node.nodeId)) return;
+                                if (!event.dataTransfer.types.includes(SERVICE_DRAG_MIME)) return;
+                                event.preventDefault();
+                                event.dataTransfer.dropEffect = 'copy';
+                                setDropTargetId(node.nodeId);
+                            }}
+                            onDragLeave={() => {
+                                if (dropTargetId === node.nodeId) setDropTargetId(null);
+                            }}
+                            onDrop={(event) => {
+                                const serviceId = event.dataTransfer.getData(SERVICE_DRAG_MIME);
+                                setDraggingServiceId(null);
+                                setDropTargetId(null);
+                                if (!serviceId || !canAssignService(canvas, node.nodeId)) return;
+                                event.preventDefault();
+                                const target = canvas.selector.getNode(node.nodeId);
+                                setPendingServiceDrop({
+                                    nodeId: node.nodeId,
+                                    serviceId,
+                                    x: node.x + (node.width ?? 220) + 16,
+                                    y: node.y,
+                                    currentServiceId: getNodeServiceId(target),
+                                });
+                            }}
                         >
                             <NodeCard
                                 view={node}
+                                className={
+                                    highlightedIds.has(node.nodeId)
+                                        ? 'border-amber-300 ring-2 ring-amber-200 dark:border-amber-500/50 dark:ring-amber-500/20'
+                                        : dropTargetId === node.nodeId
+                                          ? 'border-emerald-300 ring-2 ring-emerald-200 dark:border-emerald-500/50 dark:ring-emerald-500/20'
+                                          : draggingServiceId && canAssignService(canvas, node.nodeId)
+                                            ? 'border-dashed border-emerald-200'
+                                            : undefined
+                                }
                                 onClick={() => {
                                     startTransition(() => {
                                         canvas.setActive(node.nodeId);
@@ -167,6 +236,41 @@ export default function BuilderCanvas() {
                             </NodeCard>
                         </div>
                     ))}
+
+                    {pendingServiceDrop ? (
+                        <div
+                            className="absolute z-30 w-72"
+                            style={{
+                                left: `${pendingServiceDrop.x}px`,
+                                top: `${pendingServiceDrop.y}px`,
+                            }}
+                        >
+                            <CanvasOverlay
+                                title={pendingServiceDrop.currentServiceId != null ? 'Replace service on node' : 'Set service on node'}
+                                description={`Assign service #${pendingServiceDrop.serviceId} to ${getNodeLabel(canvas.selector.getNode(pendingServiceDrop.nodeId))}.`}
+                            >
+                                <div className="space-y-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            canvas.api.editor.setService(pendingServiceDrop.nodeId, { service_id: Number(pendingServiceDrop.serviceId) });
+                                            setPendingServiceDrop(null);
+                                        }}
+                                        className="w-full rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900"
+                                    >
+                                        {pendingServiceDrop.currentServiceId != null ? 'Replace service' : 'Set service'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPendingServiceDrop(null)}
+                                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </CanvasOverlay>
+                        </div>
+                    ) : null}
 
                     {freeThreads.map((thread, index) => {
                         const pos = thread.anchor?.type === 'free' ? thread.anchor.position : { x: 60, y: 60 + index * 120 };
@@ -191,6 +295,17 @@ export default function BuilderCanvas() {
                     })}
                 </div>
             </div>
+
+            <BottomConsolePanel
+                controller={bottomPanel}
+                errors={errors}
+                activeServices={serviceSummary.activeServices}
+                allServices={serviceSummary.allServices}
+                onServiceDragStateChange={(serviceId) => {
+                    setDraggingServiceId(serviceId);
+                    if (!serviceId) setDropTargetId(null);
+                }}
+            />
         </div>
     );
 }
@@ -205,4 +320,25 @@ function StatCard({ label, value, tone }: { label: string; value: number; tone: 
             <div className="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{value}</div>
         </div>
     );
+}
+
+function canAssignService(canvas: ReturnType<typeof useCanvas>, nodeId: string) {
+    const node = canvas.selector.getNode(nodeId);
+    if (!node || (node.kind !== 'tag' && node.kind !== 'field' && node.kind !== 'option')) return false;
+    return getNodePropertyCapabilities(node).service.canEdit;
+}
+
+function getNodeServiceId(node: unknown) {
+    if (node && typeof node === 'object' && 'raw' in node && node.raw && typeof node.raw === 'object' && 'service_id' in node.raw) {
+        const value = (node.raw as { service_id?: number | string }).service_id;
+        return value;
+    }
+    return undefined;
+}
+
+function getNodeLabel(node: unknown) {
+    if (node && typeof node === 'object' && 'raw' in node && node.raw && typeof node.raw === 'object' && 'label' in node.raw) {
+        return String((node.raw as { label?: string }).label ?? 'this node');
+    }
+    return 'this node';
 }

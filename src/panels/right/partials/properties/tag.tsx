@@ -5,6 +5,7 @@ import { TagConstraintsSection } from './tag/TagConstraintsSection';
 import { TagExcludesSection, TagIncludesSection } from './tag/TagIncludesSection';
 import AddService from '@/panels/right/partials/global/add-service.tsx';
 import QuantitySection from './components/quantity-section.tsx';
+import { getTagPropertyCapabilities } from './components/node-capabilities.ts';
 
 export interface TagProps {
     className?: string;
@@ -12,6 +13,8 @@ export interface TagProps {
 }
 
 export function TagProperties({ node }: TagProps) {
+    const capabilities = getTagPropertyCapabilities();
+
     return (
         <>
             <TagConstraintsSection node={node} />
@@ -22,7 +25,7 @@ export function TagProperties({ node }: TagProps) {
             <Separator />
             <TagExcludesSection node={node} />
             <Separator />
-            <AddService data={node} />
+            <AddService data={node} readOnly={!capabilities.service.canEdit} readOnlyMessage={capabilities.service.message} />
         </>
     );
 }

@@ -315,3 +315,5 @@ export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(function Panel
         />
     );
 });
+
+Panel.displayName = 'Panel';

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html class="" lang="en"><head>
+<html lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>CMS Navigation Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script>tailwind.config = {darkMode: "class", theme: {extend: {colors: {primary: "#135bec", "background-light": "#f6f6f8", "background-dark": "#101622", "surface-light": "#FFFFFF", "surface-dark": "#111111", "text-light-primary": "#111827", "text-dark-primary": "#F9FAFB", "text-light-secondary": "#6B7280", "text-dark-secondary": "#A1A1AA", "border-light": "#E5E7EB", "border-dark": "#27272A", "hover-light": "#F3F4F6", "hover-dark": "#18181B", "selected-light": "#EEF2FF", "selected-dark": "#222144"}, fontFamily: {display: "Inter"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}}}};</script>
+<script>tailwind.config = {darkMode: "class", theme: {extend: {colors: {primary: "#135bec", "background-light": "#f6f6f8", "background-dark": "#101622", "surface-light": "#FFFFFF", "surface-dark": "#111111", "text-light-primary": "#111827", "text-dark-primary": "#F9FAFB", "text-light-secondary": "#6B7280", "text-dark-secondary": "#A1A1AA", "border-light": "#E5E7EB", "border-dark": "#27272A", "hover-light": "#F3F4F6", "hover-dark": "#18181B", "selected-light": "#EEF2FF", "selected-dark": "#222144"}, fontFamily: {display: "Inter", mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace']}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}}}};</script>
 <style>
     .material-symbols-outlined {
       font-variation-settings:
@@ -18,37 +18,37 @@
     }
   </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display antialiased">
-<div class="flex h-screen w-full gap-4 p-4">
-<aside class="flex h-full w-full max-w-[280px] flex-col bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl shadow-2xl shadow-black/20">
-<div class="flex-shrink-0 border-b border-border-light dark:border-border-dark p-4">
+<body class="bg-background-light font-display antialiased">
+<div class="flex h-screen w-full gap-4 p-4" x-data="{ isPanelOpen: true }">
+<aside class="flex h-full w-full max-w-[280px] flex-col bg-surface-light border border-border-light rounded-xl shadow-2xl shadow-black/20">
+<div class="flex-shrink-0 border-b border-border-light p-4">
 <div class="flex items-center justify-between">
 <div class="flex items-center gap-2">
 <div class="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-600">
 <span class="material-symbols-outlined text-white" style="font-size: 16px; font-variation-settings: 'wght' 400;">space_dashboard</span>
 </div>
-<h1 class="text-base font-semibold text-text-light-primary dark:text-text-dark-primary">Workspace</h1>
+<h1 class="text-base font-semibold text-text-light-primary">Workspace</h1>
 </div>
-<button class="text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary p-1.5 rounded-md hover:bg-hover-light dark:hover:bg-hover-dark transition-colors">
+<button class="text-text-light-secondary hover:text-text-light-primary p-1.5 rounded-md hover:bg-hover-light transition-colors">
 <span class="material-symbols-outlined">menu_open</span>
 </button>
 </div>
 </div>
 <nav class="flex-grow overflow-y-auto pt-4">
 <div class="px-3">
-<a class="flex items-center gap-3 rounded-lg py-2.5 px-3 text-sm font-medium text-text-light-primary dark:text-text-dark-primary bg-selected-light dark:bg-primary/20" href="#">
-<span class="material-symbols-outlined text-primary dark:text-indigo-300">drafts</span>
+<a class="flex items-center gap-3 rounded-lg py-2.5 px-3 text-sm font-medium text-text-light-primary bg-selected-light" href="#">
+<span class="material-symbols-outlined text-primary">drafts</span>
 Drafts
-<span class="ml-auto text-xs font-semibold bg-white dark:bg-surface-dark text-slate-700 dark:text-slate-200 rounded-full px-2 py-0.5 border border-border-light dark:border-border-dark">5</span>
+<span class="ml-auto text-xs font-semibold bg-white text-slate-700 rounded-full px-2 py-0.5 border border-border-light">5</span>
 </a>
 </div>
 <div class="px-3 pt-4 pb-2">
-<div class="flex items-center rounded-lg bg-hover-light dark:bg-hover-dark p-1">
-<a class="flex flex-1 items-center justify-center gap-2 rounded-md bg-surface-light dark:bg-surface-dark py-1.5 text-sm font-medium text-text-light-primary dark:text-text-dark-primary shadow-sm" href="#">
-<span class="material-symbols-outlined !font-light text-text-light-primary dark:text-text-dark-primary">layers</span>
+<div class="flex items-center rounded-lg bg-hover-light p-1">
+<a class="flex flex-1 items-center justify-center gap-2 rounded-md bg-surface-light py-1.5 text-sm font-medium text-text-light-primary shadow-sm" href="#">
+<span class="material-symbols-outlined !font-light text-text-light-primary">layers</span>
 Layers
 </a>
-<a class="flex flex-1 items-center justify-center gap-2 rounded-md py-1.5 text-sm font-medium text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary" href="#">
+<a class="flex flex-1 items-center justify-center gap-2 rounded-md py-1.5 text-sm font-medium text-text-light-secondary hover:text-text-light-primary" href="#">
 <span class="material-symbols-outlined !font-light">grid_view</span>
 Assets
 </a>
@@ -56,95 +56,280 @@ Assets
 </div>
 <div class="px-3 space-y-1">
 <div class="flex items-center justify-between px-3 pt-2 pb-2">
-<h2 class="text-xs font-semibold uppercase tracking-wider text-text-light-secondary dark:text-text-dark-secondary">Tags</h2>
-<button class="text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary">
+<h2 class="text-xs font-semibold uppercase tracking-wider text-text-light-secondary">Tags</h2>
+<button class="text-text-light-secondary hover:text-text-light-primary">
 <span class="material-symbols-outlined" style="font-size: 18px;">search</span>
 </button>
 </div>
 <ul class="space-y-1 text-sm">
 <li>
 <details open="">
-<summary class="group flex cursor-pointer list-none items-center justify-between rounded-lg py-2 px-3 hover:bg-hover-light dark:hover:bg-hover-dark">
+<summary class="group flex cursor-pointer list-none items-center justify-between rounded-lg py-2 px-3 hover:bg-hover-light">
 <div class="flex items-center gap-3">
-<span class="material-symbols-outlined !font-light text-primary dark:text-indigo-400">folder_open</span>
-<span class="font-semibold text-primary dark:text-indigo-300">Site Builder</span>
+<span class="material-symbols-outlined !font-light text-primary">folder_open</span>
+<span class="font-semibold text-primary">Site Builder</span>
 </div>
-<span class="text-xs font-medium text-text-light-secondary dark:text-text-dark-secondary group-hover:text-text-light-primary dark:group-hover:text-text-dark-primary transition-transform duration-300 [&amp;&gt;*:last-child]:-rotate-180"><span class="material-symbols-outlined">expand_more</span></span>
+<span class="text-xs font-medium text-text-light-secondary group-hover:text-text-light-primary transition-transform duration-300 [&amp;&gt;*:last-child]:-rotate-180"><span class="material-symbols-outlined">expand_more</span></span>
 </summary>
 <ul class="pl-6 pt-1">
-<li class="relative"><a class="block py-1.5 pl-6 text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary before:absolute before:left-[9px] before:top-[12px] before:h-px before:w-4 before:bg-border-light dark:before:bg-border-dark" href="#">Pages</a></li>
-<li class="relative"><a class="block py-1.5 pl-6 text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary before:absolute before:left-[9px] before:top-0 before:h-full before:w-px before:bg-border-light dark:before:bg-border-dark after:absolute after:left-[9px] after:top-[12px] after:h-px after:w-4 after:bg-border-light dark:after:bg-border-dark" href="#">Components</a></li>
+<li class="relative"><a class="block py-1.5 pl-6 text-text-light-secondary hover:text-text-light-primary before:absolute before:left-[9px] before:top-[12px] before:h-px before:w-4 before:bg-border-light" href="#">Pages</a></li>
+<li class="relative"><a class="block py-1.5 pl-6 text-text-light-secondary hover:text-text-light-primary before:absolute before:left-[9px] before:top-0 before:h-full before:w-px before:bg-border-light after:absolute after:left-[9px] after:top-[12px] after:h-px after:w-4 after:bg-border-light" href="#">Components</a></li>
 </ul>
 </details>
 </li>
 <li>
 <details>
-<summary class="group flex cursor-pointer list-none items-center justify-between rounded-lg py-2 px-3 hover:bg-hover-light dark:hover:bg-hover-dark">
+<summary class="group flex cursor-pointer list-none items-center justify-between rounded-lg py-2 px-3 hover:bg-hover-light">
 <div class="flex items-center gap-3">
-<span class="material-symbols-outlined !font-light text-text-light-secondary dark:text-text-dark-secondary group-hover:text-text-light-primary dark:group-hover:text-text-dark-primary">folder</span>
-<span class="font-medium text-text-light-secondary dark:text-text-dark-secondary group-hover:text-text-light-primary dark:group-hover:text-text-dark-primary">Content Management</span>
+<span class="material-symbols-outlined !font-light text-text-light-secondary group-hover:text-text-light-primary">folder</span>
+<span class="font-medium text-text-light-secondary group-hover:text-text-light-primary">Content Management</span>
 </div>
-<span class="text-xs font-medium text-text-light-secondary dark:text-text-dark-secondary group-hover:text-text-light-primary dark:group-hover:text-text-dark-primary transition-transform duration-300 [&amp;&gt;*:last-child]:group-open:-rotate-180"><span class="material-symbols-outlined">chevron_right</span></span>
+<span class="text-xs font-medium text-text-light-secondary group-hover:text-text-light-primary transition-transform duration-300 [&amp;&gt;*:last-child]:group-open:-rotate-180"><span class="material-symbols-outlined">chevron_right</span></span>
 </summary>
 </details>
 </li>
 <li>
 <details>
-<summary class="group flex cursor-pointer list-none items-center justify-between rounded-lg py-2 px-3 hover:bg-hover-light dark:hover:bg-hover-dark">
+<summary class="group flex cursor-pointer list-none items-center justify-between rounded-lg py-2 px-3 hover:bg-hover-light">
 <div class="flex items-center gap-3">
-<span class="material-symbols-outlined !font-light text-text-light-secondary dark:text-text-dark-secondary group-hover:text-text-light-primary dark:group-hover:text-text-dark-primary">folder</span>
-<span class="font-medium text-text-light-secondary dark:text-text-dark-secondary group-hover:text-text-light-primary dark:group-hover:text-text-dark-primary">E-commerce</span>
+<span class="material-symbols-outlined !font-light text-text-light-secondary group-hover:text-text-light-primary">folder</span>
+<span class="font-medium text-text-light-secondary group-hover:text-text-light-primary">E-commerce</span>
 </div>
-<span class="text-xs font-medium text-text-light-secondary dark:text-text-dark-secondary group-hover:text-text-light-primary dark:group-hover:text-text-dark-primary transition-transform duration-300 [&amp;&gt;*:last-child]:group-open:-rotate-180"><span class="material-symbols-outlined">chevron_right</span></span>
+<span class="text-xs font-medium text-text-light-secondary group-hover:text-text-light-primary transition-transform duration-300 [&amp;&gt;*:last-child]:group-open:-rotate-180"><span class="material-symbols-outlined">chevron_right</span></span>
 </summary>
 </details>
 </li>
 <li>
 <details>
-<summary class="group flex cursor-pointer list-none items-center justify-between rounded-lg py-2 px-3 hover:bg-hover-light dark:hover:bg-hover-dark">
+<summary class="group flex cursor-pointer list-none items-center justify-between rounded-lg py-2 px-3 hover:bg-hover-light">
 <div class="flex items-center gap-3">
-<span class="material-symbols-outlined !font-light text-text-light-secondary dark:text-text-dark-secondary group-hover:text-text-light-primary dark:group-hover:text-text-dark-primary">folder</span>
-<span class="font-medium text-text-light-secondary dark:text-text-dark-secondary group-hover:text-text-light-primary dark:group-hover:text-text-dark-primary">Extras</span>
+<span class="material-symbols-outlined !font-light text-text-light-secondary group-hover:text-text-light-primary">folder</span>
+<span class="font-medium text-text-light-secondary group-hover:text-text-light-primary">Extras</span>
 </div>
-<span class="text-xs font-medium text-text-light-secondary dark:text-text-dark-secondary group-hover:text-text-light-primary dark:group-hover:text-text-dark-primary transition-transform duration-300 [&amp;&gt;*:last-child]:group-open:-rotate-180"><span class="material-symbols-outlined">chevron_right</span></span>
+<span class="text-xs font-medium text-text-light-secondary group-hover:text-text-light-primary transition-transform duration-300 [&amp;&gt;*:last-child]:group-open:-rotate-180"><span class="material-symbols-outlined">chevron_right</span></span>
 </summary>
 </details>
 </li>
 </ul>
 </div>
 </nav>
-<div class="flex-shrink-0 border-t border-border-light dark:border-border-dark p-3 mt-auto">
+<div class="flex-shrink-0 border-t border-border-light p-3 mt-auto">
 <div class="px-1 mb-2">
 <div class="flex items-center justify-between">
 <div class="flex flex-col">
-<h2 class="text-sm font-semibold text-text-light-primary dark:text-text-dark-primary">Fields in View</h2>
-<p class="text-xs italic text-text-light-secondary/80 dark:text-text-dark-secondary/80">under Site Builder</p>
+<h2 class="text-sm font-semibold text-text-light-primary">Fields in View</h2>
+<p class="text-xs italic text-text-light-secondary/80">under Site Builder</p>
 </div>
 <div class="flex items-center">
-<button class="text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary p-1.5 rounded-md hover:bg-hover-light dark:hover:bg-hover-dark transition-colors">
+<button class="text-text-light-secondary hover:text-text-light-primary p-1.5 rounded-md hover:bg-hover-light transition-colors">
 <span class="material-symbols-outlined" style="font-size: 18px;">search</span>
 </button>
-<button class="text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary p-1.5 rounded-md hover:bg-hover-light dark:hover:bg-hover-dark transition-colors">
+<button class="text-text-light-secondary hover:text-text-light-primary p-1.5 rounded-md hover:bg-hover-light transition-colors">
 <span class="material-symbols-outlined">add</span>
 </button>
 </div>
 </div>
 </div>
 <div class="space-y-2">
-<button class="w-full text-left group flex cursor-pointer items-center justify-between rounded-lg p-2.5 hover:bg-hover-light dark:hover:bg-hover-dark">
+<button class="w-full text-left group flex cursor-pointer items-center justify-between rounded-lg p-2.5 hover:bg-hover-light">
 <div class="flex items-center gap-3">
-<span class="material-symbols-outlined text-text-light-secondary dark:text-text-dark-secondary group-hover:text-text-light-primary dark:group-hover:text-text-dark-primary">visibility_off</span>
+<span class="material-symbols-outlined text-text-light-secondary group-hover:text-text-light-primary">visibility_off</span>
 <div>
-<p class="text-sm font-medium text-text-light-primary dark:text-text-dark-primary">CMS Features</p>
-<p class="text-xs text-text-light-secondary dark:text-text-dark-secondary">2 options selected</p>
+<p class="text-sm font-medium text-text-light-primary">CMS Features</p>
+<p class="text-xs text-text-light-secondary">2 options selected</p>
 </div>
 </div>
-<span class="material-symbols-outlined text-text-light-secondary dark:text-text-dark-secondary group-hover:text-text-light-primary dark:group-hover:text-text-dark-primary">expand_more</span>
+<span class="material-symbols-outlined text-text-light-secondary group-hover:text-text-light-primary">expand_more</span>
 </button>
 </div>
 </div>
 </aside>
-<main class="h-full flex-1 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl shadow-2xl shadow-black/20"></main>
-<div class="w-full max-w-[280px] hidden lg:block"></div>
+<main class="relative h-full flex-1 bg-surface-light border border-border-light rounded-xl shadow-2xl shadow-black/20">
+<div class="absolute top-4 left-4 z-10" x-data="{ minimized: false }">
+<div class="flex w-11 flex-col items-center gap-1 p-1 bg-background-light border border-border-light rounded-lg shadow-md" x-cloak="" x-show="!minimized">
+<div class="flex items-center justify-center p-1 cursor-grab" title="Drag to move">
+<span class="material-symbols-outlined !font-light text-text-light-secondary/50 rotate-90" style="font-size: 20px;">drag_indicator</span>
 </div>
+<button class="flex items-center justify-center h-8 w-8 rounded hover:bg-hover-light text-text-light-secondary hover:text-text-light-primary transition-colors">
+<span class="material-symbols-outlined">add_box</span>
+</button>
+<button class="flex items-center justify-center h-8 w-8 rounded bg-selected-light text-primary transition-colors">
+<span class="material-symbols-outlined">near_me</span>
+</button>
+<div class="w-6 h-px bg-border-light my-1"></div>
+<button class="relative group flex items-center justify-center gap-1 h-8 w-8 rounded hover:bg-hover-light text-text-light-secondary hover:text-text-light-primary transition-colors">
+<span class="material-symbols-outlined" style="font-size: 16px;">horizontal_rule</span>
+<span class="material-symbols-outlined" style="font-size: 16px;">arrow_drop_down</span>
+</button>
+<div class="w-6 h-px bg-border-light my-1"></div>
+<div class="flex flex-col items-center">
+<button class="flex items-center justify-center h-8 w-8 rounded hover:bg-hover-light text-text-light-secondary hover:text-text-light-primary transition-colors">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="text-xs font-medium text-text-light-secondary hover:bg-hover-light px-2 h-7 rounded transition-colors">100%</button>
+<button class="flex items-center justify-center h-8 w-8 rounded hover:bg-hover-light text-text-light-secondary hover:text-text-light-primary transition-colors">
+<span class="material-symbols-outlined">remove</span>
+</button>
+</div>
+<div class="w-6 h-px bg-border-light my-1"></div>
+<button @click="minimized = true" class="flex items-center justify-center h-8 w-8 rounded hover:bg-hover-light text-text-light-secondary hover:text-text-light-primary transition-colors" title="Minimize toolbar">
+<span class="material-symbols-outlined">unfold_more</span>
+</button>
+<div class="w-6 h-px bg-border-light my-1"></div>
+<button class="flex items-center justify-center h-8 w-8 rounded hover:bg-hover-light text-text-light-secondary hover:text-text-light-primary transition-colors" title="Undock toolbar">
+<span class="material-symbols-outlined">launch</span>
+</button>
+</div>
+<button @click="minimized = false" class="flex items-center justify-center h-9 w-9 bg-background-light border border-border-light rounded-lg shadow-md text-text-light-secondary hover:text-text-light-primary hover:bg-hover-light transition-all" title="Show tools" x-cloak="" x-show="minimized">
+<span class="material-symbols-outlined">construction</span>
+</button>
+</div>
+<div class="absolute top-4 right-4 z-10 flex items-center gap-2">
+<div class="flex items-center rounded-lg bg-background-light border border-border-light shadow-md">
+<button class="flex items-center justify-center w-9 h-9 text-text-light-primary hover:bg-hover-light rounded-l-md transition-colors" title="Save">
+<span class="material-symbols-outlined" style="font-size: 20px;">save</span>
+</button>
+<div class="h-5 w-px bg-border-light"></div>
+<button class="flex items-center justify-center w-8 h-9 text-text-light-secondary hover:text-text-light-primary hover:bg-hover-light rounded-r-md transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">expand_more</span>
+</button>
+</div>
+<div class="flex items-center rounded-lg bg-background-light border border-border-light shadow-md p-0.5 space-x-0.5">
+<button class="flex items-center justify-center h-8 w-8 rounded-md text-text-light-secondary hover:bg-hover-light hover:text-text-light-primary transition-colors" title="Autolayout">
+<span class="material-symbols-outlined" style="font-size: 20px;">auto_awesome_mosaic</span>
+</button>
+<button class="flex items-center justify-center h-8 w-8 rounded-md text-text-light-secondary hover:bg-hover-light hover:text-text-light-primary transition-colors" title="Visuals">
+<span class="material-symbols-outlined" style="font-size: 20px;">visibility</span>
+</button>
+<button @click="isPanelOpen = !isPanelOpen" class="relative flex items-center justify-center h-8 w-8 rounded-md text-text-light-secondary hover:bg-hover-light hover:text-text-light-primary transition-colors" title="Logs">
+<span class="material-symbols-outlined" style="font-size: 20px;">terminal</span>
+<span class="absolute top-1.5 right-1.5 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 text-white text-[8px] font-bold">3</span>
+</button>
+</div>
+</div>
+</main>
+<div class="w-full max-w-[280px] hidden lg:block"></div>
+<div class="absolute bottom-4 left-4 right-4 z-20 flex flex-col h-1/3 max-h-[400px] min-h-[200px] bg-surface-light border border-border-light rounded-xl shadow-2xl shadow-black/20" x-cloak="" x-data="{ activeTab: 'console' }" x-show="isPanelOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-end="opacity-100 translate-y-0" x-transition:enter-start="opacity-0 translate-y-full" x-transition:leave="transition ease-in duration-200" x-transition:leave-end="opacity-0 translate-y-full" x-transition:leave-start="opacity-100 translate-y-0">
+<div class="flex-shrink-0 flex items-center justify-between border-b border-border-light px-2">
+<div class="flex items-center">
+<div class="py-2 px-1">
+<button :class="{'bg-hover-light text-text-light-primary': activeTab === 'console', 'text-text-light-secondary hover:bg-hover-light hover:text-text-light-primary': activeTab !== 'console'}" @click="activeTab = 'console'" class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors">
+<span class="material-symbols-outlined !font-light" style="font-size: 16px;">terminal</span>
+                    Console
+                </button>
+</div>
+<div class="py-2 px-1">
+<button :class="{'bg-hover-light text-text-light-primary': activeTab === 'active', 'text-text-light-secondary hover:bg-hover-light hover:text-text-light-primary': activeTab !== 'active'}" @click="activeTab = 'active'" class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors">
+<span class="material-symbols-outlined !font-light" style="font-size: 16px;">sync</span>
+                    Active Services
+                </button>
+</div>
+<div class="py-2 px-1">
+<button :class="{'bg-hover-light text-text-light-primary': activeTab === 'all', 'text-text-light-secondary hover:bg-hover-light hover:text-text-light-primary': activeTab !== 'all'}" @click="activeTab = 'all'" class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors">
+<span class="material-symbols-outlined !font-light" style="font-size: 16px;">apps</span>
+                    All Services
+                </button>
+</div>
+</div>
+<div class="flex items-center gap-1 pr-2">
+<button class="w-7 h-7 flex items-center justify-center rounded-md text-text-light-secondary hover:bg-hover-light hover:text-text-light-primary transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">drag_handle</span>
+</button>
+<button @click="isPanelOpen = false" class="w-7 h-7 flex items-center justify-center rounded-md text-text-light-secondary hover:bg-hover-light hover:text-text-light-primary transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+</button>
+</div>
+</div>
+<div class="flex-grow p-4 overflow-y-auto bg-gray-50/50">
+<div x-show="activeTab === 'console'">
+<div class="space-y-2">
+<details class="group bg-white border border-border-light rounded-lg overflow-hidden">
+<summary class="flex cursor-pointer items-start gap-4 p-3 hover:bg-hover-light transition-colors">
+<span class="material-symbols-outlined text-text-light-secondary transition-transform duration-300 group-open:rotate-90" style="font-size: 20px;">chevron_right</span>
+<div class="flex-1">
+<p class="font-mono text-xs text-red-600">custom_component_missing</p>
+<p class="text-sm font-medium text-text-light-primary">Custom field is missing component.</p>
+</div>
+<span class="flex-shrink-0 text-xs font-medium bg-gray-100 text-gray-700 px-2 py-1 rounded-md">Node: CMS Features</span>
+</summary>
+<div class="border-t border-border-light bg-gray-50/70 p-4">
+<h3 class="text-xs font-semibold uppercase tracking-wider text-text-light-secondary mb-3">Details</h3>
+<div class="space-y-4">
+<div>
+<h4 class="text-sm font-medium text-text-light-primary mb-2">Scope</h4>
+<div class="flex flex-wrap items-center gap-2">
+<span class="inline-flex items-center whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-1 text-xs text-text-light-secondary">Tag: <span class="font-medium text-text-light-primary ml-1">Site Builder</span></span>
+<span class="inline-flex items-center whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-1 text-xs text-text-light-secondary">Field: <span class="font-medium text-text-light-primary ml-1">cms_features</span></span>
+<span class="inline-flex items-center whitespace-nowrap rounded-full bg-yellow-100 px-2.5 py-1 text-xs text-yellow-800">Severity: <span class="font-medium ml-1">Warning</span></span>
+</div>
+</div>
+</div>
+</div>
+</details>
+<details class="group bg-white border border-border-light rounded-lg overflow-hidden">
+<summary class="flex cursor-pointer items-start gap-4 p-3 hover:bg-hover-light transition-colors">
+<span class="material-symbols-outlined text-text-light-secondary transition-transform duration-300 group-open:rotate-90" style="font-size: 20px;">chevron_right</span>
+<div class="flex-1">
+<p class="font-mono text-xs text-red-600">service_config_invalid</p>
+<p class="text-sm font-medium text-text-light-primary">Service configuration has an invalid value.</p>
+</div>
+</summary>
+<div class="border-t border-border-light bg-gray-50/70 p-4">
+<h3 class="text-xs font-semibold uppercase tracking-wider text-text-light-secondary mb-3">Details</h3>
+<div class="space-y-4">
+<div>
+<h4 class="text-sm font-medium text-text-light-primary mb-2">Scope</h4>
+<div class="flex flex-wrap items-center gap-2">
+<span class="inline-flex items-center whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-1 text-xs text-text-light-secondary">Service: <span class="font-medium text-text-light-primary ml-1">Auth-01</span></span>
+<span class="inline-flex items-center whitespace-nowrap rounded-full bg-red-100 px-2.5 py-1 text-xs text-red-800">Severity: <span class="font-medium ml-1">Error</span></span>
+</div>
+</div>
+</div>
+</div>
+</details>
+<details class="group bg-white border border-border-light rounded-lg overflow-hidden" open="">
+<summary class="flex cursor-pointer items-start gap-4 p-3 hover:bg-hover-light transition-colors">
+<span class="material-symbols-outlined text-text-light-secondary transition-transform duration-300 group-open:rotate-90" style="font-size: 20px;">chevron_right</span>
+<div class="flex-1">
+<p class="font-mono text-xs text-red-600 truncate" title="api_rate_limit_exceeded_for_a_very_long_code_example">api_rate_limit_exceeded_for_a_very_long_code_example</p>
+<p class="text-sm font-medium text-text-light-primary">API rate limit exceeded. This is a longer message to demonstrate how the text wraps cleanly within the available space without causing any horizontal overflow, ensuring readability.</p>
+</div>
+<span class="flex-shrink-0 text-xs font-medium bg-gray-100 text-gray-700 px-2 py-1 rounded-md">Node: a1b2c3d4…</span>
+</summary>
+<div class="border-t border-border-light bg-gray-50/70 p-4">
+<h3 class="text-xs font-semibold uppercase tracking-wider text-text-light-secondary mb-3">Details</h3>
+<div class="space-y-4">
+<div>
+<h4 class="text-sm font-medium text-text-light-primary mb-2">Affected IDs</h4>
+<div class="flex flex-wrap items-center gap-2">
+<span class="inline-flex items-center whitespace-nowrap rounded-md bg-gray-200 px-2 py-0.5 text-xs font-mono text-gray-600">usr_a1b2c3d4</span>
+<span class="inline-flex items-center whitespace-nowrap rounded-md bg-gray-200 px-2 py-0.5 text-xs font-mono text-gray-600">usr_e5f6g7h8</span>
+<span class="inline-flex items-center whitespace-nowrap rounded-md bg-gray-200 px-2 py-0.5 text-xs font-mono text-gray-600">usr_i9j0k1l2</span>
+</div>
+</div>
+<div>
+<h4 class="text-sm font-medium text-text-light-primary mb-2">Scope</h4>
+<div class="flex flex-wrap items-center gap-2">
+<span class="inline-flex items-center whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-1 text-xs text-text-light-secondary">Tag: <span class="font-medium text-text-light-primary ml-1 truncate" title="long-descriptive-tag-name-for-builder">long-descriptive-tag-name-for-builder</span></span>
+<span class="inline-flex items-center whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-1 text-xs text-text-light-secondary">Field: <span class="font-medium text-text-light-primary ml-1">api_key</span></span>
+<span class="inline-flex items-center whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-1 text-xs text-text-light-secondary">Option: <span class="font-medium text-text-light-primary ml-1">standard_tier</span></span>
+<span class="inline-flex items-center whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-text-light-secondary">+5 more</span>
+</div>
+</div>
+</div>
+</div>
+</details>
+</div>
+</div>
+<div x-show="activeTab === 'active'">
+<p class="text-sm text-text-light-secondary">Currently active services will be displayed here.</p>
+</div>
+<div x-show="activeTab === 'all'">
+<p class="text-sm text-text-light-secondary">A list of all available services will be shown here.</p>
+</div>
+</div>
+</div>
+</div>
+<script defer="" src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<style>[x-cloak] { display: none !important; }</style>
 </body></html>

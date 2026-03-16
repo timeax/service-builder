@@ -5,15 +5,19 @@ import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { keyBy } from 'lodash';
 import { useMemo, useState } from 'react';
 import { AddIncludesPopover } from './AddIncludesPopover';
+import type { TriggerMappingCapability } from './node-capabilities.ts';
 
 interface ExcludesSectionProps {
     node: TagNode | FieldNode | OptionNode;
     mode: 'includes' | 'excludes';
+    capability?: TriggerMappingCapability;
 }
 
-export function IncExcludeSection({ node, mode }: ExcludesSectionProps) {
+export function IncExcludeSection({ node, mode, capability }: ExcludesSectionProps) {
     const canvas = useCanvas();
     const [open, setOpen] = useState(false);
+    const canEdit = capability?.canEdit ?? true;
+    const helperMessage = capability?.message;
 
     const fields = useMemo(() => keyBy(canvas.props.fields, 'id'), [canvas.props]);
 
@@ -46,24 +50,26 @@ export function IncExcludeSection({ node, mode }: ExcludesSectionProps) {
     }, [canvas.props.fields, node]);
 
     const name = mode.slice(0, -1) as 'include' | 'exclude';
-    console.log(node[mode]?.size);
     return (
         <Section>
             <Section.Header>
                 <Section.Title>{mode == 'includes' ? 'Includes' : 'Excludes'}</Section.Title>
                 <Section.Actions>
-                    <AddIncludesPopover
-                        onSelect={(e) => canvas.api.editor[name](node.id, e)}
-                        open={open}
-                        onOpenChange={setOpen}
-                        options={descendantOptions}
-                    />
+                    {canEdit ? (
+                        <AddIncludesPopover
+                            onSelect={(e) => canvas.api.editor[name](node.id, e)}
+                            open={open}
+                            onOpenChange={setOpen}
+                            options={descendantOptions}
+                        />
+                    ) : null}
                 </Section.Actions>
             </Section.Header>
             <Section.Content>
+                {helperMessage ? <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{helperMessage}</p> : null}
                 <RenderIf data={(node[mode]?.size ?? 0) > 0} emptyMessage={'None'}>
                     <IncludesList>
-                        {Array.from(node[mode] ?? []).map((id) => {
+                        {(Array.from(node[mode] ?? []) as string[]).map((id) => {
                             const field = fields[id] as any;
                             if (field) {
                                 return (
@@ -79,6 +85,7 @@ export function IncExcludeSection({ node, mode }: ExcludesSectionProps) {
                                                 title: 'Remove',
                                                 kind: 'remove',
                                                 onClick: () => canvas.api.editor.disconnect(name, node.id, id),
+                                                disabled: !canEdit,
                                             },
                                         ]}
                                     />

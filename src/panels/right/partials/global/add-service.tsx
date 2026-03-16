@@ -15,6 +15,9 @@ export interface AddServiceProps {
     data: FieldNode | TagNode | OptionNode;
     disabled?: boolean;
     disabledMessage?: string;
+    readOnly?: boolean;
+    readOnlyMessage?: string;
+    emptyMessage?: string | null;
 }
 
 type ServiceOption = {
@@ -24,27 +27,28 @@ type ServiceOption = {
     service: DgpServiceCapability;
 };
 
-export function AddService({ className, data, disabled, disabledMessage }: AddServiceProps) {
+export function AddService({ className, data, disabled, disabledMessage, readOnly, readOnlyMessage, emptyMessage }: AddServiceProps) {
     const ws = useWorkspace();
     const canvas = useCanvas();
     const services = useMemo(() => ws.services.data ?? {}, [ws.services.data]);
     const connectedService = data.raw.service_id != null ? (services[data.raw.service_id as keyof typeof services] as DgpServiceCapability | undefined) : undefined;
+    const isReadOnly = Boolean(disabled || readOnly);
+    const helperMessage = readOnlyMessage ?? disabledMessage;
 
     return (
         <Section className={className}>
             <Section.Header>
                 <Section.Title>Service</Section.Title>
                 <Section.Actions>
-                    {!disabled ? <AddServicePopover data={data} services={Object.values(services)} /> : null}
+                    {!isReadOnly ? <AddServicePopover data={data} services={Object.values(services)} /> : null}
                 </Section.Actions>
             </Section.Header>
 
             <Section.Content>
-                {disabled && disabledMessage && !connectedService ? <p className="text-xs text-slate-500 dark:text-slate-400">{disabledMessage}</p> : null}
-                <RenderIf data={connectedService} emptyMessage={disabled ? null : 'None'}>
+                {helperMessage ? <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{helperMessage}</p> : null}
+                <RenderIf data={connectedService} emptyMessage={isReadOnly ? (emptyMessage ?? null) : (emptyMessage ?? 'None')}>
                     {(service) => (
                         <>
-                            {disabled && disabledMessage ? <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{disabledMessage}</p> : null}
                             <IncludesItem
                                 title={service.name ?? `Service ${service.id}`}
                                 className="items-start!"
@@ -54,7 +58,7 @@ export function AddService({ className, data, disabled, disabledMessage }: AddSe
                                     </span>
                                 }
                                 actions={
-                                    !disabled && data.raw.service_id != null
+                                    !isReadOnly && data.raw.service_id != null
                                         ? [
                                               {
                                                   kind: 'remove',
@@ -68,7 +72,7 @@ export function AddService({ className, data, disabled, disabledMessage }: AddSe
                         </>
                     )}
                 </RenderIf>
-                {connectedService ? <ServiceSummary service={connectedService} nodeId={data.id} disabled={disabled} /> : null}
+                {connectedService ? <ServiceSummary service={connectedService} nodeId={data.id} disabled={isReadOnly} /> : null}
             </Section.Content>
         </Section>
     );

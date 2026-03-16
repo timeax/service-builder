@@ -4,10 +4,16 @@ import { Separator } from '@/components/ui/separator.tsx';
 import { Section } from '@/panels/right/components/sections.tsx';
 import { AddService } from '@/panels/right/partials/global/add-service.tsx';
 import type { FieldNode } from '@timeax/digital-service-engine/core';
+import { resolveInputDescriptor, useInputs } from '@timeax/digital-service-engine/react';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
+import { useMemo } from 'react';
+import { DescriptorSettings, getDescriptorUiKeys } from './components/descriptor-settings.tsx';
+import { mergeNodeMeta } from './components/meta.ts';
+import { getFieldPropertyCapabilities } from './components/node-capabilities.ts';
 import QuantitySection from './components/quantity-section.tsx';
 import UtilitySection from './components/utility-section.tsx';
+import ValidationSection from './components/validation-section.tsx';
 import { IncExcludeSection } from './components/Union';
 
 export interface FieldPropertiesProps {
@@ -15,10 +21,109 @@ export interface FieldPropertiesProps {
     node: FieldNode;
 }
 
+const fieldTypeOptions = [
+    { label: 'Text', value: 'text' },
+    { label: 'Textarea', value: 'textarea' },
+    { label: 'Number', value: 'number' },
+    { label: 'Select', value: 'select' },
+    { label: 'Radio', value: 'radio' },
+    { label: 'Checkbox', value: 'checkbox' },
+] as const;
+
+const getVariant = (node: FieldNode) => {
+    const variant = (node.raw.meta as Record<string, unknown> | undefined)?.variant;
+    return typeof variant === 'string' && variant.trim() ? variant.trim() : undefined;
+};
+
+const toLabel = (value: string) =>
+    value
+        .split(/[-_:]/g)
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+
+const pruneDescriptorDefaults = (
+    defaults: Record<string, unknown>,
+    previousDescriptorKeys: Set<string>,
+    nextDescriptorKeys: Set<string>,
+) => {
+    const nextDefaults = Object.fromEntries(
+        Object.entries(defaults).filter(([key]) => !previousDescriptorKeys.has(key) || nextDescriptorKeys.has(key)),
+    );
+
+    return Object.keys(nextDefaults).length ? nextDefaults : undefined;
+};
+
 export function FieldProperties({ className, node }: FieldPropertiesProps) {
     const canvas = useCanvas();
+    const { registry } = useInputs();
+    const capabilities = getFieldPropertyCapabilities(node);
     const defaults = node.raw.defaults ?? {};
     const options = node.raw.options ?? [];
+    const currentVariant = getVariant(node);
+
+    const descriptor = useMemo(() => resolveInputDescriptor(registry, node.raw.type as any, currentVariant as any), [currentVariant, node.raw.type, registry]);
+    const descriptorUi = descriptor?.ui ?? {};
+    const descriptorKeySet = useMemo(() => new Set(getDescriptorUiKeys(descriptorUi)), [descriptorUi]);
+
+    const variantEntries = useMemo(() => {
+        const entries = Array.from(registry._store.get(node.raw.type as any)?.entries() ?? []);
+        return entries
+            .filter(([variant]) => variant !== 'default')
+            .map(([variant]) => ({
+                label: toLabel(String(variant)),
+                value: String(variant),
+            }));
+    }, [node.raw.type, registry]);
+
+    const canEditVariant = variantEntries.length > 0 || Boolean(currentVariant);
+
+    const updateDefaults = (nextDefaults: Record<string, unknown> | undefined) => {
+        canvas.api.editor.updateField(node.id, { defaults: nextDefaults } as any);
+    };
+
+    const updateGenericDefault = (key: string, rawValue: unknown) => {
+        const nextDefaults = { ...defaults };
+        const nextValue = typeof rawValue === 'string' ? rawValue : undefined;
+
+        if (!nextValue) {
+            delete nextDefaults[key];
+        } else {
+            nextDefaults[key] = nextValue;
+        }
+
+        updateDefaults(Object.keys(nextDefaults).length ? nextDefaults : undefined);
+    };
+
+    const applyDescriptorTransition = (nextType: string, nextVariant: string | undefined) => {
+        const nextDescriptor = resolveInputDescriptor(registry, nextType as any, nextVariant as any);
+        const nextDescriptorKeys = new Set(getDescriptorUiKeys(nextDescriptor?.ui));
+        const nextDefaults = pruneDescriptorDefaults(defaults, descriptorKeySet, nextDescriptorKeys);
+        const nextMeta = mergeNodeMeta(node.raw.meta as Record<string, unknown> | undefined, {
+            variant: nextVariant,
+        });
+
+        canvas.api.editor.updateField(
+            node.id,
+            {
+                type: nextType as any,
+                defaults: nextDefaults,
+                meta: nextMeta,
+            } as any,
+        );
+    };
+
+    const handleTypeChange = (rawType: unknown) => {
+        const nextType = String(rawType ?? 'text');
+        const variantMap = registry._store.get(nextType as any);
+        const nextVariant = currentVariant && variantMap?.has(currentVariant as any) ? currentVariant : undefined;
+        applyDescriptorTransition(nextType, nextVariant);
+    };
+
+    const handleVariantChange = (rawVariant: unknown) => {
+        const nextVariant = String(rawVariant ?? 'default');
+        applyDescriptorTransition(node.raw.type, nextVariant === 'default' ? undefined : nextVariant);
+    };
 
     return (
         <div className={className}>
@@ -43,18 +148,18 @@ export function FieldProperties({ className, node }: FieldPropertiesProps) {
                                 variant="select"
                                 label="Type"
                                 value={node.raw.type}
-                                options={
-                                    [
-                                        { label: 'Text', value: 'text' },
-                                        { label: 'Textarea', value: 'textarea' },
-                                        { label: 'Number', value: 'number' },
-                                        { label: 'Select', value: 'select' },
-                                        { label: 'Radio', value: 'radio' },
-                                        { label: 'Checkbox', value: 'checkbox' },
-                                    ] as any
-                                }
-                                onChange={(e) => canvas.api.editor.updateField(node.id, { type: String(e.value ?? 'text') as any })}
+                                options={fieldTypeOptions as any}
+                                onChange={(e) => handleTypeChange(e.value)}
                             />
+                            {canEditVariant ? (
+                                <InputField
+                                    variant="select"
+                                    label="Input variant"
+                                    value={currentVariant ?? 'default'}
+                                    options={[{ label: 'Default', value: 'default' }, ...variantEntries] as any}
+                                    onChange={(e) => handleVariantChange(e.value)}
+                                />
+                            ) : null}
                             <InputField
                                 variant="toggle"
                                 label="Required"
@@ -64,9 +169,13 @@ export function FieldProperties({ className, node }: FieldPropertiesProps) {
                             <InputField
                                 variant="toggle"
                                 label="Button mode"
-                                value={Boolean((node.raw as any).button)}
+                                disabled={capabilities.buttonModeLocked}
+                                value={capabilities.isButton}
                                 onChange={(e) => canvas.api.editor.updateField(node.id, { button: Boolean(e.value) } as any)}
                             />
+                            {capabilities.buttonModeMessage ? (
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{capabilities.buttonModeMessage}</p>
+                            ) : null}
                         </div>
                     </Section.Content>
                 </Section>
@@ -83,31 +192,39 @@ export function FieldProperties({ className, node }: FieldPropertiesProps) {
                                 variant="text"
                                 label="Placeholder"
                                 value={(defaults.placeholder as string) ?? ''}
-                                onChange={(e) =>
-                                    canvas.api.editor.updateField(node.id, {
-                                        defaults: {
-                                            ...defaults,
-                                            placeholder: e.value,
-                                        },
-                                    })
-                                }
+                                onChange={(e) => updateGenericDefault('placeholder', e.value)}
                             />
                             <InputField
                                 variant="textarea"
                                 label="Help text"
                                 value={(defaults.helpText as string) ?? ''}
-                                onChange={(e) =>
-                                    canvas.api.editor.updateField(node.id, {
-                                        defaults: {
-                                            ...defaults,
-                                            helpText: e.value,
-                                        },
-                                    })
-                                }
+                                onChange={(e) => updateGenericDefault('helpText', e.value)}
                             />
                         </div>
                     </Section.Content>
                 </Section>
+                <Separator />
+
+                <Section>
+                    <Section.Header>
+                        <Section.Title>Input appearance and behavior</Section.Title>
+                    </Section.Header>
+                    <Section.Content>
+                        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+                            Descriptor-owned runtime props. The schema comes from the input registry and overrides are stored in field defaults.
+                        </p>
+                        {descriptor ? (
+                            <DescriptorSettings schema={descriptorUi} defaults={defaults} onChange={updateDefaults} />
+                        ) : (
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                No input descriptor was found for this field type{currentVariant ? ` / ${currentVariant}` : ''}.
+                            </p>
+                        )}
+                    </Section.Content>
+                </Section>
+                <Separator />
+
+                <ValidationSection node={node} />
                 <Separator />
 
                 <QuantitySection node={node} />
@@ -165,12 +282,24 @@ export function FieldProperties({ className, node }: FieldPropertiesProps) {
                     </>
                 ) : null}
 
-                <IncExcludeSection node={node} mode="includes" />
-
+                {capabilities.triggerMappings.canEdit ? (
+                    <>
+                        <IncExcludeSection node={node} mode="includes" capability={capabilities.triggerMappings} />
+                        <Separator />
+                        <IncExcludeSection node={node} mode="excludes" capability={capabilities.triggerMappings} />
+                    </>
+                ) : (
+                    <Section>
+                        <Section.Header>
+                            <Section.Title>Trigger mappings</Section.Title>
+                        </Section.Header>
+                        <Section.Content>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{capabilities.triggerMappings.message}</p>
+                        </Section.Content>
+                    </Section>
+                )}
                 <Separator />
-                <IncExcludeSection node={node} mode="excludes" />
-                <Separator />
-                <AddService data={node} />
+                <AddService data={node} readOnly={!capabilities.service.canEdit} readOnlyMessage={capabilities.service.message} />
             </div>
         </div>
     );
