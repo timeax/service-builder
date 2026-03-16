@@ -32,7 +32,7 @@ export type BottomConsolePanelState = {
     setHeight: (height: number) => void;
     shortcutLabel: string;
 };
-
+ 
 const PANEL_HEIGHT_KEY = 'service-builder.bottom-panel.height';
 const DEFAULT_HEIGHT = 300;
 const MIN_HEIGHT = 220;

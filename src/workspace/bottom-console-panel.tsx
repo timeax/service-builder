@@ -12,6 +12,7 @@ import { EmptyState, StatusDot } from '@/components/builder/index.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Panel } from '@/components/ui/panel.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { cn } from '@/lib/utils.ts';
 import { useCanvas, useWorkspace, type ErrorLog, type UseErrorsReturn, type ValidationRow } from '@timeax/digital-service-engine/workspace';
@@ -385,158 +386,166 @@ function ServicesSplitPane(props: ServicesSplitPaneProps) {
             : 'Try changing the search or relaxing the safe context filter to bring more services into view.';
 
     return (
-        <div className="grid min-h-[360px] gap-4 xl:grid-cols-[minmax(320px,0.95fr)_minmax(360px,1.15fr)]">
-            <section className="flex min-h-0 flex-col overflow-hidden rounded-[1.65rem] border border-slate-200/80 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-950/80">
-                <div className="space-y-3 border-b border-slate-100 px-4 py-4 dark:border-slate-800">
-                    <div className="flex items-center justify-between gap-3">
-                        <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                                {props.mode === 'active' ? 'Service bindings' : 'Searchable catalog'}
-                            </p>
+        <div className="min-h-[360px]">
+            <ResizablePanelGroup direction="horizontal" className="min-h-[360px]">
+                <ResizablePanel defaultSize={44} minSize={30}>
+                    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.65rem] border border-slate-200/80 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-950/80">
+                        <div className="space-y-3 border-b border-slate-100 px-4 py-4 dark:border-slate-800">
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                                        {props.mode === 'active' ? 'Service bindings' : 'Searchable catalog'}
+                                    </p>
+                                    <h4 className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-100">
+                                        {props.mode === 'active' ? 'Attached services' : 'All services'}
+                                    </h4>
+                                </div>
+                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                                    {props.rows.length}
+                                </span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                                <label className="relative min-w-[220px] flex-1">
+                                    <FiSearch className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        value={props.search}
+                                        onChange={(event) => props.onSearchChange(event.target.value)}
+                                        placeholder={props.mode === 'active' ? 'Search active services...' : 'Search by name, id, key, category...'}
+                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pr-3 pl-9 text-sm outline-none transition focus:border-blue-300 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:focus:border-blue-500/40"
+                                    />
+                                </label>
+
+                                {props.mode === 'all' ? (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={() => props.onHideActiveServicesChange?.(!props.hideActiveServices)}
+                                            className={cn(
+                                                'rounded-2xl border px-3 py-2 text-sm font-medium transition',
+                                                props.hideActiveServices
+                                                    ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200'
+                                                    : 'border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300',
+                                            )}
+                                        >
+                                            Hide active
+                                        </button>
+
+                                        <SafeContextFilter
+                                            open={props.filterOpen ?? false}
+                                            onOpenChange={props.onFilterOpenChange ?? (() => {})}
+                                            snapshot={props.draftSnapshot}
+                                            context={props.draftContext}
+                                            onContextChange={props.onDraftContextChange ?? (() => {})}
+                                            onApply={props.onApplyContext ?? (() => {})}
+                                            onReset={props.onResetContext ?? (() => {})}
+                                        />
+                                    </>
+                                ) : null}
+                            </div>
+
+                            {props.mode === 'all' && props.appliedSnapshot?.selectedTag ? (
+                                <div className="flex flex-wrap gap-2">
+                                    <FilterChip label={`Tag: ${props.appliedSnapshot.selectedTag.label}`} />
+                                    <FilterChip label={props.appliedSnapshot.state.strictSafety ? 'Strict safety on' : 'Strict safety off'} />
+                                    <FilterChip label={props.appliedSnapshot.state.enforcePolicies ? 'Policies enforced' : 'Policies relaxed'} />
+                                    <FilterChip label={`${props.appliedSnapshot.usedServiceIds.length} used service${props.appliedSnapshot.usedServiceIds.length === 1 ? '' : 's'} in context`} />
+                                </div>
+                            ) : null}
+                        </div>
+
+                        <ScrollArea className="min-h-0 flex-1">
+                            <div className="space-y-2 p-3">
+                                {props.rows.length === 0 ? (
+                                    <EmptyState title={emptyTitle} description={emptyDescription} />
+                                ) : (
+                                    props.rows.map((row) => (
+                                        <button
+                                            key={row.id}
+                                            type="button"
+                                            draggable={props.mode === 'all'}
+                                            onClick={() => props.onSelectRow(row.id)}
+                                            onDragStart={(event) => props.onRowDragStart?.(row.id, event)}
+                                            onDragEnd={props.onRowDragEnd}
+                                            className={cn(
+                                                'w-full rounded-2xl border px-4 py-3 text-left transition',
+                                                props.selectedRowId === row.id
+                                                    ? 'border-blue-300 bg-blue-50 shadow-sm dark:border-blue-500/40 dark:bg-blue-500/10'
+                                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-slate-700',
+                                            )}
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <StatusDot tone={row.statusTone} />
+                                                        <span className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{row.summary.name}</span>
+                                                    </div>
+                                                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                                                        <span>#{row.summary.id}</span>
+                                                        {row.summary.category ? <span>{row.summary.category}</span> : null}
+                                                        {row.summary.platformId ? <span>{row.summary.platformId}</span> : null}
+                                                    </div>
+                                                </div>
+                                                <span className={statusBadgeClassName(row.statusTone)}>{row.statusLabel}</span>
+                                            </div>
+
+                                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                                                    {row.summary.attachmentCount} node{row.summary.attachmentCount === 1 ? '' : 's'}
+                                                </span>
+                                                {row.summary.rate != null ? (
+                                                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                                                        Rate {row.summary.rate}
+                                                    </span>
+                                                ) : null}
+                                                {row.reasonLabels.slice(0, 2).map((reason) => (
+                                                    <span
+                                                        key={`${row.id}:${reason}`}
+                                                        className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] text-amber-700 dark:bg-amber-500/10 dark:text-amber-200"
+                                                    >
+                                                        {reason}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                        </ScrollArea>
+                    </section>
+                </ResizablePanel>
+
+                <ResizableHandle withHandle />
+
+                <ResizablePanel defaultSize={56} minSize={36}>
+                    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.65rem] border border-slate-200/80 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-950/80">
+                        <div className="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Service detail</p>
                             <h4 className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-100">
-                                {props.mode === 'active' ? 'Attached services' : 'All services'}
+                                {props.detailRow ? props.detailRow.summary.name : 'Select a service'}
                             </h4>
+                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                                {props.mode === 'active'
+                                    ? 'Highlight connected nodes, inspect usage, and jump back into the canvas.'
+                                    : 'Inspect compatibility, pricing, and bindings before assigning the service to a node.'}
+                            </p>
                         </div>
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-900 dark:text-slate-300">
-                            {props.rows.length}
-                        </span>
-                    </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                        <label className="relative min-w-[220px] flex-1">
-                            <FiSearch className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
-                            <input
-                                value={props.search}
-                                onChange={(event) => props.onSearchChange(event.target.value)}
-                                placeholder={props.mode === 'active' ? 'Search active services...' : 'Search by name, id, key, category...'}
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pr-3 pl-9 text-sm outline-none transition focus:border-blue-300 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:focus:border-blue-500/40"
-                            />
-                        </label>
-
-                        {props.mode === 'all' ? (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={() => props.onHideActiveServicesChange?.(!props.hideActiveServices)}
-                                    className={cn(
-                                        'rounded-2xl border px-3 py-2 text-sm font-medium transition',
-                                        props.hideActiveServices
-                                            ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200'
-                                            : 'border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300',
-                                    )}
-                                >
-                                    Hide active
-                                </button>
-
-                                <SafeContextFilter
-                                    open={props.filterOpen ?? false}
-                                    onOpenChange={props.onFilterOpenChange ?? (() => {})}
-                                    snapshot={props.draftSnapshot}
-                                    context={props.draftContext}
-                                    onContextChange={props.onDraftContextChange ?? (() => {})}
-                                    onApply={props.onApplyContext ?? (() => {})}
-                                    onReset={props.onResetContext ?? (() => {})}
-                                />
-                            </>
-                        ) : null}
-                    </div>
-
-                    {props.mode === 'all' && props.appliedSnapshot?.selectedTag ? (
-                        <div className="flex flex-wrap gap-2">
-                            <FilterChip label={`Tag: ${props.appliedSnapshot.selectedTag.label}`} />
-                            <FilterChip label={props.appliedSnapshot.state.strictSafety ? 'Strict safety on' : 'Strict safety off'} />
-                            <FilterChip label={props.appliedSnapshot.state.enforcePolicies ? 'Policies enforced' : 'Policies relaxed'} />
-                            <FilterChip label={`${props.appliedSnapshot.usedServiceIds.length} used service${props.appliedSnapshot.usedServiceIds.length === 1 ? '' : 's'} in context`} />
-                        </div>
-                    ) : null}
-                </div>
-
-                <ScrollArea className="min-h-0 flex-1">
-                    <div className="space-y-2 p-3">
-                        {props.rows.length === 0 ? (
-                            <EmptyState title={emptyTitle} description={emptyDescription} />
-                        ) : (
-                            props.rows.map((row) => (
-                                <button
-                                    key={row.id}
-                                    type="button"
-                                    draggable={props.mode === 'all'}
-                                    onClick={() => props.onSelectRow(row.id)}
-                                    onDragStart={(event) => props.onRowDragStart?.(row.id, event)}
-                                    onDragEnd={props.onRowDragEnd}
-                                    className={cn(
-                                        'w-full rounded-2xl border px-4 py-3 text-left transition',
-                                        props.selectedRowId === row.id
-                                            ? 'border-blue-300 bg-blue-50 shadow-sm dark:border-blue-500/40 dark:bg-blue-500/10'
-                                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-slate-700',
-                                    )}
-                                >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <StatusDot tone={row.statusTone} />
-                                                <span className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{row.summary.name}</span>
-                                            </div>
-                                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                                                <span>#{row.summary.id}</span>
-                                                {row.summary.category ? <span>{row.summary.category}</span> : null}
-                                                {row.summary.platformId ? <span>{row.summary.platformId}</span> : null}
-                                            </div>
-                                        </div>
-                                        <span className={statusBadgeClassName(row.statusTone)}>{row.statusLabel}</span>
-                                    </div>
-
-                                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-600 dark:bg-slate-900 dark:text-slate-300">
-                                            {row.summary.attachmentCount} node{row.summary.attachmentCount === 1 ? '' : 's'}
-                                        </span>
-                                        {row.summary.rate != null ? (
-                                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-600 dark:bg-slate-900 dark:text-slate-300">
-                                                Rate {row.summary.rate}
-                                            </span>
-                                        ) : null}
-                                        {row.reasonLabels.slice(0, 2).map((reason) => (
-                                            <span
-                                                key={`${row.id}:${reason}`}
-                                                className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] text-amber-700 dark:bg-amber-500/10 dark:text-amber-200"
-                                            >
-                                                {reason}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </button>
-                            ))
-                        )}
-                    </div>
-                </ScrollArea>
-            </section>
-
-            <section className="flex min-h-0 flex-col overflow-hidden rounded-[1.65rem] border border-slate-200/80 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-950/80">
-                <div className="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Service detail</p>
-                    <h4 className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-100">
-                        {props.detailRow ? props.detailRow.summary.name : 'Select a service'}
-                    </h4>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        {props.mode === 'active'
-                            ? 'Highlight connected nodes, inspect usage, and jump back into the canvas.'
-                            : 'Inspect compatibility, pricing, and bindings before assigning the service to a node.'}
-                    </p>
-                </div>
-
-                <ScrollArea className="min-h-0 flex-1">
-                    <div className="p-5">
-                        {props.detailRow ? (
-                            <ServiceDetailCard mode={props.mode} row={props.detailRow} snapshot={props.appliedSnapshot ?? null} onNodeClick={props.onNodeClick} />
-                        ) : (
-                            <EmptyState
-                                title="No service selected"
-                                description={props.mode === 'active' ? 'Choose a connected service from the list to see its bindings.' : 'Pick a service to inspect how it fits the active safe context.'}
-                            />
-                        )}
-                    </div>
-                </ScrollArea>
-            </section>
+                        <ScrollArea className="min-h-0 flex-1">
+                            <div className="p-5">
+                                {props.detailRow ? (
+                                    <ServiceDetailCard mode={props.mode} row={props.detailRow} snapshot={props.appliedSnapshot ?? null} onNodeClick={props.onNodeClick} />
+                                ) : (
+                                    <EmptyState
+                                        title="No service selected"
+                                        description={props.mode === 'active' ? 'Choose a connected service from the list to see its bindings.' : 'Pick a service to inspect how it fits the active safe context.'}
+                                    />
+                                )}
+                            </div>
+                        </ScrollArea>
+                    </section>
+                </ResizablePanel>
+            </ResizablePanelGroup>
         </div>
     );
 }
