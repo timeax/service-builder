@@ -1,5 +1,5 @@
 import { formatEstimate } from '@/builder/view-models.tsx';
-import type { DgpServiceCapability } from '@timeax/digital-service-engine/schema';
+import type { DgpServiceCapability, Field, ServiceProps, Tag } from '@timeax/digital-service-engine/schema';
 import type { UseCanvasReturn, WorkspaceAPI } from '@timeax/digital-service-engine/workspace';
 import { useEffect, useEffectEvent, useMemo, useState } from 'react';
 
@@ -32,7 +32,7 @@ export type BottomConsolePanelState = {
     setHeight: (height: number) => void;
     shortcutLabel: string;
 };
- 
+
 const PANEL_HEIGHT_KEY = 'service-builder.bottom-panel.height';
 const DEFAULT_HEIGHT = 300;
 const MIN_HEIGHT = 220;
@@ -43,19 +43,17 @@ export function buildServiceSummaries(canvas: UseCanvasReturn, ws: WorkspaceAPI)
     allServices: BuilderServiceSummary[];
 } {
     const services = (ws.services.data ?? {}) as Record<string, DgpServiceCapability>;
+    const serviceProps = canvas.api.getServiceProps();
+    const nodeMap = buildServiceNodeMap(serviceProps);
     const usage = new Map<string, { labels: string[]; ids: string[]; active: boolean }>();
     const selected = new Set(canvas.selectionInfo.ids as string[]);
     if (canvas.activeId) selected.add(canvas.activeId);
 
-    for (const graphNode of canvas.graph.nodes) {
-        const node = canvas.selector.getNode(graphNode.id);
-        if (!hasBuilderNodeShape(node)) continue;
-        const serviceId = (node.raw as { service_id?: number | string }).service_id;
-        if (serviceId == null) continue;
-
-        const key = String(serviceId);
+    for (const node of nodeMap.values()) {
+        if (node.serviceId == null) continue;
+        const key = String(node.serviceId);
         const current = usage.get(key) ?? { labels: [], ids: [], active: false };
-        current.labels.push(node.raw.label);
+        current.labels.push(node.label);
         current.ids.push(node.id);
         current.active = current.active || selected.has(node.id);
         usage.set(key, current);
@@ -133,21 +131,13 @@ export function useBottomConsolePanel(): BottomConsolePanelState {
     );
 }
 
-function hasBuilderNodeShape(node: unknown): node is {
+type ServiceNodeDescriptor = {
     id: string;
-    kind: string;
-    raw: {
-        label: string;
-        service_id?: number | string;
-        type?: string;
-        required?: boolean;
-        options?: Array<{ service_id?: number | string }>;
-        validation?: unknown[];
-    };
-    field?: () => { raw: { label: string } };
-} {
-    return Boolean(node && typeof node === 'object' && 'id' in node && 'kind' in node && 'raw' in node);
-}
+    kind: 'tag' | 'field' | 'option';
+    label: string;
+    serviceId?: number | string;
+    parentFieldLabel?: string;
+};
 
 function toServiceSummary(service: DgpServiceCapability, usage?: { labels: string[]; ids: string[]; active: boolean }): BuilderServiceSummary {
     return {
@@ -171,6 +161,48 @@ function toServiceSummary(service: DgpServiceCapability, usage?: { labels: strin
 
 function compareServices(a: BuilderServiceSummary, b: BuilderServiceSummary) {
     return Number(b.active) - Number(a.active) || b.attachmentCount - a.attachmentCount || a.name.localeCompare(b.name);
+}
+
+function buildServiceNodeMap(props?: ServiceProps | null) {
+    const nodes = new Map<string, ServiceNodeDescriptor>();
+    if (!props) return nodes;
+
+    for (const tag of props.filters ?? []) {
+        nodes.set(tag.id, toTagDescriptor(tag));
+    }
+
+    for (const field of props.fields ?? []) {
+        nodes.set(field.id, toFieldDescriptor(field));
+        for (const option of field.options ?? []) {
+            nodes.set(option.id, {
+                id: option.id,
+                kind: 'option',
+                label: option.label,
+                serviceId: option.service_id,
+                parentFieldLabel: field.label,
+            });
+        }
+    }
+
+    return nodes;
+}
+
+function toTagDescriptor(tag: Tag): ServiceNodeDescriptor {
+    return {
+        id: tag.id,
+        kind: 'tag',
+        label: tag.label,
+        serviceId: tag.service_id,
+    };
+}
+
+function toFieldDescriptor(field: Field): ServiceNodeDescriptor {
+    return {
+        id: field.id,
+        kind: 'field',
+        label: field.label,
+        serviceId: field.button ? field.service_id : undefined,
+    };
 }
 
 function clampHeight(height: number) {

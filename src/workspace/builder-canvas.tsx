@@ -5,7 +5,7 @@ import {
     NodeCard,
     NodePill,
     StatusDot,
-    ToolbarGroup,
+    ToolbarGroup
 } from '@/components/builder/index.tsx';
 import { buildServiceSummaries, useBottomConsolePanel } from '@/builder/bottom-panel.ts';
 import { buildCanvasNodeViewModels, getServiceDetails } from '@/builder/view-models.tsx';
@@ -75,7 +75,7 @@ export default function BuilderCanvas() {
 
     const nodes = useMemo(() => buildCanvasNodeViewModels(canvas, ws.comments.threads.data ?? []), [canvas.graph, canvas.activeId, canvas.selection, ws.comments.threads.data]);
     const freeThreads = (ws.comments.threads.data ?? []).filter((thread) => thread.anchor?.type === 'free');
-    const serviceSummary = useMemo(() => buildServiceSummaries(canvas, ws), [canvas.graph, canvas.selectionInfo, canvas.activeId, ws.services.data]);
+    const serviceSummary = useMemo(() => buildServiceSummaries(canvas, ws), [canvas.props, canvas.selectionInfo, canvas.activeId, ws.services.data]);
 
     const stats = {
         tags: canvas.layers.tags.length,
@@ -92,7 +92,7 @@ export default function BuilderCanvas() {
 
     if (!nodes.length) {
         return (
-            <div className="relative flex min-h-0 flex-1 overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(19,91,236,0.08),_transparent_35%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] dark:bg-[radial-gradient(circle_at_top,_rgba(19,91,236,0.12),_transparent_35%),linear-gradient(180deg,#0f172a_0%,#020617_100%)]">
+            <div className="relative flex min-h-0 flex-1 overflow-hidden bg-[radial-gradient(circle_at_top,rgba(19,91,236,0.08),transparent_35%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] dark:bg-[radial-gradient(circle_at_top,rgba(19,91,236,0.12),transparent_35%),linear-gradient(180deg,#0f172a_0%,#020617_100%)]">
                 <div className="m-auto w-full max-w-xl px-6">
                     <EmptyState
                         title="Your service map is ready for components"
@@ -104,8 +104,8 @@ export default function BuilderCanvas() {
     }
 
     return (
-        <div className="relative min-h-0 flex-1 overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(19,91,236,0.08),_transparent_35%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] dark:bg-[radial-gradient(circle_at_top,_rgba(19,91,236,0.12),_transparent_35%),linear-gradient(180deg,#0f172a_0%,#020617_100%)]">
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.13)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.13)_1px,transparent_1px)] bg-[size:32px_32px]" />
+        <div className="relative min-h-0 flex-1 overflow-hidden bg-[radial-gradient(circle_at_top,rgba(19,91,236,0.08),transparent_35%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] dark:bg-[radial-gradient(circle_at_top,rgba(19,91,236,0.12),transparent_35%),linear-gradient(180deg,#0f172a_0%,#020617_100%)]">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.13)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.13)_1px,transparent_1px)] bg-size-[32px_32px]" />
 
             <div className="absolute top-4 left-1/2 z-20 -translate-x-1/2">
                 <ToolbarGroup>
@@ -172,7 +172,7 @@ export default function BuilderCanvas() {
             </div>
 
             <div className="relative h-full min-h-0 overflow-auto px-8 pt-20 pb-8">
-                <div className="relative mx-auto min-h-[900px] min-w-[960px]">
+                <div className="relative mx-auto min-h-225 min-w-240">
                     {nodes.map((node) => (
                         <div
                             key={node.nodeId}
@@ -330,8 +330,7 @@ function canAssignService(canvas: ReturnType<typeof useCanvas>, nodeId: string) 
 
 function getNodeServiceId(node: unknown) {
     if (node && typeof node === 'object' && 'raw' in node && node.raw && typeof node.raw === 'object' && 'service_id' in node.raw) {
-        const value = (node.raw as { service_id?: number | string }).service_id;
-        return value;
+        return (node.raw as { service_id?: number | string }).service_id;
     }
     return undefined;
 }

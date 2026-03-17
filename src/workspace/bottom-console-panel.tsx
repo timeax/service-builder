@@ -14,10 +14,11 @@ import { Panel } from '@/components/ui/panel.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { cn } from '@/lib/utils.ts';
 import { useCanvas, useWorkspace, type ErrorLog, type UseErrorsReturn, type ValidationRow } from '@timeax/digital-service-engine/workspace';
 import { startTransition, type DragEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { FiAlertCircle, FiFilter, FiInfo, FiLoader, FiSearch, FiTerminal, FiTrash2, FiX } from 'react-icons/fi';
+import { FiAlertCircle, FiChevronRight, FiFilter, FiInfo, FiLoader, FiSearch, FiTerminal, FiTrash2, FiX } from 'react-icons/fi';
 import { LuGripHorizontal, LuLayers3 } from 'react-icons/lu';
 import { MdOutlineSync } from 'react-icons/md';
 
@@ -132,14 +133,16 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
             canvas.api.setHighlighted(desiredIds);
             lastHighlightedIdsRef.current = [...desiredIds];
         }
+    }, [activeRows, canvas.api, controller.activeTab, controller.isOpen, selectedActiveServiceId]);
 
+    useEffect(() => {
         return () => {
-            if (lastHighlightedIdsRef.current.length > 0) {
+            if (lastHighlightedIdsRef.current.length) {
                 canvas.api.setHighlighted([]);
                 lastHighlightedIdsRef.current = [];
             }
         };
-    }, [activeRows, canvas.api, controller.activeTab, controller.isOpen, selectedActiveServiceId]);
+    }, [canvas.api]);
 
     const tabs: Array<{ id: BottomPanelTab; label: string; icon: ReactNode; count?: number }> = [
         { id: 'console', label: 'Console', icon: <FiTerminal />, count: errors.merged.counts.total },
@@ -386,11 +389,11 @@ function ServicesSplitPane(props: ServicesSplitPaneProps) {
             : 'Try changing the search or relaxing the safe context filter to bring more services into view.';
 
     return (
-        <div className="min-h-[360px]">
-            <ResizablePanelGroup direction="horizontal" className="min-h-[360px]">
+        <div className="min-h-90">
+            <ResizablePanelGroup direction="horizontal" className="min-h-90">
                 <ResizablePanel defaultSize={44} minSize={30}>
-                    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.65rem] border border-slate-200/80 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-950/80">
-                        <div className="space-y-3 border-b border-slate-100 px-4 py-4 dark:border-slate-800">
+                    <section className="flex h-full min-h-0 flex-col overflow-hidden">
+                        <div className="space-y-3 border-b pr-4 border-slate-100 dark:border-slate-800">
                             <div className="flex items-center justify-between gap-3">
                                 <div>
                                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
@@ -406,7 +409,7 @@ function ServicesSplitPane(props: ServicesSplitPaneProps) {
                             </div>
 
                             <div className="flex flex-wrap items-center gap-2">
-                                <label className="relative min-w-[220px] flex-1">
+                                <label className="relative min-w-55 flex-1">
                                     <FiSearch className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
                                     <input
                                         value={props.search}
@@ -455,7 +458,7 @@ function ServicesSplitPane(props: ServicesSplitPaneProps) {
                         </div>
 
                         <ScrollArea className="min-h-0 flex-1">
-                            <div className="space-y-2 p-3">
+                            <div className="space-y-2 p-3 pl-0">
                                 {props.rows.length === 0 ? (
                                     <EmptyState title={emptyTitle} description={emptyDescription} />
                                 ) : (
@@ -518,8 +521,8 @@ function ServicesSplitPane(props: ServicesSplitPaneProps) {
                 <ResizableHandle withHandle />
 
                 <ResizablePanel defaultSize={56} minSize={36}>
-                    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.65rem] border border-slate-200/80 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-950/80">
-                        <div className="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+                    <section className="flex h-full min-h-0 flex-col overflow-hidden">
+                        <div className="border-b border-slate-100 px-4 dark:border-slate-800">
                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Service detail</p>
                             <h4 className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-100">
                                 {props.detailRow ? props.detailRow.summary.name : 'Select a service'}
@@ -567,6 +570,27 @@ function SafeContextFilter({
     onApply: () => void;
     onReset: () => void;
 }) {
+    const [selectionMode, setSelectionMode] = useState<'all' | 'any'>('all');
+    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+    useEffect(() => {
+        const nextGroups = snapshot?.buttonGroups ?? [];
+        setExpandedGroups((current) => {
+            const next: Record<string, boolean> = {};
+            let changed = false;
+
+            nextGroups.forEach((group, index) => {
+                const hasSelectedOption = group.options.some((option) => context?.selectedButtons.includes(option.id));
+                const fallback = hasSelectedOption || index === 0;
+                next[group.id] = current[group.id] ?? fallback;
+                if (next[group.id] !== current[group.id]) changed = true;
+            });
+
+            if (Object.keys(current).length !== nextGroups.length) changed = true;
+            return changed ? next : current;
+        });
+    }, [context?.selectedButtons, snapshot?.buttonGroups]);
+
     return (
         <Popover open={open} onOpenChange={onOpenChange}>
             <PopoverTrigger asChild>
@@ -583,138 +607,181 @@ function SafeContextFilter({
                     Safe context filter
                 </button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-[420px] rounded-[1.5rem] border-slate-200 bg-white/95 p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-950/95">
-                <div className="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Safe context filter</p>
-                    <h4 className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-100">Visible-group sandbox</h4>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        Pick one tag and the visible buttons that define the service-safe context.
-                    </p>
+            <PopoverContent
+                align="end"
+                sideOffset={8}
+                avoidCollisions
+                collisionPadding={16}
+                className="w-96 min-w-80 max-w-[min(24rem,var(--radix-popover-content-available-width))] rounded-xl border border-slate-200 bg-white p-0 shadow-2xl shadow-black/20 dark:border-slate-800 dark:bg-slate-950"
+            >
+                <div className="border-b border-slate-200 px-4 py-4 dark:border-slate-800">
+                    <h3 className="text-base font-semibold leading-6 text-slate-900 dark:text-slate-100">Safe Context Filter</h3>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Define the evaluation context for services.</p>
                 </div>
 
-                <ScrollArea className="max-h-[420px]">
-                    <div className="space-y-5 px-5 py-4">
-                        <section className="space-y-3">
-                            <div>
-                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Tag context</p>
-                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Tags are single-select so the visible group stays deterministic.</p>
-                            </div>
-                            <div className="space-y-2">
+                <ScrollArea className="max-h-[min(26rem,var(--radix-popover-content-available-height))]">
+                    <div className="space-y-5 p-4">
+                        <section>
+                            <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Tags</h4>
+                            <div className="mt-3 space-y-2">
                                 {(snapshot?.tags ?? []).map((tag) => {
                                     const selected = (context?.selectedTagId ?? '') === tag.id;
                                     return (
-                                        <button
+                                        <label
                                             key={tag.id}
-                                            type="button"
-                                            onClick={() =>
-                                                onContextChange({
-                                                    ...(context ?? createDefaultServiceContext()),
-                                                    selectedTagId: tag.id,
-                                                    selectedButtons: [],
-                                                })
-                                            }
-                                            className={cn(
-                                                'w-full rounded-2xl border px-4 py-3 text-left transition',
-                                                selected
-                                                    ? 'border-blue-300 bg-blue-50 dark:border-blue-500/40 dark:bg-blue-500/10'
-                                                    : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950',
-                                            )}
+                                            className="flex cursor-pointer items-start gap-3 text-sm text-slate-900 dark:text-slate-100"
                                         >
-                                            <div className="flex items-start gap-3">
-                                                <div className={cn('mt-1 h-3 w-3 rounded-full border-2', selected ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-950')} />
-                                                <div className="min-w-0">
-                                                    <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{tag.label}</div>
-                                                    {tag.description ? <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{tag.description}</div> : null}
-                                                </div>
-                                            </div>
-                                        </button>
+                                            <input
+                                                type="radio"
+                                                name="safe-context-tag"
+                                                checked={selected}
+                                                onChange={() =>
+                                                    onContextChange({
+                                                        ...(context ?? createDefaultServiceContext()),
+                                                        selectedTagId: tag.id,
+                                                        selectedButtons: [],
+                                                    })
+                                                }
+                                                className="mt-0.5 h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 dark:border-slate-700 dark:bg-slate-950"
+                                            />
+                                            <span className="min-w-0">
+                                                <span className={cn('block', selected ? 'font-medium' : 'font-normal')}>{tag.label}</span>
+                                                {tag.description ? <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{tag.description}</span> : null}
+                                            </span>
+                                        </label>
                                     );
                                 })}
                             </div>
+                            <div className="mt-4 flex items-center rounded-lg bg-slate-100 p-1 text-sm dark:bg-slate-900">
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectionMode('all')}
+                                    className={cn(
+                                        'flex-1 rounded-md px-2 py-1 transition-all duration-200',
+                                        selectionMode === 'all'
+                                            ? 'bg-white font-medium text-slate-800 shadow-sm dark:bg-slate-950 dark:text-slate-100'
+                                            : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-slate-800/70',
+                                    )}
+                                >
+                                    All selected
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectionMode('any')}
+                                    className={cn(
+                                        'flex-1 rounded-md px-2 py-1 transition-all duration-200',
+                                        selectionMode === 'any'
+                                            ? 'bg-white font-medium text-slate-800 shadow-sm dark:bg-slate-950 dark:text-slate-100'
+                                            : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-slate-800/70',
+                                    )}
+                                >
+                                    Any selected
+                                </button>
+                            </div>
                         </section>
 
-                        <section className="space-y-3">
-                            <div>
-                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Visible buttons</p>
-                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">These options are recomputed from the selected tag&apos;s current visible group.</p>
-                            </div>
+                        <PopoverSectionDivider />
+
+                        <section>
+                            <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Buttons (Context Options)</h4>
 
                             {snapshot?.buttonGroups.length ? (
-                                <div className="space-y-3">
+                                <div className="mt-3 space-y-3">
                                     {snapshot.buttonGroups.map((group) => (
-                                        <div key={group.id} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/40">
-                                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{group.label}</p>
-                                            <div className="mt-2 flex flex-wrap gap-2">
-                                                {group.options.map((option) => {
-                                                    const selected = context?.selectedButtons.includes(option.id) ?? false;
-                                                    return (
-                                                        <button
-                                                            key={option.id}
-                                                            type="button"
-                                                            onClick={() =>
-                                                                onContextChange({
-                                                                    ...(context ?? createDefaultServiceContext()),
-                                                                    selectedButtons: selected
-                                                                        ? (context?.selectedButtons ?? []).filter((id) => id !== option.id)
-                                                                        : [...(context?.selectedButtons ?? []), option.id],
-                                                                })
-                                                            }
-                                                            className={cn(
-                                                                'rounded-full border px-3 py-1.5 text-xs font-medium transition',
-                                                                selected
-                                                                    ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-200'
-                                                                    : 'border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300',
-                                                            )}
-                                                        >
-                                                            {option.label}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
+                                        <div key={group.id}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setExpandedGroups((current) => ({ ...current, [group.id]: !current[group.id] }))}
+                                                className="flex w-full items-center gap-2 text-left text-sm font-medium text-slate-900 dark:text-slate-100"
+                                            >
+                                                <FiChevronRight className={cn('text-slate-400 transition-transform duration-200', expandedGroups[group.id] ? 'rotate-90' : 'rotate-0')} />
+                                                <span>{group.label}</span>
+                                            </button>
+                                            {expandedGroups[group.id] ? (
+                                                <div className="space-y-2 pt-2 pl-7">
+                                                    {group.options.map((option) => {
+                                                        const selected = context?.selectedButtons.includes(option.id) ?? false;
+                                                        return (
+                                                            <label key={option.id} className="flex cursor-pointer items-start gap-3 text-sm text-slate-900 dark:text-slate-100">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selected}
+                                                                    onChange={() =>
+                                                                        onContextChange({
+                                                                            ...(context ?? createDefaultServiceContext()),
+                                                                            selectedButtons: selected
+                                                                                ? (context?.selectedButtons ?? []).filter((id) => id !== option.id)
+                                                                                : [...(context?.selectedButtons ?? []), option.id],
+                                                                        })
+                                                                    }
+                                                                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 dark:border-slate-700 dark:bg-slate-950"
+                                                                />
+                                                                <span className="min-w-0">
+                                                                    <span className="block">{option.label}</span>
+                                                                    {option.description ? <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{option.description}</span> : null}
+                                                                </span>
+                                                            </label>
+                                                        );
+                                                    })}
+                                                </div>
+                                            ) : null}
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                <div className="mt-3 rounded-lg border border-dashed border-slate-300 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
                                     No button triggers are visible for the selected tag yet.
                                 </div>
                             )}
                         </section>
 
-                        <section className="grid gap-3 sm:grid-cols-2">
-                            <ToggleCard
-                                title="Strict safety"
-                                description="Only surface services that fit this context cleanly."
-                                enabled={context?.strictSafety ?? true}
-                                onToggle={() =>
-                                    onContextChange({
-                                        ...(context ?? createDefaultServiceContext()),
-                                        strictSafety: !(context?.strictSafety ?? true),
-                                    })
-                                }
-                            />
-                            <ToggleCard
-                                title="Enforce policies"
-                                description="Keep dynamic service policies active while filtering."
-                                enabled={context?.enforcePolicies ?? true}
-                                onToggle={() =>
-                                    onContextChange({
-                                        ...(context ?? createDefaultServiceContext()),
-                                        enforcePolicies: !(context?.enforcePolicies ?? true),
-                                    })
-                                }
-                            />
+                        <PopoverSectionDivider />
+
+                        <section>
+                            <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Safety Toggles</h4>
+                            <div className="mt-3 space-y-2">
+                                <SafetyToggleRow
+                                    title="Strict safety"
+                                    checked={context?.strictSafety ?? true}
+                                    tooltip="Omit services causing rate mismatches or utility services lacking a visible base."
+                                    onChange={() =>
+                                        onContextChange({
+                                            ...(context ?? createDefaultServiceContext()),
+                                            strictSafety: !(context?.strictSafety ?? true),
+                                        })
+                                    }
+                                />
+                                <SafetyToggleRow
+                                    title="Enforce policies"
+                                    checked={context?.enforcePolicies ?? true}
+                                    tooltip="Omit services implicated by policy violations."
+                                    onChange={() =>
+                                        onContextChange({
+                                            ...(context ?? createDefaultServiceContext()),
+                                            enforcePolicies: !(context?.enforcePolicies ?? true),
+                                        })
+                                    }
+                                />
+                            </div>
                         </section>
                     </div>
                 </ScrollArea>
 
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-4 dark:border-slate-800">
-                    <Button type="button" variant="ghost" size="sm" onClick={onReset} className="rounded-xl">
+                <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/40">
+                    <button
+                        type="button"
+                        onClick={onReset}
+                        className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
+                    >
                         Reset
-                    </Button>
-                    <Button type="button" size="sm" onClick={onApply} className="rounded-xl">
-                        Apply context
-                    </Button>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onApply}
+                        className="rounded-lg border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+                    >
+                        Apply
+                    </button>
                 </div>
             </PopoverContent>
         </Popover>
@@ -837,26 +904,33 @@ function ServiceDetailCard({
     );
 }
 
-function ToggleCard({ title, description, enabled, onToggle }: { title: string; description: string; enabled: boolean; onToggle: () => void }) {
+function PopoverSectionDivider() {
+    return <div className="h-px bg-slate-200 dark:bg-slate-800" />;
+}
+
+function SafetyToggleRow({ title, checked, tooltip, onChange }: { title: string; checked: boolean; tooltip: string; onChange: () => void }) {
     return (
-        <button
-            type="button"
-            onClick={onToggle}
-            className={cn(
-                'rounded-2xl border px-4 py-3 text-left transition',
-                enabled
-                    ? 'border-blue-200 bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/10'
-                    : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950',
-            )}
-        >
-            <div className="flex items-center justify-between gap-3">
-                <div>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{description}</p>
-                </div>
-                <div className={cn('h-2.5 w-2.5 rounded-full', enabled ? 'bg-emerald-500' : 'bg-slate-400')} />
-            </div>
-        </button>
+        <div className="flex items-center justify-between gap-3">
+            <label className="flex cursor-pointer items-center gap-3 text-sm text-slate-900 dark:text-slate-100">
+                <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={onChange}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 dark:border-slate-700 dark:bg-slate-950"
+                />
+                {title}
+            </label>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <button type="button" className="text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">
+                        <FiInfo className="h-4 w-4" />
+                    </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={8} className="max-w-60 rounded-md bg-slate-800 px-3 py-2 text-xs font-medium text-white dark:bg-slate-100 dark:text-slate-950">
+                    {tooltip}
+                </TooltipContent>
+            </Tooltip>
+        </div>
     );
 }
 
