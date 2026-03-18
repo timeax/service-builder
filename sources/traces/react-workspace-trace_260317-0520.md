@@ -12,51 +12,51 @@
 - [src/react/workspace/adapters/reactflow/toolbar/merge.ts](#5)  L1358-L1431
 - [src/react/workspace/adapters/reactflow/toolbar/types.ts](#6)  L1432-L1516
 - [src/react/workspace/app.tsx](#7)  L1517-L1604
-- [src/react/workspace/components/canvas.tsx](#8)  L1605-L1725
-- [src/react/workspace/components/context-menu-renderer.tsx](#9)  L1726-L1931
-- [src/react/workspace/components/index.tsx](#10)  L1932-L2001
-- [src/react/workspace/components/reactflow/edge.tsx](#11)  L2002-L2011
-- [src/react/workspace/components/reactflow/index.tsx](#12)  L2012-L2033
-- [src/react/workspace/components/reactflow/nodes/comments.tsx](#13)  L2034-L2043
-- [src/react/workspace/components/reactflow/nodes/field.tsx](#14)  L2044-L2078
-- [src/react/workspace/components/reactflow/nodes/node.tsx](#15)  L2079-L2247
-- [src/react/workspace/components/reactflow/nodes/options.tsx](#16)  L2248-L2266
-- [src/react/workspace/components/reactflow/nodes/tags.tsx](#17)  L2267-L2289
-- [src/react/workspace/context/backend.ts](#18)  L2290-L2852
-- [src/react/workspace/context/context.tsx](#19)  L2853-L3164
-- [src/react/workspace/context/ctxmenu.tsx](#20)  L3165-L3463
-- [src/react/workspace/context/hooks/use-canvas.ts](#21)  L3464-L3804
-- [src/react/workspace/context/hooks/use-errors.ts](#22)  L3805-L4144
-- [src/react/workspace/context/index.ts](#23)  L4145-L4195
-- [src/react/workspace/context/memory/errors.ts](#24)  L4196-L4248
-- [src/react/workspace/context/memory/ids.ts](#25)  L4249-L4309
-- [src/react/workspace/context/memory/index.ts](#26)  L4310-L4329
-- [src/react/workspace/context/memory/memory-backend.ts](#27)  L4330-L5630
-- [src/react/workspace/context/memory/seed.ts](#28)  L5631-L5728
-- [src/react/workspace/context/memory/store.ts](#29)  L5729-L5854
-- [src/react/workspace/context/memory/time.ts](#30)  L5855-L5879
-- [src/react/workspace/context/provider/compose/use-branch-cache.ts](#31)  L5880-L6161
-- [src/react/workspace/context/provider/compose/use-live-polling.ts](#32)  L6162-L6449
-- [src/react/workspace/context/provider/compose/use-workspace-refresh.ts](#33)  L6450-L6669
-- [src/react/workspace/context/provider/context.ts](#34)  L6670-L6697
-- [src/react/workspace/context/provider/helpers.ts](#35)  L6698-L6808
-- [src/react/workspace/context/provider/live/adapters/manual.ts](#36)  L6809-L6818
-- [src/react/workspace/context/provider/live/adapters/poll.ts](#37)  L6819-L6899
-- [src/react/workspace/context/provider/live/adapters/sse.ts](#38)  L6900-L6909
-- [src/react/workspace/context/provider/live/adapters/ws.ts](#39)  L6910-L6919
-- [src/react/workspace/context/provider/live/types.ts](#40)  L6920-L7002
-- [src/react/workspace/context/provider/provider.tsx](#41)  L7003-L7521
-- [src/react/workspace/context/provider/runtime/use-backend-runtime.ts](#42)  L7522-L7569
-- [src/react/workspace/context/provider/slices/use-authors-slice.ts](#43)  L7570-L7639
-- [src/react/workspace/context/provider/slices/use-branches-slice.ts](#44)  L7640-L7855
-- [src/react/workspace/context/provider/slices/use-comments-slice.ts](#45)  L7856-L8305
-- [src/react/workspace/context/provider/slices/use-permissions-slice.ts](#46)  L8306-L8383
-- [src/react/workspace/context/provider/slices/use-policies-slice.ts](#47)  L8384-L8600
-- [src/react/workspace/context/provider/slices/use-services-slice.ts](#48)  L8601-L8677
-- [src/react/workspace/context/provider/slices/use-snapshots-slice.ts](#49)  L8678-L9124
-- [src/react/workspace/context/provider/slices/use-templates-slice.ts](#50)  L9125-L9364
-- [src/react/workspace/context/provider/types.ts](#51)  L9365-L9611
-- [src/react/workspace/index.ts](#52)  L9612-L9629
+- [src/react/workspace/components/canvas.tsx](#8)  L1605-L1728
+- [src/react/workspace/components/context-menu-renderer.tsx](#9)  L1729-L1934
+- [src/react/workspace/components/index.tsx](#10)  L1935-L2010
+- [src/react/workspace/components/reactflow/edge.tsx](#11)  L2011-L2020
+- [src/react/workspace/components/reactflow/index.tsx](#12)  L2021-L2042
+- [src/react/workspace/components/reactflow/nodes/comments.tsx](#13)  L2043-L2052
+- [src/react/workspace/components/reactflow/nodes/field.tsx](#14)  L2053-L2087
+- [src/react/workspace/components/reactflow/nodes/node.tsx](#15)  L2088-L2256
+- [src/react/workspace/components/reactflow/nodes/options.tsx](#16)  L2257-L2275
+- [src/react/workspace/components/reactflow/nodes/tags.tsx](#17)  L2276-L2298
+- [src/react/workspace/context/backend.ts](#18)  L2299-L2861
+- [src/react/workspace/context/context.tsx](#19)  L2862-L3173
+- [src/react/workspace/context/ctxmenu.tsx](#20)  L3174-L3472
+- [src/react/workspace/context/hooks/use-canvas.ts](#21)  L3473-L3813
+- [src/react/workspace/context/hooks/use-errors.ts](#22)  L3814-L4153
+- [src/react/workspace/context/index.ts](#23)  L4154-L4204
+- [src/react/workspace/context/memory/errors.ts](#24)  L4205-L4257
+- [src/react/workspace/context/memory/ids.ts](#25)  L4258-L4318
+- [src/react/workspace/context/memory/index.ts](#26)  L4319-L4338
+- [src/react/workspace/context/memory/memory-backend.ts](#27)  L4339-L5639
+- [src/react/workspace/context/memory/seed.ts](#28)  L5640-L5737
+- [src/react/workspace/context/memory/store.ts](#29)  L5738-L5863
+- [src/react/workspace/context/memory/time.ts](#30)  L5864-L5888
+- [src/react/workspace/context/provider/compose/use-branch-cache.ts](#31)  L5889-L6170
+- [src/react/workspace/context/provider/compose/use-live-polling.ts](#32)  L6171-L6458
+- [src/react/workspace/context/provider/compose/use-workspace-refresh.ts](#33)  L6459-L6678
+- [src/react/workspace/context/provider/context.ts](#34)  L6679-L6706
+- [src/react/workspace/context/provider/helpers.ts](#35)  L6707-L6817
+- [src/react/workspace/context/provider/live/adapters/manual.ts](#36)  L6818-L6827
+- [src/react/workspace/context/provider/live/adapters/poll.ts](#37)  L6828-L6908
+- [src/react/workspace/context/provider/live/adapters/sse.ts](#38)  L6909-L6918
+- [src/react/workspace/context/provider/live/adapters/ws.ts](#39)  L6919-L6928
+- [src/react/workspace/context/provider/live/types.ts](#40)  L6929-L7011
+- [src/react/workspace/context/provider/provider.tsx](#41)  L7012-L7530
+- [src/react/workspace/context/provider/runtime/use-backend-runtime.ts](#42)  L7531-L7578
+- [src/react/workspace/context/provider/slices/use-authors-slice.ts](#43)  L7579-L7648
+- [src/react/workspace/context/provider/slices/use-branches-slice.ts](#44)  L7649-L7864
+- [src/react/workspace/context/provider/slices/use-comments-slice.ts](#45)  L7865-L8314
+- [src/react/workspace/context/provider/slices/use-permissions-slice.ts](#46)  L8315-L8392
+- [src/react/workspace/context/provider/slices/use-policies-slice.ts](#47)  L8393-L8609
+- [src/react/workspace/context/provider/slices/use-services-slice.ts](#48)  L8610-L8686
+- [src/react/workspace/context/provider/slices/use-snapshots-slice.ts](#49)  L8687-L9133
+- [src/react/workspace/context/provider/slices/use-templates-slice.ts](#50)  L9134-L9373
+- [src/react/workspace/context/provider/types.ts](#51)  L9374-L9620
+- [src/react/workspace/index.ts](#52)  L9621-L9638
 <!-- PRODEX_INDEX_LIST_END -->
 
 ---
@@ -1637,6 +1637,7 @@ export type ReactFlowCanvasProps = {
 
     /** absolute position classes relative to the ReactFlow canvas */
     toolbarPositionClassName?: string; // e.g. "left-2 top-2"
+    children?: React.ReactNode;
 };
 
 export function Canvas({
@@ -1649,6 +1650,7 @@ export function Canvas({
     initialShowGrid = true,
     initialShowMiniMap = false,
     toolbarPositionClassName = "left-2 top-2",
+    children,
 }: ReactFlowCanvasProps) {
     const [showGrid, setShowGrid] = useState(initialShowGrid);
     const [showMiniMap, setShowMiniMap] = useState(initialShowMiniMap);
@@ -1717,6 +1719,7 @@ export function Canvas({
 
                 {showMiniMap && <MiniMap />}
                 {showGrid && <Background />}
+                {children}
             </ReactFlow>
         </div>
     );
@@ -1939,7 +1942,10 @@ function prevFocusable(
 // src/react/adapters/reactflow/index.tsx
 import React from "react";
 import type { AdapterOptions } from "../adapters/reactflow/adapter";
-import type { ToolsConfig, LabelPlacement } from "../adapters/reactflow/toolbar/types";
+import type {
+    LabelPlacement,
+    ToolsConfig,
+} from "../adapters/reactflow/toolbar/types";
 import { useCanvasAPI } from "@/react/workspace/context/context";
 import { Canvas } from "@/react/workspace/components/canvas";
 
@@ -1963,6 +1969,7 @@ export type FlowCanvasProps = {
 
     /** Adapter options (snapping etc.) */
     options?: AdapterOptions;
+    children?: React.ReactNode;
 };
 
 const FlowCanvas: React.FC<FlowCanvasProps> = ({
@@ -1974,6 +1981,7 @@ const FlowCanvas: React.FC<FlowCanvasProps> = ({
     initialShowGrid = true,
     initialShowMiniMap = false,
     options,
+    children,
 }) => {
     const api = useCanvasAPI();
 
@@ -1988,6 +1996,7 @@ const FlowCanvas: React.FC<FlowCanvasProps> = ({
             initialShowGrid={initialShowGrid}
             initialShowMiniMap={initialShowMiniMap}
             options={options}
+            children={children}
         />
     );
 };
@@ -9627,4 +9636,4 @@ export * from "./context";
 
 ---
 *Generated with [Prodex](https://github.com/emxhive/prodex) — Codebase decoded.*
-<!-- PRODEx v1.4.11 | 2026-03-16T18:53:22.946Z -->
+<!-- PRODEx v1.4.11 | 2026-03-17T04:20:31.216Z -->

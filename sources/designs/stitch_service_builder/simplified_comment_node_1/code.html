@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Comment Node</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#135bec",
+              "background-light": "#f6f6f8",
+              "background-dark": "#101622",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+    </style>
+</head>
+<body class="font-display">
+<div class="relative flex h-screen w-full flex-col items-center justify-center bg-background-light dark:bg-background-dark p-10">
+<!-- Background grid pattern for canvas feel -->
+<div class="absolute inset-0 z-0 h-full w-full bg-grid-slate-200/[0.4] dark:bg-grid-slate-700/[0.2]"></div>
+<!-- Comment Node Component -->
+<div class="group/node relative z-10 flex h-48 w-64 cursor-grab flex-col rounded-lg border border-[#E0E0E0] bg-[#FEFBEA] shadow-md transition-all duration-150 ease-in-out hover:border-[#AECBFA] hover:shadow-lg focus-within:cursor-text focus-within:border-primary focus-within:shadow-xl dark:bg-[#4a4a38] dark:border-[#555] dark:hover:border-[#526a93] dark:focus-within:border-primary">
+<label class="flex h-full w-full flex-col">
+<textarea class="form-input h-full w-full resize-none overflow-auto rounded-lg border-none bg-transparent p-4 text-base font-normal leading-normal text-[#333333] placeholder:text-[#888] focus:outline-none focus:ring-0 dark:text-[#E0E0E0] dark:placeholder:text-[#aaa]" placeholder="Type your comment...">This is an example of a user's comment. It can span multiple lines and will wrap automatically. If the content exceeds the height of the node, a scrollbar will appear.</textarea>
+</label>
+</div>
+</div>
+</body></html>

@@ -21,15 +21,6 @@ export interface FieldPropertiesProps {
     node: FieldNode;
 }
 
-const fieldTypeOptions = [
-    { label: 'Text', value: 'text' },
-    { label: 'Textarea', value: 'textarea' },
-    { label: 'Number', value: 'number' },
-    { label: 'Select', value: 'select' },
-    { label: 'Radio', value: 'radio' },
-    { label: 'Checkbox', value: 'checkbox' },
-] as const;
-
 const getVariant = (node: FieldNode) => {
     const variant = (node.raw.meta as Record<string, unknown> | undefined)?.variant;
     return typeof variant === 'string' && variant.trim() ? variant.trim() : undefined;
@@ -60,21 +51,34 @@ export function FieldProperties({ className, node }: FieldPropertiesProps) {
     const capabilities = getFieldPropertyCapabilities(node);
     const defaults = node.raw.defaults ?? {};
     const options = node.raw.options ?? [];
+    const currentType = String(node.raw.type ?? 'text');
     const currentVariant = getVariant(node);
 
-    const descriptor = useMemo(() => resolveInputDescriptor(registry, node.raw.type as any, currentVariant as any), [currentVariant, node.raw.type, registry]);
+    const descriptor = useMemo(() => resolveInputDescriptor(registry, currentType as any, currentVariant as any), [currentType, currentVariant, registry]);
     const descriptorUi = descriptor?.ui ?? {};
     const descriptorKeySet = useMemo(() => new Set(getDescriptorUiKeys(descriptorUi)), [descriptorUi]);
 
+    const fieldTypeOptions = useMemo(() => {
+        const kinds = Array.from(registry._store.keys()).map((kind) => String(kind));
+
+        if (!kinds.includes(currentType)) {
+            kinds.push(currentType);
+        }
+
+        return kinds
+            .map((value) => ({ label: toLabel(value), value }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [currentType, registry]);
+
     const variantEntries = useMemo(() => {
-        const entries = Array.from(registry._store.get(node.raw.type as any)?.entries() ?? []);
+        const entries = Array.from(registry._store.get(currentType as any)?.entries() ?? []);
         return entries
             .filter(([variant]) => variant !== 'default')
             .map(([variant]) => ({
                 label: toLabel(String(variant)),
                 value: String(variant),
             }));
-    }, [node.raw.type, registry]);
+    }, [currentType, registry]);
 
     const canEditVariant = variantEntries.length > 0 || Boolean(currentVariant);
 
@@ -122,7 +126,7 @@ export function FieldProperties({ className, node }: FieldPropertiesProps) {
 
     const handleVariantChange = (rawVariant: unknown) => {
         const nextVariant = String(rawVariant ?? 'default');
-        applyDescriptorTransition(node.raw.type, nextVariant === 'default' ? undefined : nextVariant);
+        applyDescriptorTransition(currentType, nextVariant === 'default' ? undefined : nextVariant);
     };
 
     return (
@@ -147,7 +151,7 @@ export function FieldProperties({ className, node }: FieldPropertiesProps) {
                             <InputField
                                 variant="select"
                                 label="Type"
-                                value={node.raw.type}
+                                value={currentType}
                                 options={fieldTypeOptions as any}
                                 onChange={(e) => handleTypeChange(e.value)}
                             />

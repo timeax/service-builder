@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { cn } from '@/lib/utils.ts';
-import type { ReactNode } from 'react';
+import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react';
 import { FiMoreHorizontal } from 'react-icons/fi';
 import { HiOutlineSparkles } from 'react-icons/hi2';
 import { LuSearch } from 'react-icons/lu';
@@ -43,17 +43,17 @@ export function BuilderIconButton({
     );
 }
 
-export function PanelSearch({
-    className,
-    value,
-    onChange,
-    placeholder = 'Search',
-}: {
+type PanelSearchProps = {
     className?: string;
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
-}) {
+} & Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'placeholder' | 'className'>;
+
+export const PanelSearch = forwardRef<HTMLInputElement, PanelSearchProps>(function PanelSearch(
+    { className, value, onChange, placeholder = 'Search', ...inputProps },
+    ref,
+) {
     return (
         <label
             className={cn(
@@ -65,14 +65,16 @@ export function PanelSearch({
         >
             <LuSearch className="text-base" />
             <input
+                ref={ref}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
                 className="w-full bg-transparent outline-none placeholder:text-slate-400"
+                {...inputProps}
             />
         </label>
     );
-}
+});
 
 export function PanelSection({
     title,

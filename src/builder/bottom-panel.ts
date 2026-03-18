@@ -1,7 +1,7 @@
 import { formatEstimate } from '@/builder/view-models.tsx';
 import type { DgpServiceCapability, Field, ServiceProps, Tag } from '@timeax/digital-service-engine/schema';
 import type { UseCanvasReturn, WorkspaceAPI } from '@timeax/digital-service-engine/workspace';
-import { useEffect, useEffectEvent, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export type BottomPanelTab = 'console' | 'activeServices' | 'allServices';
 
@@ -24,19 +24,35 @@ export type BuilderServiceSummary = {
 export type BottomConsolePanelState = {
     isOpen: boolean;
     activeTab: BottomPanelTab;
+    width: number;
     height: number;
     toggle: () => void;
     open: (tab?: BottomPanelTab) => void;
     close: () => void;
     setActiveTab: (tab: BottomPanelTab) => void;
+    setWidth: (width: number) => void;
     setHeight: (height: number) => void;
     shortcutLabel: string;
 };
 
+const PANEL_WIDTH_KEY = 'service-builder.bottom-panel.width';
 const PANEL_HEIGHT_KEY = 'service-builder.bottom-panel.height';
+const DEFAULT_WIDTH = 960;
+const MIN_WIDTH = 520;
+const MAX_WIDTH = 1600;
 const DEFAULT_HEIGHT = 300;
 const MIN_HEIGHT = 220;
 const MAX_HEIGHT = 460;
+
+function useStableEvent<TArgs extends unknown[], TResult>(handler: (...args: TArgs) => TResult) {
+    const handlerRef = useRef(handler);
+
+    useEffect(() => {
+        handlerRef.current = handler;
+    }, [handler]);
+
+    return useCallback((...args: TArgs) => handlerRef.current(...args), []);
+}
 
 export function buildServiceSummaries(canvas: UseCanvasReturn, ws: WorkspaceAPI): {
     activeServices: BuilderServiceSummary[];
@@ -72,15 +88,23 @@ export function buildServiceSummaries(canvas: UseCanvasReturn, ws: WorkspaceAPI)
 export function useBottomConsolePanel(): BottomConsolePanelState {
     const [isOpen, setIsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<BottomPanelTab>('console');
+    const [width, setWidthState] = useState(() => readStoredWidth());
     const [height, setHeightState] = useState(() => readStoredHeight());
 
-    const close = useEffectEvent(() => setIsOpen(false));
-    const toggle = useEffectEvent(() => setIsOpen((current) => !current));
-    const open = useEffectEvent((tab?: BottomPanelTab) => {
+    const close = useStableEvent(() => setIsOpen(false));
+    const toggle = useStableEvent(() => setIsOpen((current) => !current));
+    const open = useStableEvent((tab?: BottomPanelTab) => {
         if (tab) setActiveTab(tab);
         setIsOpen(true);
     });
-    const setHeight = useEffectEvent((nextHeight: number) => {
+    const setWidth = useStableEvent((nextWidth: number) => {
+        const clamped = clampWidth(nextWidth);
+        setWidthState(clamped);
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(PANEL_WIDTH_KEY, String(clamped));
+        }
+    });
+    const setHeight = useStableEvent((nextHeight: number) => {
         const clamped = clampHeight(nextHeight);
         setHeightState(clamped);
         if (typeof window !== 'undefined') {
@@ -119,15 +143,17 @@ export function useBottomConsolePanel(): BottomConsolePanelState {
         () => ({
             isOpen,
             activeTab,
+            width,
             height,
             toggle,
             open,
             close,
             setActiveTab,
+            setWidth,
             setHeight,
             shortcutLabel: 'Ctrl/Cmd + J',
         }),
-        [activeTab, close, height, isOpen, open, setHeight, toggle],
+        [activeTab, close, height, isOpen, open, setHeight, setWidth, toggle, width],
     );
 }
 
@@ -207,6 +233,16 @@ function toFieldDescriptor(field: Field): ServiceNodeDescriptor {
 
 function clampHeight(height: number) {
     return Math.min(Math.max(Math.round(height), MIN_HEIGHT), MAX_HEIGHT);
+}
+
+function clampWidth(width: number) {
+    return Math.min(Math.max(Math.round(width), MIN_WIDTH), MAX_WIDTH);
+}
+
+function readStoredWidth() {
+    if (typeof window === 'undefined') return DEFAULT_WIDTH;
+    const value = Number(window.localStorage.getItem(PANEL_WIDTH_KEY));
+    return Number.isFinite(value) ? clampWidth(value) : DEFAULT_WIDTH;
 }
 
 function readStoredHeight() {

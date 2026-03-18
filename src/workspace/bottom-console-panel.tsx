@@ -17,7 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { cn } from '@/lib/utils.ts';
 import { useCanvas, useWorkspace, type ErrorLog, type UseErrorsReturn, type ValidationRow } from '@timeax/digital-service-engine/workspace';
-import { startTransition, type DragEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { startTransition, type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { FiAlertCircle, FiChevronRight, FiFilter, FiInfo, FiLoader, FiSearch, FiTerminal, FiTrash2, FiX } from 'react-icons/fi';
 import { LuGripHorizontal, LuLayers3 } from 'react-icons/lu';
 import { MdOutlineSync } from 'react-icons/md';
@@ -31,6 +31,10 @@ type BottomConsolePanelProps = {
 };
 
 const DRAG_MIME = 'application/x-service-builder-service';
+const PANEL_MARGIN = 16;
+const PANEL_LEFT_KEY = 'service-builder.bottom-panel.pos-x';
+const PANEL_BOTTOM_KEY = 'service-builder.bottom-panel.pos-y';
+type PanelPosition = { left: number | null; bottom: number | null };
 
 export function BottomConsolePanel({ controller, errors, activeServices, allServices, onServiceDragStateChange }: BottomConsolePanelProps) {
     const canvas = useCanvas();
@@ -48,7 +52,12 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
     const [selectedAllServiceId, setSelectedAllServiceId] = useState<string | null>(null);
     const [appliedContext, setAppliedContext] = useState<ServiceContextState>(() => createDefaultServiceContext(canvas.props, preferredTagId));
     const [draftContext, setDraftContext] = useState<ServiceContextState>(() => createDefaultServiceContext(canvas.props, preferredTagId));
+    const [panelPosition, setPanelPosition] = useState<PanelPosition>(() => readStoredPanelPosition());
+    const [draggingPanel, setDraggingPanel] = useState(false);
     const lastHighlightedIdsRef = useRef<string[]>([]);
+    const panelContainerRef = useRef<HTMLDivElement | null>(null);
+    const panelRef = useRef<HTMLDivElement | null>(null);
+    const dragStartRef = useRef<{ x: number; y: number; position: { left: number; bottom: number } } | null>(null);
 
     const activeServiceIds = useMemo(() => new Set(activeServices.map((service) => String(service.id))), [activeServices]);
 
@@ -144,6 +153,65 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
         };
     }, [canvas.api]);
 
+    useEffect(() => {
+        setPanelPosition((current) => {
+            const resolved = resolvePanelPosition(current, panelRef.current, panelContainerRef.current);
+            persistPanelPosition(resolved);
+            return resolved;
+        });
+    }, [controller.height, controller.width]);
+
+    const onPanelDragStart = (event: ReactPointerEvent<HTMLButtonElement>) => {
+        if (event.button !== 0) return;
+        const resolved = resolvePanelPosition(panelPosition, panelRef.current, panelContainerRef.current);
+        dragStartRef.current = {
+            x: event.clientX,
+            y: event.clientY,
+            position: resolved,
+        };
+        setDraggingPanel(true);
+        try {
+            event.currentTarget.setPointerCapture(event.pointerId);
+        } catch {
+            // Ignore capture failures and continue with window listeners.
+        }
+        event.preventDefault();
+    };
+
+    useEffect(() => {
+        if (!draggingPanel) return;
+
+        const onPointerMove = (event: PointerEvent) => {
+            const start = dragStartRef.current;
+            if (!start) return;
+
+            const next = {
+                left: start.position.left + (event.clientX - start.x),
+                bottom: start.position.bottom - (event.clientY - start.y),
+            };
+
+            setPanelPosition(clampPanelPosition(next, panelRef.current, panelContainerRef.current));
+        };
+
+        const onPointerUp = () => {
+            setDraggingPanel(false);
+            dragStartRef.current = null;
+            setPanelPosition((current) => {
+                persistPanelPosition(current);
+                return current;
+            });
+        };
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp, { once: true });
+        window.addEventListener('pointercancel', onPointerUp, { once: true });
+        return () => {
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerUp);
+        };
+    }, [draggingPanel, panelPosition]);
+
     const tabs: Array<{ id: BottomPanelTab; label: string; icon: ReactNode; count?: number }> = [
         { id: 'console', label: 'Console', icon: <FiTerminal />, count: errors.merged.counts.total },
         { id: 'activeServices', label: 'Active Services', icon: <MdOutlineSync />, count: activeServices.length },
@@ -154,19 +222,37 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
     const selectedAllRow = allRows.find((row) => row.id === selectedAllServiceId) ?? null;
 
     return (
-        <div className="pointer-events-none absolute inset-x-4 bottom-4 z-30">
+        <div
+            ref={panelContainerRef}
+            className="pointer-events-none absolute inset-0"
+        >
             <Panel
-                edges={['top']}
+                ref={panelRef}
+                edges={['left', 'right', 'top']}
+                defaultWidth={controller.width}
                 defaultHeight={controller.height}
+                minWidth={520}
+                maxWidth={1600}
                 minHeight={220}
                 maxHeight={460}
-                maintainPosition
-                onResizeEnd={({ height }) => controller.setHeight(height)}
+                onResizeEnd={({ width, height }) => {
+                    controller.setWidth(width);
+                    controller.setHeight(height);
+                    setPanelPosition((current) => {
+                        const clamped = resolvePanelPosition(current, panelRef.current, panelContainerRef.current);
+                        persistPanelPosition(clamped);
+                        return clamped;
+                    });
+                }}
                 className={cn(
-                    'pointer-events-auto flex w-full flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-2xl backdrop-blur-md transition-all duration-300',
+                    'pointer-events-auto absolute flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-2xl backdrop-blur-md transition-all duration-300',
                     'dark:border-slate-800/90 dark:bg-slate-950/95',
                     controller.isOpen ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-[calc(100%+1rem)] opacity-0',
                 )}
+                style={{
+                    left: panelPosition.left != null ? `${panelPosition.left}px` : `${PANEL_MARGIN}px`,
+                    bottom: panelPosition.bottom != null ? `${panelPosition.bottom}px` : `${PANEL_MARGIN}px`,
+                }}
             >
                 <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-3 py-2 dark:border-slate-800/80">
                     <div className="flex min-w-0 items-center gap-1">
@@ -201,9 +287,20 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
                     </div>
 
                     <div className="flex items-center gap-1">
+                        <button
+                            type="button"
+                            onPointerDown={onPanelDragStart}
+                            className={cn(
+                                'flex items-center gap-2 rounded-xl border border-slate-200/80 px-2 py-1 text-xs text-slate-500 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-900',
+                                draggingPanel && 'cursor-grabbing',
+                            )}
+                        >
+                            <LuGripHorizontal />
+                            <span>{draggingPanel ? 'Dragging panel...' : 'Drag panel'}</span>
+                        </button>
                         <div className="hidden items-center gap-2 rounded-xl border border-slate-200/80 px-2 py-1 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400 md:flex">
                             <LuGripHorizontal />
-                            <span>Resize from top edge</span>
+                            <span>Resize from top or side edges</span>
                         </div>
                         <Button
                             type="button"
@@ -1101,4 +1198,64 @@ function filterChipClassName(tone: 'success' | 'warning' | 'danger' | 'default')
 
 function capitalize(value: string) {
     return value ? `${value[0].toUpperCase()}${value.slice(1)}` : value;
+}
+
+function clampPanelPosition(
+    position: { left: number; bottom: number },
+    panelEl: HTMLDivElement | null,
+    containerEl: HTMLDivElement | null,
+) {
+    if (!panelEl || !containerEl) return position;
+
+    const panelRect = panelEl.getBoundingClientRect();
+    const containerRect = containerEl.getBoundingClientRect();
+    const maxLeft = Math.max(PANEL_MARGIN, containerRect.width - panelRect.width - PANEL_MARGIN);
+    const maxBottom = Math.max(PANEL_MARGIN, containerRect.height - panelRect.height - PANEL_MARGIN);
+
+    return {
+        left: clampNumber(position.left, PANEL_MARGIN, maxLeft),
+        bottom: clampNumber(position.bottom, PANEL_MARGIN, maxBottom),
+    };
+}
+
+function resolvePanelPosition(position: PanelPosition, panelEl: HTMLDivElement | null, containerEl: HTMLDivElement | null) {
+    if (!panelEl || !containerEl) {
+        return {
+            left: position.left ?? PANEL_MARGIN,
+            bottom: position.bottom ?? PANEL_MARGIN,
+        };
+    }
+
+    const panelRect = panelEl.getBoundingClientRect();
+    const containerRect = containerEl.getBoundingClientRect();
+    const defaultLeft = Math.max(PANEL_MARGIN, (containerRect.width - panelRect.width) / 2);
+    const defaultBottom = PANEL_MARGIN;
+    return clampPanelPosition(
+        {
+            left: position.left ?? defaultLeft,
+            bottom: position.bottom ?? defaultBottom,
+        },
+        panelEl,
+        containerEl,
+    );
+}
+
+function clampNumber(value: number, min: number, max: number) {
+    return Math.min(Math.max(value, min), max);
+}
+
+function readStoredPanelPosition(): PanelPosition {
+    if (typeof window === 'undefined') return { left: null, bottom: null };
+    const left = Number(window.localStorage.getItem(PANEL_LEFT_KEY));
+    const bottom = Number(window.localStorage.getItem(PANEL_BOTTOM_KEY));
+    return {
+        left: Number.isFinite(left) ? left : null,
+        bottom: Number.isFinite(bottom) ? bottom : null,
+    };
+}
+
+function persistPanelPosition(position: { left: number; bottom: number }) {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(PANEL_LEFT_KEY, String(Math.round(position.left)));
+    window.localStorage.setItem(PANEL_BOTTOM_KEY, String(Math.round(position.bottom)));
 }

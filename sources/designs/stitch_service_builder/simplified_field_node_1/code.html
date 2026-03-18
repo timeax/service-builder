@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Field Node Component</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#135bec",
+              "background-light": "#f6f6f8",
+              "background-dark": "#101622",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 20
+      }
+    </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-[#111318] dark:text-white">
+<div class="relative flex h-screen w-full flex-col items-center justify-center p-8 group/design-root">
+<div class="absolute top-8 right-8">
+<button class="p-2 rounded-full bg-white dark:bg-gray-800 shadow-md text-gray-700 dark:text-gray-300" id="theme-toggle">
+<span class="material-symbols-outlined" data-icon="dark_mode">dark_mode</span>
+</button>
+</div>
+<div class="flex flex-col items-center gap-12">
+<div class="text-center">
+<h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">Field Node Examples</h1>
+<p class="mt-2 text-slate-600 dark:text-slate-400">Minimalist nodes for a flow map canvas.</p>
+</div>
+<div class="flex flex-wrap items-start justify-center gap-8">
+<div class="flex flex-col items-center gap-2">
+<p class="text-sm font-medium text-slate-500 dark:text-slate-400">Standard Node</p>
+<div class="group/node w-64 cursor-grab rounded-lg bg-white p-4 shadow-[0_4px_12px_rgba(0,0,0,0.05)] dark:bg-gray-800 dark:shadow-[0_4px_12px_rgba(0,0,0,0.15)] ring-1 ring-slate-200 dark:ring-slate-700 hover:shadow-lg dark:hover:shadow-primary/20 transition-all duration-200">
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 flex-1 min-w-0">
+<span class="material-symbols-outlined text-base text-slate-400 dark:text-slate-500">article</span>
+<p class="text-slate-800 dark:text-slate-200 font-medium truncate">Customer Name</p>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-center gap-2">
+<p class="text-sm font-medium text-slate-500 dark:text-slate-400">Node with Options</p>
+<div class="group/node w-64 cursor-grab rounded-lg bg-white p-4 shadow-[0_4px_12px_rgba(0,0,0,0.05)] dark:bg-gray-800 dark:shadow-[0_4px_12px_rgba(0,0,0,0.15)] ring-1 ring-slate-200 dark:ring-slate-700 hover:shadow-lg dark:hover:shadow-primary/20 transition-all duration-200">
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 flex-1 min-w-0">
+<span class="material-symbols-outlined text-base text-slate-400 dark:text-slate-500">article</span>
+<p class="text-slate-800 dark:text-slate-200 font-medium truncate">Product Category</p>
+</div>
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 group-hover/node:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-center gap-2">
+<p class="text-sm font-medium text-slate-500 dark:text-slate-400">Selected State</p>
+<div class="group/node w-64 cursor-grab rounded-lg bg-white p-4 shadow-lg shadow-primary/20 dark:bg-gray-800 dark:shadow-primary/20 ring-2 ring-primary transition-all duration-200">
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 flex-1 min-w-0">
+<span class="material-symbols-outlined text-base text-primary/80">article</span>
+<p class="text-slate-800 dark:text-slate-200 font-medium truncate">Email Address</p>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-center gap-2">
+<p class="text-sm font-medium text-slate-500 dark:text-slate-400">Selected (with Options)</p>
+<div class="group/node w-64 cursor-grab rounded-lg bg-white p-4 shadow-lg shadow-primary/20 dark:bg-gray-800 dark:shadow-primary/20 ring-2 ring-primary transition-all duration-200">
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 flex-1 min-w-0">
+<span class="material-symbols-outlined text-base text-primary/80">article</span>
+<p class="text-slate-800 dark:text-slate-200 font-medium truncate">Account Type</p>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = themeToggle.querySelector('[data-icon]');
+        themeToggle.addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('light');
+                themeIcon.textContent = 'dark_mode';
+            } else {
+                document.documentElement.classList.remove('light');
+                document.documentElement.classList.add('dark');
+                themeIcon.textContent = 'light_mode';
+            }
+        });
+    </script>
+</body></html>

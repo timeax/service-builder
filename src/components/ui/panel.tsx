@@ -93,7 +93,16 @@ export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(function Panel
     const activeEdge: PanelEdge | null = dragEdge ?? hoverEdge;
 
     const startRef = React.useRef<{ x: number; y: number; width: number; height: number } | null>(null);
-    const startOffsetsRef = React.useRef<{ left: number; top: number; right: number; bottom: number } | null>(null);
+    const startOffsetsRef = React.useRef<{
+        left: number;
+        top: number;
+        right: number;
+        bottom: number;
+        anchoredLeft: boolean;
+        anchoredTop: boolean;
+        anchoredRight: boolean;
+        anchoredBottom: boolean;
+    } | null>(null);
 
     React.useEffect(() => {
         if (!resizable) {
@@ -165,11 +174,19 @@ export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(function Panel
 
             if (maintainPosition) {
                 const cs = getComputedStyle(el);
+                const anchoredLeft = cs.left !== 'auto';
+                const anchoredTop = cs.top !== 'auto';
+                const anchoredRight = cs.right !== 'auto';
+                const anchoredBottom = cs.bottom !== 'auto';
                 startOffsetsRef.current = {
                     left: parseOffset(cs.left),
                     top: parseOffset(cs.top),
                     right: parseOffset(cs.right),
                     bottom: parseOffset(cs.bottom),
+                    anchoredLeft,
+                    anchoredTop,
+                    anchoredRight,
+                    anchoredBottom,
                 };
             } else {
                 startOffsetsRef.current = null;
@@ -215,10 +232,14 @@ export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(function Panel
 
                 if (maintainPosition && startOffsetsRef.current) {
                     if (dragEdge === 'left') {
-                        setOffsets((prev) => ({ ...prev, left: startOffsetsRef.current!.left + dx }));
+                        if (startOffsetsRef.current.anchoredLeft) {
+                            setOffsets((prev) => ({ ...prev, left: startOffsetsRef.current!.left + dx }));
+                        }
                     } else {
                         // right edge drag — use 'right' to compensate
-                        setOffsets((prev) => ({ ...prev, right: startOffsetsRef.current!.right - dx }));
+                        if (startOffsetsRef.current.anchoredRight) {
+                            setOffsets((prev) => ({ ...prev, right: startOffsetsRef.current!.right - dx }));
+                        }
                     }
                 }
 
@@ -231,10 +252,14 @@ export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(function Panel
 
                 if (maintainPosition && startOffsetsRef.current) {
                     if (dragEdge === 'top') {
-                        setOffsets((prev) => ({ ...prev, top: startOffsetsRef.current!.top + dy }));
+                        if (startOffsetsRef.current.anchoredTop) {
+                            setOffsets((prev) => ({ ...prev, top: startOffsetsRef.current!.top + dy }));
+                        }
                     } else {
                         // bottom edge drag — use 'bottom' to compensate
-                        setOffsets((prev) => ({ ...prev, bottom: startOffsetsRef.current!.bottom - dy }));
+                        if (startOffsetsRef.current.anchoredBottom) {
+                            setOffsets((prev) => ({ ...prev, bottom: startOffsetsRef.current!.bottom - dy }));
+                        }
                     }
                 }
 
