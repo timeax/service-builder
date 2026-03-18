@@ -169,7 +169,10 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     }, [options.snapToGrid]);
 
     useEffect(() => {
-        const sync = () => setRF(toRF(api.snapshot(), api, { nodeDecorators, edgeDecorators }));
+        const sync = () => {
+            const snap = api.snapshot();
+            setRF(toRF(snap, api, { nodeDecorators, edgeDecorators }));
+        };
         const offGraph = api.on('graph:update', sync);
         const offSelection = api.on('selection:change', sync);
         const offCommentCreate = api.on('comment:thread:create', sync);
@@ -213,7 +216,7 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
 
             const posUpdates: Record<string, { x: number; y: number }> = {};
             let selectionDirty = false;
-            const keep = new Set(api.getSelection());
+            const keep = new Set(api.getSelection().map(String));
 
             for (const change of changes) {
                 if (change.type === 'position' && change.position) {
@@ -259,10 +262,9 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
             }
 
             if (Object.keys(posUpdates).length > 0) setPositionsThrottled(posUpdates);
-
             if (selectionDirty) {
-                const next = Array.from(keep).map(String);
-                const current = api.getSelection();
+                const next = Array.from(keep);
+                const current = api.getSelection().map(String);
                 if (!sameIdSet(next, current)) api.select(next);
             }
         },
@@ -373,13 +375,10 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     );
 
     const onSelectionChange = useCallback(
-        ({ nodes }: { nodes: Node[]; edges: Edge[] }) => {
-            const next = nodes.map((n) => n.id).filter((id) => !isCommentId(id));
-            const current = api.getSelection();
-            if (sameIdSet(next, current)) return;
-            api.select(next);
+        (_arg: { nodes: Node[]; edges: Edge[] }) => {
+            // Selection sync is owned by onNodesChange to avoid callback feedback loops.
         },
-        [api],
+        [],
     );
 
     return {

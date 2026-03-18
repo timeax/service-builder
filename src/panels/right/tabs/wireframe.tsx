@@ -1,92 +1,131 @@
-import { formatEstimate, getCurrentTag, getServiceDetails, getVisiblePreviewFields } from '@/builder/view-models.tsx';
-import { EmptyState, PanelSection, PropertyList, StatusDot } from '@/components/builder/index.tsx';
-import { ScrollArea } from '@/components/ui/scroll-area.tsx';
-import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
-import { InputField } from '@timeax/form-palette';
-import { useMemo, useState } from 'react';
-
-const inferVariant = (type: string) => {
-    if (['text', 'textarea', 'number', 'select', 'radio', 'checkbox', 'toggle'].includes(type)) return type;
-    return 'text';
-};
+import { getCurrentTag, getVisiblePreviewFields } from '@/builder/view-models.tsx';
+import { EmptyState } from '@/components/builder';
+import type { Field, Tag } from '@timeax/digital-service-engine';
+import { Wrapper } from '@timeax/digital-service-engine/react';
+import { useCanvas } from '@timeax/digital-service-engine/workspace';
+import { useCallback, useMemo } from 'react';
+import WireframeTagsWidget, { type TagNotice } from '@/panels/right/components/wireframe-tags-widget.tsx';
 
 export function Wireframe() {
     const canvas = useCanvas();
-    const ws = useWorkspace();
     const currentTag = getCurrentTag(canvas);
     const previewFields = useMemo(() => getVisiblePreviewFields(canvas, currentTag?.id), [canvas.props, canvas.selectionInfo, canvas.activeId]);
-    const [formValues, setFormValues] = useState<Record<string, any>>({});
+    const selectedOptionsCount = canvas.selectionInfo.optionIds.length;
 
-    const selectedService = previewFields
-        .flatMap((field) => field.options)
-        .map((option) => getServiceDetails(ws, option.service_id))
-        .find(Boolean);
+    const footerLine = currentTag
+        ? `Tag: ${currentTag.raw.label} · Visible fields: ${previewFields.length} · Selected options: ${selectedOptionsCount}`
+        : `No active tag · Visible fields: 0 · Selected options: ${selectedOptionsCount}`;
 
-    if (!currentTag) {
-        return (
-            <div className="p-4">
-                <EmptyState title="No preview context" description="Select a tag to render the visible service inputs in this tab." />
-            </div>
-        );
-    }
+    const { visibleTag, parents, children, visibleFields } = useMemo(() => {
+        let result = canvas.api.selection.visibleGroup();
+        const notices = canvas.api.builder.getProps().notices;
+
+        if (result?.kind !== 'single') {
+            return {
+                visibleTag: null,
+                parentId: null,
+                parents: [] as Tag[],
+                children: [] as Tag[],
+                visibleFieldIds: [] as string[],
+                visibleFields: [] as Field[],
+            };
+        }
+
+        const vg = result.group;
+        ///---
+        const parents = (vg.parentTags ?? []).filter((t) => t.id !== 't:root');
+        const children = vg.childrenTags ?? [];
+        const visibleFields = vg.fields ?? [];
+        const visibleFieldIds = vg.fieldIds ?? [];
+
+        // strict rule: parentId is ONLY from parentTags, otherwise null
+        const visibleTag = vg.tag && vg.tagId && vg.tagId !== 't:root' ? vg.tag : null;
+        const parentId = vg.parentTags?.length ? vg.parentTags[vg.parentTags.length - 1].id : null;
+
+        return {
+            visibleTag,
+            parentId,
+            parents,
+            children,
+            visibleFieldIds,
+            visibleFields,
+            notices,
+        };
+    }, [canvas.props, canvas.selectionInfo, canvas.activeId]);
+
+    const noticesByTagId = useMemo(() => {
+        const map = new Map<string, TagNotice[]>();
+        for (const notice of visibleFields.length || children.length || parents.length || visibleTag
+            ? (canvas.api.builder.getProps().notices ?? [])
+            : (canvas.api.builder.getProps().notices ?? [])) {
+            if (notice?.kind !== 'label') continue;
+            if (notice?.target?.scope !== 'node') continue;
+            if (notice?.target?.node_kind !== 'tag') continue;
+
+            const nodeId = notice.target.node_id;
+            const item: TagNotice = {
+                id: notice.id,
+                title: notice.title,
+                severity: notice.severity,
+                color: notice.color,
+            };
+            const existing = map.get(nodeId) ?? [];
+            existing.push(item);
+            map.set(nodeId, existing);
+        }
+        return map;
+    }, [canvas.props, canvas.selectionInfo, canvas.activeId]);
+
+    const select = useCallback(
+        (id: string) => {
+            canvas.setActive(id);
+            canvas.api.select([id]);
+        },
+        [canvas.api, canvas.setActive],
+    );
 
     return (
-        <ScrollArea className="h-full min-h-0 flex-1">
-            <div className="space-y-4 px-4 py-4">
-                <PanelSection title="Preview context" description={`Rendering visible inputs for ${currentTag.raw.label}.`}>
-                    <div className="space-y-3">
-                        <PropertyList
-                            items={[
-                                { label: 'Active tag', value: currentTag.raw.label },
-                                { label: 'Visible fields', value: String(previewFields.length) },
-                                { label: 'Selected options', value: String(canvas.selectionInfo.optionIds.length) },
-                            ]}
+        <div className="flex h-full min-h-0 flex-col">
+            <div className="min-h-0 flex-1 overflow-auto p-4">
+                <div className="mx-auto max-w-md">
+                    <div className="flex flex-col gap-4">
+                        <WireframeTagsWidget
+                            visibleTag={visibleTag}
+                            parents={parents}
+                            children={children}
+                            noticesByTagId={noticesByTagId}
+                            onSelect={select}
                         />
-                        {selectedService ? (
-                            <div className="rounded-xl bg-slate-50 px-3 py-3 dark:bg-slate-900">
-                                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                    <StatusDot tone="success" />
-                                    <span>{selectedService.name}</span>
-                                </div>
-                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatEstimate(selectedService) ?? 'No estimate metadata available.'}</p>
-                            </div>
-                        ) : null}
-                    </div>
-                </PanelSection>
 
-                {previewFields.length ? (
-                    <PanelSection title="Live wireframe" description="This preview uses the same visibility rules as the engine.">
-                        <div className="space-y-4">
-                            {previewFields.map(({ id, field, options }) => (
-                                <div key={id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-                                    <InputField
-                                        variant={inferVariant(field.type) as any}
-                                        label={field.label}
-                                        value={formValues[id]}
-                                        options={options.map((option) => ({
-                                            label: option.label,
-                                            value: option.value ?? option.id,
-                                            description: option.service_id ? `Service ${option.service_id}` : undefined,
-                                        })) as any}
-                                        placeholder={(field.defaults?.placeholder as string) ?? `Enter ${field.label}`}
-                                        onChange={(e) => setFormValues((curr) => ({ ...curr, [id]: e.value }))}
-                                    />
-                                    {field.description ? <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{field.description}</p> : null}
-                                    {field.defaults?.helpText ? (
-                                        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{String(field.defaults.helpText)}</p>
-                                    ) : null}
-                                </div>
-                            ))}
+                        <div className="border-t border-slate-200 pt-3 dark:border-slate-800">
+                            {visibleFields.length ? (
+                                visibleFields.map((field) => {
+                                    return (
+                                        <div onClick={() => select(field.id)} className="cursor-pointer pb-2" key={field.id}>
+                                            <Wrapper
+                                                extraProps={{ ...(field.type == 'checkbox' && !field.options ? { single: true } : {}) }}
+                                                field={field}
+                                                key={field.id}
+                                            />
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <EmptyState
+                                    title="Wireframe stub"
+                                    description="Wireframe visible fields body is empty. Implement your custom preview content here."
+                                    className="min-h-55"
+                                />
+                            )}
                         </div>
-                    </PanelSection>
-                ) : (
-                    <EmptyState
-                        title="No visible fields for this tag"
-                        description="Use includes, excludes, or option mappings to reveal fields in the preview flow."
-                    />
-                )}
+                    </div>
+                </div>
             </div>
-        </ScrollArea>
+
+            <div className="border-t border-slate-200 px-4 py-2 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-300">
+                <p className="truncate">{footerLine}</p>
+            </div>
+        </div>
     );
 }
 

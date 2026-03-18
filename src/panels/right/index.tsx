@@ -5,6 +5,7 @@ import Header from '@/panels/right/components/header.tsx';
 import Comments from '@/panels/right/tabs/comments.tsx';
 import { Properties } from '@/panels/right/tabs/properties.tsx';
 import Wireframe from '@/panels/right/tabs/wireframe.tsx';
+import { OrderFlowProvider, useInputs } from '@timeax/digital-service-engine/react';
 
 const RightPanel = () => {
     const tabClassName = cn(
@@ -13,13 +14,15 @@ const RightPanel = () => {
         'dark:data-[state=active]:text-slate-100!',
         'data-[state=active]:-mb-px! data-[state=active]:border-blue-500!',
     );
+
+    const registry = useInputs().registry;
     return (
         <Panel
             edges={['left']}
             maxWidth={420}
             minWidth={320}
             className={
-                'flex h-dvh max-h-dvh w-[400px] flex-col rounded-none! border-l border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] dark:border-slate-800 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.98),rgba(15,23,42,0.98))]'
+                'flex h-dvh max-h-dvh w-100 flex-col rounded-none! border-l border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] dark:border-slate-800 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.98),rgba(15,23,42,0.98))]'
             }
         >
             <div className="flex h-full flex-col">
@@ -43,7 +46,9 @@ const RightPanel = () => {
                         <Properties />
                     </TabsContent>
                     <TabsContent className={'min-h-0 grow overflow-hidden'} value="wireframe">
-                        <Wireframe />
+                        <OrderFlowProvider registry={registry}>
+                            <Wireframe />
+                        </OrderFlowProvider>
                     </TabsContent>
                 </Tabs>
             </div>

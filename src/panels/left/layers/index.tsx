@@ -46,10 +46,17 @@ const Layers = () => {
     const [isFieldSearchOpen, setIsFieldSearchOpen] = useState(false);
 
     const handleSelection: SortTreeProps['onSelect'] = (ids, meta) => {
-        if (meta?.via === 'click') {
-            canvas.setActive(ids[0]);
-            canvas.api.select(ids);
+        if (meta?.via === 'api') return;
+        const primary = ids[0];
+        if (!primary) return;
+
+        canvas.setActive(primary);
+        if (meta?.selection?.cause === 'single' || meta?.selection?.cause === 'toggle') {
+            canvas.api.select([primary]);
+            return;
         }
+
+        canvas.api.addToSelection(ids);
     };
 
     const handleTagChange: SortTreeProps<Tag>['onChange'] = (_next, detail) => {
@@ -253,7 +260,7 @@ const Layers = () => {
                                 nodeClassName="text-[13px]! font-medium"
                                 defaultNodeIcon={(node) => {
                                     const id = String(node.id);
-                                    if (id.startsWith('o:') || node.data.meta?.button) return <BsXDiamondFill />;
+                                    if (id.startsWith('o:') || node.data?.meta?.button) return <BsXDiamondFill />;
                                     return <RxInput />;
                                 }}
                                 selectionMode="multiple"
@@ -261,15 +268,17 @@ const Layers = () => {
                                 ref={fieldsRef}
                                 allSupportSubnodes
                                 onSelect={(ids, meta) => {
-                                    if (meta.via !== 'api') {
-                                        if (meta.selection.cause === 'single' || meta.selection.cause === 'toggle') {
-                                            ids.forEach((id) => canvas.api.selection.remove(id));
-                                            canvas.setActive(ids[0]);
-                                            canvas.api.select([...canvas.selectionInfo.tagIds, ...ids]);
-                                        } else {
-                                            canvas.api.addToSelection(ids);
-                                        }
+                                    if (meta.via === 'api') return;
+                                    const primary = ids[0];
+                                    if (!primary) return;
+
+                                    canvas.setActive(primary);
+                                    if (meta.selection.cause === 'single' || meta.selection.cause === 'toggle') {
+                                        canvas.api.select([primary], canvas.api.selection.currentTag());
+                                        return;
                                     }
+
+                                    canvas.api.addToSelection(ids);
                                 }}
                                 value={[...canvas.selectionInfo.fieldIds, ...canvas.selectionInfo.optionIds] as string[]}
                                 rowClassName="mb-1 rounded-xl border border-transparent px-1 hover:border-slate-200 hover:bg-slate-50 dark:hover:border-slate-800 dark:hover:bg-slate-900/70"

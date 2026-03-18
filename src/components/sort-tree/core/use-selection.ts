@@ -157,6 +157,14 @@ export function useSelection<T>({ rows, getNodeKey, selectionMode, controlledVal
 
     function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
         if (selectionMode === 'none' || !rows.length) return;
+        const target = e.target as HTMLElement | null;
+        const isEditableTarget =
+            !!target &&
+            (target instanceof HTMLInputElement ||
+                target instanceof HTMLTextAreaElement ||
+                target.isContentEditable ||
+                target.closest('[contenteditable=""],[contenteditable="true"],[role="combobox"],input,textarea') !== null);
+        if (isEditableTarget) return;
 
         const modifiers = {
             shift: e.shiftKey || undefined,
