@@ -2,34 +2,37 @@
 > Note for LLMs: `Lx-Ly` ranges refer to lines in this Prodex trace file, not the original source files. Index metadata is provided via the HTML comment markers in this section.
 
 # Index
-<!-- PRODEX_INDEX_RANGE: L8-L32 -->
-<!-- PRODEX_FILE_COUNT: 25 -->
+<!-- PRODEX_INDEX_RANGE: L8-L35 -->
+<!-- PRODEX_FILE_COUNT: 28 -->
 <!-- PRODEX_INDEX_LIST_START -->
-- [src/react/canvas/__tests__/editor.constraints-emitter.spec.ts](#1)  L36-L188
-- [src/react/canvas/__tests__/editor.constraints.spec.ts](#2)  L189-L645
-- [src/react/canvas/__tests__/editor.includes.test.ts](#3)  L646-L817
-- [src/react/canvas/__tests__/editor.quantity-rule.spec.ts](#4)  L818-L903
-- [src/react/canvas/__tests__/editor.service-filter.spec.ts](#5)  L904-L1029
-- [src/react/canvas/__tests__/editor.utility-guard.spec.ts](#6)  L1030-L1124
-- [src/react/canvas/__tests__/selection-get-selected-options.spec.ts](#7)  L1125-L1240
-- [src/react/canvas/__tests__/selection.inheritance.test.ts](#8)  L1241-L1538
-- [src/react/canvas/__tests__/selection.test.ts](#9)  L1539-L1754
-- [src/react/canvas/api.ts](#10)  L1755-L2090
-- [src/react/canvas/backend.ts](#11)  L2091-L2115
-- [src/react/canvas/comments.ts](#12)  L2116-L2787
-- [src/react/canvas/editor.ts](#13)  L2788-L3290
-- [src/react/canvas/editor/editor-constraints.ts](#14)  L3291-L3413
-- [src/react/canvas/editor/editor-duplicate.ts](#15)  L3414-L3669
-- [src/react/canvas/editor/editor-field-rules.ts](#16)  L3670-L3829
-- [src/react/canvas/editor/editor-ids.ts](#17)  L3830-L3917
-- [src/react/canvas/editor/editor-nodes.ts](#18)  L3918-L4593
-- [src/react/canvas/editor/editor-placement.ts](#19)  L4594-L4748
-- [src/react/canvas/editor/editor-relations.ts](#20)  L4749-L5246
-- [src/react/canvas/editor/editor-service-filter.ts](#21)  L5247-L5291
-- [src/react/canvas/editor/editor-types.ts](#22)  L5292-L5370
-- [src/react/canvas/editor/editor-utils.ts](#23)  L5371-L5439
-- [src/react/canvas/events.ts](#24)  L5440-L5484
-- [src/react/canvas/selection.ts](#25)  L5485-L5971
+- [src/react/canvas/__tests__/editor.constraints-emitter.spec.ts](#1)  L39-L191
+- [src/react/canvas/__tests__/editor.constraints.spec.ts](#2)  L192-L648
+- [src/react/canvas/__tests__/editor.history-redo.regression.spec.ts](#3)  L649-L807
+- [src/react/canvas/__tests__/editor.includes.test.ts](#4)  L808-L979
+- [src/react/canvas/__tests__/editor.notices.spec.ts](#5)  L980-L1118
+- [src/react/canvas/__tests__/editor.quantity-rule.spec.ts](#6)  L1119-L1204
+- [src/react/canvas/__tests__/editor.service-filter.spec.ts](#7)  L1205-L1330
+- [src/react/canvas/__tests__/editor.utility-guard.spec.ts](#8)  L1331-L1425
+- [src/react/canvas/__tests__/selection-get-selected-options.spec.ts](#9)  L1426-L1541
+- [src/react/canvas/__tests__/selection.inheritance.test.ts](#10)  L1542-L1985
+- [src/react/canvas/__tests__/selection.test.ts](#11)  L1986-L2201
+- [src/react/canvas/api.ts](#12)  L2202-L2532
+- [src/react/canvas/backend.ts](#13)  L2533-L2557
+- [src/react/canvas/comments.ts](#14)  L2558-L3229
+- [src/react/canvas/editor.ts](#15)  L3230-L3753
+- [src/react/canvas/editor/editor-constraints.ts](#16)  L3754-L3876
+- [src/react/canvas/editor/editor-duplicate.ts](#17)  L3877-L4132
+- [src/react/canvas/editor/editor-field-rules.ts](#18)  L4133-L4292
+- [src/react/canvas/editor/editor-ids.ts](#19)  L4293-L4380
+- [src/react/canvas/editor/editor-nodes.ts](#20)  L4381-L5056
+- [src/react/canvas/editor/editor-notices.ts](#21)  L5057-L5132
+- [src/react/canvas/editor/editor-placement.ts](#22)  L5133-L5287
+- [src/react/canvas/editor/editor-relations.ts](#23)  L5288-L5785
+- [src/react/canvas/editor/editor-service-filter.ts](#24)  L5786-L5830
+- [src/react/canvas/editor/editor-types.ts](#25)  L5831-L5910
+- [src/react/canvas/editor/editor-utils.ts](#26)  L5911-L5979
+- [src/react/canvas/events.ts](#27)  L5980-L6024
+- [src/react/canvas/selection.ts](#28)  L6025-L6524
 <!-- PRODEX_INDEX_LIST_END -->
 
 ---
@@ -647,6 +650,165 @@ describe("Editor constraints", () => {
 #### 3
 
 
+` File: src/react/canvas/__tests__/editor.history-redo.regression.spec.ts`  [↑ Back to top](#index)
+
+```ts
+import { describe, expect, it } from "vitest";
+import { createBuilder } from "@/core";
+import type { ServiceProps } from "@/schema";
+import { CanvasAPI } from "../api";
+
+function baseProps(): ServiceProps {
+    return {
+        schema_version: "1.0",
+        filters: [{ id: "t:root", label: "Root" }],
+        fields: [{ id: "f:seed", type: "text", bind_id: "t:root", label: "Seed" }],
+    };
+}
+
+function setup() {
+    const b = createBuilder({
+        serviceMap: {
+            svc1: { id: 1, flags: { refill: { description: "Refill flag" } } } as any,
+        },
+    });
+    b.load(baseProps());
+    const api = new CanvasAPI(b, { autoEmitState: false });
+    return { b, api, editor: api.editor };
+}
+
+function tagIdByLabel(props: ServiceProps, label: string): string {
+    const found = props.filters.find((t) => t.label === label);
+    if (!found) throw new Error(`tag with label '${label}' not found`);
+    return found.id;
+}
+
+function fieldIdByLabel(props: ServiceProps, label: string): string {
+    const found = props.fields.find((f) => f.label === label);
+    if (!found) throw new Error(`field with label '${label}' not found`);
+    return found.id;
+}
+
+describe("Editor history redo regression", () => {
+    it("basic add-node undo/redo restores tag", () => {
+        const { b, editor } = setup();
+        editor.addTag({ label: "A" });
+        const tagId = tagIdByLabel(b.getProps(), "A");
+        expect(b.getProps().filters.some((t) => t.id === tagId)).toBe(true);
+
+        expect(editor.undo()).toBe(true);
+        expect(b.getProps().filters.some((t) => t.id === tagId)).toBe(false);
+
+        expect(editor.redo()).toBe(true);
+        expect(b.getProps().filters.some((t) => t.id === tagId)).toBe(true);
+    });
+
+    it("supports multi-step chain undo/redo across structural, property, and rule mutations", () => {
+        const { b, editor } = setup();
+
+        editor.addTag({ label: "ChainTag" });
+        const tagId = tagIdByLabel(b.getProps(), "ChainTag");
+        editor.editLabel(tagId, "ChainTag v2");
+        editor.addField({
+            label: "ChainField",
+            type: "text",
+            bind_id: tagId,
+        });
+        const fieldId = fieldIdByLabel(b.getProps(), "ChainField");
+        editor.setFieldQuantityRule(fieldId, { valueBy: "length" });
+
+        expect(editor.getFieldQuantityRule(fieldId)).toEqual({ valueBy: "length" });
+        expect(b.getProps().fields.some((f) => f.id === fieldId)).toBe(true);
+        expect(b.getProps().filters.find((t) => t.id === tagId)?.label).toBe("ChainTag v2");
+
+        expect(editor.undo()).toBe(true);
+        expect(editor.getFieldQuantityRule(fieldId)).toBeUndefined();
+
+        expect(editor.undo()).toBe(true);
+        expect(b.getProps().fields.some((f) => f.id === fieldId)).toBe(false);
+
+        expect(editor.undo()).toBe(true);
+        expect(b.getProps().filters.find((t) => t.id === tagId)?.label).toBe("ChainTag");
+
+        expect(editor.undo()).toBe(true);
+        expect(b.getProps().filters.some((t) => t.id === tagId)).toBe(false);
+
+        expect(editor.redo()).toBe(true);
+        expect(b.getProps().filters.some((t) => t.id === tagId)).toBe(true);
+
+        expect(editor.redo()).toBe(true);
+        expect(b.getProps().filters.find((t) => t.id === tagId)?.label).toBe("ChainTag v2");
+
+        expect(editor.redo()).toBe(true);
+        expect(b.getProps().fields.some((f) => f.id === fieldId)).toBe(true);
+
+        expect(editor.redo()).toBe(true);
+        expect(editor.getFieldQuantityRule(fieldId)).toEqual({ valueBy: "length" });
+    });
+
+    it("preserves redo branch after undo and discards branch only after new mutation", () => {
+        const { b, editor } = setup();
+
+        editor.addTag({ label: "A" }); // A
+        const tagId = tagIdByLabel(b.getProps(), "A");
+        editor.updateTag(tagId, { label: "B" }); // B
+        editor.addField({ label: "CField", type: "text", bind_id: tagId }); // C
+        const fieldId = fieldIdByLabel(b.getProps(), "CField");
+        expect(b.getProps().fields.some((f) => f.id === fieldId)).toBe(true);
+
+        expect(editor.undo()).toBe(true); // back to B
+        expect(b.getProps().fields.some((f) => f.id === fieldId)).toBe(false);
+
+        expect(editor.redo()).toBe(true); // forward to C
+        expect(b.getProps().fields.some((f) => f.id === fieldId)).toBe(true);
+
+        expect(editor.undo()).toBe(true); // back to B
+        editor.updateTag(tagId, { label: "C" }); // new branch
+
+        expect(editor.redo()).toBe(false);
+        expect(b.getProps().fields.some((f) => f.id === fieldId)).toBe(false);
+        expect(b.getProps().filters.find((t) => t.id === tagId)?.label).toBe("C");
+    });
+
+    it("does not re-push editor history entries on pure undo/redo restore", () => {
+        const { editor } = setup();
+        editor.addTag({ label: "HistA" });
+        editor.addTag({ label: "HistB" });
+
+        const anyEditor = editor as any;
+        const lenBeforeUndo = anyEditor.history.length;
+        const idxBeforeUndo = anyEditor.index;
+
+        expect(editor.undo()).toBe(true);
+        expect(anyEditor.history.length).toBe(lenBeforeUndo);
+        expect(anyEditor.index).toBe(idxBeforeUndo - 1);
+
+        expect(editor.redo()).toBe(true);
+        expect(anyEditor.history.length).toBe(lenBeforeUndo);
+        expect(anyEditor.index).toBe(idxBeforeUndo);
+    });
+
+    it("canvas api does not expose undo; editor remains the history owner", () => {
+        const { b, api, editor } = setup();
+        editor.addTag({ label: "LegacyUndo" });
+        const tagId = tagIdByLabel(b.getProps(), "LegacyUndo");
+        expect(b.getProps().filters.some((t) => t.id === tagId)).toBe(true);
+
+        expect((api as any).undo).toBeUndefined();
+
+        expect(editor.undo()).toBe(true);
+        expect(b.getProps().filters.some((t) => t.id === tagId)).toBe(false);
+
+        expect(editor.redo()).toBe(true);
+        expect(b.getProps().filters.some((t) => t.id === tagId)).toBe(true);
+    });
+});
+```
+
+---
+#### 4
+
+
 ` File: src/react/canvas/__tests__/editor.includes.test.ts`  [↑ Back to top](#index)
 
 ```ts
@@ -816,7 +978,146 @@ describe("Editor includes/excludes", () => {
 ```
 
 ---
-#### 4
+#### 5
+
+
+` File: src/react/canvas/__tests__/editor.notices.spec.ts`  [↑ Back to top](#index)
+
+```ts
+import { describe, expect, it } from "vitest";
+import { createBuilder } from "@/core";
+import type { ServiceProps, ServicePropsNotice } from "@/schema";
+import { CanvasAPI } from "../api";
+
+function baseProps(): ServiceProps {
+    return {
+        schema_version: "1.0",
+        filters: [{ id: "root", label: "Root" }],
+        fields: [{ id: "f:text", type: "text", bind_id: "root", label: "Text" }],
+    };
+}
+
+function makeNotice(
+    overrides: Partial<ServicePropsNotice> = {},
+): Omit<ServicePropsNotice, "id"> {
+    return {
+        type: "public",
+        kind: "label",
+        severity: "info",
+        target: { scope: "global" },
+        title: "Best",
+        ...overrides,
+    };
+}
+
+describe("Editor notice helpers", () => {
+    it("addNotice adds a notice and returns generated id when omitted", () => {
+        const b = createBuilder();
+        b.load(baseProps());
+        const api = new CanvasAPI(b, { autoEmitState: false });
+        const { editor } = api;
+
+        const id = editor.addNotice(makeNotice());
+        const props = b.getProps();
+
+        expect(id).toBe("n:1");
+        expect(props.notices).toHaveLength(1);
+        expect(props.notices?.[0]).toMatchObject({ id, title: "Best" });
+    });
+
+    it("addNotice preserves provided id", () => {
+        const b = createBuilder();
+        b.load(baseProps());
+        const api = new CanvasAPI(b, { autoEmitState: false });
+        const { editor } = api;
+
+        const id = editor.addNotice({
+            id: "notice:custom",
+            ...makeNotice({ title: "Custom" }),
+        });
+        const props = b.getProps();
+
+        expect(id).toBe("notice:custom");
+        expect(props.notices?.[0].id).toBe("notice:custom");
+    });
+
+    it("updateNotice patches targeted notice and unknown id is no-op", () => {
+        const b = createBuilder();
+        b.load({
+            ...baseProps(),
+            notices: [
+                { id: "n:1", ...makeNotice({ title: "One" }) },
+                { id: "n:2", ...makeNotice({ title: "Two" }) },
+            ],
+        });
+        const api = new CanvasAPI(b, { autoEmitState: false });
+        const { editor } = api;
+
+        editor.updateNotice("n:2", { title: "Two Updated", severity: "warning" });
+        editor.updateNotice("n:404", { title: "Nope" });
+
+        const props = b.getProps();
+        expect(props.notices?.find((n) => n.id === "n:1")?.title).toBe("One");
+        expect(props.notices?.find((n) => n.id === "n:2")).toMatchObject({
+            title: "Two Updated",
+            severity: "warning",
+        });
+    });
+
+    it("removeNotice deletes targeted notice and unknown id is no-op", () => {
+        const b = createBuilder();
+        b.load({
+            ...baseProps(),
+            notices: [
+                { id: "n:1", ...makeNotice({ title: "One" }) },
+                { id: "n:2", ...makeNotice({ title: "Two" }) },
+            ],
+        });
+        const api = new CanvasAPI(b, { autoEmitState: false });
+        const { editor } = api;
+
+        editor.removeNotice("n:2");
+        editor.removeNotice("n:404");
+
+        const props = b.getProps();
+        expect(props.notices).toHaveLength(1);
+        expect(props.notices?.[0].id).toBe("n:1");
+    });
+
+    it("supports undo/redo across add, update, remove notice", () => {
+        const b = createBuilder();
+        b.load(baseProps());
+        const api = new CanvasAPI(b, { autoEmitState: false });
+        const { editor } = api;
+
+        const id = editor.addNotice(makeNotice({ title: "Initial" }));
+        editor.updateNotice(id, { title: "Updated" });
+        editor.removeNotice(id);
+        expect(b.getProps().notices).toBeUndefined();
+
+        editor.undo();
+        expect(b.getProps().notices?.[0].title).toBe("Updated");
+
+        editor.undo();
+        expect(b.getProps().notices?.[0].title).toBe("Initial");
+
+        editor.undo();
+        expect(b.getProps().notices).toBeUndefined();
+
+        editor.redo();
+        expect(b.getProps().notices?.[0].title).toBe("Initial");
+
+        editor.redo();
+        expect(b.getProps().notices?.[0].title).toBe("Updated");
+
+        editor.redo();
+        expect(b.getProps().notices).toBeUndefined();
+    });
+});
+```
+
+---
+#### 6
 
 
 ` File: src/react/canvas/__tests__/editor.quantity-rule.spec.ts`  [↑ Back to top](#index)
@@ -902,7 +1203,7 @@ describe('Editor field quantity rule helpers', () => {
 ```
 
 ---
-#### 5
+#### 7
 
 
 ` File: src/react/canvas/__tests__/editor.service-filter.spec.ts`  [↑ Back to top](#index)
@@ -1028,7 +1329,7 @@ describe("Editor.filterServicesForVisibleGroup", () => {
 ```
 
 ---
-#### 6
+#### 8
 
 
 ` File: src/react/canvas/__tests__/editor.utility-guard.spec.ts`  [↑ Back to top](#index)
@@ -1123,7 +1424,7 @@ describe('Editor utility guard (utilities cannot have service_id)', () => {
 ```
 
 ---
-#### 7
+#### 9
 
 
 ` File: src/react/canvas/__tests__/selection-get-selected-options.spec.ts`  [↑ Back to top](#index)
@@ -1239,7 +1540,7 @@ describe("Selection button helpers", () => {
 ```
 
 ---
-#### 8
+#### 10
 
 
 ` File: src/react/canvas/__tests__/selection.inheritance.test.ts`  [↑ Back to top](#index)
@@ -1261,6 +1562,152 @@ function idsSorted(x: string[]) {
 }
 
 describe("Selection.visibleGroup() — inheritance rules", () => {
+    it("preserves current tag when selecting an ancestor-bound field visible in child context", () => {
+        const props = {
+            filters: [
+                { id: "t:root", label: "Root" },
+                { id: "t:Child", label: "Child", bind_id: "t:root" },
+            ],
+            fields: [
+                { id: "f:rootBound", label: "RootBound", bind_id: "t:root" },
+                { id: "f:childBound", label: "ChildBound", bind_id: "t:Child" },
+            ],
+        };
+
+        const builder = mkBuilder(props);
+        const sel = new Selection(builder, {
+            env: "client",
+            rootTagId: "t:root",
+        });
+
+        sel.replace("t:Child");
+        expect(sel.currentTag()).toBe("t:Child");
+
+        sel.add("f:rootBound");
+        expect(sel.currentTag()).toBe("t:Child");
+    });
+
+    it("preserves current tag when selecting an option whose host field is visible in context", () => {
+        const props = {
+            filters: [
+                { id: "t:root", label: "Root" },
+                { id: "t:Child", label: "Child", bind_id: "t:root" },
+            ],
+            fields: [
+                {
+                    id: "f:mode",
+                    label: "Mode",
+                    bind_id: "t:root",
+                    options: [{ id: "o:fast", label: "Fast" }],
+                },
+            ],
+        };
+
+        const builder = mkBuilder(props);
+        const sel = new Selection(builder, {
+            env: "client",
+            rootTagId: "t:root",
+        });
+
+        sel.replace("t:Child");
+        expect(sel.currentTag()).toBe("t:Child");
+
+        sel.add("o:fast");
+        expect(sel.currentTag()).toBe("t:Child");
+    });
+
+    it("falls back to field first bind when selected field is not visible in current tag context", () => {
+        const props = {
+            filters: [
+                { id: "t:root", label: "Root" },
+                { id: "t:A", label: "A", bind_id: "t:root" },
+                { id: "t:B", label: "B", bind_id: "t:root" },
+            ],
+            fields: [{ id: "f:aOnly", label: "AOnly", bind_id: "t:A" }],
+        };
+
+        const builder = mkBuilder(props);
+        const sel = new Selection(builder, {
+            env: "client",
+            rootTagId: "t:root",
+        });
+
+        sel.replace("t:B");
+        expect(sel.currentTag()).toBe("t:B");
+
+        sel.add("f:aOnly");
+        expect(sel.currentTag()).toBe("t:A");
+    });
+
+    it("legacy field::option follows the same keep-or-fallback rule", () => {
+        const props = {
+            filters: [
+                { id: "t:root", label: "Root" },
+                { id: "t:A", label: "A", bind_id: "t:root" },
+                { id: "t:B", label: "B", bind_id: "t:root" },
+                { id: "t:Child", label: "Child", bind_id: "t:root" },
+            ],
+            fields: [
+                {
+                    id: "f:rootMode",
+                    label: "RootMode",
+                    bind_id: "t:root",
+                    options: [{ id: "o:rootFast", label: "Fast" }],
+                },
+                {
+                    id: "f:aMode",
+                    label: "AMode",
+                    bind_id: "t:A",
+                    options: [{ id: "o:aFast", label: "Fast" }],
+                },
+            ],
+        };
+
+        const builder = mkBuilder(props);
+        const sel = new Selection(builder, {
+            env: "client",
+            rootTagId: "t:root",
+        });
+
+        sel.replace("t:Child");
+        sel.add("f:rootMode::o:rootFast");
+        expect(sel.currentTag()).toBe("t:Child");
+
+        sel.replace("t:B");
+        sel.add("f:aMode::o:aFast");
+        expect(sel.currentTag()).toBe("t:A");
+    });
+
+    it("multi-bind fallback keeps existing index-0 precedence", () => {
+        const props = {
+            filters: [
+                { id: "t:root", label: "Root" },
+                { id: "t:A", label: "A", bind_id: "t:root" },
+                { id: "t:B", label: "B", bind_id: "t:root" },
+                { id: "t:C", label: "C", bind_id: "t:root" },
+            ],
+            fields: [
+                {
+                    id: "f:multi",
+                    label: "Multi",
+                    bind_id: ["t:A", "t:B"],
+                },
+            ],
+        };
+
+        const builder = mkBuilder(props);
+        const sel = new Selection(builder, {
+            env: "client",
+            rootTagId: "t:root",
+        });
+
+        sel.replace("t:C");
+        expect(sel.currentTag()).toBe("t:C");
+
+        sel.add("f:multi");
+        expect(sel.currentTag()).toBe("t:A");
+    });
+
     it("bind inheritance: field bound to root is visible when selecting a child tag", () => {
         const props = {
             filters: [
@@ -1537,7 +1984,7 @@ describe("Selection.visibleGroup() — inheritance rules", () => {
 ```
 
 ---
-#### 9
+#### 11
 
 
 ` File: src/react/canvas/__tests__/selection.test.ts`  [↑ Back to top](#index)
@@ -1753,7 +2200,7 @@ describe("Selection.visibleGroup()", () => {
 ```
 
 ---
-#### 10
+#### 12
 
 
 ` File: src/react/canvas/api.ts`  [↑ Back to top](#index)
@@ -1914,8 +2361,8 @@ export class CanvasAPI {
     }
 
     /* ─── Selection ─────────────────────────────────────────── */
-    select(ids: string[] | Set<string>): void {
-        this.selection.many(ids);
+    select(ids: string[] | Set<string>, primary?: string): void {
+        this.selection.many(ids, primary);
     }
 
     addToSelection(ids: string[] | Set<string>): void {
@@ -2001,11 +2448,6 @@ export class CanvasAPI {
         this.bus.clear();
     }
 
-    undo() {
-        this.builder.undo();
-        this.refreshGraph();
-    }
-
     private edgeRel: EdgeKind = "bind";
 
     getEdgeRel(): EdgeKind {
@@ -2089,7 +2531,7 @@ export class CanvasAPI {
 ```
 
 ---
-#### 11
+#### 13
 
 
 ` File: src/react/canvas/backend.ts`  [↑ Back to top](#index)
@@ -2114,7 +2556,7 @@ export type CanvasBackendOptions = {
 ```
 
 ---
-#### 12
+#### 14
 
 
 ` File: src/react/canvas/comments.ts`  [↑ Back to top](#index)
@@ -2786,7 +3228,7 @@ export class CommentsAPI {
 ```
 
 ---
-#### 13
+#### 15
 
 
 ` File: src/react/canvas/editor.ts`  [↑ Back to top](#index)
@@ -2803,6 +3245,7 @@ import type {
     Field,
     FieldValidationRule,
     ServiceProps,
+    ServicePropsNotice,
     Tag,
 } from "@/schema";
 import type { CanvasAPI } from "./api";
@@ -2819,6 +3262,11 @@ import type {
     WireKind,
 } from "./editor/editor-types";
 import { duplicate } from "./editor/editor-duplicate";
+import {
+    addNotice,
+    removeNotice,
+    updateNotice,
+} from "./editor/editor-notices";
 import {
     addField,
     addOption,
@@ -3065,6 +3513,20 @@ export class Editor {
         return removeTag(this.moduleCtx(), id);
     }
 
+    addNotice(
+        input: Omit<ServicePropsNotice, "id"> & { id?: string },
+    ): string {
+        return addNotice(this.moduleCtx(), input);
+    }
+
+    updateNotice(id: string, patch: Partial<ServicePropsNotice>): void {
+        return updateNotice(this.moduleCtx(), id, patch);
+    }
+
+    removeNotice(id: string): void {
+        return removeNotice(this.moduleCtx(), id);
+    }
+
     addField(
         partial: Omit<Field, "id" | "label" | "type"> & {
             id?: string;
@@ -3270,6 +3732,7 @@ export class Editor {
             isOptionId: (id) => this.isOptionId(id),
             transact: (label, fn) => this.transact(label, fn),
             exec: (cmd) => this.exec(cmd),
+            undo: () => this.undo(),
             patchProps: (mut) => this.patchProps(mut),
             replaceProps: (next) => this.replaceProps(next),
             emit: (event, payload) => this.emit(event, payload),
@@ -3289,7 +3752,7 @@ export class Editor {
 ```
 
 ---
-#### 14
+#### 16
 
 
 ` File: src/react/canvas/editor/editor-constraints.ts`  [↑ Back to top](#index)
@@ -3406,13 +3869,13 @@ export function clearConstraint(
 
                 process(tagId);
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 ```
 
 ---
-#### 15
+#### 17
 
 
 ` File: src/react/canvas/editor/editor-duplicate.ts`  [↑ Back to top](#index)
@@ -3668,7 +4131,7 @@ export function duplicateOption(
 ```
 
 ---
-#### 16
+#### 18
 
 
 ` File: src/react/canvas/editor/editor-field-rules.ts`  [↑ Back to top](#index)
@@ -3717,7 +4180,7 @@ export function setFieldQuantityRule(
                     quantity: normalized,
                 };
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 
@@ -3736,7 +4199,7 @@ export function clearFieldQuantityRule(
                     delete (f as any).meta;
                 }
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 
@@ -3771,7 +4234,7 @@ export function setFieldValidation(
 
                 (f as any).validation = normalized;
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 
@@ -3787,7 +4250,7 @@ export function clearFieldValidation(
                 if (!f || !(f as any).validation) return;
                 delete (f as any).validation;
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 
@@ -3828,7 +4291,7 @@ export function normalizeQuantityRule(input: unknown): QuantityRule | undefined 
 ```
 
 ---
-#### 17
+#### 19
 
 
 ` File: src/react/canvas/editor/editor-ids.ts`  [↑ Back to top](#index)
@@ -3916,7 +4379,7 @@ export function bumpSuffix(old: string): string {
 ```
 
 ---
-#### 18
+#### 20
 
 
 ` File: src/react/canvas/editor/editor-nodes.ts`  [↑ Back to top](#index)
@@ -3968,7 +4431,7 @@ export function reLabel(
                 fld.label = label;
                 ctx.api.refreshGraph();
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 
@@ -4033,7 +4496,7 @@ export function setFieldName(
 
                 (f as any).name = name;
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 
@@ -4062,7 +4525,7 @@ export function addOption(
                 }
                 list.push({ ...input, id } as any);
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 
     return id;
@@ -4093,7 +4556,7 @@ export function updateOption(
                 const o = f.options.find((x) => x.id === optionId);
                 if (o) Object.assign(o, patch);
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 
@@ -4122,7 +4585,7 @@ export function removeOption(ctx: EditorModuleContext, optionId: string) {
                     if (!Object.keys(map).length) delete (p as any)[m];
                 }
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 
@@ -4154,7 +4617,7 @@ export function editLabel(ctx: EditorModuleContext, id: string, label: string): 
                 }
                 throw new Error("editLabel: unsupported id");
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 
@@ -4171,7 +4634,7 @@ export function editName(
                 if (!f) return;
                 f.name = name;
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 
@@ -4300,7 +4763,7 @@ export function setService(
                     else (f as any).service_id = sid;
                 }
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 
@@ -4507,7 +4970,7 @@ export function remove(ctx: EditorModuleContext, id: string) {
                         if (!p.order_for_tags![k].length) delete p.order_for_tags![k];
                     }
                 }),
-            undo: () => ctx.api.undo(),
+            undo: () => ctx.undo(),
         });
         return;
     }
@@ -4545,7 +5008,7 @@ export function remove(ctx: EditorModuleContext, id: string) {
                         if (!Object.keys(map).length) delete (p as any)[m];
                     }
                 }),
-            undo: () => ctx.api.undo(),
+            undo: () => ctx.undo(),
         });
         return;
     }
@@ -4592,7 +5055,83 @@ export function getNode(ctx: EditorModuleContext, id: string): EditorNodeLookup 
 ```
 
 ---
-#### 19
+#### 21
+
+
+` File: src/react/canvas/editor/editor-notices.ts`  [↑ Back to top](#index)
+
+```ts
+import type { ServicePropsNotice } from "@/schema";
+import type { EditorModuleContext } from "./editor-types";
+
+function genNoticeId(ctx: EditorModuleContext): string {
+    const taken = new Set((ctx.getProps().notices ?? []).map((n) => n.id));
+    for (let i = 1; i < 10_000; i++) {
+        const id = `n:${i}`;
+        if (!taken.has(id)) return id;
+    }
+    throw new Error("Unable to generate notice id");
+}
+
+export function addNotice(
+    ctx: EditorModuleContext,
+    input: Omit<ServicePropsNotice, "id"> & { id?: string },
+): string {
+    const id = input.id ?? genNoticeId(ctx);
+
+    ctx.exec({
+        name: "addNotice",
+        do: () =>
+            ctx.patchProps((p) => {
+                const notices = (p.notices ??= []);
+                if (notices.some((n) => n.id === id)) {
+                    throw new Error(`Notice id '${id}' already exists`);
+                }
+                notices.push({ ...input, id });
+            }),
+        undo: () => ctx.undo(),
+    });
+
+    return id;
+}
+
+export function updateNotice(
+    ctx: EditorModuleContext,
+    id: string,
+    patch: Partial<ServicePropsNotice>,
+): void {
+    const { id: _ignored, ...rest } = patch;
+    ctx.exec({
+        name: "updateNotice",
+        do: () =>
+            ctx.patchProps((p) => {
+                const notices = p.notices;
+                if (!notices?.length) return;
+
+                const target = notices.find((n) => n.id === id);
+                if (!target) return;
+                Object.assign(target, rest);
+            }),
+        undo: () => ctx.undo(),
+    });
+}
+
+export function removeNotice(ctx: EditorModuleContext, id: string): void {
+    ctx.exec({
+        name: "removeNotice",
+        do: () =>
+            ctx.patchProps((p) => {
+                if (!p.notices?.length) return;
+                p.notices = p.notices.filter((n) => n.id !== id);
+                if (!p.notices.length) delete p.notices;
+            }),
+        undo: () => ctx.undo(),
+    });
+}
+```
+
+---
+#### 22
 
 
 ` File: src/react/canvas/editor/editor-placement.ts`  [↑ Back to top](#index)
@@ -4656,7 +5195,7 @@ export function placeNode(
                     siblings.splice(dest, 0, pulled);
                     p.filters = [...out, ...siblings];
                 }),
-            undo: () => ctx.api.undo(),
+            undo: () => ctx.undo(),
         });
         return;
     }
@@ -4686,7 +5225,7 @@ export function placeNode(
 
                     arr.splice(dest, 0, fieldId);
                 }),
-            undo: () => ctx.api.undo(),
+            undo: () => ctx.undo(),
         });
         return;
     }
@@ -4741,13 +5280,13 @@ export function placeOption(
 
                 f.options.splice(dest, 0, pulled);
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 ```
 
 ---
-#### 20
+#### 23
 
 
 ` File: src/react/canvas/editor/editor-relations.ts`  [↑ Back to top](#index)
@@ -4909,7 +5448,7 @@ export function include(
                     throw new Error("Receiver must be a tag, button field, or option");
                 }
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 
@@ -5014,7 +5553,7 @@ export function exclude(
                     throw new Error("Receiver must be a tag, button field, or option");
                 }
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 
@@ -5100,7 +5639,7 @@ export function connect(
                                     const t = (next.filters ?? []).find((x) => x.id === toId);
                                     if (t) (t as any).service_id = fromId;
                                 }),
-                            undo: () => ctx.api.undo(),
+                            undo: () => ctx.undo(),
                         });
                         return;
                     }
@@ -5118,7 +5657,7 @@ export function connect(
                                         }
                                     }
                                 }),
-                            undo: () => ctx.api.undo(),
+                            undo: () => ctx.undo(),
                         });
                         return;
                     }
@@ -5128,7 +5667,7 @@ export function connect(
 
                 throw new Error(`Unknown connect kind: ${kind}`);
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 
@@ -5211,7 +5750,7 @@ export function disconnect(
                                     const t = (next.filters ?? []).find((x) => x.id === toId);
                                     if (t) delete (t as any).service_id;
                                 }),
-                            undo: () => ctx.api.undo(),
+                            undo: () => ctx.undo(),
                         });
                         return;
                     }
@@ -5229,7 +5768,7 @@ export function disconnect(
                                         }
                                     }
                                 }),
-                            undo: () => ctx.api.undo(),
+                            undo: () => ctx.undo(),
                         });
                         return;
                     }
@@ -5239,13 +5778,13 @@ export function disconnect(
 
                 throw new Error(`Unknown disconnect kind: ${kind}`);
             }),
-        undo: () => ctx.api.undo(),
+        undo: () => ctx.undo(),
     });
 }
 ```
 
 ---
-#### 21
+#### 24
 
 
 ` File: src/react/canvas/editor/editor-service-filter.ts`  [↑ Back to top](#index)
@@ -5290,7 +5829,7 @@ export function filterServicesForVisibleGroup(
 ```
 
 ---
-#### 22
+#### 25
 
 
 ` File: src/react/canvas/editor/editor-types.ts`  [↑ Back to top](#index)
@@ -5352,6 +5891,7 @@ export type EditorModuleContext = {
     isOptionId: (id: string) => boolean;
     transact: (label: string, fn: () => void) => void;
     exec: (cmd: Command) => void;
+    undo: () => boolean;
     patchProps: (mut: (p: ServiceProps) => void) => void;
     replaceProps: (next: ServiceProps) => void;
     emit: <K extends keyof (EditorEvents & any)>(
@@ -5369,7 +5909,7 @@ export type EditorModuleContext = {
 ```
 
 ---
-#### 23
+#### 26
 
 
 ` File: src/react/canvas/editor/editor-utils.ts`  [↑ Back to top](#index)
@@ -5438,7 +5978,7 @@ export function ensureServiceExists(opts: EditorOptions, id: any) {
 ```
 
 ---
-#### 24
+#### 27
 
 
 ` File: src/react/canvas/events.ts`  [↑ Back to top](#index)
@@ -5483,14 +6023,14 @@ export class EventBus<E extends EventMap> {
 ```
 
 ---
-#### 25
+#### 28
 
 
 ` File: src/react/canvas/selection.ts`  [↑ Back to top](#index)
 
 ```ts
 // src/react/canvas/selection.ts
-import type { Builder } from "@/core";
+import { createNodeIndex, type Builder } from "@/core";
 import type { Field, PricingRole, ServiceProps, Tag } from "@/schema";
 import type { DgpServiceCapability } from "@/schema/provider";
 
@@ -5762,36 +6302,49 @@ export class Selection {
             this.currentTagId = id;
             return;
         }
-        const f = fields.find((x) => x.id === id);
-        if (f?.bind_id) {
-            this.currentTagId = Array.isArray(f.bind_id)
-                ? f.bind_id[0]
-                : f.bind_id;
-            return;
-        }
 
-        if (this.builder.isOptionId(id)) {
-            const host = fields.find((x) =>
-                (x.options ?? []).some((o) => o.id === id),
+        const firstBindId = (field?: Field): string | undefined => {
+            if (!field?.bind_id) return undefined;
+            return Array.isArray(field.bind_id)
+                ? field.bind_id[0]
+                : field.bind_id;
+        };
+
+        const resolveField = (): Field | undefined => {
+            const direct = fields.find((x) => x.id === id);
+            if (direct) return direct;
+
+            if (this.builder.isOptionId(id)) {
+                return fields.find((x) =>
+                    (x.options ?? []).some((o) => o.id === id),
+                );
+            }
+
+            if (id.includes("::")) {
+                const [fieldId] = id.split("::");
+                if (!fieldId) return undefined;
+                return fields.find((x) => x.id === fieldId);
+            }
+
+            return undefined;
+        };
+
+        const field = resolveField();
+        if (!field) return;
+
+        const currentTagId = this.currentTag();
+        if (currentTagId) {
+            const currentTagNode = createNodeIndex(this.builder).getTag(
+                currentTagId,
             );
-            if (host?.bind_id) {
-                this.currentTagId = Array.isArray(host.bind_id)
-                    ? host.bind_id[0]
-                    : host.bind_id;
+            if (currentTagNode?.getDescendant(field.id)) {
+                this.currentTagId = currentTagId;
                 return;
             }
         }
 
-        if (id.includes("::")) {
-            const [fid] = id.split("::");
-            const host = fields.find((x) => x.id === fid);
-            if (host?.bind_id) {
-                this.currentTagId = Array.isArray(host.bind_id)
-                    ? host.bind_id[0]
-                    : host.bind_id;
-                return;
-            }
-        }
+        const fallbackTagId = firstBindId(field);
+        if (fallbackTagId) this.currentTagId = fallbackTagId;
     }
 
     private resolveTagContextId(props: ServiceProps): string | undefined {
@@ -5969,4 +6522,4 @@ export class Selection {
 
 ---
 *Generated with [Prodex](https://github.com/emxhive/prodex) — Codebase decoded.*
-<!-- PRODEx v1.4.11 | 2026-03-17T04:20:31.216Z -->
+<!-- PRODEx v1.4.11 | 2026-03-19T00:38:56.151Z -->

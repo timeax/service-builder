@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils.ts';
 import Header from '@/panels/left/components/header.tsx';
 import Drafts from '@/panels/left/components/drafts.tsx';
+import AssetsPanel from '@/panels/left/assets';
 import Layers from '@/panels/left/layers';
 import { Panel } from '@/components/ui/panel.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
@@ -46,9 +47,7 @@ const Left = () => {
                             <Layers />
                         </TabsContent>
                         <TabsContent className="mt-2 min-h-0 flex-1 overflow-hidden" value="assets">
-                            <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/70 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-400">
-                                Assets will surface templates, reusable field groups, and service presets in this panel.
-                            </div>
+                            <AssetsPanel />
                         </TabsContent>
                     </Tabs>
                 </div>

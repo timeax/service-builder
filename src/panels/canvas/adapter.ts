@@ -209,14 +209,18 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
 
     const onNodesChange: OnNodesChange = useCallback(
         async (changes) => {
-            setRF((prev) => ({
-                nodes: applyNodeChanges(changes, prev.nodes),
-                edges: prev.edges,
-            }));
+            let nextNodesSnapshot: Node[] = [];
+            setRF((prev) => {
+                const nextNodes = applyNodeChanges(changes, prev.nodes);
+                nextNodesSnapshot = nextNodes;
+                return {
+                    nodes: nextNodes,
+                    edges: prev.edges,
+                };
+            });
 
             const posUpdates: Record<string, { x: number; y: number }> = {};
             let selectionDirty = false;
-            const keep = new Set(api.getSelection().map(String));
 
             for (const change of changes) {
                 if (change.type === 'position' && change.position) {
@@ -256,14 +260,12 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
                         continue;
                     }
                     selectionDirty = true;
-                    if (change.selected) keep.add(change.id);
-                    else keep.delete(change.id);
                 }
             }
 
             if (Object.keys(posUpdates).length > 0) setPositionsThrottled(posUpdates);
             if (selectionDirty) {
-                const next = Array.from(keep);
+                const next = nextNodesSnapshot.filter((node) => !isCommentId(node.id) && node.selected).map((node) => String(node.id));
                 const current = api.getSelection().map(String);
                 if (!sameIdSet(next, current)) api.select(next);
             }

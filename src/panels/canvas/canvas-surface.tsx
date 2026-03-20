@@ -13,12 +13,21 @@ export type CanvasSurfaceProps = {
     showToolbar?: boolean;
     tools?: ToolsConfig;
     labelPlacement?: LabelPlacement;
+    canUndo?: boolean;
+    canRedo?: boolean;
     renderTool?: Parameters<typeof Toolbar>[0]['renderButton'];
     initialShowGrid?: boolean;
     initialShowMiniMap?: boolean;
     toolbarOrientation?: ToolbarOrientation;
     persistToolbarOrientation?: boolean;
     toolbarPositionClassName?: string;
+    onNodeContextMenu?: (payload: {
+        nodeId: string;
+        nodeKind: 'tag' | 'field' | 'option' | 'comment';
+        clientX: number;
+        clientY: number;
+        event: React.MouseEvent;
+    }) => void;
     children?: React.ReactNode;
 };
 
@@ -30,12 +39,15 @@ export function CanvasSurface({
     showToolbar = true,
     tools,
     labelPlacement = 'tooltip',
+    canUndo = false,
+    canRedo = false,
     renderTool,
     initialShowGrid = true,
     initialShowMiniMap = false,
     toolbarOrientation = 'horizontal',
     persistToolbarOrientation = true,
     toolbarPositionClassName = 'left-4 top-4',
+    onNodeContextMenu,
     children,
 }: CanvasSurfaceProps) {
     const ws = useWorkspace();
@@ -87,6 +99,18 @@ export function CanvasSurface({
                 snapToGrid={snapToGrid}
                 snapGrid={snapGrid}
                 className="bg-transparent!"
+                onNodeContextMenu={(event, node) => {
+                    const kind =
+                        (node.data as any)?.node?.kind ??
+                        (node.type === 'tag' || node.type === 'field' || node.type === 'option' || node.type === 'comment' ? node.type : 'comment');
+                    onNodeContextMenu?.({
+                        nodeId: node.id,
+                        nodeKind: kind,
+                        clientX: event.clientX,
+                        clientY: event.clientY,
+                        event,
+                    });
+                }}
             >
                 {showToolbar ? (
                     <div className={`pointer-events-none absolute z-10 ${toolbarPositionClassName}`}>
@@ -99,6 +123,8 @@ export function CanvasSurface({
                             setShowMiniMap={setShowMiniMap}
                             tools={tools}
                             labelPlacement={labelPlacement}
+                            canUndo={canUndo}
+                            canRedo={canRedo}
                             renderButton={renderTool}
                             orientation={orientation}
                             onToggleOrientation={() => setOrientation((current) => (current === 'horizontal' ? 'vertical' : 'horizontal'))}

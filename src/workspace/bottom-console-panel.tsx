@@ -35,6 +35,24 @@ const PANEL_MARGIN = 16;
 const PANEL_LEFT_KEY = 'service-builder.bottom-panel.pos-x';
 const PANEL_BOTTOM_KEY = 'service-builder.bottom-panel.pos-y';
 type PanelPosition = { left: number | null; bottom: number | null };
+type ConsoleSubTab = 'validation' | 'logs' | 'notices';
+type ConsoleScopeFilter = 'all' | 'activeNode';
+type ConsoleSeverityFilter = 'all' | 'error' | 'warning' | 'info';
+
+type ServiceNotice = {
+    id: string;
+    type: 'public' | 'private';
+    kind: 'label' | 'warning' | 'deprecation' | 'compat' | 'migration' | 'policy' | string;
+    severity: 'info' | 'warning' | 'error';
+    target: { scope: 'global' } | { scope: 'node'; node_kind: 'tag' | 'field' | 'option' | string; node_id: string };
+    title: string;
+    description?: string;
+    reason?: string;
+    marked_at?: string;
+    icon?: string;
+    color?: string;
+    meta?: Record<string, unknown>;
+};
 
 export function BottomConsolePanel({ controller, errors, activeServices, allServices, onServiceDragStateChange }: BottomConsolePanelProps) {
     const canvas = useCanvas();
@@ -54,6 +72,9 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
     const [draftContext, setDraftContext] = useState<ServiceContextState>(() => createDefaultServiceContext(canvas.props, preferredTagId));
     const [panelPosition, setPanelPosition] = useState<PanelPosition>(() => readStoredPanelPosition());
     const [draggingPanel, setDraggingPanel] = useState(false);
+    const [consoleSubTab, setConsoleSubTab] = useState<ConsoleSubTab>('validation');
+    const [consoleScopeFilter, setConsoleScopeFilter] = useState<ConsoleScopeFilter>('all');
+    const [consoleSeverityFilter, setConsoleSeverityFilter] = useState<ConsoleSeverityFilter>('all');
     const lastHighlightedIdsRef = useRef<string[]>([]);
     const panelContainerRef = useRef<HTMLDivElement | null>(null);
     const panelRef = useRef<HTMLDivElement | null>(null);
@@ -123,6 +144,15 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
                 .filter((row) => !hideActiveServices || !activeServiceIds.has(row.id)),
         [activeServiceIds, allChecksById, allSearch, allServices, appliedSnapshot.state, hideActiveServices, servicesMap],
     );
+
+    const notices = useMemo(() => normalizeNotices((canvas.props as { notices?: unknown[] } | null | undefined)?.notices), [canvas.props]);
+    const activeNodeIds = useMemo(() => {
+        const ids = new Set<string>();
+        if (canvas.activeId) ids.add(String(canvas.activeId));
+        for (const id of canvas.selectionInfo.ids as string[]) ids.add(String(id));
+        return ids;
+    }, [canvas.activeId, canvas.selectionInfo.ids]);
+    const consoleIssueCount = errors.validation.length + errors.logs.length + notices.length;
 
     useEffect(() => {
         setSelectedActiveServiceId((current) => ensureSelectedRow(current, activeRows));
@@ -213,7 +243,7 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
     }, [draggingPanel, panelPosition]);
 
     const tabs: Array<{ id: BottomPanelTab; label: string; icon: ReactNode; count?: number }> = [
-        { id: 'console', label: 'Console', icon: <FiTerminal />, count: errors.merged.counts.total },
+        { id: 'console', label: 'Console', icon: <FiTerminal />, count: consoleIssueCount },
         { id: 'activeServices', label: 'Active Services', icon: <MdOutlineSync />, count: activeServices.length },
         { id: 'allServices', label: 'All Services', icon: <LuLayers3 />, count: allServices.length },
     ];
@@ -326,7 +356,7 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
                             </p>
                             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                 {controller.activeTab === 'console'
-                                    ? 'Validation rows come from the engine validator. Logs come from the workspace error stream.'
+                                    ? 'Validation rows come from the engine validator. Logs come from the workspace stream. Notices come from schema props.'
                                     : controller.activeTab === 'activeServices'
                                       ? 'Bound services can be highlighted back onto the canvas from here.'
                                       : 'Search every service, test it against a safe visible-group context, and drag it onto nodes.'}
@@ -346,7 +376,20 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
 
                     <ScrollArea className="min-h-0 flex-1">
                         <div className="p-4">
-                            {controller.activeTab === 'console' ? <ConsoleTab errors={errors} /> : null}
+                            {controller.activeTab === 'console' ? (
+                                <ConsoleTab
+                                    errors={errors}
+                                    notices={notices}
+                                    activeNodeIds={activeNodeIds}
+                                    subTab={consoleSubTab}
+                                    onSubTabChange={setConsoleSubTab}
+                                    scopeFilter={consoleScopeFilter}
+                                    onScopeFilterChange={setConsoleScopeFilter}
+                                    severityFilter={consoleSeverityFilter}
+                                    onSeverityFilterChange={setConsoleSeverityFilter}
+                                    onNodeClick={(nodeId) => focusNode(canvas, nodeId)}
+                                />
+                            ) : null}
                             {controller.activeTab === 'activeServices' ? (
                                 <ServicesSplitPane
                                     mode="active"
@@ -403,54 +446,167 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
     );
 }
 
-function ConsoleTab({ errors }: { errors: UseErrorsReturn }) {
-    if (errors.merged.counts.total === 0) {
+function ConsoleTab({
+    errors,
+    notices,
+    activeNodeIds,
+    subTab,
+    onSubTabChange,
+    scopeFilter,
+    onScopeFilterChange,
+    severityFilter,
+    onSeverityFilterChange,
+    onNodeClick,
+}: {
+    errors: UseErrorsReturn;
+    notices: ServiceNotice[];
+    activeNodeIds: ReadonlySet<string>;
+    subTab: ConsoleSubTab;
+    onSubTabChange: (tab: ConsoleSubTab) => void;
+    scopeFilter: ConsoleScopeFilter;
+    onScopeFilterChange: (scope: ConsoleScopeFilter) => void;
+    severityFilter: ConsoleSeverityFilter;
+    onSeverityFilterChange: (severity: ConsoleSeverityFilter) => void;
+    onNodeClick: (nodeId: string) => void;
+}) {
+    const hasActiveSelection = activeNodeIds.size > 0;
+    const validationRows = errors.validation.filter((row) => matchesValidationScope(row, scopeFilter, activeNodeIds)).filter((row) => matchesSeverity(row.severity, severityFilter));
+    const logRows = errors.logs.filter((row) => matchesLogScope(row, scopeFilter, activeNodeIds));
+    const noticeRows = notices.filter((notice) => matchesNoticeScope(notice, scopeFilter, activeNodeIds)).filter((notice) => matchesSeverity(notice.severity, severityFilter));
+
+    const totalIssues = errors.validation.length + errors.logs.length + notices.length;
+    if (totalIssues === 0) {
         return (
             <EmptyState
                 title="No console issues right now"
-                description="The current workspace validates cleanly and there are no pending console logs."
+                description="Validation, logs, and notices are all clear for this workspace."
             />
         );
     }
 
+    const subTabs: Array<{ id: ConsoleSubTab; label: string; count: number }> = [
+        { id: 'validation', label: 'Validation', count: validationRows.length },
+        { id: 'logs', label: 'Logs', count: logRows.length },
+        { id: 'notices', label: 'Notices', count: noticeRows.length },
+    ];
+
     return (
-        <div className="space-y-5">
-            {errors.merged.groups.map((group) => (
-                <section key={group.kind} className="space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                        <div>
-                            <h4 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{group.title}</h4>
-                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                {group.kind === 'validation'
-                                    ? 'These rows come from `validate(props)` and cannot be cleared manually.'
-                                    : 'Editor and runtime errors collected from the workspace stream.'}
-                            </p>
-                        </div>
-                        {group.kind === 'log' && group.rows.length ? (
-                            <Button type="button" variant="ghost" size="sm" onClick={() => errors.clear('logs')} className="h-8 rounded-xl px-3 text-xs">
-                                <FiTrash2 />
-                                Clear logs
-                            </Button>
-                        ) : (
-                            <span className="rounded-full bg-slate-200/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                                {group.rows.length}
-                            </span>
-                        )}
+        <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-200 bg-white/70 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        {subTabs.map((tab) => (
+                            <button
+                                key={tab.id}
+                                type="button"
+                                onClick={() => onSubTabChange(tab.id)}
+                                className={cn(
+                                    'inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors',
+                                    subTab === tab.id
+                                        ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800',
+                                )}
+                            >
+                                <span>{tab.label}</span>
+                                <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] dark:bg-white/10">{tab.count}</span>
+                            </button>
+                        ))}
                     </div>
 
-                    {group.rows.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-400">
-                            {group.kind === 'validation' ? 'No validation issues.' : 'No logs captured yet.'}
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {group.kind === 'validation'
-                                ? group.rows.map((row) => <ValidationCard key={row.id} row={row} />)
-                                : group.rows.map((row) => <LogCard key={row.id} row={row} onRemove={() => errors.removeLog(row.id)} />)}
-                        </div>
-                    )}
-                </section>
-            ))}
+                    {subTab === 'logs' && logRows.length ? (
+                        <Button type="button" variant="ghost" size="sm" onClick={() => errors.clear('logs')} className="h-8 rounded-xl px-3 text-xs">
+                            <FiTrash2 />
+                            Clear logs
+                        </Button>
+                    ) : null}
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Scope</span>
+                    <button
+                        type="button"
+                        onClick={() => onScopeFilterChange('all')}
+                        className={cn(
+                            'rounded-full px-2.5 py-1 text-xs font-medium transition',
+                            scopeFilter === 'all'
+                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800',
+                        )}
+                    >
+                        All items
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onScopeFilterChange('activeNode')}
+                        className={cn(
+                            'rounded-full px-2.5 py-1 text-xs font-medium transition',
+                            scopeFilter === 'activeNode'
+                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800',
+                        )}
+                    >
+                        Active node
+                    </button>
+
+                    {subTab !== 'logs' ? (
+                        <>
+                            <span className="ml-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Severity</span>
+                            {(['all', 'error', 'warning', 'info'] as const).map((option) => (
+                                <button
+                                    key={option}
+                                    type="button"
+                                    onClick={() => onSeverityFilterChange(option)}
+                                    className={cn(
+                                        'rounded-full px-2.5 py-1 text-xs font-medium capitalize transition',
+                                        severityFilter === option
+                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200'
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800',
+                                    )}
+                                >
+                                    {option}
+                                </button>
+                            ))}
+                        </>
+                    ) : null}
+                </div>
+
+                {scopeFilter === 'activeNode' && !hasActiveSelection ? (
+                    <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">No active node selected. Select a node to filter by active scope.</p>
+                ) : null}
+            </div>
+
+            {subTab === 'validation' ? (
+                validationRows.length ? (
+                    <div className="space-y-3">{validationRows.map((row) => <ValidationCard key={row.id} row={row} />)}</div>
+                ) : (
+                    <EmptyState
+                        title="No validation rows for this filter"
+                        description={scopeFilter === 'activeNode' ? 'No validation rows match the current active node scope.' : 'No validation rows match the current severity filter.'}
+                    />
+                )
+            ) : null}
+
+            {subTab === 'logs' ? (
+                logRows.length ? (
+                    <div className="space-y-3">{logRows.map((row) => <LogCard key={row.id} row={row} onRemove={() => errors.removeLog(row.id)} />)}</div>
+                ) : (
+                    <EmptyState
+                        title="No logs for this filter"
+                        description={scopeFilter === 'activeNode' ? 'No logs are linked to the current active node scope.' : 'No logs have been captured yet.'}
+                    />
+                )
+            ) : null}
+
+            {subTab === 'notices' ? (
+                noticeRows.length ? (
+                    <div className="space-y-3">{noticeRows.map((row) => <NoticeCard key={row.id} notice={row} onNodeClick={onNodeClick} />)}</div>
+                ) : (
+                    <EmptyState
+                        title="No notices for this filter"
+                        description={scopeFilter === 'activeNode' ? 'No node-scoped notices match the current active node.' : 'No notices match the current severity filter.'}
+                    />
+                )
+            ) : null}
         </div>
     );
 }
@@ -1031,6 +1187,50 @@ function SafetyToggleRow({ title, checked, tooltip, onChange }: { title: string;
     );
 }
 
+function NoticeCard({ notice, onNodeClick }: { notice: ServiceNotice; onNodeClick: (nodeId: string) => void }) {
+    const canvas = useCanvas();
+    const targetNodeId = notice.target.scope === 'node' ? notice.target.node_id : null;
+    const targetChip =
+        notice.target.scope === 'node'
+            ? toNodeChip(canvas, notice.target.node_id)
+            : 'Global notice';
+
+    return (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/90">
+            <div className="flex items-start gap-3">
+                <div className="mt-0.5">{iconForSeverity(notice.severity)}</div>
+                <div className="min-w-0 flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className={severityBadgeClassName(notice.severity)}>{notice.kind}</span>
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                            {notice.type}
+                        </span>
+                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{notice.title}</span>
+                    </div>
+                    {notice.description ? <p className="text-sm text-slate-600 dark:text-slate-300">{notice.description}</p> : null}
+                    {notice.reason ? <p className="text-xs text-slate-500 dark:text-slate-400">Reason: {notice.reason}</p> : null}
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                        {notice.target.scope === 'node' ? (
+                            <button
+                                type="button"
+                                onClick={() => targetNodeId && onNodeClick(targetNodeId)}
+                                className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700 transition hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                            >
+                                {targetChip}
+                            </button>
+                        ) : (
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700 dark:bg-slate-900 dark:text-slate-300">{targetChip}</span>
+                        )}
+                        {notice.marked_at ? <span>{new Date(notice.marked_at).toLocaleString()}</span> : null}
+                        {notice.icon ? <span>Icon: {notice.icon}</span> : null}
+                        {notice.color ? <span>Color: {notice.color}</span> : null}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function ValidationCard({ row }: { row: ValidationRow }) {
     const canvas = useCanvas();
     const scope = describeValidationScope(canvas, row);
@@ -1198,6 +1398,87 @@ function filterChipClassName(tone: 'success' | 'warning' | 'danger' | 'default')
 
 function capitalize(value: string) {
     return value ? `${value[0].toUpperCase()}${value.slice(1)}` : value;
+}
+
+function normalizeNotices(input: unknown[] | undefined): ServiceNotice[] {
+    if (!Array.isArray(input)) return [];
+    return input
+        .map((entry, index) => {
+            if (!entry || typeof entry !== 'object') return null;
+            const row = entry as Record<string, unknown>;
+            const rawTarget = row.target as Record<string, unknown> | undefined;
+            const scope = rawTarget?.scope === 'node' ? 'node' : 'global';
+            const target =
+                scope === 'node'
+                    ? {
+                          scope: 'node' as const,
+                          node_kind: String(rawTarget?.node_kind ?? 'node'),
+                          node_id: String(rawTarget?.node_id ?? ''),
+                      }
+                    : ({ scope: 'global' } as const);
+            return {
+                id: typeof row.id === 'string' ? row.id : `notice:${index}`,
+                type: row.type === 'private' ? 'private' : 'public',
+                kind: typeof row.kind === 'string' ? row.kind : 'warning',
+                severity: row.severity === 'error' || row.severity === 'warning' ? row.severity : 'info',
+                target,
+                title: typeof row.title === 'string' && row.title.trim() ? row.title : 'Untitled notice',
+                description: typeof row.description === 'string' ? row.description : undefined,
+                reason: typeof row.reason === 'string' ? row.reason : undefined,
+                marked_at: typeof row.marked_at === 'string' ? row.marked_at : undefined,
+                icon: typeof row.icon === 'string' ? row.icon : undefined,
+                color: typeof row.color === 'string' ? row.color : undefined,
+                meta: row.meta && typeof row.meta === 'object' ? (row.meta as Record<string, unknown>) : undefined,
+            } satisfies ServiceNotice;
+        })
+        .filter(Boolean) as ServiceNotice[];
+}
+
+function matchesSeverity(severity: 'error' | 'warning' | 'info', filter: ConsoleSeverityFilter) {
+    return filter === 'all' || severity === filter;
+}
+
+function matchesValidationScope(row: ValidationRow, scopeFilter: ConsoleScopeFilter, activeNodeIds: ReadonlySet<string>) {
+    if (scopeFilter === 'all') return true;
+    if (!activeNodeIds.size) return false;
+    const ids = new Set<string>();
+    if (row.nodeId) ids.add(String(row.nodeId));
+    const affectedIds = Array.isArray(row.details?.affectedIds) ? row.details.affectedIds : [];
+    for (const id of affectedIds) ids.add(String(id));
+    for (const id of ids) {
+        if (activeNodeIds.has(id)) return true;
+    }
+    return false;
+}
+
+function matchesLogScope(row: ErrorLog, scopeFilter: ConsoleScopeFilter, activeNodeIds: ReadonlySet<string>) {
+    if (scopeFilter === 'all') return true;
+    if (!activeNodeIds.size) return false;
+    const ids = extractLogNodeIds(row);
+    return ids.some((id) => activeNodeIds.has(id));
+}
+
+function matchesNoticeScope(notice: ServiceNotice, scopeFilter: ConsoleScopeFilter, activeNodeIds: ReadonlySet<string>) {
+    if (scopeFilter === 'all') return true;
+    if (!activeNodeIds.size) return false;
+    if (notice.target.scope !== 'node') return false;
+    return activeNodeIds.has(String(notice.target.node_id));
+}
+
+function extractLogNodeIds(row: ErrorLog) {
+    const ids = new Set<string>();
+    const meta = row.meta && typeof row.meta === 'object' ? (row.meta as Record<string, unknown>) : {};
+    const directNodeId = meta.nodeId ?? meta.node_id;
+    if (typeof directNodeId === 'string') ids.add(directNodeId);
+
+    const affected = meta.affectedIds ?? meta.affected_ids;
+    if (Array.isArray(affected)) {
+        for (const id of affected) {
+            if (typeof id === 'string' || typeof id === 'number') ids.add(String(id));
+        }
+    }
+
+    return Array.from(ids);
 }
 
 function clampPanelPosition(

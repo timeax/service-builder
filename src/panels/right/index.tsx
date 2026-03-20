@@ -6,6 +6,7 @@ import Comments from '@/panels/right/tabs/comments.tsx';
 import { Properties } from '@/panels/right/tabs/properties.tsx';
 import Wireframe from '@/panels/right/tabs/wireframe.tsx';
 import { OrderFlowProvider, useInputs } from '@timeax/digital-service-engine/react';
+import { useCanvas } from '@timeax/digital-service-engine/workspace';
 
 const RightPanel = () => {
     const tabClassName = cn(
@@ -16,6 +17,9 @@ const RightPanel = () => {
     );
 
     const registry = useInputs().registry;
+
+    const { props, api } = useCanvas();
+
     return (
         <Panel
             edges={['left']}
@@ -46,7 +50,8 @@ const RightPanel = () => {
                         <Properties />
                     </TabsContent>
                     <TabsContent className={'min-h-0 grow overflow-hidden'} value="wireframe">
-                        <OrderFlowProvider registry={registry}>
+                        {/*@ts-ignore*/}
+                        <OrderFlowProvider serviceProps={props} builder={api.builder} selection={api.selection!} registry={registry}>
                             <Wireframe />
                         </OrderFlowProvider>
                     </TabsContent>

@@ -1,4 +1,5 @@
 import { buildServiceSummaries, useBottomConsolePanel } from '@/builder/bottom-panel.ts';
+import { NodeContextMenuProvider } from '@/builder/node-context-menu.tsx';
 import Left from '@/panels/left';
 import RightPanel from '@/panels/right';
 import CanvasPanel from '@/panels/canvas';
@@ -22,28 +23,30 @@ function WorkspaceLayout() {
     const serviceSummary = useMemo(() => buildServiceSummaries(canvas, ws), [canvas.props, canvas.selectionInfo, canvas.activeId, ws.services.data]);
 
     return (
-        <div className={'relative flex h-screen flex-col overflow-hidden *:font-display'}>
-            <div className={'flex grow overflow-hidden'}>
-                <Left />
-                <CanvasPanel
-                    errors={errors}
-                    bottomPanel={bottomPanel}
-                    draggingServiceId={draggingServiceId}
-                    onServiceDragStateChange={(serviceId) => setDraggingServiceId(serviceId)}
-                />
-                <RightPanel />
-            </div>
+        <NodeContextMenuProvider>
+            <div className={'relative flex h-screen flex-col overflow-hidden *:font-display'}>
+                <div className={'flex grow overflow-hidden'}>
+                    <Left />
+                    <CanvasPanel
+                        errors={errors}
+                        bottomPanel={bottomPanel}
+                        draggingServiceId={draggingServiceId}
+                        onServiceDragStateChange={(serviceId) => setDraggingServiceId(serviceId)}
+                    />
+                    <RightPanel />
+                </div>
 
-            <div className="pointer-events-none absolute inset-0 z-5">
-                <BottomConsolePanel
-                    controller={bottomPanel}
-                    errors={errors}
-                    activeServices={serviceSummary.activeServices}
-                    allServices={serviceSummary.allServices}
-                    onServiceDragStateChange={(serviceId) => setDraggingServiceId(serviceId)}
-                />
+                <div className="pointer-events-none absolute inset-0 z-5">
+                    <BottomConsolePanel
+                        controller={bottomPanel}
+                        errors={errors}
+                        activeServices={serviceSummary.activeServices}
+                        allServices={serviceSummary.allServices}
+                        onServiceDragStateChange={(serviceId) => setDraggingServiceId(serviceId)}
+                    />
+                </div>
             </div>
-        </div>
+        </NodeContextMenuProvider>
     );
 }
 

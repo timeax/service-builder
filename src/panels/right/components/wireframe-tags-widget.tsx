@@ -1,5 +1,6 @@
 import type { Tag } from '@timeax/digital-service-engine';
 import { IoClose } from 'react-icons/io5';
+import type React from 'react';
 
 export type TagNotice = {
     id: string;
@@ -39,12 +40,28 @@ type TagsWidgetProps = {
     children: Tag[];
     noticesByTagId: Map<string, TagNotice[]>;
     onSelect: (id: string) => void;
+    onTagContextMenu?: (args: { id: string; event: React.MouseEvent }) => void;
+    onTagDragOver?: (args: { id: string; event: React.DragEvent }) => void;
+    onTagDrop?: (args: { id: string; event: React.DragEvent }) => void;
 };
 
-export function WireframeTagsWidget({ visibleTag, parents, children, noticesByTagId, onSelect }: TagsWidgetProps) {
+export function WireframeTagsWidget({
+    visibleTag,
+    parents,
+    children,
+    noticesByTagId,
+    onSelect,
+    onTagContextMenu,
+    onTagDragOver,
+    onTagDrop,
+}: TagsWidgetProps) {
     return (
         <div className="flex flex-wrap items-center gap-2">
-            <small className="shrink-0 cursor-pointer text-sm font-medium text-gray-500 dark:text-gray-400" onClick={() => onSelect('t:root')}>
+            <small
+                className="shrink-0 cursor-pointer text-sm font-medium text-gray-500 dark:text-gray-400"
+                onClick={() => onSelect('t:root')}
+                onContextMenu={(event) => onTagContextMenu?.({ id: 't:root', event })}
+            >
                 Tags:
             </small>
             <div className="flex flex-wrap items-center gap-1.5">
@@ -55,6 +72,9 @@ export function WireframeTagsWidget({ visibleTag, parents, children, noticesByTa
                                 type="button"
                                 key={item.id}
                                 onClick={() => onSelect(item.id)}
+                                onContextMenu={(event) => onTagContextMenu?.({ id: item.id, event })}
+                                onDragOver={(event) => onTagDragOver?.({ id: item.id, event })}
+                                onDrop={(event) => onTagDrop?.({ id: item.id, event })}
                                 className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-gray-100 py-1 pr-1.5 pl-2.5 text-xs text-gray-700 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                             >
                                 <span>{item.label}</span>
@@ -74,6 +94,9 @@ export function WireframeTagsWidget({ visibleTag, parents, children, noticesByTa
 
                         <button
                             type="button"
+                            onContextMenu={(event) => onTagContextMenu?.({ id: visibleTag.id, event })}
+                            onDragOver={(event) => onTagDragOver?.({ id: visibleTag.id, event })}
+                            onDrop={(event) => onTagDrop?.({ id: visibleTag.id, event })}
                             className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-gray-100 py-1 pr-1.5 pl-2.5 text-xs font-semibold text-gray-800 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                         >
                             <span>{visibleTag.label}</span>
@@ -96,6 +119,9 @@ export function WireframeTagsWidget({ visibleTag, parents, children, noticesByTa
                                     type="button"
                                     key={item.id}
                                     onClick={() => onSelect(item.id)}
+                                    onContextMenu={(event) => onTagContextMenu?.({ id: item.id, event })}
+                                    onDragOver={(event) => onTagDragOver?.({ id: item.id, event })}
+                                    onDrop={(event) => onTagDrop?.({ id: item.id, event })}
                                     className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-gray-100 py-1 pr-1.5 pl-2.5 text-xs text-gray-700 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                                 >
                                     <span>{item.label}</span>
@@ -115,11 +141,14 @@ export function WireframeTagsWidget({ visibleTag, parents, children, noticesByTa
                     children.map((item) => {
                         return (
                             <button
-                                type="button"
-                                key={item.id}
-                                onClick={() => onSelect(item.id)}
-                                className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-gray-100 py-1 pr-1.5 pl-2.5 text-xs text-gray-700 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                            >
+                            type="button"
+                            key={item.id}
+                            onClick={() => onSelect(item.id)}
+                            onContextMenu={(event) => onTagContextMenu?.({ id: item.id, event })}
+                            onDragOver={(event) => onTagDragOver?.({ id: item.id, event })}
+                            onDrop={(event) => onTagDrop?.({ id: item.id, event })}
+                            className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-gray-100 py-1 pr-1.5 pl-2.5 text-xs text-gray-700 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                        >
                                 <span>{item.label}</span>
                                 {(noticesByTagId.get(item.id) ?? []).map((notice) => (
                                     <span key={notice.id} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${noticeToneClass(notice)}`}>

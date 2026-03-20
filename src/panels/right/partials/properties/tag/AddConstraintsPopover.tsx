@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { RenderIf } from '@/panels/right/components/renderif.tsx';
-import { SectionActionButton } from '@/panels/right/components/sections.tsx';
+import { SectionActionTriggerButton } from '@/panels/right/components/sections.tsx';
 import { Form, InputField } from '@timeax/form-palette';
 import React from 'react';
 import { BsPlus } from 'react-icons/bs';
@@ -18,7 +18,7 @@ export function AddConstraintsPopover({ open, onOpenChange, constraints, allCons
     return (
         <Popover open={open} onOpenChange={onOpenChange}>
             <PopoverTrigger asChild>
-                <SectionActionButton icon={<BsPlus />}>Add</SectionActionButton>
+                <SectionActionTriggerButton icon={<BsPlus />}>Add</SectionActionTriggerButton>
             </PopoverTrigger>
             <PopoverContent>
                 <RenderIf data={allConstraints}>

@@ -13,6 +13,8 @@ export type ToolbarProps = {
     setShowGrid: (v: boolean) => void;
     showMiniMap: boolean;
     setShowMiniMap: (v: boolean) => void;
+    canUndo?: boolean;
+    canRedo?: boolean;
     tools?: ToolsConfig;
     labelPlacement?: LabelPlacement;
     renderButton?: (tool: ToolRender, key: string) => React.ReactNode;
@@ -45,6 +47,8 @@ export function Toolbar({
     setShowGrid,
     showMiniMap,
     setShowMiniMap,
+    canUndo = false,
+    canRedo = false,
     tools,
     labelPlacement = 'tooltip',
     renderButton,
@@ -57,8 +61,6 @@ export function Toolbar({
 
     const selectionCount = api.getSelection().length;
     const relation = api.getEdgeRel();
-    const canUndo = true;
-    const canRedo = true;
 
     const ctx: ToolContext = useMemo(
         () => ({

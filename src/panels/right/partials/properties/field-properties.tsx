@@ -7,7 +7,7 @@ import type { FieldNode } from '@timeax/digital-service-engine/core';
 import { resolveInputDescriptor, useInputs } from '@timeax/digital-service-engine/react';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DescriptorSettings, getDescriptorUiKeys } from './components/descriptor-settings.tsx';
 import { mergeNodeMeta } from './components/meta.ts';
 import { getFieldPropertyCapabilities } from './components/node-capabilities.ts';
@@ -53,10 +53,28 @@ export function FieldProperties({ className, node }: FieldPropertiesProps) {
     const options = node.raw.options ?? [];
     const currentType = String(node.raw.type ?? 'text');
     const currentVariant = getVariant(node);
+    const nameValue = node.raw.name ?? '';
+    const placeholderValue = (defaults.placeholder as string) ?? '';
+    const helpTextValue = (defaults.helpText as string) ?? '';
+    const [nameDraft, setNameDraft] = useState(nameValue);
+    const [placeholderDraft, setPlaceholderDraft] = useState(placeholderValue);
+    const [helpTextDraft, setHelpTextDraft] = useState(helpTextValue);
 
     const descriptor = useMemo(() => resolveInputDescriptor(registry, currentType as any, currentVariant as any), [currentType, currentVariant, registry]);
     const descriptorUi = descriptor?.ui ?? {};
     const descriptorKeySet = useMemo(() => new Set(getDescriptorUiKeys(descriptorUi)), [descriptorUi]);
+
+    useEffect(() => {
+        setNameDraft(nameValue);
+    }, [node.id, nameValue]);
+
+    useEffect(() => {
+        setPlaceholderDraft(placeholderValue);
+    }, [node.id, placeholderValue]);
+
+    useEffect(() => {
+        setHelpTextDraft(helpTextValue);
+    }, [node.id, helpTextValue]);
 
     const fieldTypeOptions = useMemo(() => {
         const kinds = Array.from(registry._store.keys()).map((kind) => String(kind));
@@ -144,9 +162,10 @@ export function FieldProperties({ className, node }: FieldPropertiesProps) {
                             <InputField
                                 variant="text"
                                 label="Name"
-                                value={node.raw.name ?? ''}
+                                value={nameDraft}
                                 placeholder="Storage key"
-                                onChange={(e) => canvas.api.editor.editName(node.id, e.value || undefined)}
+                                onChange={(e) => setNameDraft(String(e.value ?? ''))}
+                                onBlur={() => canvas.api.editor.editName(node.id, nameDraft || undefined)}
                             />
                             <InputField
                                 variant="select"
@@ -195,21 +214,23 @@ export function FieldProperties({ className, node }: FieldPropertiesProps) {
                             <InputField
                                 variant="text"
                                 label="Placeholder"
-                                value={(defaults.placeholder as string) ?? ''}
-                                onChange={(e) => updateGenericDefault('placeholder', e.value)}
+                                value={placeholderDraft}
+                                onChange={(e) => setPlaceholderDraft(String(e.value ?? ''))}
+                                onBlur={() => updateGenericDefault('placeholder', placeholderDraft)}
                             />
                             <InputField
                                 variant="textarea"
                                 label="Help text"
-                                value={(defaults.helpText as string) ?? ''}
-                                onChange={(e) => updateGenericDefault('helpText', e.value)}
+                                value={helpTextDraft}
+                                onChange={(e) => setHelpTextDraft(String(e.value ?? ''))}
+                                onBlur={() => updateGenericDefault('helpText', helpTextDraft)}
                             />
                         </div>
                     </Section.Content>
                 </Section>
                 <Separator />
 
-                <Section>
+                <Section defaultOpen={false}>
                     <Section.Header>
                         <Section.Title>Input appearance and behavior</Section.Title>
                     </Section.Header>

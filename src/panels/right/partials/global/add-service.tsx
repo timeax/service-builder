@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { RenderIf } from '@/panels/right/components/renderif.tsx';
-import { IncludesItem, Section, SectionActionButton } from '@/panels/right/components/sections.tsx';
+import { IncludesItem, Section, SectionActionTriggerButton } from '@/panels/right/components/sections.tsx';
 import type { FieldNode, OptionNode, TagNode } from '@timeax/digital-service-engine/core';
 import type { DgpServiceCapability } from '@timeax/digital-service-engine/schema';
 import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
@@ -133,7 +133,7 @@ function AddServicePopover({ data, services }: { data: FieldNode | TagNode | Opt
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <SectionActionButton icon={<BsPlus />}>Add</SectionActionButton>
+                <SectionActionTriggerButton icon={<BsPlus />}>Add</SectionActionTriggerButton>
             </PopoverTrigger>
             <PopoverContent className="w-96">
                 <div className="flex flex-col gap-3">

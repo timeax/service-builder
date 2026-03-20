@@ -12,34 +12,34 @@
 - [src/react/inputs/entries/checkbox.tsx](#5)  L667-L833
 - [src/react/inputs/entries/chips.tsx](#6)  L834-L974
 - [src/react/inputs/entries/color.tsx](#7)  L975-L1034
-- [src/react/inputs/entries/custom.tsx](#8)  L1035-L1044
-- [src/react/inputs/entries/date.tsx](#9)  L1045-L1164
-- [src/react/inputs/entries/editor.tsx](#10)  L1165-L1268
-- [src/react/inputs/entries/file.tsx](#11)  L1269-L1408
-- [src/react/inputs/entries/icon.tsx](#12)  L1409-L1418
-- [src/react/inputs/entries/image-icon.tsx](#13)  L1419-L1428
-- [src/react/inputs/entries/index.ts](#14)  L1429-L1731
-- [src/react/inputs/entries/json-editor.tsx](#15)  L1732-L1741
-- [src/react/inputs/entries/keyvalue.tsx](#16)  L1742-L1870
-- [src/react/inputs/entries/lister.tsx](#17)  L1871-L2086
-- [src/react/inputs/entries/multiselect.tsx](#18)  L2087-L2154
-- [src/react/inputs/entries/number.tsx](#19)  L2155-L2326
-- [src/react/inputs/entries/password.tsx](#20)  L2327-L2488
-- [src/react/inputs/entries/phone.tsx](#21)  L2489-L2657
-- [src/react/inputs/entries/radio.tsx](#22)  L2658-L2701
-- [src/react/inputs/entries/select.tsx](#23)  L2702-L2753
-- [src/react/inputs/entries/shared.ts](#24)  L2754-L3025
-- [src/react/inputs/entries/slider.tsx](#25)  L3026-L3126
-- [src/react/inputs/entries/text.tsx](#26)  L3127-L3212
-- [src/react/inputs/entries/textarea.tsx](#27)  L3213-L3269
-- [src/react/inputs/entries/toggle-group.tsx](#28)  L3270-L3447
-- [src/react/inputs/entries/toggle.tsx](#29)  L3448-L3499
-- [src/react/inputs/entries/treeselect.tsx](#30)  L3500-L3609
-- [src/react/inputs/form-context.tsx](#31)  L3610-L3836
-- [src/react/inputs/provider.tsx](#32)  L3837-L3905
-- [src/react/inputs/register-custom.ts](#33)  L3906-L3972
-- [src/react/inputs/registry.ts](#34)  L3973-L4101
-- [src/react/inputs/wrapper.tsx](#35)  L4102-L4468
+- [src/react/inputs/entries/custom.tsx](#8)  L1035-L1094
+- [src/react/inputs/entries/date.tsx](#9)  L1095-L1214
+- [src/react/inputs/entries/editor.tsx](#10)  L1215-L1318
+- [src/react/inputs/entries/file.tsx](#11)  L1319-L1458
+- [src/react/inputs/entries/icon.tsx](#12)  L1459-L1598
+- [src/react/inputs/entries/image-icon.tsx](#13)  L1599-L1738
+- [src/react/inputs/entries/index.ts](#14)  L1739-L2041
+- [src/react/inputs/entries/json-editor.tsx](#15)  L2042-L2344
+- [src/react/inputs/entries/keyvalue.tsx](#16)  L2345-L2473
+- [src/react/inputs/entries/lister.tsx](#17)  L2474-L2689
+- [src/react/inputs/entries/multiselect.tsx](#18)  L2690-L2757
+- [src/react/inputs/entries/number.tsx](#19)  L2758-L2929
+- [src/react/inputs/entries/password.tsx](#20)  L2930-L3091
+- [src/react/inputs/entries/phone.tsx](#21)  L3092-L3260
+- [src/react/inputs/entries/radio.tsx](#22)  L3261-L3304
+- [src/react/inputs/entries/select.tsx](#23)  L3305-L3356
+- [src/react/inputs/entries/shared.ts](#24)  L3357-L3628
+- [src/react/inputs/entries/slider.tsx](#25)  L3629-L3729
+- [src/react/inputs/entries/text.tsx](#26)  L3730-L3815
+- [src/react/inputs/entries/textarea.tsx](#27)  L3816-L3872
+- [src/react/inputs/entries/toggle-group.tsx](#28)  L3873-L4050
+- [src/react/inputs/entries/toggle.tsx](#29)  L4051-L4102
+- [src/react/inputs/entries/treeselect.tsx](#30)  L4103-L4212
+- [src/react/inputs/form-context.tsx](#31)  L4213-L4439
+- [src/react/inputs/provider.tsx](#32)  L4440-L4508
+- [src/react/inputs/register-custom.ts](#33)  L4509-L4575
+- [src/react/inputs/registry.ts](#34)  L4576-L4704
+- [src/react/inputs/wrapper.tsx](#35)  L4705-L5071
 <!-- PRODEX_INDEX_LIST_END -->
 
 ---
@@ -1039,7 +1039,57 @@ export const colorDescriptor: InputDescriptor = {
 ` File: src/react/inputs/entries/custom.tsx`  [↑ Back to top](#index)
 
 ```tsx
+// src/react/inputs/registry/entries/color.ts
+import { InputField } from "@timeax/form-palette";
+import type { InputDescriptor } from "@/react";
+import { sharedUi } from "./shared";
 
+export const colorDescriptor: InputDescriptor = {
+    Component: InputField as any,
+
+    defaultProps: {
+        variant: "color", // MUST
+
+        // sensible defaults (matches variant defaults)
+        showPreview: true,
+        showPickerToggle: true,
+        previewSize: 18,
+
+        // forwarded from text UI
+        joinControls: true,
+        extendBoxToControls: true,
+    },
+
+    ui: {
+        // color inherits most text UI props (but we still only expose the shared-safe ones)
+        size: sharedUi.size,
+        density: sharedUi.density,
+        ...sharedUi.padding,
+
+        joinControls: sharedUi.joinControls,
+        extendBoxToControls: sharedUi.extendBoxToControls,
+
+        showPreview: {
+            type: "boolean",
+            label: "Show preview",
+            description: "Show the color swatch preview control.",
+        },
+
+        showPickerToggle: {
+            type: "boolean",
+            label: "Show picker toggle",
+            description: "Show the picker toggle control/icon.",
+        },
+
+        previewSize: {
+            type: "number",
+            label: "Preview size",
+            description: "Size of the color swatch in pixels.",
+            minimum: 8,
+            maximum: 64,
+        },
+    },
+};
 ```
 
 ---
@@ -1413,7 +1463,137 @@ export const fileDescriptor: InputDescriptor = {
 ` File: src/react/inputs/entries/icon.tsx`  [↑ Back to top](#index)
 
 ```tsx
+// src/react/inputs/registry/entries/file.ts
+import { InputField } from "@timeax/form-palette";
+import type { InputDescriptor } from "@/react";
+import { sharedUi } from "./shared";
 
+export const fileDescriptor: InputDescriptor = {
+    Component: InputField as any,
+
+    defaultProps: {
+        variant: "file", // MUST
+
+        // sensible defaults (optional)
+        multiple: false,
+        mergeMode: "append",
+        showDropArea: false,
+        showCheckboxes: true,
+        custom: false,
+        // placeholder exists on the variant, but per your rule we DON'T declare it here
+    },
+
+    ui: {
+        size: sharedUi.size,
+
+        // file has its own density union
+        density: {
+            type: "anyOf",
+            label: "Density",
+            description: "Spacing preset for the trigger + list UI.",
+            items: [
+                { type: "string", title: "Compact", value: "compact" },
+                { type: "string", title: "Comfortable", value: "comfortable" },
+                { type: "string", title: "Loose", value: "loose" },
+            ],
+        },
+
+        multiple: {
+            type: "boolean",
+            label: "Multiple",
+            description: "Allow selecting multiple files.",
+        },
+
+        accept: {
+            type: "array",
+            label: "Accepted types",
+            description:
+                'Accepted MIME types / extensions (e.g. "image/*", ".png", "application/pdf").',
+            editable: true,
+            item: {
+                type: "string",
+                label: "Type",
+                description: "A MIME type or extension.",
+            },
+        },
+
+        maxFiles: {
+            type: "number",
+            label: "Max files",
+            description:
+                "Maximum number of files allowed (leave unset for unlimited).",
+            minimum: 1,
+        },
+
+        maxTotalSize: {
+            type: "number",
+            label: "Max total size (bytes)",
+            description:
+                "Maximum total size across all selected files in bytes (leave unset for unlimited).",
+            minimum: 1,
+        },
+
+        mergeMode: {
+            type: "anyOf",
+            label: "Merge mode",
+            description:
+                'How new picks are merged into the current selection ("append" or "replace").',
+            items: [
+                { type: "string", title: "Append", value: "append" },
+                { type: "string", title: "Replace", value: "replace" },
+            ],
+        },
+
+        showDropArea: {
+            type: "boolean",
+            label: "Show drop area",
+            description: "Show a drag-and-drop area inside the picker.",
+        },
+
+        // these are ReactNode in the variant, but strings are safe + useful in builder
+        dropTitle: {
+            type: "string",
+            label: "Drop title",
+            description: "Title text shown in the drop area.",
+        },
+
+        dropDescription: {
+            type: "string",
+            label: "Drop description",
+            description: "Supporting text shown in the drop area.",
+        },
+
+        custom: {
+            type: "boolean",
+            label: "Custom loader",
+            description:
+                "Enable a host-provided custom loader (host must wire customLoader at runtime).",
+        },
+
+        showCheckboxes: {
+            type: "boolean",
+            label: "Show checkboxes",
+            description:
+                "Show selection checkboxes for file rows inside the picker.",
+        },
+
+        asRaw: {
+            type: "boolean",
+            label: "As raw (legacy)",
+            description:
+                "Legacy compatibility flag. The submitted value is still File|string; raw items are available via change detail meta.",
+        },
+
+        // intentionally excluded:
+        // - placeholder (InputField prop, injected by your registry helper)
+        // - dropIcon (ReactNode)
+        // - renderDropArea / renderFileItem (functions)
+        // - customLoader (function)
+        // - formatFileName / formatFileSize (functions)
+        // - all *ClassName props (not allowed)
+        // - button mode trigger props (ReactNode/functions)
+    },
+};
 ```
 
 ---
@@ -1423,7 +1603,137 @@ export const fileDescriptor: InputDescriptor = {
 ` File: src/react/inputs/entries/image-icon.tsx`  [↑ Back to top](#index)
 
 ```tsx
+// src/react/inputs/registry/entries/file.ts
+import { InputField } from "@timeax/form-palette";
+import type { InputDescriptor } from "@/react";
+import { sharedUi } from "./shared";
 
+export const fileDescriptor: InputDescriptor = {
+    Component: InputField as any,
+
+    defaultProps: {
+        variant: "file", // MUST
+
+        // sensible defaults (optional)
+        multiple: false,
+        mergeMode: "append",
+        showDropArea: false,
+        showCheckboxes: true,
+        custom: false,
+        // placeholder exists on the variant, but per your rule we DON'T declare it here
+    },
+
+    ui: {
+        size: sharedUi.size,
+
+        // file has its own density union
+        density: {
+            type: "anyOf",
+            label: "Density",
+            description: "Spacing preset for the trigger + list UI.",
+            items: [
+                { type: "string", title: "Compact", value: "compact" },
+                { type: "string", title: "Comfortable", value: "comfortable" },
+                { type: "string", title: "Loose", value: "loose" },
+            ],
+        },
+
+        multiple: {
+            type: "boolean",
+            label: "Multiple",
+            description: "Allow selecting multiple files.",
+        },
+
+        accept: {
+            type: "array",
+            label: "Accepted types",
+            description:
+                'Accepted MIME types / extensions (e.g. "image/*", ".png", "application/pdf").',
+            editable: true,
+            item: {
+                type: "string",
+                label: "Type",
+                description: "A MIME type or extension.",
+            },
+        },
+
+        maxFiles: {
+            type: "number",
+            label: "Max files",
+            description:
+                "Maximum number of files allowed (leave unset for unlimited).",
+            minimum: 1,
+        },
+
+        maxTotalSize: {
+            type: "number",
+            label: "Max total size (bytes)",
+            description:
+                "Maximum total size across all selected files in bytes (leave unset for unlimited).",
+            minimum: 1,
+        },
+
+        mergeMode: {
+            type: "anyOf",
+            label: "Merge mode",
+            description:
+                'How new picks are merged into the current selection ("append" or "replace").',
+            items: [
+                { type: "string", title: "Append", value: "append" },
+                { type: "string", title: "Replace", value: "replace" },
+            ],
+        },
+
+        showDropArea: {
+            type: "boolean",
+            label: "Show drop area",
+            description: "Show a drag-and-drop area inside the picker.",
+        },
+
+        // these are ReactNode in the variant, but strings are safe + useful in builder
+        dropTitle: {
+            type: "string",
+            label: "Drop title",
+            description: "Title text shown in the drop area.",
+        },
+
+        dropDescription: {
+            type: "string",
+            label: "Drop description",
+            description: "Supporting text shown in the drop area.",
+        },
+
+        custom: {
+            type: "boolean",
+            label: "Custom loader",
+            description:
+                "Enable a host-provided custom loader (host must wire customLoader at runtime).",
+        },
+
+        showCheckboxes: {
+            type: "boolean",
+            label: "Show checkboxes",
+            description:
+                "Show selection checkboxes for file rows inside the picker.",
+        },
+
+        asRaw: {
+            type: "boolean",
+            label: "As raw (legacy)",
+            description:
+                "Legacy compatibility flag. The submitted value is still File|string; raw items are available via change detail meta.",
+        },
+
+        // intentionally excluded:
+        // - placeholder (InputField prop, injected by your registry helper)
+        // - dropIcon (ReactNode)
+        // - renderDropArea / renderFileItem (functions)
+        // - customLoader (function)
+        // - formatFileName / formatFileSize (functions)
+        // - all *ClassName props (not allowed)
+        // - button mode trigger props (ReactNode/functions)
+    },
+};
 ```
 
 ---
@@ -1736,7 +2046,300 @@ export {
 ` File: src/react/inputs/entries/json-editor.tsx`  [↑ Back to top](#index)
 
 ```tsx
+// src/react/inputs/registry/entries/index.ts
+import type { InputDescriptor, Registry } from "@/react";
 
+import { textDescriptor } from "./text";
+import { textareaDescriptor } from "./textarea";
+import { phoneDescriptor } from "./phone";
+import { toggleGroupDescriptor } from "./toggle-group";
+import { numberDescriptor } from "./number";
+import { passwordDescriptor } from "./password";
+import { sliderDescriptor } from "./slider";
+import { toggleDescriptor } from "./toggle";
+import { treeSelectDescriptor } from "./treeselect";
+import { multiSelectDescriptor } from "./multiselect";
+import { selectDescriptor } from "./select";
+import { radioDescriptor } from "./radio";
+import { checkboxDescriptor } from "./checkbox";
+import { chipsDescriptor } from "./chips";
+import { colorDescriptor } from "./color";
+import { dateDescriptor } from "./date";
+import { keyValueDescriptor } from "./keyvalue";
+import { editorDescriptor } from "./editor";
+import { listerDescriptor } from "./lister";
+import { fileDescriptor } from "./file";
+import {Ui} from "@/schema";
+
+/**
+ * InputField-level UI props (injected for every descriptor at registration time).
+ * NOTE: keep this list tight—only props that truly belong to InputField itself.
+ */
+const inputFieldUi: Record<string, Ui> = {
+    // --- Chrome / helper text (builder-friendly) ---
+    sublabel: {
+        type: "string",
+        label: "Sublabel",
+        description:
+            "Secondary label text shown near the main label (if supported).",
+    },
+
+    description: {
+        type: "string",
+        label: "Description",
+        description: "Helper description shown under the label.",
+    },
+
+    helpText: {
+        type: "string",
+        label: "Help text",
+        description: "Additional helper text shown in the help slot.",
+    },
+
+    // --- Placement hints (layout-only; host decides exact behavior) ---
+    labelPlacement: {
+        type: "string",
+        label: "Label placement",
+        description: "Layout hint for where the label is rendered.",
+    } as Ui,
+
+    sublabelPlacement: {
+        type: "string",
+        label: "Sublabel placement",
+        description: "Layout hint for where the sublabel is rendered.",
+    } as Ui,
+
+    descriptionPlacement: {
+        type: "string",
+        label: "Description placement",
+        description: "Layout hint for where the description is rendered.",
+    } as Ui,
+
+    helpTextPlacement: {
+        type: "string",
+        label: "Help text placement",
+        description: "Layout hint for where the help text is rendered.",
+    } as Ui,
+
+    tagPlacement: {
+        type: "string",
+        label: "Tag placement",
+        description: "Layout hint for where tags are rendered.",
+    } as Ui,
+
+    // --- Tags (builder-safe subset; host maps to FieldTag) ---
+    tags: {
+        type: "array",
+        label: "Tags",
+        description:
+            "Small tag badges shown near the label. Builder-safe subset (label/color/bgColor).",
+        editable: true,
+        item: {
+            type: "object",
+            label: "Tag",
+            description: "A label tag.",
+            editable: true,
+            fields: {
+                label: {
+                    type: "string",
+                    label: "Label",
+                    description: "Tag text.",
+                },
+                color: {
+                    type: "string",
+                    label: "Text color",
+                    description: 'CSS color value (e.g. "#fff" or "rgb(...)").',
+                },
+                bgColor: {
+                    type: "string",
+                    label: "Background color",
+                    description: 'CSS color value (e.g. "#111").',
+                },
+            },
+            order: ["label", "color", "bgColor"],
+        } as Ui,
+    } satisfies Ui,
+
+    disabled: {
+        type: "boolean",
+        label: "Disabled",
+        description: "Disable user interaction with the field.",
+    },
+
+    readOnly: {
+        type: "boolean",
+        label: "Read-only",
+        description: "Prevent edits while still allowing focus/selection.",
+    },
+
+    // --- Layout flags ---
+    inline: {
+        type: "boolean",
+        label: "Inline",
+        description:
+            "Render label + input in an inline row layout (if supported).",
+    },
+
+    fullWidth: {
+        type: "boolean",
+        label: "Full width",
+        description:
+            "Stretch the field to fill its container width (if supported).",
+    },
+};
+
+function withInputFieldUi(desc: InputDescriptor): InputDescriptor {
+    return {
+        ...desc,
+        adapter: {
+            getValue(e: any) {
+                return e.value;
+            },
+            valueProp: "value",
+            changeProp: "onChange",
+            getInputPropsFromField({ field, props }) {
+                const severityPillClassMap = {
+                    info: "border-blue-200 bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200",
+                    warning:
+                        "border-amber-200 bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200",
+                    error: "border-red-200 bg-red-50 text-red-700 ring-1 ring-inset ring-red-200",
+                } as const;
+
+                const pillBaseClassName =
+                    "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium";
+
+                const toTagPill = (tag: any) => ({
+                    label: tag.title,
+                    bgColor: tag.color,
+                    className: `${pillBaseClassName} ${severityPillClassMap[tag.severity as keyof typeof severityPillClassMap] ?? severityPillClassMap.info}`,
+                });
+
+                const matchesNotice = (
+                    target: { id?: unknown; service_id?: unknown },
+                    notice: { id?: unknown },
+                ) =>
+                    notice.id === target.id ||
+                    (!!target.service_id && target.service_id == notice.id);
+
+                const notices = props.notices ?? [];
+
+                const fieldNotices = notices.filter((notice) =>
+                    matchesNotice(field, notice),
+                );
+
+                return {
+                    label: field.label,
+                    tags: fieldNotices.map(toTagPill),
+                    required: field.required,
+
+                    ...(field.options?.length
+                        ? {
+                              options: field.options.map((item) => {
+                                  // @ts-ignore
+                                  const optionNotices = notices.filter(
+                                      (notice) => matchesNotice(item, notice),
+                                  );
+
+                                  return {
+                                      ...item,
+                                      tags: optionNotices.map(toTagPill),
+                                  };
+                              }),
+                          }
+                        : {}),
+                };
+            },
+            getSelectedOptions(next, currentt, ctx) {
+                return ((next as any)?.selectedOptions ?? [])?.map(
+                    (item: any) => item.id,
+                );
+            },
+
+            isActive(stored, ctx) {
+                return Boolean(stored);
+            },
+        },
+        ui: {
+            ...inputFieldUi,
+            ...(desc.ui ?? {}),
+        },
+    };
+}
+
+function variantOf(desc: InputDescriptor): string {
+    const v = (desc.defaultProps as any)?.variant;
+    if (!v || typeof v !== "string") {
+        throw new Error(
+            `[inputs] Descriptor is missing defaultProps.variant: ${String(v)}`,
+        );
+    }
+    return v;
+}
+
+/**
+ * Register all built-in entries.
+ * - You said "variant is the only thing necessary", so we treat kind as a constant.
+ */
+export function registerEntries(registry: Registry): void {
+    const entries: InputDescriptor[] = [
+        textDescriptor,
+        textareaDescriptor,
+        phoneDescriptor,
+        toggleGroupDescriptor,
+        numberDescriptor,
+        passwordDescriptor,
+        sliderDescriptor,
+        toggleDescriptor,
+        treeSelectDescriptor,
+        multiSelectDescriptor,
+        selectDescriptor,
+        radioDescriptor,
+        checkboxDescriptor,
+        chipsDescriptor,
+        colorDescriptor,
+        dateDescriptor,
+        keyValueDescriptor,
+        editorDescriptor,
+        listerDescriptor,
+        fileDescriptor,
+    ];
+
+    registry.registerMany(
+        entries.map((descriptor) => {
+            const finalDescriptor = withInputFieldUi(descriptor);
+            const variant = variantOf(finalDescriptor);
+
+            return {
+                kind: variant,
+                descriptor: finalDescriptor,
+            };
+        }),
+    );
+}
+
+// re-export entries (optional convenience)
+export {
+    textDescriptor,
+    textareaDescriptor,
+    phoneDescriptor,
+    toggleGroupDescriptor,
+    numberDescriptor,
+    passwordDescriptor,
+    sliderDescriptor,
+    toggleDescriptor,
+    treeSelectDescriptor,
+    multiSelectDescriptor,
+    selectDescriptor,
+    radioDescriptor,
+    checkboxDescriptor,
+    chipsDescriptor,
+    colorDescriptor,
+    dateDescriptor,
+    keyValueDescriptor,
+    editorDescriptor,
+    listerDescriptor,
+    fileDescriptor,
+};
 ```
 
 ---
@@ -4466,4 +5069,4 @@ export function Wrapper({
 
 ---
 *Generated with [Prodex](https://github.com/emxhive/prodex) — Codebase decoded.*
-<!-- PRODEx v1.4.11 | 2026-03-17T04:20:31.216Z -->
+<!-- PRODEx v1.4.11 | 2026-03-19T00:38:56.151Z -->

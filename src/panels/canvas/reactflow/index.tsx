@@ -17,7 +17,8 @@ type BaseData = {
     showErrorBadge?: boolean;
     canAssignService?: boolean;
     draggingService?: boolean;
-    onServiceDrop?: (args: { nodeId: string; serviceId: string; clientX: number; clientY: number }) => void;
+    canAcceptDropPayload?: (dataTransfer: DataTransfer) => boolean;
+    onNodeDrop?: (args: { nodeId: string; clientX: number; clientY: number; dataTransfer: DataTransfer }) => void;
 };
 type CanvasNode = Node<BaseData, 'tag' | 'field' | 'option' | 'comment'>;
 
@@ -29,6 +30,7 @@ function NodeShell({
     showErrorBadge,
     canAssignService,
     draggingService,
+    canAcceptDropPayload,
     onDrop,
 }: {
     label: string;
@@ -38,6 +40,7 @@ function NodeShell({
     showErrorBadge?: boolean;
     canAssignService?: boolean;
     draggingService?: boolean;
+    canAcceptDropPayload?: (dataTransfer: DataTransfer) => boolean;
     onDrop?: (event: React.DragEvent) => void;
 }) {
     return (
@@ -49,8 +52,7 @@ function NodeShell({
                 (!canAssignService && draggingService ? 'opacity-70 ' : '')
             }
             onDragOver={(event) => {
-                if (!canAssignService) return;
-                if (!event.dataTransfer.types.includes('application/x-service-builder-service')) return;
+                if (!canAcceptDropPayload?.(event.dataTransfer)) return;
                 event.preventDefault();
                 event.dataTransfer.dropEffect = 'copy';
             }}
@@ -79,11 +81,11 @@ function TagNode(props: NodeProps<CanvasNode>) {
                 showErrorBadge={props.data.showErrorBadge}
                 canAssignService={props.data.canAssignService}
                 draggingService={props.data.draggingService}
+                canAcceptDropPayload={props.data.canAcceptDropPayload}
                 onDrop={(event) => {
-                    const serviceId = event.dataTransfer.getData('application/x-service-builder-service');
-                    if (!serviceId) return;
+                    if (!props.data.canAcceptDropPayload?.(event.dataTransfer)) return;
                     event.preventDefault();
-                    props.data.onServiceDrop?.({ nodeId: id, serviceId, clientX: event.clientX, clientY: event.clientY });
+                    props.data.onNodeDrop?.({ nodeId: id, clientX: event.clientX, clientY: event.clientY, dataTransfer: event.dataTransfer });
                 }}
             />
             <Handle type="source" position={Position.Right} className="!h-2 !w-2 !bg-slate-400" />
@@ -104,11 +106,11 @@ function FieldNode(props: NodeProps<CanvasNode>) {
                 showErrorBadge={props.data.showErrorBadge}
                 canAssignService={props.data.canAssignService}
                 draggingService={props.data.draggingService}
+                canAcceptDropPayload={props.data.canAcceptDropPayload}
                 onDrop={(event) => {
-                    const serviceId = event.dataTransfer.getData('application/x-service-builder-service');
-                    if (!serviceId) return;
+                    if (!props.data.canAcceptDropPayload?.(event.dataTransfer)) return;
                     event.preventDefault();
-                    props.data.onServiceDrop?.({ nodeId: id, serviceId, clientX: event.clientX, clientY: event.clientY });
+                    props.data.onNodeDrop?.({ nodeId: id, clientX: event.clientX, clientY: event.clientY, dataTransfer: event.dataTransfer });
                 }}
             />
             <Handle type="source" position={Position.Right} className="!h-2 !w-2 !bg-slate-400" />
@@ -127,16 +129,14 @@ function OptionNode(props: NodeProps<CanvasNode>) {
                     (props.selected ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/15 ' : 'border-slate-300 dark:border-slate-700')
                 }
                 onDragOver={(event) => {
-                    if (!props.data.canAssignService) return;
-                    if (!event.dataTransfer.types.includes('application/x-service-builder-service')) return;
+                    if (!props.data.canAcceptDropPayload?.(event.dataTransfer)) return;
                     event.preventDefault();
                     event.dataTransfer.dropEffect = 'copy';
                 }}
                 onDrop={(event) => {
-                    const serviceId = event.dataTransfer.getData('application/x-service-builder-service');
-                    if (!serviceId) return;
+                    if (!props.data.canAcceptDropPayload?.(event.dataTransfer)) return;
                     event.preventDefault();
-                    props.data.onServiceDrop?.({ nodeId: id, serviceId, clientX: event.clientX, clientY: event.clientY });
+                    props.data.onNodeDrop?.({ nodeId: id, clientX: event.clientX, clientY: event.clientY, dataTransfer: event.dataTransfer });
                 }}
             >
                 <div className="flex items-center gap-2">

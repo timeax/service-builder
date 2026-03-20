@@ -37,7 +37,10 @@ export function IncExcludeSection({ node, mode, capability }: ExcludesSectionPro
                     label: item.label,
                     value: item.id,
                     description: item.description,
-                    tags: [item.id],
+                    tags: [{
+                        label: item.id,
+                        value: item.id
+                    }],
                 }));
         }
 
@@ -45,7 +48,10 @@ export function IncExcludeSection({ node, mode, capability }: ExcludesSectionPro
             label: item.label,
             value: item.id,
             description: item.description,
-            tags: [item.id],
+            tags: [{
+                label: item.id,
+                value: item.id
+            }],
         }));
     }, [canvas.props.fields, node]);
 

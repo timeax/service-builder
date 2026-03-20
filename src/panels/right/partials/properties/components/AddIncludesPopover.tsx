@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
-import { SectionActionButton } from '@/panels/right/components/sections.tsx';
+import { SectionActionTriggerButton } from '@/panels/right/components/sections.tsx';
 import { InputField } from '@timeax/form-palette';
 import { useState } from 'react';
 import { BsPlus } from 'react-icons/bs';
@@ -18,7 +18,7 @@ export function AddIncludesPopover({ open, onOpenChange, onSelect, options }: Ad
     return (
         <Popover open={open} onOpenChange={onOpenChange}>
             <PopoverTrigger asChild>
-                <SectionActionButton icon={<BsPlus />}>Add</SectionActionButton>
+                <SectionActionTriggerButton icon={<BsPlus />}>Add</SectionActionTriggerButton>
             </PopoverTrigger>
             <PopoverContent>
                 <div className={'flex flex-col gap-2'}>
@@ -27,12 +27,13 @@ export function AddIncludesPopover({ open, onOpenChange, onSelect, options }: Ad
                         onChange={(e) => {
                             setValue(e.value);
                         }}
+                        optGroupClassName={'gap-4'}
                         variant={'checkbox'}
                         options={options as any}
                     />
                     <Button
                         onClick={() => {
-                            onSelect(Object.keys(value));
+                            onSelect(value);
                             setValue(undefined);
                             onOpenChange(false);
                         }}

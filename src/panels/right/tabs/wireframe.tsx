@@ -1,5 +1,6 @@
 import { getCurrentTag, getVisiblePreviewFields } from '@/builder/view-models.tsx';
 import { EmptyState } from '@/components/builder';
+import { useNodeContextMenu } from '@/builder/node-context-menu.tsx';
 import type { Field, Tag } from '@timeax/digital-service-engine';
 import { Wrapper } from '@timeax/digital-service-engine/react';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
@@ -8,6 +9,7 @@ import WireframeTagsWidget, { type TagNotice } from '@/panels/right/components/w
 
 export function Wireframe() {
     const canvas = useCanvas();
+    const { openNodeContextMenu, canAcceptDropPayload, handleNodeDrop } = useNodeContextMenu();
     const currentTag = getCurrentTag(canvas);
     const previewFields = useMemo(() => getVisiblePreviewFields(canvas, currentTag?.id), [canvas.props, canvas.selectionInfo, canvas.activeId]);
     const selectedOptionsCount = canvas.selectionInfo.optionIds.length;
@@ -95,6 +97,33 @@ export function Wireframe() {
                             children={children}
                             noticesByTagId={noticesByTagId}
                             onSelect={select}
+                            onTagContextMenu={({ id, event }) => {
+                                event.preventDefault();
+                                openNodeContextMenu({
+                                    nodeId: id,
+                                    nodeKind: 'tag',
+                                    surface: 'wireframe',
+                                    clientX: event.clientX,
+                                    clientY: event.clientY,
+                                });
+                            }}
+                            onTagDragOver={({ event }) => {
+                                if (!canAcceptDropPayload(event.dataTransfer)) return;
+                                event.preventDefault();
+                                event.dataTransfer.dropEffect = 'copy';
+                            }}
+                            onTagDrop={({ id, event }) => {
+                                if (!canAcceptDropPayload(event.dataTransfer)) return;
+                                event.preventDefault();
+                                handleNodeDrop({
+                                    receiverId: id,
+                                    receiverKind: 'tag',
+                                    surface: 'wireframe',
+                                    clientX: event.clientX,
+                                    clientY: event.clientY,
+                                    dataTransfer: event.dataTransfer,
+                                });
+                            }}
                         />
 
                         <div className="border-t border-slate-200 pt-3 dark:border-slate-800">
@@ -102,11 +131,41 @@ export function Wireframe() {
                                 visibleFields.map((field) => {
                                     return (
                                         <div onClick={() => select(field.id)} className="cursor-pointer pb-2" key={field.id}>
-                                            <Wrapper
-                                                extraProps={{ ...(field.type == 'checkbox' && !field.options ? { single: true } : {}) }}
-                                                field={field}
-                                                key={field.id}
-                                            />
+                                            <div
+                                                onContextMenu={(event) => {
+                                                    event.preventDefault();
+                                                    openNodeContextMenu({
+                                                        nodeId: field.id,
+                                                        nodeKind: 'field',
+                                                        surface: 'wireframe',
+                                                        clientX: event.clientX,
+                                                        clientY: event.clientY,
+                                                    });
+                                                }}
+                                                onDragOver={(event) => {
+                                                    if (!canAcceptDropPayload(event.dataTransfer)) return;
+                                                    event.preventDefault();
+                                                    event.dataTransfer.dropEffect = 'copy';
+                                                }}
+                                                onDrop={(event) => {
+                                                    if (!canAcceptDropPayload(event.dataTransfer)) return;
+                                                    event.preventDefault();
+                                                    handleNodeDrop({
+                                                        receiverId: field.id,
+                                                        receiverKind: 'field',
+                                                        surface: 'wireframe',
+                                                        clientX: event.clientX,
+                                                        clientY: event.clientY,
+                                                        dataTransfer: event.dataTransfer,
+                                                    });
+                                                }}
+                                            >
+                                                <Wrapper
+                                                    extraProps={{ ...(field.type == 'checkbox' && !field.options ? { single: true } : {}) }}
+                                                    field={field}
+                                                    key={field.id}
+                                                />
+                                            </div>
                                         </div>
                                     );
                                 })

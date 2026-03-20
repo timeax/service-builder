@@ -11,12 +11,12 @@
 - [src/schema/editor.ts](#4)  L463-L498
 - [src/schema/editor.types.ts](#5)  L499-L541
 - [src/schema/fallback-editor.ts](#6)  L542-L767
-- [src/schema/graph.ts](#7)  L768-L808
-- [src/schema/index.ts](#8)  L809-L828
-- [src/schema/order.ts](#9)  L829-L976
-- [src/schema/policies.ts](#10)  L977-L993
-- [src/schema/provider.ts](#11)  L994-L1053
-- [src/schema/validation.ts](#12)  L1054-L1223
+- [src/schema/graph.ts](#7)  L768-L810
+- [src/schema/index.ts](#8)  L811-L830
+- [src/schema/order.ts](#9)  L831-L978
+- [src/schema/policies.ts](#10)  L979-L995
+- [src/schema/provider.ts](#11)  L996-L1055
+- [src/schema/validation.ts](#12)  L1056-L1225
 <!-- PRODEX_INDEX_LIST_END -->
 
 ---
@@ -772,7 +772,7 @@ export declare function createFallbackEditor(
 ` File: src/schema/graph.ts`  [↑ Back to top](#index)
 
 ```ts
-import type { NodeProps } from "reactflow";
+import type { Node, NodeProps } from "@xyflow/react";
 
 export type NodeKind = "tag" | "field" | "comment" | "option";
 export type EdgeKind =
@@ -800,10 +800,12 @@ export type GraphEdge = {
 
 export type GraphSnapshot = { nodes: GraphNode[]; edges: GraphEdge[] };
 
-export type FlowNode = NodeProps<{
+export type FlowNode = NodeProps<
+Node<{
     node: GraphNode;
     [x: string]: any;
-}>;
+}, NodeKind>
+>;
 ```
 
 ---
@@ -1221,4 +1223,4 @@ export type FallbackSettings = {
 
 ---
 *Generated with [Prodex](https://github.com/emxhive/prodex) — Codebase decoded.*
-<!-- PRODEx v1.4.11 | 2026-03-17T04:20:31.216Z -->
+<!-- PRODEx v1.4.11 | 2026-03-19T00:38:56.151Z -->

@@ -132,7 +132,10 @@ export type SectionActionButtonProps = React.ButtonHTMLAttributes<HTMLButtonElem
     badge?: React.ReactNode;
 };
 
-export function SectionActionButton({ className, icon, tooltip, iconOnly = false, badge, children, ...props }: SectionActionButtonProps) {
+function buildSectionActionButton(
+    { className, icon, tooltip, iconOnly = false, badge, children, ...props }: SectionActionButtonProps,
+    ref?: React.Ref<HTMLButtonElement>,
+) {
     const derivedAriaLabel =
         props['aria-label'] ??
         (typeof tooltip === 'string'
@@ -145,6 +148,7 @@ export function SectionActionButton({ className, icon, tooltip, iconOnly = false
 
     const button = (
         <button
+            ref={ref}
             type="button"
             className={cn(
                 'flex cursor-pointer items-center gap-1 text-sm font-medium text-primary',
@@ -175,6 +179,17 @@ export function SectionActionButton({ className, icon, tooltip, iconOnly = false
         </Tooltip>
     );
 }
+
+export function SectionActionButton(props: SectionActionButtonProps) {
+    return buildSectionActionButton(props);
+}
+
+export const SectionActionTriggerButton = React.forwardRef<HTMLButtonElement, SectionActionButtonProps>(function SectionActionTriggerButton(
+    props,
+    ref,
+) {
+    return buildSectionActionButton(props, ref);
+});
 
 /* -------------------------------------------------------------------------------------------------
  * Includes UI (you said you like this)

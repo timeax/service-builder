@@ -1,3 +1,4 @@
+import { BuilderIconButton } from '@/components/builder/index.tsx';
 import Users, { type User } from '@/panels/right/components/users.tsx';
 import { useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { useMemo } from 'react';
@@ -38,16 +39,19 @@ const Header = () => {
     }, [ws.participants.data, ws.authors.data, ws.actor]);
 
     return (
-        <div className="flex items-center justify-between border-b border-gray-200 p-2.5 dark:border-gray-700">
-            <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-3 dark:border-slate-800">
+            <div className="min-w-0 flex items-center gap-3">
                 <Users users={users} />
-                <button className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+                <BuilderIconButton title="Preview current branch" className="h-9 w-9 rounded-xl border border-slate-200 bg-white/80 text-slate-600 hover:bg-white dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-300">
                     <MdOutlinePlayArrow className="text-2xl" />
-                </button>
+                </BuilderIconButton>
             </div>
-            <button className="flex h-7 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-[#0095FF] text-white hover:bg-[#007edc]">
+            <BuilderIconButton
+                title="Share branch"
+                className="h-9 w-9 rounded-xl bg-sky-500 text-white hover:border-sky-500 hover:bg-sky-600 hover:text-white dark:bg-sky-500 dark:text-white"
+            >
                 <PiShareFatThin />
-            </button>
+            </BuilderIconButton>
         </div>
     );
 };

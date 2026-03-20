@@ -15,48 +15,48 @@
 - [src/react/workspace/components/canvas.tsx](#8)  L1605-L1728
 - [src/react/workspace/components/context-menu-renderer.tsx](#9)  L1729-L1934
 - [src/react/workspace/components/index.tsx](#10)  L1935-L2010
-- [src/react/workspace/components/reactflow/edge.tsx](#11)  L2011-L2020
-- [src/react/workspace/components/reactflow/index.tsx](#12)  L2021-L2042
-- [src/react/workspace/components/reactflow/nodes/comments.tsx](#13)  L2043-L2052
-- [src/react/workspace/components/reactflow/nodes/field.tsx](#14)  L2053-L2087
-- [src/react/workspace/components/reactflow/nodes/node.tsx](#15)  L2088-L2256
-- [src/react/workspace/components/reactflow/nodes/options.tsx](#16)  L2257-L2275
-- [src/react/workspace/components/reactflow/nodes/tags.tsx](#17)  L2276-L2298
-- [src/react/workspace/context/backend.ts](#18)  L2299-L2861
-- [src/react/workspace/context/context.tsx](#19)  L2862-L3173
-- [src/react/workspace/context/ctxmenu.tsx](#20)  L3174-L3472
-- [src/react/workspace/context/hooks/use-canvas.ts](#21)  L3473-L3813
-- [src/react/workspace/context/hooks/use-errors.ts](#22)  L3814-L4153
-- [src/react/workspace/context/index.ts](#23)  L4154-L4204
-- [src/react/workspace/context/memory/errors.ts](#24)  L4205-L4257
-- [src/react/workspace/context/memory/ids.ts](#25)  L4258-L4318
-- [src/react/workspace/context/memory/index.ts](#26)  L4319-L4338
-- [src/react/workspace/context/memory/memory-backend.ts](#27)  L4339-L5639
-- [src/react/workspace/context/memory/seed.ts](#28)  L5640-L5737
-- [src/react/workspace/context/memory/store.ts](#29)  L5738-L5863
-- [src/react/workspace/context/memory/time.ts](#30)  L5864-L5888
-- [src/react/workspace/context/provider/compose/use-branch-cache.ts](#31)  L5889-L6170
-- [src/react/workspace/context/provider/compose/use-live-polling.ts](#32)  L6171-L6458
-- [src/react/workspace/context/provider/compose/use-workspace-refresh.ts](#33)  L6459-L6678
-- [src/react/workspace/context/provider/context.ts](#34)  L6679-L6706
-- [src/react/workspace/context/provider/helpers.ts](#35)  L6707-L6817
-- [src/react/workspace/context/provider/live/adapters/manual.ts](#36)  L6818-L6827
-- [src/react/workspace/context/provider/live/adapters/poll.ts](#37)  L6828-L6908
-- [src/react/workspace/context/provider/live/adapters/sse.ts](#38)  L6909-L6918
-- [src/react/workspace/context/provider/live/adapters/ws.ts](#39)  L6919-L6928
-- [src/react/workspace/context/provider/live/types.ts](#40)  L6929-L7011
-- [src/react/workspace/context/provider/provider.tsx](#41)  L7012-L7530
-- [src/react/workspace/context/provider/runtime/use-backend-runtime.ts](#42)  L7531-L7578
-- [src/react/workspace/context/provider/slices/use-authors-slice.ts](#43)  L7579-L7648
-- [src/react/workspace/context/provider/slices/use-branches-slice.ts](#44)  L7649-L7864
-- [src/react/workspace/context/provider/slices/use-comments-slice.ts](#45)  L7865-L8314
-- [src/react/workspace/context/provider/slices/use-permissions-slice.ts](#46)  L8315-L8392
-- [src/react/workspace/context/provider/slices/use-policies-slice.ts](#47)  L8393-L8609
-- [src/react/workspace/context/provider/slices/use-services-slice.ts](#48)  L8610-L8686
-- [src/react/workspace/context/provider/slices/use-snapshots-slice.ts](#49)  L8687-L9133
-- [src/react/workspace/context/provider/slices/use-templates-slice.ts](#50)  L9134-L9373
-- [src/react/workspace/context/provider/types.ts](#51)  L9374-L9620
-- [src/react/workspace/index.ts](#52)  L9621-L9638
+- [src/react/workspace/components/reactflow/edge.tsx](#11)  L2011-L2033
+- [src/react/workspace/components/reactflow/index.tsx](#12)  L2034-L2055
+- [src/react/workspace/components/reactflow/nodes/comments.tsx](#13)  L2056-L2514
+- [src/react/workspace/components/reactflow/nodes/field.tsx](#14)  L2515-L2548
+- [src/react/workspace/components/reactflow/nodes/node.tsx](#15)  L2549-L2717
+- [src/react/workspace/components/reactflow/nodes/options.tsx](#16)  L2718-L2736
+- [src/react/workspace/components/reactflow/nodes/tags.tsx](#17)  L2737-L2758
+- [src/react/workspace/context/backend.ts](#18)  L2759-L3321
+- [src/react/workspace/context/context.tsx](#19)  L3322-L3633
+- [src/react/workspace/context/ctxmenu.tsx](#20)  L3634-L3932
+- [src/react/workspace/context/hooks/use-canvas.ts](#21)  L3933-L4273
+- [src/react/workspace/context/hooks/use-errors.ts](#22)  L4274-L4613
+- [src/react/workspace/context/index.ts](#23)  L4614-L4664
+- [src/react/workspace/context/memory/errors.ts](#24)  L4665-L4717
+- [src/react/workspace/context/memory/ids.ts](#25)  L4718-L4778
+- [src/react/workspace/context/memory/index.ts](#26)  L4779-L4798
+- [src/react/workspace/context/memory/memory-backend.ts](#27)  L4799-L6099
+- [src/react/workspace/context/memory/seed.ts](#28)  L6100-L6197
+- [src/react/workspace/context/memory/store.ts](#29)  L6198-L6323
+- [src/react/workspace/context/memory/time.ts](#30)  L6324-L6348
+- [src/react/workspace/context/provider/compose/use-branch-cache.ts](#31)  L6349-L6630
+- [src/react/workspace/context/provider/compose/use-live-polling.ts](#32)  L6631-L6918
+- [src/react/workspace/context/provider/compose/use-workspace-refresh.ts](#33)  L6919-L7138
+- [src/react/workspace/context/provider/context.ts](#34)  L7139-L7166
+- [src/react/workspace/context/provider/helpers.ts](#35)  L7167-L7277
+- [src/react/workspace/context/provider/live/adapters/manual.ts](#36)  L7278-L7497
+- [src/react/workspace/context/provider/live/adapters/poll.ts](#37)  L7498-L7578
+- [src/react/workspace/context/provider/live/adapters/sse.ts](#38)  L7579-L7659
+- [src/react/workspace/context/provider/live/adapters/ws.ts](#39)  L7660-L7740
+- [src/react/workspace/context/provider/live/types.ts](#40)  L7741-L7823
+- [src/react/workspace/context/provider/provider.tsx](#41)  L7824-L8342
+- [src/react/workspace/context/provider/runtime/use-backend-runtime.ts](#42)  L8343-L8390
+- [src/react/workspace/context/provider/slices/use-authors-slice.ts](#43)  L8391-L8460
+- [src/react/workspace/context/provider/slices/use-branches-slice.ts](#44)  L8461-L8676
+- [src/react/workspace/context/provider/slices/use-comments-slice.ts](#45)  L8677-L9126
+- [src/react/workspace/context/provider/slices/use-permissions-slice.ts](#46)  L9127-L9204
+- [src/react/workspace/context/provider/slices/use-policies-slice.ts](#47)  L9205-L9421
+- [src/react/workspace/context/provider/slices/use-services-slice.ts](#48)  L9422-L9498
+- [src/react/workspace/context/provider/slices/use-snapshots-slice.ts](#49)  L9499-L9945
+- [src/react/workspace/context/provider/slices/use-templates-slice.ts](#50)  L9946-L10185
+- [src/react/workspace/context/provider/types.ts](#51)  L10186-L10432
+- [src/react/workspace/index.ts](#52)  L10433-L10451
 <!-- PRODEX_INDEX_LIST_END -->
 
 ---
@@ -344,8 +344,8 @@ import type {
     Connection,
     OnConnectStart,
     OnConnectEnd,
-} from "reactflow";
-import { applyNodeChanges, applyEdgeChanges } from "reactflow";
+} from "@xyflow/react";
+import { applyNodeChanges, applyEdgeChanges } from "@xyflow/react";
 import type { CanvasAPI } from "@/react";
 import type { CanvasState } from "@/schema/canvas-types";
 import type { EdgeKind } from "@/schema/graph";
@@ -840,7 +840,7 @@ export function useReactFlowAdapter(
 
 ```tsx
 import React, { useMemo, useState, useCallback } from "react";
-import { useReactFlow } from "reactflow";
+import { useReactFlow } from "@xyflow/react";
 import type { CanvasAPI } from "@/react";
 import { resolveTools } from "./toolbar/merge";
 import type {
@@ -1611,8 +1611,8 @@ export default Workspace;
 ```tsx
 // src/react/adapters/reactflow/ReactFlowCanvas.tsx
 import React, { useMemo, useState } from "react";
-import ReactFlow, { Background, ConnectionMode, MiniMap } from "reactflow";
-import "reactflow/dist/style.css";
+import { Background, ConnectionMode, MiniMap, ReactFlow } from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 
 import {
     type AdapterOptions,
@@ -2015,7 +2015,20 @@ export type { ToolsConfig, LabelPlacement, AdapterOptions };
 ` File: src/react/workspace/components/reactflow/edge.tsx`  [↑ Back to top](#index)
 
 ```tsx
+import Node from "./node";
+import React from "react";
+import type { FlowNode } from "@/schema/graph";
 
+const Tag: React.FC<FlowNode> = ({
+    id,
+    data: {
+        node: { label },
+    },
+}) => {
+    return <Node type={"tag"} label={label} id={id} />;
+};
+
+export default Tag;
 ```
 
 ---
@@ -2047,7 +2060,456 @@ export { nodeTypes, edgeTypes };
 ` File: src/react/workspace/components/reactflow/nodes/comments.tsx`  [↑ Back to top](#index)
 
 ```tsx
+import React, { useMemo, useState, useCallback } from "react";
+import { useReactFlow } from "@xyflow/react";
+import type { CanvasAPI } from "@/react";
+import { resolveTools } from "./toolbar/merge";
+import type {
+    ResolvedTools,
+    ToolContext,
+    ToolsConfig,
+    LabelPlacement,
+    ToolDescriptor,
+} from "./toolbar/types";
+import { Icons } from "./toolbar/icons";
 
+export type ToolbarProps = {
+    api: CanvasAPI;
+    mode?: "dev" | "prod";
+    showGrid: boolean;
+    setShowGrid: (v: boolean) => void;
+    showMiniMap: boolean;
+    setShowMiniMap: (v: boolean) => void;
+
+    tools?: ToolsConfig;
+    /** Default: 'tooltip' (hidden label, shown as native tooltip) */
+    labelPlacement?: LabelPlacement;
+    /** Optional custom button renderer */
+    renderButton?: (t: ToolRender, key: string) => React.ReactNode;
+};
+
+export type ToolRender = {
+    id: string;
+    label?: string;
+    icon?: React.ReactNode;
+    active: boolean;
+    disabled: boolean;
+    disabledReason?: string;
+    onClick: () => void;
+    group?: string;
+    hasMenu?: boolean;
+    open?: boolean;
+    onToggleMenu?: () => void;
+    children?: ToolRender[];
+};
+
+export function Toolbar({
+    api,
+    mode = "dev",
+    showGrid,
+    setShowGrid,
+    showMiniMap,
+    setShowMiniMap,
+    tools,
+    labelPlacement = "tooltip",
+    renderButton,
+}: ToolbarProps) {
+    const rf = useReactFlow();
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+    const selectionCount = api.getSelection().length;
+    const relation = api.getEdgeRel();
+    const canUndo = true;
+    const canRedo = true;
+
+    const ctx: ToolContext = useMemo(
+        () => ({
+            api,
+            env: { mode },
+            state: {
+                relation,
+                selectionCount,
+                canUndo,
+                canRedo,
+                showGrid,
+                showMiniMap,
+            },
+            flow: {
+                zoomIn: () => rf.zoomIn?.(),
+                zoomOut: () => rf.zoomOut?.(),
+                fitView: () => rf.fitView?.(),
+            },
+            setRelation: (rel) => api.setEdgeRel(rel),
+            toggleGrid: () => setShowGrid(!showGrid),
+            toggleMiniMap: () => setShowMiniMap(!showMiniMap),
+        }),
+        [
+            api,
+            mode,
+            relation,
+            selectionCount,
+            showGrid,
+            showMiniMap,
+            rf,
+            setShowGrid,
+            setShowMiniMap,
+        ],
+    );
+
+    const descriptors: ResolvedTools = useMemo(
+        () => resolveTools({ base: defaultTools(), ...(tools ?? {}) }),
+        [tools],
+    );
+
+    const buildRenderable = useCallback(
+        (defs: ToolDescriptor[]): ToolRender[] => {
+            return defs
+                .filter((t) => (t.when ? !!t.when(ctx) : true))
+                .map((t) => {
+                    const en = t.enabled ? t.enabled(ctx) : true;
+                    const enabledOk =
+                        typeof en === "boolean" ? en : en.ok !== false;
+                    const reason =
+                        typeof en === "boolean" ? undefined : en.reason;
+                    const active = t.active ? !!t.active(ctx) : false;
+
+                    let iconNode: React.ReactNode | undefined;
+                    if (typeof t.icon === "function")
+                        iconNode = t.icon(active, !enabledOk);
+                    else if (typeof t.icon === "string")
+                        iconNode = mapIcon(t.icon, active);
+
+                    const onClick = async () => {
+                        if (!enabledOk || !t.action) return;
+                        try {
+                            t.onBefore?.(ctx);
+                            await t.action(ctx);
+                            t.onAfter?.(ctx);
+                        } catch (err) {
+                            t.onError?.(ctx, err);
+                            api.emit("error", {
+                                message:
+                                    (err as any)?.message ??
+                                    "Tool action failed",
+                                meta: { tool: t.id },
+                            });
+                        }
+                    };
+
+                    const hasMenu = !!(t.children && t.children.length);
+                    const children = hasMenu
+                        ? buildRenderable(t.children!)
+                        : undefined;
+
+                    return {
+                        id: t.id,
+                        label: t.label,
+                        icon: iconNode,
+                        active,
+                        disabled: !enabledOk,
+                        disabledReason: reason,
+                        onClick,
+                        group: t.group,
+                        hasMenu,
+                        open: hasMenu && openMenuId === t.id,
+                        onToggleMenu: hasMenu
+                            ? () =>
+                                  setOpenMenuId(
+                                      openMenuId === t.id ? null : t.id,
+                                  )
+                            : undefined,
+                        children,
+                    } as ToolRender;
+                });
+        },
+        [ctx, api, openMenuId],
+    );
+
+    const items: ToolRender[] = buildRenderable(descriptors);
+    const groups = groupBy(items, (i) => i.group ?? "view");
+
+    return (
+        <div className="dsb-toolbar pointer-events-none absolute left-2 top-2 z-10 grid gap-2">
+            {Object.entries(groups).map(([g, arr]) => (
+                <div
+                    key={g}
+                    className="dsb-toolbar__group pointer-events-auto flex gap-1 rounded-lg border border-border bg-card/90 p-1 shadow-sm"
+                >
+                    {arr.map((btn) =>
+                        renderButton ? (
+                            renderButton(btn, btn.id)
+                        ) : (
+                            <DefaultTool
+                                key={btn.id}
+                                {...btn}
+                                labelPlacement={labelPlacement}
+                            />
+                        ),
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+/* ------------------- Built-in tools (with Tailwind icons) ------------------- */
+
+function defaultTools(): ToolDescriptor[] {
+    return [
+        {
+            id: "mode:bind",
+            kind: "mode",
+            group: "relation",
+            order: 10,
+            label: "Bind",
+            icon: (active) => Icons.bind(active),
+            active: (ctx) => ctx.state.relation === "bind",
+            action: (ctx) => ctx.setRelation("bind"),
+        },
+        {
+            id: "mode:include",
+            kind: "mode",
+            group: "relation",
+            order: 20,
+            label: "Include",
+            icon: (active) => Icons.include(active),
+            active: (ctx) => ctx.state.relation === "include",
+            action: (ctx) => ctx.setRelation("include"),
+        },
+        {
+            id: "mode:exclude",
+            kind: "mode",
+            group: "relation",
+            order: 30,
+            label: "Exclude",
+            icon: (active) => Icons.exclude(active),
+            active: (ctx) => ctx.state.relation === "exclude",
+            action: (ctx) => ctx.setRelation("exclude"),
+        },
+
+        {
+            id: "view:grid",
+            kind: "toggle",
+            group: "view",
+            order: 10,
+            label: "Grid",
+            icon: (a) => Icons.grid(a),
+            active: (ctx) => ctx.state.showGrid,
+            action: (ctx) => ctx.toggleGrid(),
+        },
+        {
+            id: "view:minimap",
+            kind: "toggle",
+            group: "view",
+            order: 20,
+            label: "Minimap",
+            icon: (a) => Icons.minimap(a),
+            active: (ctx) => ctx.state.showMiniMap,
+            action: (ctx) => ctx.toggleMiniMap(),
+        },
+
+        // Example dropdown (menu) with viewport controls
+        {
+            id: "zoom:menu",
+            kind: "menu",
+            group: "viewport",
+            order: 5,
+            label: "Viewport",
+            icon: () => Icons.fit(),
+            children: [
+                {
+                    id: "zoom:in",
+                    kind: "command",
+                    label: "Zoom In",
+                    icon: () => Icons.zoomIn(),
+                    action: (ctx) => ctx.flow.zoomIn(),
+                },
+                {
+                    id: "zoom:out",
+                    kind: "command",
+                    label: "Zoom Out",
+                    icon: () => Icons.zoomOut(),
+                    action: (ctx) => ctx.flow.zoomOut(),
+                },
+                {
+                    id: "zoom:fit",
+                    kind: "command",
+                    label: "Fit",
+                    icon: () => Icons.fit(),
+                    action: (ctx) => ctx.flow.fitView(),
+                },
+            ],
+        },
+    ];
+}
+
+/* ------------------- Renderers ------------------- */
+
+function DefaultTool({
+    id,
+    label,
+    icon,
+    active,
+    disabled,
+    disabledReason,
+    onClick,
+    hasMenu,
+    open,
+    onToggleMenu,
+    children,
+    group,
+    labelPlacement,
+}: ToolRender & { labelPlacement: LabelPlacement }) {
+    const baseBtn =
+        "dsb-tool inline-flex items-center justify-center rounded-md border border-border bg-card px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground " +
+        (active ? "ring-1 ring-ring bg-accent text-accent-foreground" : "") +
+        (disabled ? " opacity-50 cursor-not-allowed" : "");
+
+    const title =
+        labelPlacement === "tooltip"
+            ? disabled
+                ? (disabledReason ?? label)
+                : label
+            : undefined;
+
+    const content = (
+        <>
+            {icon ?? null}
+            {labelPlacement === "inline" && label && (
+                <span className="ml-1">{label}</span>
+            )}
+            {labelPlacement === "below" && label && (
+                <span className="mt-0.5 block text-[10px] leading-3 text-muted-foreground">
+                    {label}
+                </span>
+            )}
+            {hasMenu && <span className="ml-1">{Icons.chevronDown()}</span>}
+        </>
+    );
+
+    if (!hasMenu) {
+        return (
+            <button
+                type="button"
+                title={title}
+                aria-pressed={active}
+                disabled={disabled}
+                onClick={onClick}
+                className={
+                    baseBtn +
+                    " h-8 w-8 " +
+                    (labelPlacement === "below" ? "flex-col" : "")
+                }
+            >
+                {content}
+            </button>
+        );
+    }
+
+    // Menu root
+    return (
+        <div className="relative">
+            <button
+                type="button"
+                title={title}
+                aria-expanded={open ? "true" : "false"}
+                disabled={disabled}
+                onClick={onToggleMenu}
+                className={
+                    baseBtn +
+                    " h-8 w-8 " +
+                    (labelPlacement === "below" ? "flex-col" : "")
+                }
+            >
+                {content}
+            </button>
+
+            {open && (
+                <div
+                    className="absolute left-0 z-20 mt-1 min-w-[10rem] overflow-hidden rounded-md border border-border bg-popover shadow-lg"
+                    role="menu"
+                >
+                    <ul className="divide-y divide-border">
+                        {children?.map((ch) => (
+                            <li key={ch.id} className="p-0">
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    title={
+                                        labelPlacement === "tooltip"
+                                            ? ch.disabled
+                                                ? (ch.disabledReason ??
+                                                  ch.label)
+                                                : ch.label
+                                            : undefined
+                                    }
+                                    disabled={ch.disabled}
+                                    onClick={ch.onClick}
+                                    className={
+                                        "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground " +
+                                        (ch.disabled
+                                            ? "opacity-50 cursor-not-allowed"
+                                            : "")
+                                    }
+                                >
+                                    {ch.icon ?? null}
+                                    {labelText(ch.label, "inline")}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function labelText(label?: string, placement: LabelPlacement = "tooltip") {
+    if (!label || placement === "none" || placement === "tooltip") return null;
+    if (placement === "inline") return <span>{label}</span>;
+    if (placement === "below")
+        return (
+            <span className="block text-[10px] leading-3 text-muted-foreground">
+                {label}
+            </span>
+        );
+    return null;
+}
+
+function mapIcon(token: string, active: boolean): React.ReactNode {
+    switch (token) {
+        case "bind":
+            return Icons.bind(active);
+        case "include":
+            return Icons.include(active);
+        case "exclude":
+            return Icons.exclude(active);
+        case "zoom-in":
+            return Icons.zoomIn();
+        case "zoom-out":
+            return Icons.zoomOut();
+        case "fit":
+            return Icons.fit();
+        case "grid":
+            return Icons.grid(active);
+        case "minimap":
+            return Icons.minimap(active);
+        default:
+            return (
+                <span className="text-xs text-muted-foreground">{token}</span>
+            );
+    }
+}
+
+function groupBy<T>(arr: T[], key: (t: T) => string): Record<string, T[]> {
+    const out: Record<string, T[]> = {};
+    for (const x of arr) {
+        const k = key(x);
+        if (!out[k]) out[k] = [];
+        out[k].push(x);
+    }
+    return out;
+}
 ```
 
 ---
@@ -2058,10 +2520,9 @@ export { nodeTypes, edgeTypes };
 
 ```tsx
 import Node from "./node";
-import React from "react";
 import { FlowNode } from "@/schema/graph";
 
-const Field: React.FC<FlowNode> = (props) => {
+function Field(props: FlowNode) {
     const {
         id,
         data: {
@@ -2080,7 +2541,7 @@ const Field: React.FC<FlowNode> = (props) => {
             }}
         </Node>
     );
-};
+}
 
 export default Field;
 ```
@@ -2098,7 +2559,7 @@ import { RxInput } from "react-icons/rx";
 import { TbHandClick } from "react-icons/tb";
 import { LuTextSelect } from "react-icons/lu";
 import { TfiComments } from "react-icons/tfi";
-import { Handle, Position } from "reactflow";
+import { Handle, Position } from "@xyflow/react";
 import { useCanvasAPI } from "@/react/workspace/context/context";
 import { clsx } from "clsx";
 
@@ -2262,13 +2723,13 @@ export default Node;
 
 ```tsx
 import Node from "./node";
-import { NodeProps } from "reactflow";
-import { GraphNode } from "@/schema/graph";
-import React from "react";
+import type { Node as RFNode, NodeProps } from "@xyflow/react";
 
-const Options: React.FC<NodeProps<GraphNode>> = ({ id, data: { label } }) => {
+type OptionNode = RFNode<{ label: string }, "option">;
+
+function Options({ id, data: { label } }: NodeProps<OptionNode>) {
     return <Node label={label} id={id} type={"option"} />;
-};
+}
 
 export default Options;
 ```
@@ -2281,17 +2742,16 @@ export default Options;
 
 ```tsx
 import Node from "./node";
-import React from "react";
 import type { FlowNode } from "@/schema/graph";
 
-const Tag: React.FC<FlowNode> = ({
+function Tag({
     id,
     data: {
         node: { label },
     },
-}) => {
+}: FlowNode) {
     return <Node type={"tag"} label={label} id={id} />;
-};
+}
 
 export default Tag;
 ```
@@ -6822,7 +7282,217 @@ export function toServiceMap(
 ` File: src/react/workspace/context/provider/live/adapters/manual.ts`  [↑ Back to top](#index)
 
 ```ts
+// src/react/workspace/context/provider/compose/use-workspace-refresh.ts
+import * as React from "react";
+import type { RunResult } from "../types";
+import type { BackendRuntime } from "../runtime/use-backend-runtime";
+import { PoliciesSlice } from "@/react/workspace/context/provider/slices/use-policies-slice";
+import { CommentsSliceApi } from "@/react/workspace/context/provider/slices/use-comments-slice";
 
+export interface WorkspaceRefreshApi {
+    readonly refreshAll: (opts?: { strict?: boolean }) => Promise<RunResult>;
+
+    // NOTE: still callable as refreshBranchContext() — we just allow optional params.
+    readonly refreshBranchContext: (
+        opts?: Readonly<{
+            branchId?: string;
+
+            /**
+             * When true, errors stop the chain (same meaning as refreshAll strict).
+             * Defaults to false (tolerant).
+             */
+            strict?: boolean;
+
+            /**
+             * Include workspace-scoped refreshes that are often “branch-relevant” in practice
+             * (services, permissions, authors). Defaults to true.
+             */
+            includeWorkspaceData?: boolean;
+        }>,
+    ) => Promise<void>;
+
+    // NOTE: still callable as refreshSnapshotPointers() — optional params allowed.
+    readonly refreshSnapshotPointers: (
+        opts?: Readonly<{
+            branchId?: string;
+            strict?: boolean;
+        }>,
+    ) => Promise<void>;
+}
+
+export interface UseWorkspaceRefreshParams {
+    readonly runtime: BackendRuntime;
+
+    readonly refreshAuthors: () => Promise<void>;
+    readonly refreshPermissions: () => Promise<void>;
+    readonly refreshBranches: () => Promise<void>;
+    readonly refreshServices: () => Promise<void>;
+    readonly refreshPolicies: PoliciesSlice["refreshPolicies"];
+    readonly refreshComments: CommentsSliceApi["refreshThreads"];
+
+    readonly getCurrentBranchId: () => string | undefined;
+
+    readonly refreshTemplates: (
+        params?: Partial<{ branchId: string }>,
+    ) => Promise<void>;
+    readonly refreshParticipants: (
+        params?: Partial<{ branchId: string }>,
+    ) => Promise<void>;
+
+    readonly refreshSnapshotPointersForBranch: (
+        branchId: string,
+    ) => Promise<void>;
+    readonly refreshSnapshotPointers: () => Promise<void>;
+}
+
+export function useWorkspaceRefresh(
+    params: UseWorkspaceRefreshParams,
+): WorkspaceRefreshApi {
+    const {
+        runtime,
+        refreshAuthors,
+        refreshPermissions,
+        refreshBranches,
+        refreshServices,
+        refreshComments,
+        refreshPolicies,
+        getCurrentBranchId,
+        refreshTemplates,
+        refreshParticipants,
+        refreshSnapshotPointersForBranch,
+        refreshSnapshotPointers,
+    } = params;
+
+    const refreshBranchLocalContext = React.useCallback(
+        async (branchId: string, tolerant: boolean): Promise<RunResult> => {
+            return runtime.runTasks(
+                [
+                    () => refreshParticipants({ branchId }),
+                    () => refreshTemplates({ branchId }),
+                    () => refreshSnapshotPointersForBranch(branchId),
+                    () => refreshComments(),
+                    () => refreshPolicies({ branchId }),
+                ],
+                tolerant,
+            );
+        },
+        [
+            runtime,
+            refreshParticipants,
+            refreshTemplates,
+            refreshSnapshotPointersForBranch,
+        ],
+    );
+
+    const refreshBranchContext = React.useCallback(
+        async (
+            opts?: Readonly<{
+                branchId?: string;
+                strict?: boolean;
+                includeWorkspaceData?: boolean;
+            }>,
+        ): Promise<void> => {
+            const branchId: string | undefined =
+                opts?.branchId ?? getCurrentBranchId();
+
+            if (!branchId) return;
+
+            const tolerant: boolean = !(opts?.strict ?? false);
+            const includeWorkspaceData: boolean =
+                opts?.includeWorkspaceData ?? true;
+
+            // The “practical” expectation: branch refresh should refresh branch-local data
+            // AND other workspace data that impacts the branch experience.
+            // (Services, authors/permissions often impact what a branch can do/render.)
+            const tasks: Array<() => Promise<unknown>> = [];
+
+            if (includeWorkspaceData) {
+                tasks.push(() => refreshAuthors());
+                tasks.push(() => refreshPermissions());
+                tasks.push(() => refreshServices());
+            }
+
+            tasks.push(() => refreshBranchLocalContext(branchId, tolerant));
+
+            await runtime.runTasks(tasks, tolerant);
+        },
+        [
+            getCurrentBranchId,
+            runtime,
+            refreshAuthors,
+            refreshPermissions,
+            refreshServices,
+            refreshBranchLocalContext,
+        ],
+    );
+
+    const refreshAll = React.useCallback(
+        async (opts?: { strict?: boolean }): Promise<RunResult> => {
+            const tolerant: boolean = !(opts?.strict ?? false);
+
+            // Avoid duplicate workspace refresh work:
+            // refreshAll() does workspace-wide first, then branch-local only.
+            const branchId: string | undefined = getCurrentBranchId();
+
+            const tasks: Array<() => Promise<unknown>> = [
+                () => refreshAuthors(),
+                () => refreshPermissions(),
+                () => refreshBranches(),
+                () => refreshServices(),
+            ];
+
+            if (branchId) {
+                tasks.push(() => refreshBranchLocalContext(branchId, tolerant));
+            }
+
+            return runtime.runTasks(tasks, tolerant);
+        },
+        [
+            runtime,
+            refreshAuthors,
+            refreshPermissions,
+            refreshBranches,
+            refreshServices,
+            getCurrentBranchId,
+            refreshBranchLocalContext,
+            refreshComments,
+            refreshPolicies,
+        ],
+    );
+
+    const refreshSnapshotPointersWrapped = React.useCallback(
+        async (
+            opts?: Readonly<{ branchId?: string; strict?: boolean }>,
+        ): Promise<void> => {
+            const tolerant: boolean = !(opts?.strict ?? false);
+
+            if (opts?.branchId) {
+                await runtime.runTasks(
+                    [
+                        () =>
+                            refreshSnapshotPointersForBranch(
+                                opts.branchId as string,
+                            ),
+                    ],
+                    tolerant,
+                );
+                return;
+            }
+
+            await runtime.runTasks([() => refreshSnapshotPointers()], tolerant);
+        },
+        [runtime, refreshSnapshotPointers, refreshSnapshotPointersForBranch],
+    );
+
+    return React.useMemo<WorkspaceRefreshApi>(
+        () => ({
+            refreshAll,
+            refreshBranchContext,
+            refreshSnapshotPointers: refreshSnapshotPointersWrapped,
+        }),
+        [refreshAll, refreshBranchContext, refreshSnapshotPointersWrapped],
+    );
+}
 ```
 
 ---
@@ -6913,7 +7583,78 @@ export function createPollAdapter(
 ` File: src/react/workspace/context/provider/live/adapters/sse.ts`  [↑ Back to top](#index)
 
 ```ts
+// src/react/workspace/context/provider/live/adapters/poll.ts
+import type { LiveOptions } from "../../../backend";
+import type {
+    WorkspaceLiveAdapter,
+    WorkspaceLiveAdapterContext,
+    WorkspaceLiveAdapterHandlers,
+    WorkspaceLiveStatus,
+    WorkspaceLiveTick,
+} from "../types";
 
+export interface PollAdapterOptions {
+    readonly defaultIntervalMs: number; // e.g. 15000
+}
+
+export function createPollAdapter(
+    opts?: Partial<PollAdapterOptions>,
+): WorkspaceLiveAdapter {
+    const defaultIntervalMs: number = opts?.defaultIntervalMs ?? 15000;
+
+    let intervalId: number | undefined;
+    let connected: boolean = false;
+
+    const disconnect = (): void => {
+        if (typeof intervalId === "number") {
+            window.clearInterval(intervalId);
+        }
+        intervalId = undefined;
+        connected = false;
+    };
+
+    const connect = async (
+        ctx: WorkspaceLiveAdapterContext,
+        handlers: WorkspaceLiveAdapterHandlers,
+    ): Promise<void> => {
+        disconnect();
+
+        const live: LiveOptions = ctx.live;
+
+        if (live.mode !== "poll") {
+            handlers.onStatus({ connected: false } as WorkspaceLiveStatus);
+            return;
+        }
+
+        const intervalMs: number = live.intervalMs ?? defaultIntervalMs;
+
+        connected = true;
+        handlers.onStatus({ connected: true } as WorkspaceLiveStatus);
+
+        const tickOnce = async (
+            reason: WorkspaceLiveTick["reason"],
+        ): Promise<void> => {
+            const tick: WorkspaceLiveTick = {
+                at: Date.now(),
+                reason,
+            };
+            handlers.onTick(tick);
+        };
+
+        // immediate tick
+        await tickOnce("init");
+
+        intervalId = window.setInterval(() => {
+            void tickOnce("timer");
+        }, intervalMs) as unknown as number;
+    };
+
+    return {
+        id: "poll",
+        connect,
+        disconnect,
+    };
+}
 ```
 
 ---
@@ -6923,7 +7664,78 @@ export function createPollAdapter(
 ` File: src/react/workspace/context/provider/live/adapters/ws.ts`  [↑ Back to top](#index)
 
 ```ts
+// src/react/workspace/context/provider/live/adapters/poll.ts
+import type { LiveOptions } from "../../../backend";
+import type {
+    WorkspaceLiveAdapter,
+    WorkspaceLiveAdapterContext,
+    WorkspaceLiveAdapterHandlers,
+    WorkspaceLiveStatus,
+    WorkspaceLiveTick,
+} from "../types";
 
+export interface PollAdapterOptions {
+    readonly defaultIntervalMs: number; // e.g. 15000
+}
+
+export function createPollAdapter(
+    opts?: Partial<PollAdapterOptions>,
+): WorkspaceLiveAdapter {
+    const defaultIntervalMs: number = opts?.defaultIntervalMs ?? 15000;
+
+    let intervalId: number | undefined;
+    let connected: boolean = false;
+
+    const disconnect = (): void => {
+        if (typeof intervalId === "number") {
+            window.clearInterval(intervalId);
+        }
+        intervalId = undefined;
+        connected = false;
+    };
+
+    const connect = async (
+        ctx: WorkspaceLiveAdapterContext,
+        handlers: WorkspaceLiveAdapterHandlers,
+    ): Promise<void> => {
+        disconnect();
+
+        const live: LiveOptions = ctx.live;
+
+        if (live.mode !== "poll") {
+            handlers.onStatus({ connected: false } as WorkspaceLiveStatus);
+            return;
+        }
+
+        const intervalMs: number = live.intervalMs ?? defaultIntervalMs;
+
+        connected = true;
+        handlers.onStatus({ connected: true } as WorkspaceLiveStatus);
+
+        const tickOnce = async (
+            reason: WorkspaceLiveTick["reason"],
+        ): Promise<void> => {
+            const tick: WorkspaceLiveTick = {
+                at: Date.now(),
+                reason,
+            };
+            handlers.onTick(tick);
+        };
+
+        // immediate tick
+        await tickOnce("init");
+
+        intervalId = window.setInterval(() => {
+            void tickOnce("timer");
+        }, intervalMs) as unknown as number;
+    };
+
+    return {
+        id: "poll",
+        connect,
+        disconnect,
+    };
+}
 ```
 
 ---
@@ -9631,9 +10443,10 @@ export { Workspace } from "./app";
 export type { WorkspaceProps } from "./app";
 
 export * from "./context";
+export * from './components'
 ```
 
 
 ---
 *Generated with [Prodex](https://github.com/emxhive/prodex) — Codebase decoded.*
-<!-- PRODEx v1.4.11 | 2026-03-17T04:20:31.216Z -->
+<!-- PRODEx v1.4.11 | 2026-03-19T00:38:56.151Z -->
