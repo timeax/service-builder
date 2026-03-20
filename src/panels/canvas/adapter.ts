@@ -135,7 +135,10 @@ function toRF(state: ReturnType<CanvasAPI['snapshot']>, api: CanvasAPI, opts?: P
 }
 
 const parseEdgeId = (id: string): { kind: 'bind' | 'include' | 'exclude'; from: string; to: string } | null => {
-    const [k, rest] = id.split(':');
+    const sep = id.indexOf(':');
+    if (sep < 0) return null;
+    const k = id.slice(0, sep);
+    const rest = id.slice(sep + 1);
     if (!k || !rest) return null;
     const [from, to] = rest.split('->');
     if (!from || !to) return null;
@@ -148,6 +151,8 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     const nodeDecorators = options.nodeDecorators;
     const edgeDecorators = options.edgeDecorators;
 
+    const nodeDecoratorsRef = useRef(nodeDecorators);
+    const edgeDecoratorsRef = useRef(edgeDecorators);
     const beforeConnectRef = useRef(options.beforeConnect);
     const afterConnectRef = useRef(options.afterConnect);
     const lastViewportRef = useRef<RFViewport | null>(null);
@@ -160,7 +165,30 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
         afterConnectRef.current = options.afterConnect;
     }, [options.afterConnect]);
 
-    const [rf, setRF] = useState<RFModel>(() => toRF(api.snapshot(), api, { nodeDecorators, edgeDecorators }));
+    useEffect(() => {
+        nodeDecoratorsRef.current = nodeDecorators;
+    }, [nodeDecorators]);
+
+    useEffect(() => {
+        edgeDecoratorsRef.current = edgeDecorators;
+    }, [edgeDecorators]);
+
+    useEffect(() => {
+        const snap = api.snapshot();
+        setRF(
+            toRF(snap, api, {
+                nodeDecorators: nodeDecoratorsRef.current,
+                edgeDecorators: edgeDecoratorsRef.current,
+            }),
+        );
+    }, [api, nodeDecorators, edgeDecorators]);
+
+    const [rf, setRF] = useState<RFModel>(() =>
+        toRF(api.snapshot(), api, {
+            nodeDecorators: nodeDecoratorsRef.current,
+            edgeDecorators: edgeDecoratorsRef.current,
+        }),
+    );
 
     const snapVector = useMemo<[number, number] | undefined>(() => {
         if (!options.snapToGrid) return undefined;
@@ -171,10 +199,16 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     useEffect(() => {
         const sync = () => {
             const snap = api.snapshot();
-            setRF(toRF(snap, api, { nodeDecorators, edgeDecorators }));
+            setRF(
+                toRF(snap, api, {
+                    nodeDecorators: nodeDecoratorsRef.current,
+                    edgeDecorators: edgeDecoratorsRef.current,
+                }),
+            );
         };
         const offGraph = api.on('graph:update', sync);
         const offSelection = api.on('selection:change', sync);
+        const offState = api.on('state:change', sync);
         const offCommentCreate = api.on('comment:thread:create', sync);
         const offCommentUpdate = api.on('comment:thread:update', sync);
         const offCommentDelete = api.on('comment:thread:delete', sync);
@@ -184,13 +218,14 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
         return () => {
             offGraph();
             offSelection();
+            offState();
             offCommentCreate();
             offCommentUpdate();
             offCommentDelete();
             offCommentMove();
             offCommentResolve();
         };
-    }, [api, nodeDecorators, edgeDecorators]);
+    }, [api]);
 
     const applySnap = useCallback(
         (pos: { x: number; y: number }) => {

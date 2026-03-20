@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils.ts';
 import Header from '@/panels/left/components/header.tsx';
-import Drafts from '@/panels/left/components/drafts.tsx';
 import AssetsPanel from '@/panels/left/assets';
 import Layers from '@/panels/left/layers';
 import { Panel } from '@/components/ui/panel.tsx';
@@ -25,8 +24,6 @@ const Left = () => {
             <div className="flex h-full flex-col">
                 <Header />
                 <div className="flex min-h-0 flex-1 flex-col gap-2 py-2">
-                    <Drafts />
-
                     <Tabs defaultValue="layers" className="flex min-h-0 flex-1 flex-col px-3">
                         <TabsList className="grid h-auto grid-cols-2 rounded-2xl bg-slate-100 p-1 dark:bg-slate-900">
                             <TabsTrigger className={tabClassName} value="layers">

@@ -13,6 +13,14 @@ export type ToolbarProps = {
     setShowGrid: (v: boolean) => void;
     showMiniMap: boolean;
     setShowMiniMap: (v: boolean) => void;
+    showBindEdges: boolean;
+    setShowBindEdges: (v: boolean) => void;
+    showIncludeEdges: boolean;
+    setShowIncludeEdges: (v: boolean) => void;
+    showExcludeEdges: boolean;
+    setShowExcludeEdges: (v: boolean) => void;
+    focusCurrentContext: boolean;
+    setFocusCurrentContext: (v: boolean) => void;
     canUndo?: boolean;
     canRedo?: boolean;
     tools?: ToolsConfig;
@@ -47,6 +55,14 @@ export function Toolbar({
     setShowGrid,
     showMiniMap,
     setShowMiniMap,
+    showBindEdges,
+    setShowBindEdges,
+    showIncludeEdges,
+    setShowIncludeEdges,
+    showExcludeEdges,
+    setShowExcludeEdges,
+    focusCurrentContext,
+    setFocusCurrentContext,
     canUndo = false,
     canRedo = false,
     tools,
@@ -73,6 +89,10 @@ export function Toolbar({
                 canRedo,
                 showGrid,
                 showMiniMap,
+                showBindEdges,
+                showIncludeEdges,
+                showExcludeEdges,
+                focusCurrentContext,
             },
             flow: {
                 zoomIn: () => rf.zoomIn?.(),
@@ -82,8 +102,32 @@ export function Toolbar({
             setRelation: (rel) => api.setEdgeRel(rel),
             toggleGrid: () => setShowGrid(!showGrid),
             toggleMiniMap: () => setShowMiniMap(!showMiniMap),
+            toggleBindEdges: () => setShowBindEdges(!showBindEdges),
+            toggleIncludeEdges: () => setShowIncludeEdges(!showIncludeEdges),
+            toggleExcludeEdges: () => setShowExcludeEdges(!showExcludeEdges),
+            toggleFocusCurrentContext: () => setFocusCurrentContext(!focusCurrentContext),
         }),
-        [api, mode, relation, selectionCount, canUndo, canRedo, showGrid, showMiniMap, rf, setShowGrid, setShowMiniMap],
+        [
+            api,
+            mode,
+            relation,
+            selectionCount,
+            canUndo,
+            canRedo,
+            showGrid,
+            showMiniMap,
+            showBindEdges,
+            showIncludeEdges,
+            showExcludeEdges,
+            focusCurrentContext,
+            rf,
+            setShowGrid,
+            setShowMiniMap,
+            setShowBindEdges,
+            setShowIncludeEdges,
+            setShowExcludeEdges,
+            setFocusCurrentContext,
+        ],
     );
 
     const descriptors: ResolvedTools = useMemo(() => resolveTools({ base: defaultTools(), ...(tools ?? {}) }), [tools]);
@@ -203,6 +247,46 @@ function defaultTools(): ToolDescriptor[] {
             icon: (active) => Icons.exclude(active),
             active: (ctx) => ctx.state.relation === 'exclude',
             action: (ctx) => ctx.setRelation('exclude'),
+        },
+        {
+            id: 'view:bind-edges',
+            kind: 'toggle',
+            group: 'view',
+            order: 30,
+            label: 'Show bind edges',
+            icon: (active) => Icons.bindVisible(active),
+            active: (ctx) => ctx.state.showBindEdges,
+            action: (ctx) => ctx.toggleBindEdges(),
+        },
+        {
+            id: 'view:include-edges',
+            kind: 'toggle',
+            group: 'view',
+            order: 40,
+            label: 'Show include edges',
+            icon: (active) => Icons.includeVisible(active),
+            active: (ctx) => ctx.state.showIncludeEdges,
+            action: (ctx) => ctx.toggleIncludeEdges(),
+        },
+        {
+            id: 'view:exclude-edges',
+            kind: 'toggle',
+            group: 'view',
+            order: 50,
+            label: 'Show exclude edges',
+            icon: (active) => Icons.excludeVisible(active),
+            active: (ctx) => ctx.state.showExcludeEdges,
+            action: (ctx) => ctx.toggleExcludeEdges(),
+        },
+        {
+            id: 'view:focus-context',
+            kind: 'toggle',
+            group: 'view',
+            order: 60,
+            label: 'Focus current context',
+            icon: (active) => Icons.focusContext(active),
+            active: (ctx) => ctx.state.focusCurrentContext,
+            action: (ctx) => ctx.toggleFocusCurrentContext(),
         },
         {
             id: 'view:grid',

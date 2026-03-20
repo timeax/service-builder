@@ -5,24 +5,18 @@ import { Button } from '@/components/ui/button.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { cn } from '@/lib/utils.ts';
-import type { BranchParticipant } from '@timeax/digital-service-engine/workspace';
 import { useWorkspace } from '@timeax/digital-service-engine/workspace';
-import { workspaceBackend } from '../../../../backend';
 import { useEffect, useMemo, useState, type MouseEventHandler, type ReactNode } from 'react';
-import { GoChevronDown } from 'react-icons/go';
-import { MdCheck, MdOutlineAdd, MdOutlineFileCopy, MdOutlineRefresh } from 'react-icons/md';
-import { RiDraftLine, RiGitBranchLine, RiGitMergeLine, RiLoader4Line } from 'react-icons/ri';
+import { MdCheck, MdOutlineFileCopy, MdOutlineRefresh } from 'react-icons/md';
+import { RiGitBranchLine, RiGitMergeLine, RiLoader4Line } from 'react-icons/ri';
 
 type PermissionReason = {
     allowed: boolean;
     reason?: string;
 };
 
-type BranchAccessState = {
-    data: readonly BranchParticipant[] | null;
-    loading: boolean;
-    updatedAt?: number;
-    error?: string;
+type DraftsProps = {
+    trigger: ReactNode;
 };
 
 function normalizeKey(input: string) {
@@ -90,9 +84,10 @@ function ActionIconButton({
     );
 }
 
-const Drafts = () => {
+const Drafts = ({ trigger }: DraftsProps) => {
     const ws = useWorkspace();
     const [open, setOpen] = useState(false);
+    const [createOpen, setCreateOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [createName, setCreateName] = useState('');
     const [createFromId, setCreateFromId] = useState<string | undefined>(ws.branches.currentId);
@@ -104,84 +99,22 @@ const Drafts = () => {
     const canWriteWorkspace = ws.permissions.data?.['workspace.write'] ?? false;
 
     const currentBranch = ws.branches.data?.find((branch) => branch.id === ws.branches.currentId);
-    const threadCount = ws.comments.threads.data?.length ?? 0;
-    const templateCount = ws.templates.data?.length ?? 0;
     const actorAuthorId = getActorAuthorId(ws);
-    const [branchAccessById, setBranchAccessById] = useState<Record<string, BranchAccessState>>({});
-
-    const refreshAccess = async (branchId: string) => {
-        setBranchAccessById((prev) => ({
-            ...prev,
-            [branchId]: {
-                data: prev[branchId]?.data ?? null,
-                loading: true,
-                updatedAt: prev[branchId]?.updatedAt,
-            },
-        }));
-
-        const result = await workspaceBackend.access.refreshParticipants(ws.info.id, branchId, {
-            since: branchAccessById[branchId]?.updatedAt,
-        });
-
-        if (result.ok) {
-            setBranchAccessById((prev) => ({
-                ...prev,
-                [branchId]: {
-                    data: result.value,
-                    loading: false,
-                    updatedAt: Date.now(),
-                },
-            }));
-            return;
-        }
-
-        if (!result.ok) {
-            const errorMessage = 'error' in result ? result.error.message : 'Failed to refresh branch access.';
-
-            setBranchAccessById((prev) => ({
-                ...prev,
-                [branchId]: {
-                    data: prev[branchId]?.data ?? null,
-                    loading: false,
-                    updatedAt: prev[branchId]?.updatedAt,
-                    error: errorMessage,
-                },
-            }));
-        }
-    };
-
-    useEffect(() => {
-        if (!open || !workspaceRead) return;
-
-        const missingBranchIds = (ws.branches.data ?? [])
-            .filter((branch) => branch.id !== ws.branches.currentId)
-            .filter((branch) => !branchAccessById[branch.id]?.updatedAt && !branchAccessById[branch.id]?.loading)
-            .map((branch) => branch.id);
-
-        if (!missingBranchIds.length) return;
-
-        void Promise.all(missingBranchIds.map((branchId) => refreshAccess(branchId)));
-    }, [branchAccessById, open, workspaceRead, ws.branches.currentId, ws.branches.data]);
 
     const branchItems = useMemo(() => {
         return (ws.branches.data ?? []).map((branch) => {
-            const accessState =
-                branch.id === ws.branches.currentId
-                    ? branchAccessById[branch.id] ?? ws.participants
-                    : branchAccessById[branch.id] ?? { data: null, loading: true };
-            const participant = resolveBranchParticipant(actorAuthorId, accessState.data);
-            const canRead = branch.id === ws.branches.currentId ? true : participant?.canRead ?? false;
-            const canWrite = participant?.canWrite ?? (branch.id === ws.branches.currentId ? true : false);
+            const participant = branch.id === ws.branches.currentId ? resolveBranchParticipant(actorAuthorId, ws.participants.data) : null;
+            const canRead = branch.id === ws.branches.currentId ? true : workspaceRead;
+            const canWrite = branch.id === ws.branches.currentId ? (participant?.canWrite ?? true) : canWriteWorkspace;
 
             return {
                 branch,
-                accessState,
                 participant,
                 canRead,
                 canWrite,
             };
         });
-    }, [actorAuthorId, branchAccessById, ws.branches.currentId, ws.branches.data, ws.participants]);
+    }, [actorAuthorId, canWriteWorkspace, workspaceRead, ws.branches.currentId, ws.branches.data, ws.participants.data]);
 
     const visibleBranches = useMemo(() => {
         const lower = query.trim().toLowerCase();
@@ -192,23 +125,22 @@ const Drafts = () => {
         });
     }, [branchItems, query]);
 
-    useEffect(() => {
-        if (!visibleBranches.some((item) => item.branch.id === createFromId)) {
-            setCreateFromId(ws.branches.currentId ?? visibleBranches[0]?.branch.id);
-        }
-    }, [createFromId, visibleBranches, ws.branches.currentId]);
+    const createSourceBranches = useMemo(() => branchItems.filter((item) => item.canRead), [branchItems]);
 
-    const pendingAccessCount = branchItems.filter((item) => item.branch.id !== ws.branches.currentId && !item.accessState.data && item.accessState.loading).length;
+    useEffect(() => {
+        if (!createSourceBranches.some((item) => item.branch.id === createFromId)) {
+            setCreateFromId(ws.branches.currentId ?? createSourceBranches[0]?.branch.id);
+        }
+    }, [createFromId, createSourceBranches, ws.branches.currentId]);
+
+    const pendingAccessCount = ws.participants.loading ? 1 : 0;
 
     const refreshEverything = async () => {
         setActionKey('refresh');
         try {
             await ws.refresh.branches();
-            const nextCurrentId = ws.branches.currentId ?? currentBranch?.id;
-            if (nextCurrentId) {
-                await ws.refresh.branchContext({ branchId: nextCurrentId });
-            }
-            await Promise.all(branchItems.map((item) => refreshAccess(item.branch.id)));
+            await ws.refresh.branchContext();
+            await ws.refresh.participants({ branchId: ws.branches.currentId ?? undefined });
         } finally {
             setActionKey(null);
         }
@@ -224,10 +156,15 @@ const Drafts = () => {
             const result = await ws.createBranch(branchName, { fromId: baseBranchId });
             if (result.ok) {
                 ws.setCurrentBranch(result.value.id);
-                await ws.refresh.branchContext({ branchId: result.value.id });
-                await Promise.all([ws.refresh.branches(), refreshAccess(result.value.id), refreshAccess(baseBranchId)]);
+                await ws.refresh.branchContext();
+                await Promise.all([
+                    ws.refresh.branches(),
+                    ws.refresh.participants({ branchId: result.value.id }),
+                    ws.refresh.participants({ branchId: baseBranchId }),
+                ]);
                 setCreateName('');
                 setCreateFromId(result.value.id);
+                setCreateOpen(false);
             }
         } finally {
             setActionKey(null);
@@ -238,8 +175,8 @@ const Drafts = () => {
         setActionKey(`switch:${branchId}`);
         try {
             ws.setCurrentBranch(branchId);
-            await ws.refresh.branchContext({ branchId });
-            await refreshAccess(branchId);
+            await ws.refresh.branchContext();
+            await ws.refresh.participants({ branchId });
             setOpen(false);
         } finally {
             setActionKey(null);
@@ -249,8 +186,9 @@ const Drafts = () => {
     const setMainBranch = async (branchId: string) => {
         setActionKey(`main:${branchId}`);
         try {
-            await ws.setMain(branchId);
-            await Promise.all([ws.refresh.branches(), refreshAccess(branchId)]);
+            const result = await ws.setMain(branchId);
+            if (!result.ok) return;
+            await Promise.all([ws.refresh.branches(), ws.refresh.participants({ branchId })]);
         } finally {
             setActionKey(null);
         }
@@ -259,8 +197,12 @@ const Drafts = () => {
     const deleteBranch = async (branchId: string) => {
         setActionKey(`delete:${branchId}`);
         try {
-            await ws.deleteBranch(branchId);
-            await Promise.all([ws.refresh.branches(), refreshAccess(ws.branches.currentId ?? currentBranch?.id ?? branchId)]);
+            const result = await ws.deleteBranch(branchId);
+            if (!result.ok) return;
+            await Promise.all([
+                ws.refresh.branches(),
+                ws.refresh.participants({ branchId: ws.branches.currentId ?? currentBranch?.id ?? branchId }),
+            ]);
         } finally {
             setActionKey(null);
         }
@@ -269,9 +211,14 @@ const Drafts = () => {
     const mergeBranch = async (sourceId: string, targetId: string) => {
         setActionKey(`merge:${sourceId}:${targetId}`);
         try {
-            await ws.mergeBranch(sourceId, targetId);
-            await Promise.all([ws.refresh.branches(), refreshAccess(sourceId), refreshAccess(targetId)]);
-            await ws.refresh.branchContext({ branchId: targetId });
+            const result = await ws.mergeBranch(sourceId, targetId);
+            if (!result.ok) return;
+            await Promise.all([
+                ws.refresh.branches(),
+                ws.refresh.participants({ branchId: sourceId }),
+                ws.refresh.participants({ branchId: targetId }),
+            ]);
+            await ws.refresh.branchContext();
         } finally {
             setActionKey(null);
         }
@@ -382,111 +329,92 @@ const Drafts = () => {
     if (!workspaceRead) return null;
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <div className="mx-3 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2 text-left shadow-sm transition hover:border-slate-300 hover:bg-white dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700 dark:hover:bg-slate-900">
-                <PopoverTrigger asChild>
-                    <button type="button" className="flex min-w-0 flex-1 items-center gap-3 rounded-[18px] px-1 py-1">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
-                            <RiDraftLine className="text-lg" />
-                        </span>
-
-                        <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Drafts</span>
-                                {currentBranch?.isMain ? (
-                                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
-                                        Main
-                                    </span>
-                                ) : null}
-                            </div>
-                            <div className="mt-1 flex items-center gap-2">
-                                <RiGitBranchLine className="text-slate-400" />
-                                <span className="truncate text-sm font-medium text-slate-700 dark:text-slate-200">{currentBranch?.name ?? 'main'}</span>
-                            </div>
-                            <div className="mt-1 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                                <span className="inline-flex items-center gap-1">
-                                    <StatusDot tone="warning" />
-                                    {threadCount} threads
-                                </span>
-                                <span className="inline-flex items-center gap-1">
-                                    <StatusDot tone="success" />
-                                    {templateCount} templates
-                                </span>
-                            </div>
-                        </div>
-
-                        <GoChevronDown className="shrink-0 text-slate-400" />
-                    </button>
-                </PopoverTrigger>
-
-                <ActionIconButton
-                    icon={actionKey === 'refresh' ? <RiLoader4Line className="animate-spin" /> : <MdOutlineRefresh />}
-                    label="Refresh branches"
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        void refreshEverything();
-                    }}
-                />
-            </div>
-
+        <Popover
+            open={open}
+            onOpenChange={(nextOpen) => {
+                setOpen(nextOpen);
+                if (!nextOpen) setCreateOpen(false);
+            }}
+        >
+            <PopoverTrigger asChild>{trigger}</PopoverTrigger>
             <PopoverContent align="start" sideOffset={10} className="w-[420px] rounded-[28px] border-slate-200 bg-white/98 p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-950/98">
                 <div className="border-b border-slate-200 px-4 py-4 dark:border-slate-800">
                     <div className="flex items-start justify-between gap-3">
                         <div>
                             <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Branch manager</div>
                             <h3 className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-100">Workspace drafts</h3>
-                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Switch, create, merge, delete, and refresh branches from one place.</p>
-                        </div>
-                        <ActionIconButton
-                            icon={actionKey === 'refresh' ? <RiLoader4Line className="animate-spin" /> : <MdOutlineRefresh />}
-                            label="Refresh branch data"
-                            onClick={() => void refreshEverything()}
-                        />
-                    </div>
-
-                    <div className="mt-4 grid gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/60">
-                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
-                            <MdOutlineAdd />
-                            Create branch
+                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Switch, merge, delete, and refresh branches.</p>
                         </div>
 
-                        <label className="space-y-2">
-                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Branch name</span>
-                            <input
-                                value={createName}
-                                onChange={(event) => setCreateName(event.target.value)}
-                                placeholder="feature-checkout"
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500/40"
+                        <div className="flex items-center gap-2">
+                            <Popover modal={false} open={createOpen} onOpenChange={setCreateOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button type="button" variant="outline" size="sm" className="rounded-xl border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                                        <MdOutlineFileCopy />
+                                        Create branch
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                    align="end"
+                                    side="right"
+                                    sideOffset={8}
+                                    collisionPadding={16}
+                                    className="w-[320px] rounded-2xl border-slate-200 bg-white/98 p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-950/98"
+                                >
+                                    <div className="space-y-3">
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Create branch</h4>
+                                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Branch names are normalized to lowercase slug format.</p>
+                                        </div>
+
+                                        <label className="space-y-2">
+                                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Branch name</span>
+                                            <input
+                                                value={createName}
+                                                onChange={(event) => setCreateName(event.target.value)}
+                                                placeholder="feature-checkout"
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500/40"
+                                            />
+                                        </label>
+
+                                        <label className="space-y-2">
+                                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Create from</span>
+                                            <select
+                                                value={createFromId}
+                                                onChange={(event) => setCreateFromId(event.target.value)}
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500/40"
+                                            >
+                                                {createSourceBranches.map((item) => (
+                                                    <option key={item.branch.id} value={item.branch.id}>
+                                                        {item.branch.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </label>
+
+                                        <Button
+                                            type="button"
+                                            onClick={() => void createBranch()}
+                                            disabled={!createPermission.allowed || !normalizeKey(createName) || !!actionKey}
+                                            className="w-full rounded-xl"
+                                        >
+                                            {actionKey?.startsWith('create:') ? <RiLoader4Line className="animate-spin" /> : <MdOutlineFileCopy />}
+                                            Create branch
+                                        </Button>
+
+                                        {!createPermission.allowed && createPermission.reason ? (
+                                            <p className="text-xs text-amber-600 dark:text-amber-300">{createPermission.reason}</p>
+                                        ) : null}
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+
+                            <ActionIconButton
+                                icon={actionKey === 'refresh' ? <RiLoader4Line className="animate-spin" /> : <MdOutlineRefresh />}
+                                label="Refresh branch data"
+                                onClick={() => void refreshEverything()}
                             />
-                        </label>
-
-                        <label className="space-y-2">
-                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Create from</span>
-                            <select
-                                value={createFromId}
-                                onChange={(event) => setCreateFromId(event.target.value)}
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500/40"
-                            >
-                                {visibleBranches.map((item) => (
-                                    <option key={item.branch.id} value={item.branch.id}>
-                                        {item.branch.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-
-                        <Button
-                            type="button"
-                            onClick={() => void createBranch()}
-                            disabled={!createPermission.allowed || !normalizeKey(createName) || !!actionKey}
-                            className="rounded-xl"
-                        >
-                            {actionKey?.startsWith('create:') ? <RiLoader4Line className="animate-spin" /> : <MdOutlineFileCopy />}
-                            Create branch
-                        </Button>
-                        {!createPermission.allowed && createPermission.reason ? (
-                            <p className="text-xs text-amber-600 dark:text-amber-300">{createPermission.reason}</p>
-                        ) : null}
+                        </div>
                     </div>
 
                     <div className="mt-4">

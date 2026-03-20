@@ -19,6 +19,13 @@ type BaseData = {
     draggingService?: boolean;
     canAcceptDropPayload?: (dataTransfer: DataTransfer) => boolean;
     onNodeDrop?: (args: { nodeId: string; clientX: number; clientY: number; dataTransfer: DataTransfer }) => void;
+    isActiveNode?: boolean;
+    isCurrentTag?: boolean;
+    isVisibleGroupField?: boolean;
+    isRelatedTag?: boolean;
+    isManualHighlighted?: boolean;
+    showCurrentTagDot?: boolean;
+    focusDimLevel?: 'none' | 'soft' | 'medium' | 'strong';
 };
 type CanvasNode = Node<BaseData, 'tag' | 'field' | 'option' | 'comment'>;
 
@@ -32,6 +39,13 @@ function NodeShell({
     draggingService,
     canAcceptDropPayload,
     onDrop,
+    isActiveNode,
+    isCurrentTag,
+    isVisibleGroupField,
+    isRelatedTag,
+    isManualHighlighted,
+    showCurrentTagDot,
+    focusDimLevel,
 }: {
     label: string;
     icon: React.ReactNode;
@@ -42,14 +56,46 @@ function NodeShell({
     draggingService?: boolean;
     canAcceptDropPayload?: (dataTransfer: DataTransfer) => boolean;
     onDrop?: (event: React.DragEvent) => void;
+    isActiveNode?: boolean;
+    isCurrentTag?: boolean;
+    isVisibleGroupField?: boolean;
+    isRelatedTag?: boolean;
+    isManualHighlighted?: boolean;
+    showCurrentTagDot?: boolean;
+    focusDimLevel?: 'none' | 'soft' | 'medium' | 'strong';
 }) {
+    const dimClass =
+        focusDimLevel === 'soft'
+            ? 'opacity-80 '
+            : focusDimLevel === 'medium'
+              ? 'opacity-[0.55] '
+              : focusDimLevel === 'strong'
+                ? 'opacity-35 '
+                : '';
+
     return (
         <div
+            data-node-state={[
+                isActiveNode ? 'active' : '',
+                isCurrentTag ? 'current-tag' : '',
+                isVisibleGroupField ? 'visible-group' : '',
+                isRelatedTag ? 'related-tag' : '',
+                isManualHighlighted ? 'manual-highlighted' : '',
+                focusDimLevel && focusDimLevel !== 'none' ? `dim-${focusDimLevel}` : '',
+            ]
+                .filter(Boolean)
+                .join(' ')}
             className={
                 'group relative min-w-44 rounded-lg bg-white p-3 ring-1 ring-slate-200 shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-200 dark:bg-slate-900 dark:ring-slate-700 ' +
                 (selected ? 'ring-2 ring-blue-500 shadow-lg shadow-blue-500/20 ' : 'hover:shadow-lg ') +
+                (isActiveNode ? 'ring-2 ring-blue-500 shadow-lg shadow-blue-500/25 ' : '') +
+                (isCurrentTag ? 'ring-2 ring-emerald-500 bg-emerald-50/70 shadow-lg shadow-emerald-500/25 dark:bg-emerald-500/10 ' : '') +
+                (isVisibleGroupField ? 'ring-2 ring-emerald-300 bg-emerald-50/35 dark:bg-emerald-500/5 ' : '') +
+                (isRelatedTag ? 'ring-1 ring-teal-300 bg-teal-50/25 dark:bg-teal-500/8 ' : '') +
+                (isManualHighlighted ? 'outline-2 outline-amber-400 outline-solid ' : '') +
                 (draggingService && canAssignService ? 'border border-dashed border-emerald-400 ' : '') +
-                (!canAssignService && draggingService ? 'opacity-70 ' : '')
+                (!canAssignService && draggingService ? 'opacity-70 ' : '') +
+                dimClass
             }
             onDragOver={(event) => {
                 if (!canAcceptDropPayload?.(event.dataTransfer)) return;
@@ -63,6 +109,7 @@ function NodeShell({
                 <span className="max-w-52 truncate text-sm font-medium text-slate-800 dark:text-slate-100">{label}</span>
             </div>
 
+            {showCurrentTagDot ? <span className="absolute top-2 left-2 h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(255,255,255,0.85)] dark:shadow-[0_0_0_2px_rgba(15,23,42,0.8)]" /> : null}
             {showErrorBadge && hasError ? <span className="absolute -top-1.5 -right-1.5 inline-flex h-3 w-3 rounded-full bg-rose-500" /> : null}
         </div>
     );
@@ -87,6 +134,13 @@ function TagNode(props: NodeProps<CanvasNode>) {
                     event.preventDefault();
                     props.data.onNodeDrop?.({ nodeId: id, clientX: event.clientX, clientY: event.clientY, dataTransfer: event.dataTransfer });
                 }}
+                isActiveNode={props.data.isActiveNode}
+                isCurrentTag={props.data.isCurrentTag}
+                isVisibleGroupField={props.data.isVisibleGroupField}
+                isRelatedTag={props.data.isRelatedTag}
+                isManualHighlighted={props.data.isManualHighlighted}
+                showCurrentTagDot={props.data.showCurrentTagDot}
+                focusDimLevel={props.data.focusDimLevel}
             />
             <Handle type="source" position={Position.Right} className="!h-2 !w-2 !bg-slate-400" />
         </>
@@ -112,6 +166,13 @@ function FieldNode(props: NodeProps<CanvasNode>) {
                     event.preventDefault();
                     props.data.onNodeDrop?.({ nodeId: id, clientX: event.clientX, clientY: event.clientY, dataTransfer: event.dataTransfer });
                 }}
+                isActiveNode={props.data.isActiveNode}
+                isCurrentTag={props.data.isCurrentTag}
+                isVisibleGroupField={props.data.isVisibleGroupField}
+                isRelatedTag={props.data.isRelatedTag}
+                isManualHighlighted={props.data.isManualHighlighted}
+                showCurrentTagDot={props.data.showCurrentTagDot}
+                focusDimLevel={props.data.focusDimLevel}
             />
             <Handle type="source" position={Position.Right} className="!h-2 !w-2 !bg-slate-400" />
         </>
@@ -124,9 +185,31 @@ function OptionNode(props: NodeProps<CanvasNode>) {
         <>
             <Handle type="target" position={Position.Left} className="!h-2 !w-2 !bg-slate-400" />
             <div
+                data-node-state={[
+                    props.data.isActiveNode ? 'active' : '',
+                    props.data.isCurrentTag ? 'current-tag' : '',
+                    props.data.isVisibleGroupField ? 'visible-group' : '',
+                    props.data.isRelatedTag ? 'related-tag' : '',
+                    props.data.isManualHighlighted ? 'manual-highlighted' : '',
+                    props.data.focusDimLevel && props.data.focusDimLevel !== 'none' ? `dim-${props.data.focusDimLevel}` : '',
+                ]
+                    .filter(Boolean)
+                    .join(' ')}
                 className={
-                    'rounded-full border px-4 py-1.5 text-sm bg-white text-slate-800 transition dark:bg-slate-900 dark:text-slate-200 ' +
-                    (props.selected ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/15 ' : 'border-slate-300 dark:border-slate-700')
+                    'relative rounded-full border px-4 py-1.5 text-sm bg-white text-slate-800 transition dark:bg-slate-900 dark:text-slate-200 ' +
+                    (props.selected ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/15 ' : 'border-slate-300 dark:border-slate-700 ') +
+                    (props.data.isActiveNode ? 'ring-2 ring-blue-500 shadow-lg shadow-blue-500/25 ' : '') +
+                    (props.data.isCurrentTag ? 'ring-2 ring-emerald-500 bg-emerald-50/70 dark:bg-emerald-500/10 ' : '') +
+                    (props.data.isVisibleGroupField ? 'ring-2 ring-emerald-300 bg-emerald-50/35 dark:bg-emerald-500/5 ' : '') +
+                    (props.data.isRelatedTag ? 'ring-1 ring-teal-300 bg-teal-50/25 dark:bg-teal-500/8 ' : '') +
+                    (props.data.isManualHighlighted ? 'outline-2 outline-solid outline-amber-400 ' : '') +
+                    (props.data.focusDimLevel === 'soft'
+                        ? 'opacity-80 '
+                        : props.data.focusDimLevel === 'medium'
+                          ? 'opacity-[0.55] '
+                          : props.data.focusDimLevel === 'strong'
+                            ? 'opacity-35 '
+                            : '')
                 }
                 onDragOver={(event) => {
                     if (!props.data.canAcceptDropPayload?.(event.dataTransfer)) return;
@@ -143,6 +226,7 @@ function OptionNode(props: NodeProps<CanvasNode>) {
                     <MdOutlineRadioButtonChecked className="text-slate-400" />
                     <span className="max-w-36 truncate">{props.data.node?.label ?? props.id}</span>
                 </div>
+                {props.data.showCurrentTagDot ? <span className="absolute top-1 left-1 h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(255,255,255,0.85)] dark:shadow-[0_0_0_2px_rgba(15,23,42,0.8)]" /> : null}
                 {props.data.showErrorBadge && props.data.hasError ? <span className="absolute -top-1 -right-1 inline-flex h-3 w-3 rounded-full bg-rose-500" /> : null}
             </div>
             <Handle type="source" position={Position.Right} className="!h-2 !w-2 !bg-slate-400" />

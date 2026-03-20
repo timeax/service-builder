@@ -118,7 +118,46 @@ export function useNodeActions(
         setTarget(null);
     }, [canvas.selector, emitNodeError, target, ws, setTarget]);
 
-    return { handleDuplicate, handleCopyId, handleSaveAsTemplate };
+    const isFieldOptionsShown = useMemo(() => {
+        if (!target || target.nodeKind !== 'field') return false;
+        const api = canvas.api as any;
+        if (typeof api.isFieldOptionsShown === 'function') {
+            return !!api.isFieldOptionsShown(target.nodeId);
+        }
+        return false;
+    }, [canvas.api, canvas.props, target]);
+
+    const handleToggleFieldOptions = useCallback(() => {
+        if (!target || target.nodeKind !== 'field') return;
+        const api = canvas.api as any;
+        try {
+            if (typeof api.isFieldOptionsShown === 'function' && typeof api.setFieldOptionsShown === 'function') {
+                const next = !api.isFieldOptionsShown(target.nodeId);
+                api.setFieldOptionsShown(target.nodeId, next);
+                setTarget(null);
+                return;
+            }
+            if (typeof api.toggleFieldOptions === 'function') {
+                api.toggleFieldOptions(target.nodeId);
+                setTarget(null);
+                return;
+            }
+            emitNodeError('Option visibility controls are unavailable on this canvas API', {
+                action: 'toggle-field-option-nodes',
+                nodeId: target.nodeId,
+                surface: target.surface,
+            });
+        } catch (error) {
+            emitNodeError((error as Error)?.message ?? 'Failed to toggle option-node visibility', {
+                action: 'toggle-field-option-nodes',
+                nodeId: target.nodeId,
+                surface: target.surface,
+            });
+        }
+        setTarget(null);
+    }, [canvas.api, emitNodeError, setTarget, target]);
+
+    return { handleDuplicate, handleCopyId, handleSaveAsTemplate, isFieldOptionsShown, handleToggleFieldOptions };
 }
 
 export function useDropHandling(

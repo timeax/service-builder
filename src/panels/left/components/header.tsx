@@ -1,18 +1,11 @@
-import { BuilderIconButton, PresenceAvatar } from '@/components/builder/index.tsx';
+import { BuilderIconButton } from '@/components/builder/index.tsx';
+import Drafts from '@/panels/left/components/drafts.tsx';
 import { useWorkspace } from '@timeax/digital-service-engine/workspace';
-import { useMemo } from 'react';
+import { GoChevronDown } from 'react-icons/go';
 import { MdMenuOpen, MdOutlineSpaceDashboard } from 'react-icons/md';
 
 const Header = () => {
     const ws = useWorkspace();
-
-    const owner = useMemo(() => {
-        const actorAuthor = ws.authors.data?.find((author) => author.id === ws.actor.id);
-        return {
-            name: actorAuthor?.name ?? ws.actor.name ?? 'Workspace owner',
-            avatar: actorAuthor?.avatarUrl ?? '',
-        };
-    }, [ws.authors.data, ws.actor]);
 
     const currentBranch = ws.branches.data?.find((branch) => branch.id === ws.branches.currentId);
 
@@ -26,7 +19,17 @@ const Header = () => {
                     <div>
                         <div className="text-[10px] uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Workspace</div>
                         <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Service Builder</h1>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{currentBranch?.name ?? 'Main branch'} loaded</p>
+                        <Drafts
+                            trigger={
+                                <button
+                                    type="button"
+                                    className="mt-0.5 inline-flex items-center gap-1 rounded-md px-1 text-xs text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+                                >
+                                    <span>{currentBranch?.name ?? 'Main branch'} loaded</span>
+                                    <GoChevronDown className="text-sm" />
+                                </button>
+                            }
+                        />
                     </div>
                 </div>
 

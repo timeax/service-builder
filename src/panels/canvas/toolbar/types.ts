@@ -40,6 +40,10 @@ export type ToolContext = {
         canRedo: boolean;
         showGrid: boolean;
         showMiniMap: boolean;
+        showBindEdges: boolean;
+        showIncludeEdges: boolean;
+        showExcludeEdges: boolean;
+        focusCurrentContext: boolean;
     };
     flow: {
         zoomIn: () => void;
@@ -49,6 +53,10 @@ export type ToolContext = {
     setRelation: (rel: ReturnType<CanvasAPI['getEdgeRel']>) => void;
     toggleGrid: () => void;
     toggleMiniMap: () => void;
+    toggleBindEdges: () => void;
+    toggleIncludeEdges: () => void;
+    toggleExcludeEdges: () => void;
+    toggleFocusCurrentContext: () => void;
 };
 
 export type ToolsConfig = {

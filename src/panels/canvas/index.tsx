@@ -4,6 +4,13 @@ import { CanvasOverlay, EmptyState } from '@/components/builder/index.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { cn } from '@/lib/utils.ts';
 import { getNodePropertyCapabilities } from '@/panels/right/partials/properties/components/node-capabilities.ts';
+import {
+    defaultCanvasViewPrefs,
+    deriveCanvasPresentation,
+    edgeStyleForState,
+    parseEdgeId as parseRelationEdgeId,
+    type CanvasViewPrefs,
+} from '@/panels/canvas/presentation.ts';
 import { useCanvas, type UseErrorsReturn, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -17,6 +24,7 @@ import type { LabelPlacement, ToolbarOrientation, ToolsConfig } from './toolbar/
 type OverlayId = 'pulse' | 'focus' | 'comments';
 type OverlayState = Record<OverlayId, { closed: boolean; minimized: boolean }>;
 type HistoryState = { canUndo: boolean; canRedo: boolean };
+type CanvasViewPrefsState = CanvasViewPrefs;
 type WorkspaceSnapshot = {
     props: unknown;
     layout: {
@@ -76,6 +84,8 @@ export default function CanvasPanel({
     const [currentSnapshotHash, setCurrentSnapshotHash] = useState(initialSnapshotHash);
     const [persistedBaselineHash, setPersistedBaselineHash] = useState(initialSnapshotHash);
     const [overlayState, setOverlayState] = useState<OverlayState>(() => loadOverlayState(storageKey(ws), OVERLAY_DEFAULTS));
+    const [viewPrefs, setViewPrefs] = useState<CanvasViewPrefsState>(() => loadCanvasViewPrefs(viewPrefsStorageKey(ws), defaultCanvasViewPrefs));
+    const [presentationVersion, setPresentationVersion] = useState(0);
     const lastSyncedSnapshotHashRef = useRef<string>(initialSnapshotHash);
 
     const freeThreads = useMemo(
@@ -95,11 +105,16 @@ export default function CanvasPanel({
 
     useEffect(() => {
         setOverlayState(loadOverlayState(storageKey(ws), OVERLAY_DEFAULTS));
+        setViewPrefs(loadCanvasViewPrefs(viewPrefsStorageKey(ws), defaultCanvasViewPrefs));
     }, [ws.info.id, ws.branches.currentId]);
 
     useEffect(() => {
         persistOverlayState(storageKey(ws), overlayState);
     }, [overlayState, ws]);
+
+    useEffect(() => {
+        persistCanvasViewPrefs(viewPrefsStorageKey(ws), viewPrefs);
+    }, [viewPrefs, ws]);
 
     useEffect(() => {
         const onKeyDown = (event: KeyboardEvent) => {
@@ -128,6 +143,18 @@ export default function CanvasPanel({
         lastSyncedSnapshotHashRef.current = nextHash;
         ws.snapshot.set(() => nextSnapshot as any);
     }, [canvas.api, ws.snapshot]);
+
+    useEffect(() => {
+        const bump = () => setPresentationVersion((current) => current + 1);
+        const offSelection = canvas.api.on('selection:change', bump);
+        const offState = canvas.api.on('state:change', bump);
+        const offGraph = canvas.api.on('graph:update', bump);
+        return () => {
+            offSelection();
+            offState();
+            offGraph();
+        };
+    }, [canvas.api]);
 
     useEffect(() => {
         const offState = canvas.api.on('state:change', () => syncWorkspaceSnapshot());
@@ -166,11 +193,56 @@ export default function CanvasPanel({
     const canSave = hasChanges || !!ws.snapshot.draft;
     const canPublish = hasChanges || !!ws.snapshot.draft;
 
+    const resolvedCurrentTagId = useMemo(() => {
+        const activeId = canvas.activeId;
+        if (activeId) {
+            try {
+                const activeNode = canvas.selector.getNode(activeId);
+                if (activeNode?.kind === 'tag') return activeId;
+            } catch {
+                /* fall through to selection current tag */
+            }
+        }
+        return canvas.api.selection.currentTag?.() ?? null;
+    }, [canvas.activeId, canvas.api, canvas.selector, presentationVersion]);
+
+    const resolvedVisibleFieldIds = useMemo(() => {
+        if (!resolvedCurrentTagId) return [] as string[];
+        const optionIds = (canvas.selectionInfo.optionIds ?? []) as string[];
+        try {
+            return canvas.api.builder.visibleFields(String(resolvedCurrentTagId), optionIds).map(String);
+        } catch {
+            return [];
+        }
+    }, [canvas.api, canvas.selectionInfo.optionIds, presentationVersion, resolvedCurrentTagId]);
+
+    const presentation = useMemo(() => {
+        const snapshot = canvas.api.snapshot();
+        return deriveCanvasPresentation({
+            nodes: snapshot.graph.nodes as Array<{ id: string; kind: 'tag' | 'field' | 'option' | string }>,
+            edges: snapshot.graph.edges as Array<{ kind: string; from: string; to: string }>,
+            activeId: canvas.activeId,
+            currentTagId: resolvedCurrentTagId,
+            visibleGroup: resolvedCurrentTagId
+                ? {
+                      kind: 'single',
+                      group: {
+                          tagId: resolvedCurrentTagId,
+                          fieldIds: resolvedVisibleFieldIds,
+                      },
+                  }
+                : null,
+            highlightedIds: snapshot.highlighted ?? new Set<string>(),
+            prefs: viewPrefs,
+        });
+    }, [canvas.activeId, canvas.api, resolvedCurrentTagId, resolvedVisibleFieldIds, viewPrefs, presentationVersion]);
+
     const nodeDecorators = useMemo<NonNullable<AdapterOptions['nodeDecorators']>>(
         () => (nodeId) => {
             const node = canvas.selector.getNode(nodeId);
             const canAssign = canAssignService(canvas, nodeId);
             const selected = canvas.selection.includes(nodeId) || canvas.activeId === nodeId;
+            const nodeState = presentation.nodeStateById[nodeId];
             return {
                 selected,
                 data: {
@@ -195,25 +267,38 @@ export default function CanvasPanel({
                         label: getNodeLabel(node),
                         kind: node.kind,
                     },
+                    isActiveNode: nodeState?.isActiveNode ?? false,
+                    isCurrentTag: nodeState?.isCurrentTag ?? false,
+                    isVisibleGroupField: nodeState?.isVisibleGroupField ?? false,
+                    isRelatedTag: nodeState?.isRelatedTag ?? false,
+                    isManualHighlighted: nodeState?.isManualHighlighted ?? false,
+                    showCurrentTagDot: nodeState?.showCurrentTagDot ?? false,
+                    focusDimLevel: nodeState?.focusDimLevel ?? 'none',
                 },
             };
         },
-        [canvas, canAcceptDropPayload, draggingServiceId, errorNodeIds, handleNodeDrop, onServiceDragStateChange, showErrorBadges],
+        [canvas, canAcceptDropPayload, draggingServiceId, errorNodeIds, handleNodeDrop, onServiceDragStateChange, presentation.nodeStateById, showErrorBadges],
     );
 
     const edgeDecorators = useMemo<NonNullable<AdapterOptions['edgeDecorators']>>(
         () => (edgeId) => {
-            const highlighted = canvas.api.snapshot().highlighted;
-            const parsed = parseEdgeId(edgeId);
-            const isHighlighted = parsed ? highlighted.has(parsed.from) || highlighted.has(parsed.to) : false;
+            const edgeState = presentation.edgeStateById[edgeId];
+            const parsed = parseRelationEdgeId(edgeId);
+            const kind = parsed?.kind;
+            const style = kind
+                ? edgeStyleForState({
+                      kind,
+                      isContextBindEdge: edgeState?.isContextBindEdge ?? false,
+                      isManualHighlighted: edgeState?.isManualHighlighted ?? false,
+                      focusDimLevel: edgeState?.focusDimLevel ?? 'none',
+                  })
+                : undefined;
             return {
-                style: {
-                    stroke: isHighlighted ? '#f59e0b' : '#64748b',
-                    strokeWidth: isHighlighted ? 2.2 : 1.6,
-                },
+                hidden: edgeState?.hidden ?? false,
+                style: style ?? undefined,
             };
         },
-        [canvas.api],
+        [presentation.edgeStateById],
     );
 
     const mergedOptions = useMemo<AdapterOptions>(
@@ -262,6 +347,14 @@ export default function CanvasPanel({
                 toolbarOrientation={toolbarOrientation}
                 persistToolbarOrientation={persistToolbarOrientation}
                 options={mergedOptions}
+                showBindEdges={viewPrefs.showBindEdges}
+                setShowBindEdges={(value) => setViewPrefs((current) => ({ ...current, showBindEdges: value }))}
+                showIncludeEdges={viewPrefs.showIncludeEdges}
+                setShowIncludeEdges={(value) => setViewPrefs((current) => ({ ...current, showIncludeEdges: value }))}
+                showExcludeEdges={viewPrefs.showExcludeEdges}
+                setShowExcludeEdges={(value) => setViewPrefs((current) => ({ ...current, showExcludeEdges: value }))}
+                focusCurrentContext={viewPrefs.focusCurrentContext}
+                setFocusCurrentContext={(value) => setViewPrefs((current) => ({ ...current, focusCurrentContext: value }))}
                 onNodeContextMenu={({ nodeId, nodeKind, clientX, clientY, event }) => {
                     if (nodeKind === 'comment' || nodeId.startsWith('c::')) return;
                     event.preventDefault();
@@ -612,14 +705,6 @@ function canAssignService(canvas: ReturnType<typeof useCanvas>, nodeId: string) 
     return getNodePropertyCapabilities(node).service.canEdit;
 }
 
-function parseEdgeId(id: string): { from: string; to: string; kind: string } | null {
-    const [kind, rest] = id.split(':');
-    if (!kind || !rest) return null;
-    const [from, to] = rest.split('->');
-    if (!from || !to) return null;
-    return { kind, from, to };
-}
-
 function getNodeLabel(node: unknown) {
     if (node && typeof node === 'object' && 'raw' in node && node.raw && typeof node.raw === 'object' && 'label' in node.raw) {
         return String((node.raw as { label?: string }).label ?? '');
@@ -630,6 +715,10 @@ function getNodeLabel(node: unknown) {
 
 function storageKey(ws: ReturnType<typeof useWorkspace>) {
     return `service-builder.canvas.overlays.${ws.info.id}.${ws.branches.currentId ?? 'none'}`;
+}
+
+function viewPrefsStorageKey(ws: ReturnType<typeof useWorkspace>) {
+    return `service-builder.canvas.view-prefs.${ws.info.id}.${ws.branches.currentId ?? 'none'}`;
 }
 
 function loadOverlayState(key: string, fallback: OverlayState): OverlayState {
@@ -649,6 +738,32 @@ function loadOverlayState(key: string, fallback: OverlayState): OverlayState {
 }
 
 function persistOverlayState(key: string, state: OverlayState) {
+    if (typeof window === 'undefined') return;
+    try {
+        window.localStorage.setItem(key, JSON.stringify(state));
+    } catch {
+        /* ignore storage failures */
+    }
+}
+
+function loadCanvasViewPrefs(key: string, fallback: CanvasViewPrefsState): CanvasViewPrefsState {
+    if (typeof window === 'undefined') return fallback;
+    try {
+        const raw = window.localStorage.getItem(key);
+        if (!raw) return fallback;
+        const parsed = JSON.parse(raw);
+        return {
+            showBindEdges: parsed?.showBindEdges ?? fallback.showBindEdges,
+            showIncludeEdges: parsed?.showIncludeEdges ?? fallback.showIncludeEdges,
+            showExcludeEdges: parsed?.showExcludeEdges ?? fallback.showExcludeEdges,
+            focusCurrentContext: parsed?.focusCurrentContext ?? fallback.focusCurrentContext,
+        };
+    } catch {
+        return fallback;
+    }
+}
+
+function persistCanvasViewPrefs(key: string, state: CanvasViewPrefsState) {
     if (typeof window === 'undefined') return;
     try {
         window.localStorage.setItem(key, JSON.stringify(state));

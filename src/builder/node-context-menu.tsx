@@ -8,13 +8,13 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog.tsx';
-import { cn } from '@/lib/utils.ts';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ContextMenu } from './node-context/components/ContextMenu.tsx';
 import { Dial } from './node-context/components/Dial.tsx';
 import { NoticeManager } from './node-context/components/NoticeManager.tsx';
+import { RenameNodeField } from './node-context/components/RenameNodeField.tsx';
 import { useDropHandling, useNoticeHandling } from './node-context/hooks.ts';
 import { OVERLAY_STALE_TIMEOUT_MS } from './node-context/types';
 import type {
@@ -57,7 +57,6 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
     const [noticeDraft, setNoticeDraft] = useState<NoticeDraft>(() => toDraft());
     const [noticeSearch, setNoticeSearch] = useState('');
 
-    const renameInputRef = useRef<HTMLInputElement | null>(null);
     const menuRef = useRef<HTMLDivElement | null>(null);
     const dialRef = useRef<HTMLDivElement | null>(null);
 
@@ -253,10 +252,6 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [closeNoticeManager, noticeManagerOpen]);
 
-    useEffect(() => {
-        if (!renameOpen) return;
-        queueMicrotask(() => renameInputRef.current?.focus());
-    }, [renameOpen]);
     const handleRenameCommit = useCallback(() => {
         if (!dialogTarget) return;
         const next = renameValue.trim();
@@ -402,19 +397,10 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
                                       }}
                                       className="space-y-4"
                                   >
-                                      <input
-                                          ref={renameInputRef}
+                                      <RenameNodeField
                                           value={renameValue}
-                                          onChange={(event) => setRenameValue(event.target.value)}
-                                          className={cn(
-                                              'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400',
-                                              'dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500/60',
-                                          )}
-                                          onKeyDown={(event) => {
-                                              if (event.key !== 'Escape') return;
-                                              event.preventDefault();
-                                              setRenameOpen(false);
-                                          }}
+                                          onChange={setRenameValue}
+                                          onEscape={() => setRenameOpen(false)}
                                       />
                                       <AlertDialogFooter>
                                           <AlertDialogCancel type="button">Cancel</AlertDialogCancel>

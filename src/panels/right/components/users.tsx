@@ -84,7 +84,6 @@ function buildUserMenu(user: User, handlers: Omit<UsersProps, 'users'>): MenuDat
 const Users: FC<UsersProps> = ({ users, onViewUser, onSetMain, onToggleAdmin, onRemoveUser, onInviteUser }) => {
     const visibleUsers = users.slice(0, 3);
     const extra = Math.max(users.length - visibleUsers.length, 0);
-    const onlineCount = users.filter((user) => user.isOnline).length;
 
     const orderedUsers = useMemo(() => {
         return [...users].sort((a, b) => {
@@ -99,42 +98,27 @@ const Users: FC<UsersProps> = ({ users, onViewUser, onSetMain, onToggleAdmin, on
             <PopoverTrigger asChild>
                 <button
                     type="button"
-                    className={cn(
-                        'flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-white/90 px-3 py-2 text-left shadow-sm transition',
-                        'hover:border-slate-300 hover:bg-white',
-                        'dark:border-slate-800 dark:bg-slate-950/85 dark:hover:border-slate-700',
-                    )}
+                    className="flex items-center gap-2 rounded-xl border border-transparent px-1 py-1 transition hover:border-slate-200 hover:bg-white dark:hover:border-slate-800 dark:hover:bg-slate-950"
                 >
-                    <div className="flex -space-x-2">
+                    <div className="flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-white dark:*:data-[slot=avatar]:ring-slate-950">
                         {visibleUsers.map((user) => (
                             <div key={user.id} className="relative">
-                                <Avatar className="h-8 w-8 border-2 border-white shadow-sm dark:border-slate-950">
+                                <Avatar className="h-8 w-8">
                                     <AvatarImage src={user.avatar} alt={user.name} />
                                     <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                                 </Avatar>
                                 {user.isOnline ? (
-                                    <span className="absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-950" />
+                                    <span className="absolute right-0 bottom-0 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-950" />
                                 ) : null}
                             </div>
                         ))}
                         {extra > 0 ? (
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-slate-100 text-[11px] font-semibold text-slate-500 shadow-sm dark:border-slate-950 dark:bg-slate-900 dark:text-slate-300">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dashed border-slate-300 bg-slate-100 text-xs font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
                                 +{extra}
                             </div>
                         ) : null}
                     </div>
-
-                    <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Authors</div>
-                        <div className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
-                            {users.length} collaborator{users.length === 1 ? '' : 's'}
-                        </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                            {onlineCount} online
-                        </div>
-                    </div>
-
-                    <GoChevronDown className="shrink-0 text-slate-400" />
+                    <GoChevronDown className="shrink-0 text-slate-500" />
                 </button>
             </PopoverTrigger>
 

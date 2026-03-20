@@ -1,7 +1,8 @@
-import { useWorkspace, type UseCanvasReturn } from '@timeax/digital-service-engine/workspace';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Background, ConnectionMode, MiniMap, ReactFlow, type Node } from '@xyflow/react';
+import type { AnyNode } from '@timeax/digital-service-engine/core';
+import { type UseCanvasReturn, useWorkspace } from '@timeax/digital-service-engine/workspace';
+import { Background, ConnectionMode, MiniMap, type Node, ReactFlow } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import React, { useEffect, useMemo, useState } from 'react';
 import { type AdapterOptions, useReactFlowAdapter } from './adapter.ts';
 import { edgeTypes, nodeTypes } from './reactflow/index.tsx';
 import { Toolbar } from './toolbar/index.tsx';
@@ -28,6 +29,14 @@ export type CanvasSurfaceProps = {
         clientY: number;
         event: React.MouseEvent;
     }) => void;
+    showBindEdges: boolean;
+    setShowBindEdges: (value: boolean) => void;
+    showIncludeEdges: boolean;
+    setShowIncludeEdges: (value: boolean) => void;
+    showExcludeEdges: boolean;
+    setShowExcludeEdges: (value: boolean) => void;
+    focusCurrentContext: boolean;
+    setFocusCurrentContext: (value: boolean) => void;
     children?: React.ReactNode;
 };
 
@@ -48,6 +57,14 @@ export function CanvasSurface({
     persistToolbarOrientation = true,
     toolbarPositionClassName = 'left-4 top-4',
     onNodeContextMenu,
+    showBindEdges,
+    setShowBindEdges,
+    showIncludeEdges,
+    setShowIncludeEdges,
+    showExcludeEdges,
+    setShowExcludeEdges,
+    focusCurrentContext,
+    setFocusCurrentContext,
     children,
 }: CanvasSurfaceProps) {
     const ws = useWorkspace();
@@ -60,7 +77,19 @@ export function CanvasSurface({
         return stored === 'vertical' || stored === 'horizontal' ? stored : toolbarOrientation;
     });
 
-    const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onConnectStart, onConnectEnd, onMoveEnd, onSelectionChange, isValidConnection, snapVector } = useReactFlowAdapter(api, options);
+    const {
+        nodes,
+        edges,
+        onNodesChange,
+        onEdgesChange,
+        onConnect,
+        onConnectStart,
+        onConnectEnd,
+        onMoveEnd,
+        onSelectionChange,
+        isValidConnection,
+        snapVector,
+    } = useReactFlowAdapter(api, options);
     const snapToGrid = useMemo(() => !!options?.snapToGrid, [options?.snapToGrid]);
     const snapGrid = useMemo<[number, number] | undefined>(() => snapVector, [snapVector]);
 
@@ -101,11 +130,11 @@ export function CanvasSurface({
                 className="bg-transparent!"
                 onNodeContextMenu={(event, node) => {
                     const kind =
-                        (node.data as any)?.node?.kind ??
+                        (node.data as { node: AnyNode })?.node?.kind ??
                         (node.type === 'tag' || node.type === 'field' || node.type === 'option' || node.type === 'comment' ? node.type : 'comment');
                     onNodeContextMenu?.({
                         nodeId: node.id,
-                        nodeKind: kind,
+                        nodeKind: kind as 'tag' | 'field' | 'option' | 'comment',
                         clientX: event.clientX,
                         clientY: event.clientY,
                         event,
@@ -121,6 +150,14 @@ export function CanvasSurface({
                             setShowGrid={setShowGrid}
                             showMiniMap={showMiniMap}
                             setShowMiniMap={setShowMiniMap}
+                            showBindEdges={showBindEdges}
+                            setShowBindEdges={setShowBindEdges}
+                            showIncludeEdges={showIncludeEdges}
+                            setShowIncludeEdges={setShowIncludeEdges}
+                            showExcludeEdges={showExcludeEdges}
+                            setShowExcludeEdges={setShowExcludeEdges}
+                            focusCurrentContext={focusCurrentContext}
+                            setFocusCurrentContext={setFocusCurrentContext}
                             tools={tools}
                             labelPlacement={labelPlacement}
                             canUndo={canUndo}
@@ -134,7 +171,7 @@ export function CanvasSurface({
                 ) : null}
                 {showMiniMap ? <MiniMap /> : null}
                 {showGrid ? <Background gap={32} size={1} color="rgba(148,163,184,0.25)" /> : null}
-                {children as any}
+                {children}
             </ReactFlow>
         </div>
     );

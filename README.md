@@ -2,6 +2,13 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Repository Guardrails
+
+- Do not edit `../digital-service-ui-builder` from this repo unless explicit approval is given first.
+- Treat the workspace backend traces as source of truth for UI integration.
+- In `src/**`, access workspace/backend state through `useWorkspace`/`Workspace` APIs only.
+- Do not call `ws.refresh.branchContext` with arguments; use `ws.setCurrentBranch(id)` first when branch context should change, then call `ws.refresh.branchContext()`.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh

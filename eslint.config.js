@@ -38,8 +38,32 @@ export default [
         },
     },
     {
-        ignores: ['vendor', 'node_modules', 'public', 'bootstrap/ssr', 'tailwind.config.js', 'src', 'scripts'],
+        files: ['src/**/*.{ts,tsx}'],
+        ignores: ['src/App.tsx'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: ['backend', 'backend/*', '../backend', '../../backend', '../../../backend', '../../../../backend', '../../../../../backend'],
+                            message: 'Use useWorkspace/Workspace APIs; do not import backend modules directly in UI code.',
+                        },
+                    ],
+                },
+            ],
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector:
+                        "CallExpression[callee.object.object.name='ws'][callee.object.property.name='refresh'][callee.property.name='branchContext'][arguments.length>0]",
+                    message: 'ws.refresh.branchContext() must be called with no arguments.',
+                },
+            ],
+        },
+    },
+    {
+        ignores: ['vendor', 'node_modules', 'public', 'dist', 'bootstrap/ssr', 'tailwind.config.js', 'scripts'],
     },
     prettier, // Turn off all rules that might conflict with Prettier
 ];
-

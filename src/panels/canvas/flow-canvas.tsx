@@ -18,6 +18,14 @@ export type FlowCanvasProps = {
     persistToolbarOrientation?: boolean;
     options?: AdapterOptions;
     onNodeContextMenu?: React.ComponentProps<typeof CanvasSurface>['onNodeContextMenu'];
+    showBindEdges: boolean;
+    setShowBindEdges: (value: boolean) => void;
+    showIncludeEdges: boolean;
+    setShowIncludeEdges: (value: boolean) => void;
+    showExcludeEdges: boolean;
+    setShowExcludeEdges: (value: boolean) => void;
+    focusCurrentContext: boolean;
+    setFocusCurrentContext: (value: boolean) => void;
     children?: React.ReactNode;
 };
 
@@ -35,6 +43,14 @@ export function FlowCanvas({
     persistToolbarOrientation = true,
     options,
     onNodeContextMenu,
+    showBindEdges,
+    setShowBindEdges,
+    showIncludeEdges,
+    setShowIncludeEdges,
+    showExcludeEdges,
+    setShowExcludeEdges,
+    focusCurrentContext,
+    setFocusCurrentContext,
     children,
 }: FlowCanvasProps) {
     const api = useCanvasAPI();
@@ -54,6 +70,14 @@ export function FlowCanvas({
             persistToolbarOrientation={persistToolbarOrientation}
             options={options}
             onNodeContextMenu={onNodeContextMenu}
+            showBindEdges={showBindEdges}
+            setShowBindEdges={setShowBindEdges}
+            showIncludeEdges={showIncludeEdges}
+            setShowIncludeEdges={setShowIncludeEdges}
+            showExcludeEdges={showExcludeEdges}
+            setShowExcludeEdges={setShowExcludeEdges}
+            focusCurrentContext={focusCurrentContext}
+            setFocusCurrentContext={setFocusCurrentContext}
         >
             {children}
         </CanvasSurface>
