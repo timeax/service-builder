@@ -19,7 +19,7 @@ export function Wireframe() {
         : `No active tag · Visible fields: 0 · Selected options: ${selectedOptionsCount}`;
 
     const { visibleTag, parents, children, visibleFields } = useMemo(() => {
-        let result = canvas.api.selection.visibleGroup();
+        const result = canvas.api.selection.visibleGroup();
         const notices = canvas.api.builder.getProps().notices;
 
         if (result?.kind !== 'single') {

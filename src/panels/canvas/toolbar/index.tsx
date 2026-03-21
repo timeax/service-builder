@@ -2,6 +2,7 @@ import type { UseCanvasReturn } from '@timeax/digital-service-engine/workspace';
 import React, { useCallback, useMemo, useState } from 'react';
 import { LuPanelBottom, LuPanelRight } from 'react-icons/lu';
 import { useReactFlow } from '@xyflow/react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { resolveTools } from './merge.ts';
 import { Icons } from './icons.tsx';
 import type { LabelPlacement, ResolvedTools, ToolContext, ToolDescriptor, ToolbarOrientation, ToolsConfig } from './types.ts';
@@ -182,31 +183,39 @@ export function Toolbar({
 
     const items = buildRenderable(descriptors);
     const groups = groupBy(items, (item) => item.group ?? 'view');
+    const relationTools = groups.relation ?? [];
+    const viewMenu = items.find((item) => item.id === 'view:menu');
 
     return (
         <div className={className ?? 'pointer-events-none absolute top-4 left-4 z-20'}>
             <div className={orientation === 'horizontal' ? 'flex items-start gap-2' : 'grid gap-2'}>
-                {Object.entries(groups).map(([group, arr]) => (
+                {relationTools.length ? (
                     <div
-                        key={group}
                         className={
-                            'pointer-events-auto rounded-lg border border-slate-200 bg-white/95 p-0.5 shadow-md dark:border-slate-800 dark:bg-slate-950/95 ' +
-                            (orientation === 'vertical' ? 'flex flex-col items-stretch gap-0.5' : 'inline-flex items-center gap-0.5')
+                            'pointer-events-auto rounded-2xl border border-slate-200/90 bg-white/92 p-1 shadow-[0_10px_24px_rgba(15,23,42,0.12)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/92 ' +
+                            (orientation === 'vertical' ? 'flex flex-col items-stretch gap-1' : 'inline-flex items-center gap-1')
                         }
                     >
-                        {arr.map((button) =>
+                        {relationTools.map((button) =>
                             renderButton ? (
                                 renderButton(button, button.id)
                             ) : (
-                                <DefaultTool key={button.id} {...button} labelPlacement={labelPlacement} orientation={orientation} />
+                                <DefaultTool key={button.id} {...button} labelPlacement={labelPlacement} orientation={orientation} segment="relation" />
                             ),
                         )}
                     </div>
-                ))}
+                ) : null}
+                {viewMenu ? (
+                    <ViewMenuTool
+                        tool={viewMenu}
+                        labelPlacement={labelPlacement}
+                        renderButton={renderButton}
+                    />
+                ) : null}
                 <button
                     type="button"
                     onClick={onToggleOrientation}
-                    className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white/95 text-slate-600 shadow-md transition hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/95 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100"
+                    className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200/90 bg-white/92 text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/92 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100"
                     title={orientation === 'horizontal' ? 'Switch to vertical toolbar' : 'Switch to horizontal toolbar'}
                 >
                     {orientation === 'horizontal' ? <LuPanelRight /> : <LuPanelBottom />}
@@ -249,64 +258,69 @@ function defaultTools(): ToolDescriptor[] {
             action: (ctx) => ctx.setRelation('exclude'),
         },
         {
-            id: 'view:bind-edges',
-            kind: 'toggle',
-            group: 'view',
-            order: 30,
-            label: 'Show bind edges',
-            icon: (active) => Icons.bindVisible(active),
-            active: (ctx) => ctx.state.showBindEdges,
-            action: (ctx) => ctx.toggleBindEdges(),
-        },
-        {
-            id: 'view:include-edges',
-            kind: 'toggle',
-            group: 'view',
-            order: 40,
-            label: 'Show include edges',
-            icon: (active) => Icons.includeVisible(active),
-            active: (ctx) => ctx.state.showIncludeEdges,
-            action: (ctx) => ctx.toggleIncludeEdges(),
-        },
-        {
-            id: 'view:exclude-edges',
-            kind: 'toggle',
-            group: 'view',
-            order: 50,
-            label: 'Show exclude edges',
-            icon: (active) => Icons.excludeVisible(active),
-            active: (ctx) => ctx.state.showExcludeEdges,
-            action: (ctx) => ctx.toggleExcludeEdges(),
-        },
-        {
-            id: 'view:focus-context',
-            kind: 'toggle',
-            group: 'view',
-            order: 60,
-            label: 'Focus current context',
-            icon: (active) => Icons.focusContext(active),
-            active: (ctx) => ctx.state.focusCurrentContext,
-            action: (ctx) => ctx.toggleFocusCurrentContext(),
-        },
-        {
-            id: 'view:grid',
-            kind: 'toggle',
+            id: 'view:menu',
+            kind: 'menu',
             group: 'view',
             order: 10,
-            label: 'Grid',
-            icon: (active) => Icons.grid(active),
-            active: (ctx) => ctx.state.showGrid,
-            action: (ctx) => ctx.toggleGrid(),
-        },
-        {
-            id: 'view:minimap',
-            kind: 'toggle',
-            group: 'view',
-            order: 20,
-            label: 'Minimap',
-            icon: (active) => Icons.minimap(active),
-            active: (ctx) => ctx.state.showMiniMap,
-            action: (ctx) => ctx.toggleMiniMap(),
+            label: 'Canvas view',
+            icon: (active) => Icons.visibilityMenu(active),
+            active: (ctx) =>
+                !ctx.state.showBindEdges ||
+                !ctx.state.showIncludeEdges ||
+                ctx.state.showExcludeEdges ||
+                ctx.state.focusCurrentContext ||
+                !ctx.state.showGrid ||
+                ctx.state.showMiniMap,
+            children: [
+                {
+                    id: 'view:bind-edges',
+                    kind: 'toggle',
+                    label: 'Show bind edges',
+                    icon: (active) => Icons.bindVisible(active),
+                    active: (ctx) => ctx.state.showBindEdges,
+                    action: (ctx) => ctx.toggleBindEdges(),
+                },
+                {
+                    id: 'view:include-edges',
+                    kind: 'toggle',
+                    label: 'Show include edges',
+                    icon: (active) => Icons.includeVisible(active),
+                    active: (ctx) => ctx.state.showIncludeEdges,
+                    action: (ctx) => ctx.toggleIncludeEdges(),
+                },
+                {
+                    id: 'view:exclude-edges',
+                    kind: 'toggle',
+                    label: 'Show exclude edges',
+                    icon: (active) => Icons.excludeVisible(active),
+                    active: (ctx) => ctx.state.showExcludeEdges,
+                    action: (ctx) => ctx.toggleExcludeEdges(),
+                },
+                {
+                    id: 'view:focus-context',
+                    kind: 'toggle',
+                    label: 'Focus current context',
+                    icon: (active) => Icons.focusContext(active),
+                    active: (ctx) => ctx.state.focusCurrentContext,
+                    action: (ctx) => ctx.toggleFocusCurrentContext(),
+                },
+                {
+                    id: 'view:grid',
+                    kind: 'toggle',
+                    label: 'Grid',
+                    icon: (active) => Icons.grid(active),
+                    active: (ctx) => ctx.state.showGrid,
+                    action: (ctx) => ctx.toggleGrid(),
+                },
+                {
+                    id: 'view:minimap',
+                    kind: 'toggle',
+                    label: 'Minimap',
+                    icon: (active) => Icons.minimap(active),
+                    active: (ctx) => ctx.state.showMiniMap,
+                    action: (ctx) => ctx.toggleMiniMap(),
+                },
+            ],
         },
         // {
         //     id: 'zoom:menu',
@@ -337,11 +351,17 @@ function DefaultTool({
     children,
     labelPlacement,
     orientation,
-}: ToolRender & { labelPlacement: LabelPlacement; orientation: ToolbarOrientation }) {
+    segment = 'default',
+}: ToolRender & { labelPlacement: LabelPlacement; orientation: ToolbarOrientation; segment?: 'default' | 'relation' }) {
     const base =
-        'inline-flex items-center justify-center rounded-md border border-transparent bg-transparent px-2 py-1 text-xs text-slate-600 transition ' +
+        'inline-flex items-center justify-center border border-transparent bg-transparent px-2 py-1 text-xs text-slate-600 transition ' +
         'hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 ' +
-        (active ? 'ring-1 ring-blue-400 bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 ' : '') +
+        (segment === 'relation' ? 'rounded-xl ' : 'rounded-md ') +
+        (active
+            ? segment === 'relation'
+                ? 'border-blue-200 bg-blue-50 text-blue-700 shadow-[inset_0_0_0_1px_rgba(96,165,250,0.35)] dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-300 '
+                : 'ring-1 ring-blue-400 bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 '
+            : '') +
         (disabled ? 'cursor-not-allowed opacity-50 ' : '');
 
     const title = labelPlacement === 'tooltip' ? (disabled ? disabledReason ?? label : label) : undefined;
@@ -365,7 +385,7 @@ function DefaultTool({
                 onClick={onClick}
                 className={
                     base +
-                    (orientation === 'vertical' ? ' h-8 w-full' : ' h-8 w-8') +
+                    (orientation === 'vertical' ? ' h-10 w-full' : segment === 'relation' ? ' h-10 w-10' : ' h-8 w-8') +
                     (labelPlacement === 'below' ? ' flex-col' : '')
                 }
             >
@@ -384,7 +404,7 @@ function DefaultTool({
                 onClick={onToggleMenu}
                 className={
                     base +
-                    (orientation === 'vertical' ? ' h-8 w-full' : ' h-8 w-8') +
+                    (orientation === 'vertical' ? ' h-10 w-full' : segment === 'relation' ? ' h-10 w-10' : ' h-8 w-8') +
                     (labelPlacement === 'below' ? ' flex-col' : '')
                 }
             >
@@ -398,16 +418,19 @@ function DefaultTool({
                                 <button
                                     type="button"
                                     role="menuitem"
+                                    aria-pressed={child.active}
                                     title={labelPlacement === 'tooltip' ? (child.disabled ? child.disabledReason ?? child.label : child.label) : undefined}
                                     disabled={child.disabled}
                                     onClick={child.onClick}
                                     className={
                                         'flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100 ' +
+                                        (child.active ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100 ' : '') +
                                         (child.disabled ? 'cursor-not-allowed opacity-50' : '')
                                     }
                                 >
                                     {child.icon ?? null}
                                     <span>{child.label}</span>
+                                    {child.active ? <span className="ml-auto text-[11px] font-medium text-blue-600 dark:text-blue-300">On</span> : null}
                                 </button>
                             </li>
                         ))}
@@ -416,6 +439,108 @@ function DefaultTool({
             ) : null}
         </div>
     );
+}
+
+function ViewMenuTool({
+    tool,
+    labelPlacement,
+    renderButton,
+}: {
+    tool: ToolRender;
+    labelPlacement: LabelPlacement;
+    renderButton?: (tool: ToolRender, key: string) => React.ReactNode;
+}) {
+    if (renderButton) {
+        return renderButton(tool, tool.id);
+    }
+
+    const indicatorCount = tool.children?.filter((child) => child.active).length ?? 0;
+
+    return (
+        <Popover open={tool.open} onOpenChange={() => tool.onToggleMenu?.()}>
+            <PopoverTrigger asChild>
+                <button
+                    type="button"
+                    title={labelPlacement === 'tooltip' ? tool.label : undefined}
+                    aria-expanded={tool.open ? 'true' : 'false'}
+                    aria-label={tool.label}
+                    className={
+                        'pointer-events-auto relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border bg-white/92 text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-slate-100 hover:text-slate-900 dark:bg-slate-950/92 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100 ' +
+                        (tool.active
+                            ? 'border-blue-200 text-blue-700 ring-1 ring-blue-300/70 dark:border-blue-500/30 dark:text-blue-300'
+                            : 'border-slate-200/90 dark:border-slate-800')
+                    }
+                >
+                    {tool.icon}
+                    {tool.active ? (
+                        <span className="absolute top-2.5 right-2.5 h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-white dark:ring-slate-950" />
+                    ) : null}
+                    {indicatorCount > 0 ? <span className="sr-only">{indicatorCount} active view options</span> : null}
+                </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-64 rounded-2xl border-slate-200/90 bg-white/98 p-2 shadow-[0_18px_40px_rgba(15,23,42,0.18)] dark:border-slate-800 dark:bg-slate-950/98">
+                <ViewSection title="Edge Layers" items={tool.children?.filter((child) => child.id.startsWith('view:') && child.id.includes('edges')) ?? []} />
+                <ViewSection title="Canvas" items={tool.children?.filter((child) => !child.id.includes('edges')) ?? []} className="mt-2 border-t border-slate-200 pt-2 dark:border-slate-800" />
+            </PopoverContent>
+        </Popover>
+    );
+}
+
+function ViewSection({ title, items, className }: { title: string; items: ToolRender[]; className?: string }) {
+    return (
+        <div className={className}>
+            <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">{title}</div>
+            <div className="grid gap-1">
+                {items.map((item) => (
+                    <button
+                        key={item.id}
+                        type="button"
+                        role="menuitemcheckbox"
+                        aria-checked={item.active}
+                        aria-pressed={item.active}
+                        disabled={item.disabled}
+                        onClick={item.onClick}
+                        className={
+                            'flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-900 dark:hover:text-slate-50 ' +
+                            (item.active ? 'bg-slate-100 dark:bg-slate-900 ' : '') +
+                            (item.disabled ? 'cursor-not-allowed opacity-50' : '')
+                        }
+                    >
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                            {item.icon}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate font-medium">{compactLabel(item.label)}</span>
+                        <span
+                            aria-hidden="true"
+                            className={
+                                'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[11px] font-semibold transition ' +
+                                (item.active
+                                    ? 'border-blue-500 bg-blue-500 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950'
+                                    : 'border-slate-200 bg-white text-transparent dark:border-slate-700 dark:bg-slate-950')
+                            }
+                        >
+                            {item.active ? '✓' : '•'}
+                        </span>
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function compactLabel(label?: string) {
+    switch (label) {
+        case 'Show bind edges':
+            return 'Bind edges';
+        case 'Show include edges':
+            return 'Include edges';
+        case 'Show exclude edges':
+            return 'Exclude edges';
+        case 'Focus current context':
+            return 'Focus context';
+        default:
+            return label;
+    }
 }
 
 function mapIcon(token: string, active: boolean): React.ReactNode {

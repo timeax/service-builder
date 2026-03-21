@@ -47,23 +47,40 @@ function ToolbarHarness() {
 }
 
 describe('canvas toolbar view toggles', () => {
-    it('reflects and toggles edge-layer visibility + focus mode', () => {
+    it('keeps relation buttons visible and exposes view toggles via the compact popover', () => {
         render(<ToolbarHarness />);
 
-        const bindButton = screen.getByTitle('Show bind edges');
-        const includeButton = screen.getByTitle('Show include edges');
-        const excludeButton = screen.getByTitle('Show exclude edges');
-        const focusButton = screen.getByTitle('Focus current context');
+        expect(screen.getByTitle('Bind')).toBeInTheDocument();
+        expect(screen.getByTitle('Include')).toBeInTheDocument();
+        expect(screen.getByTitle('Exclude')).toBeInTheDocument();
 
-        expect(bindButton).toHaveAttribute('aria-pressed', 'true');
-        expect(includeButton).toHaveAttribute('aria-pressed', 'true');
-        expect(excludeButton).toHaveAttribute('aria-pressed', 'false');
-        expect(focusButton).toHaveAttribute('aria-pressed', 'false');
+        const viewMenu = screen.getByRole('button', { name: /canvas view/i });
+        expect(viewMenu).toHaveAttribute('aria-expanded', 'false');
+        fireEvent.click(viewMenu);
+        expect(viewMenu).toHaveAttribute('aria-expanded', 'true');
+
+        expect(screen.getByText('Edge Layers')).toBeInTheDocument();
+        expect(screen.getByText('Canvas')).toBeInTheDocument();
+
+        const bindButton = screen.getByRole('menuitemcheckbox', { name: /bind edges/i });
+        const includeButton = screen.getByRole('menuitemcheckbox', { name: /include edges/i });
+        const excludeButton = screen.getByRole('menuitemcheckbox', { name: /exclude edges/i });
+        const focusButton = screen.getByRole('menuitemcheckbox', { name: /focus context/i });
+        const gridButton = screen.getByRole('menuitemcheckbox', { name: /^grid$/i });
+        const minimapButton = screen.getByRole('menuitemcheckbox', { name: /^minimap$/i });
+
+        expect(bindButton).toHaveAttribute('aria-checked', 'true');
+        expect(includeButton).toHaveAttribute('aria-checked', 'true');
+        expect(excludeButton).toHaveAttribute('aria-checked', 'false');
+        expect(focusButton).toHaveAttribute('aria-checked', 'false');
+        expect(gridButton).toHaveAttribute('aria-checked', 'true');
+        expect(minimapButton).toHaveAttribute('aria-checked', 'false');
 
         fireEvent.click(excludeButton);
         fireEvent.click(focusButton);
 
-        expect(excludeButton).toHaveAttribute('aria-pressed', 'true');
-        expect(focusButton).toHaveAttribute('aria-pressed', 'true');
+        expect(screen.getByRole('button', { name: /canvas view/i })).toHaveClass('ring-1');
+        expect(screen.getByRole('menuitemcheckbox', { name: /exclude edges/i })).toHaveAttribute('aria-checked', 'true');
+        expect(screen.getByRole('menuitemcheckbox', { name: /focus context/i })).toHaveAttribute('aria-checked', 'true');
     });
 });

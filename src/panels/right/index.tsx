@@ -49,7 +49,7 @@ const RightPanel = () => {
                     <TabsContent className={'min-h-0 grow overflow-hidden'} value="properties">
                         <Properties />
                     </TabsContent>
-                    <TabsContent className={'min-h-0 grow overflow-hidden'} value="wireframe">
+                    <TabsContent className={'min-h-0 grow overflow-hidden'} value="wireframe" forceMount>
                         {/*@ts-ignore*/}
                         <OrderFlowProvider serviceProps={props} builder={api.builder} selection={api.selection!} registry={registry}>
                             <Wireframe />

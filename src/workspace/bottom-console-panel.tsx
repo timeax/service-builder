@@ -38,6 +38,7 @@ type PanelPosition = { left: number | null; bottom: number | null };
 type ConsoleSubTab = 'validation' | 'logs' | 'notices';
 type ConsoleScopeFilter = 'all' | 'activeNode';
 type ConsoleSeverityFilter = 'all' | 'error' | 'warning' | 'info';
+type ConsoleIntroState = Record<ConsoleSubTab, { minimized: boolean; closed: boolean }>;
 
 type ServiceNotice = {
     id: string;
@@ -75,6 +76,11 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
     const [consoleSubTab, setConsoleSubTab] = useState<ConsoleSubTab>('validation');
     const [consoleScopeFilter, setConsoleScopeFilter] = useState<ConsoleScopeFilter>('all');
     const [consoleSeverityFilter, setConsoleSeverityFilter] = useState<ConsoleSeverityFilter>('all');
+    const [consoleIntroState, setConsoleIntroState] = useState<ConsoleIntroState>({
+        validation: { minimized: false, closed: false },
+        logs: { minimized: false, closed: false },
+        notices: { minimized: false, closed: false },
+    });
     const lastHighlightedIdsRef = useRef<string[]>([]);
     const panelContainerRef = useRef<HTMLDivElement | null>(null);
     const panelRef = useRef<HTMLDivElement | null>(null);
@@ -345,34 +351,21 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
                 </div>
 
                 <div className="flex min-h-0 flex-1 flex-col bg-slate-50/70 dark:bg-slate-950/40">
-                    <div className="flex items-center justify-between gap-3 border-b border-slate-200/70 px-4 py-3 dark:border-slate-800/70">
-                        <div className="min-w-0">
-                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                {controller.activeTab === 'console'
-                                    ? 'Workspace console'
-                                    : controller.activeTab === 'activeServices'
-                                      ? 'Connected services'
-                                      : 'Service catalog'}
-                            </p>
-                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                {controller.activeTab === 'console'
-                                    ? 'Validation rows come from the engine validator. Logs come from the workspace stream. Notices come from schema props.'
-                                    : controller.activeTab === 'activeServices'
-                                      ? 'Bound services can be highlighted back onto the canvas from here.'
-                                      : 'Search every service, test it against a safe visible-group context, and drag it onto nodes.'}
-                            </p>
+                    {controller.activeTab !== 'console' ? (
+                        <div className="flex items-center justify-between gap-3 border-b border-slate-200/70 px-4 py-3 dark:border-slate-800/70">
+                            <div className="min-w-0">
+                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    {controller.activeTab === 'activeServices' ? 'Connected services' : 'Service catalog'}
+                                </p>
+                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    {controller.activeTab === 'activeServices'
+                                        ? 'Bound services can be highlighted back onto the canvas from here.'
+                                        : 'Search every service, test it against a safe visible-group context, and drag it onto nodes.'}
+                                </p>
+                            </div>
+                            <div className="text-right text-xs text-slate-500 dark:text-slate-400">{controller.shortcutLabel}</div>
                         </div>
-                        <div className="text-right text-xs text-slate-500 dark:text-slate-400">
-                            {controller.activeTab === 'console' ? (
-                                <div className="flex items-center justify-end gap-2">
-                                    {errors.validating ? <FiLoader className="animate-spin" /> : null}
-                                    <span>{errors.validating ? 'Validating...' : 'Console idle'}</span>
-                                </div>
-                            ) : null}
-                            <div className="mt-1">{controller.shortcutLabel}</div>
-                            <div className="mt-1">Press Escape to close</div>
-                        </div>
-                    </div>
+                    ) : null}
 
                     <ScrollArea className="min-h-0 flex-1">
                         <div className="p-4">
@@ -387,6 +380,21 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
                                     onScopeFilterChange={setConsoleScopeFilter}
                                     severityFilter={consoleSeverityFilter}
                                     onSeverityFilterChange={setConsoleSeverityFilter}
+                                    validating={errors.validating}
+                                    shortcutLabel={controller.shortcutLabel}
+                                    introState={consoleIntroState}
+                                    onToggleIntroMinimized={(tab) =>
+                                        setConsoleIntroState((current) => ({
+                                            ...current,
+                                            [tab]: { ...current[tab], minimized: !current[tab].minimized },
+                                        }))
+                                    }
+                                    onCloseIntro={(tab) =>
+                                        setConsoleIntroState((current) => ({
+                                            ...current,
+                                            [tab]: { ...current[tab], closed: true },
+                                        }))
+                                    }
                                     onNodeClick={(nodeId) => focusNode(canvas, nodeId)}
                                 />
                             ) : null}
@@ -456,6 +464,11 @@ function ConsoleTab({
     onScopeFilterChange,
     severityFilter,
     onSeverityFilterChange,
+    validating,
+    shortcutLabel,
+    introState,
+    onToggleIntroMinimized,
+    onCloseIntro,
     onNodeClick,
 }: {
     errors: UseErrorsReturn;
@@ -467,6 +480,11 @@ function ConsoleTab({
     onScopeFilterChange: (scope: ConsoleScopeFilter) => void;
     severityFilter: ConsoleSeverityFilter;
     onSeverityFilterChange: (severity: ConsoleSeverityFilter) => void;
+    validating: boolean;
+    shortcutLabel: string;
+    introState: ConsoleIntroState;
+    onToggleIntroMinimized: (tab: ConsoleSubTab) => void;
+    onCloseIntro: (tab: ConsoleSubTab) => void;
     onNodeClick: (nodeId: string) => void;
 }) {
     const hasActiveSelection = activeNodeIds.size > 0;
@@ -474,24 +492,54 @@ function ConsoleTab({
     const logRows = errors.logs.filter((row) => matchesLogScope(row, scopeFilter, activeNodeIds));
     const noticeRows = notices.filter((notice) => matchesNoticeScope(notice, scopeFilter, activeNodeIds)).filter((notice) => matchesSeverity(notice.severity, severityFilter));
 
-    const totalIssues = errors.validation.length + errors.logs.length + notices.length;
-    if (totalIssues === 0) {
-        return (
-            <EmptyState
-                title="No console issues right now"
-                description="Validation, logs, and notices are all clear for this workspace."
-            />
-        );
-    }
-
     const subTabs: Array<{ id: ConsoleSubTab; label: string; count: number }> = [
         { id: 'validation', label: 'Validation', count: validationRows.length },
         { id: 'logs', label: 'Logs', count: logRows.length },
         { id: 'notices', label: 'Notices', count: noticeRows.length },
     ];
+    const activeIntro = introState[subTab];
+    const introCopy = getConsoleIntroCopy(subTab);
 
     return (
         <div className="space-y-4">
+            {!activeIntro.closed ? (
+                <div className="rounded-2xl border border-sky-200/80 bg-sky-50/70 p-3 dark:border-sky-500/20 dark:bg-sky-500/10">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{introCopy.title}</p>
+                            {!activeIntro.minimized ? (
+                                <>
+                                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{introCopy.description}</p>
+                                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                                        <span className="rounded-full bg-white/80 px-2 py-0.5 dark:bg-slate-900/70">
+                                            {validating ? 'Validating...' : 'Console idle'}
+                                        </span>
+                                        <span className="rounded-full bg-white/80 px-2 py-0.5 dark:bg-slate-900/70">{shortcutLabel}</span>
+                                        <span className="rounded-full bg-white/80 px-2 py-0.5 dark:bg-slate-900/70">Press Escape to close</span>
+                                    </div>
+                                </>
+                            ) : null}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                            <button
+                                type="button"
+                                onClick={() => onToggleIntroMinimized(subTab)}
+                                className="rounded-lg border border-slate-200 bg-white px-2 py-1 font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-900"
+                            >
+                                {activeIntro.minimized ? 'Expand' : 'Minimize'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onCloseIntro(subTab)}
+                                className="rounded-lg border border-slate-200 bg-white px-2 py-1 font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-900"
+                            >
+                                Dismiss
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+
             <div className="rounded-2xl border border-slate-200 bg-white/70 p-3 dark:border-slate-800 dark:bg-slate-950/40">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
@@ -865,24 +913,29 @@ function SafeContextFilter({
                 sideOffset={8}
                 avoidCollisions
                 collisionPadding={16}
-                className="w-96 min-w-80 max-w-[min(24rem,var(--radix-popover-content-available-width))] rounded-xl border border-slate-200 bg-white p-0 shadow-2xl shadow-black/20 dark:border-slate-800 dark:bg-slate-950"
+                className="flex h-[min(34rem,var(--radix-popover-content-available-height))] w-[26rem] min-w-80 max-w-[min(26rem,var(--radix-popover-content-available-width))] min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl shadow-black/20 dark:border-slate-800 dark:bg-slate-950"
             >
-                <div className="border-b border-slate-200 px-4 py-4 dark:border-slate-800">
+                <div className="border-b border-slate-200/80 bg-slate-50/70 px-5 py-4 dark:border-slate-800/80 dark:bg-slate-900/30">
                     <h3 className="text-base font-semibold leading-6 text-slate-900 dark:text-slate-100">Safe Context Filter</h3>
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Define the evaluation context for services.</p>
                 </div>
 
-                <ScrollArea className="max-h-[min(26rem,var(--radix-popover-content-available-height))]">
-                    <div className="space-y-5 p-4">
-                        <section>
+                <ScrollArea className="min-h-0 flex-1">
+                    <div className="space-y-4 p-4">
+                        <section className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/30">
                             <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Tags</h4>
-                            <div className="mt-3 space-y-2">
+                            <div className="mt-3 space-y-2.5">
                                 {(snapshot?.tags ?? []).map((tag) => {
                                     const selected = (context?.selectedTagId ?? '') === tag.id;
                                     return (
                                         <label
                                             key={tag.id}
-                                            className="flex cursor-pointer items-start gap-3 text-sm text-slate-900 dark:text-slate-100"
+                                            className={cn(
+                                                'flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2 text-sm text-slate-900 transition-colors dark:text-slate-100',
+                                                selected
+                                                    ? 'border-blue-200 bg-blue-50/70 dark:border-blue-500/30 dark:bg-blue-500/10'
+                                                    : 'border-transparent hover:border-slate-200 hover:bg-white/70 dark:hover:border-slate-700 dark:hover:bg-slate-950/60',
+                                            )}
                                         >
                                             <input
                                                 type="radio"
@@ -898,21 +951,21 @@ function SafeContextFilter({
                                                 className="mt-0.5 h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 dark:border-slate-700 dark:bg-slate-950"
                                             />
                                             <span className="min-w-0">
-                                                <span className={cn('block', selected ? 'font-medium' : 'font-normal')}>{tag.label}</span>
+                                                <span className={cn('block', selected ? 'font-semibold' : 'font-medium')}>{tag.label}</span>
                                                 {tag.description ? <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{tag.description}</span> : null}
                                             </span>
                                         </label>
                                     );
                                 })}
                             </div>
-                            <div className="mt-4 flex items-center rounded-lg bg-slate-100 p-1 text-sm dark:bg-slate-900">
+                            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-1 text-sm dark:border-slate-700 dark:bg-slate-950">
                                 <button
                                     type="button"
                                     onClick={() => setSelectionMode('all')}
                                     className={cn(
-                                        'flex-1 rounded-md px-2 py-1 transition-all duration-200',
+                                        'w-1/2 rounded-lg px-2 py-1.5 transition-all duration-200',
                                         selectionMode === 'all'
-                                            ? 'bg-white font-medium text-slate-800 shadow-sm dark:bg-slate-950 dark:text-slate-100'
+                                            ? 'bg-slate-100 font-semibold text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100'
                                             : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-slate-800/70',
                                     )}
                                 >
@@ -922,9 +975,9 @@ function SafeContextFilter({
                                     type="button"
                                     onClick={() => setSelectionMode('any')}
                                     className={cn(
-                                        'flex-1 rounded-md px-2 py-1 transition-all duration-200',
+                                        'w-1/2 rounded-lg px-2 py-1.5 transition-all duration-200',
                                         selectionMode === 'any'
-                                            ? 'bg-white font-medium text-slate-800 shadow-sm dark:bg-slate-950 dark:text-slate-100'
+                                            ? 'bg-slate-100 font-semibold text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100'
                                             : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-slate-800/70',
                                     )}
                                 >
@@ -933,15 +986,13 @@ function SafeContextFilter({
                             </div>
                         </section>
 
-                        <PopoverSectionDivider />
-
-                        <section>
+                        <section className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/30">
                             <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Buttons (Context Options)</h4>
 
                             {snapshot?.buttonGroups.length ? (
                                 <div className="mt-3 space-y-3">
                                     {snapshot.buttonGroups.map((group) => (
-                                        <div key={group.id}>
+                                        <div key={group.id} className="relative rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-950/70">
                                             <button
                                                 type="button"
                                                 onClick={() => setExpandedGroups((current) => ({ ...current, [group.id]: !current[group.id] }))}
@@ -955,7 +1006,7 @@ function SafeContextFilter({
                                                     {group.options.map((option) => {
                                                         const selected = context?.selectedButtons.includes(option.id) ?? false;
                                                         return (
-                                                            <label key={option.id} className="flex cursor-pointer items-start gap-3 text-sm text-slate-900 dark:text-slate-100">
+                                                            <label key={option.id} className="flex cursor-pointer items-start gap-3 rounded-lg px-2 py-1.5 text-sm text-slate-900 transition-colors hover:bg-slate-50 dark:text-slate-100 dark:hover:bg-slate-900">
                                                                 <input
                                                                     type="checkbox"
                                                                     checked={selected}
@@ -982,15 +1033,13 @@ function SafeContextFilter({
                                     ))}
                                 </div>
                             ) : (
-                                <div className="mt-3 rounded-lg border border-dashed border-slate-300 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                <div className="mt-3 rounded-xl border border-dashed border-slate-300 bg-white/70 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-400">
                                     No button triggers are visible for the selected tag yet.
                                 </div>
                             )}
                         </section>
 
-                        <PopoverSectionDivider />
-
-                        <section>
+                        <section className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/30">
                             <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Safety Toggles</h4>
                             <div className="mt-3 space-y-2">
                                 <SafetyToggleRow
@@ -1020,11 +1069,11 @@ function SafeContextFilter({
                     </div>
                 </ScrollArea>
 
-                <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/40">
+                <div className="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/40">
                     <button
                         type="button"
                         onClick={onReset}
-                        className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
+                        className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"
                     >
                         Reset
                     </button>
@@ -1398,6 +1447,25 @@ function filterChipClassName(tone: 'success' | 'warning' | 'danger' | 'default')
 
 function capitalize(value: string) {
     return value ? `${value[0].toUpperCase()}${value.slice(1)}` : value;
+}
+
+function getConsoleIntroCopy(tab: ConsoleSubTab) {
+    if (tab === 'validation') {
+        return {
+            title: 'Validation Console',
+            description: 'Validation rows come from the engine validator and reflect service/schema consistency checks.',
+        };
+    }
+    if (tab === 'logs') {
+        return {
+            title: 'Runtime Logs',
+            description: 'Logs come from workspace/editor runtime events and can be cleared or dismissed.',
+        };
+    }
+    return {
+        title: 'Schema Notices',
+        description: 'Notices come from schema props and include public/private messaging with global or node scope.',
+    };
 }
 
 function normalizeNotices(input: unknown[] | undefined): ServiceNotice[] {
