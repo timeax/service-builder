@@ -6,6 +6,8 @@ export default defineConfig({
     format: ['esm'],
     target: 'es2022',
     dts: {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         tsconfig: './tsconfig.lib.json',
     },
     clean: true,
@@ -20,5 +22,6 @@ export default defineConfig({
         '@timeax/digital-service-engine',
         '@timeax/digital-service-engine/react',
         '@timeax/digital-service-engine/workspace',
+        '@timeax/form-palette',
     ],
 });

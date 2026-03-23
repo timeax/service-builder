@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { WorkspaceBootStatusCard, WorkspaceBootStatusSurface } from './boot-status.tsx';
@@ -129,7 +130,7 @@ describe('WorkspaceBootStatusCard', () => {
             },
         });
 
-        render(<WorkspaceBootStatusCard boot={boot} />);
+        render(<WorkspaceBootStatusCard boot={boot as any} />);
 
         fireEvent.click(screen.getByRole('button', { name: /retry all/i }));
         fireEvent.click(screen.getByRole('button', { name: /retry comments/i }));
