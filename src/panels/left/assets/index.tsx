@@ -2,10 +2,11 @@ import { DRAG_MIME_ASSET_BUILTIN, DRAG_MIME_ASSET_TEMPLATE } from '@/builder/nod
 import { EmptyState } from '@/components/builder/index.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { useInputs } from '@timeax/digital-service-engine/react';
-import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useWorkspace } from '@timeax/digital-service-engine/workspace';
+import { useMemo, useState } from 'react';
 import { CiSearch } from 'react-icons/ci';
 import { LuBox, LuShapes } from 'react-icons/lu';
+import { WorkspaceBootInlineNotice } from '@/workspace/boot-status.tsx';
 
 type BuiltinAsset = {
     key: string;
@@ -23,56 +24,9 @@ function toTitle(value: string) {
 }
 
 export default function AssetsPanel() {
-    const canvas = useCanvas();
     const ws = useWorkspace();
     const { registry } = useInputs();
     const [query, setQuery] = useState('');
-    const refreshInFlightRef = useRef(new Set<string>());
-    const refreshCompletedRef = useRef(new Set<string>());
-    const refreshLastAtRef = useRef(new Map<string, number>());
-
-    const workspaceId = ws.info.id ?? 'workspace';
-    const branchId = ws.branches.currentId ?? undefined;
-    const branchKey = branchId ?? 'default';
-    const refreshKey = `${workspaceId}::${branchKey}`;
-
-    useEffect(() => {
-        if (refreshCompletedRef.current.has(refreshKey) || refreshInFlightRef.current.has(refreshKey)) return;
-
-        const lastAt = refreshLastAtRef.current.get(refreshKey);
-        const now = Date.now();
-        if (lastAt && now - lastAt < 2000) {
-            if (import.meta.env.DEV) {
-                console.warn('[assets] Template refresh skipped: throttled', { refreshKey, sinceMs: now - lastAt });
-            }
-            return;
-        }
-
-        let cancelled = false;
-        refreshInFlightRef.current.add(refreshKey);
-        refreshLastAtRef.current.set(refreshKey, now);
-
-        void ws.refresh
-            .templates({ branchId })
-            .then(() => {
-                if (cancelled) return;
-                refreshCompletedRef.current.add(refreshKey);
-            })
-            .catch((error) => {
-                if (cancelled) return;
-                canvas.api.emit('error', {
-                    message: (error as Error)?.message ?? 'Failed to refresh templates',
-                    meta: { action: 'refresh-templates', branchId: branchId ?? null },
-                });
-            })
-            .finally(() => {
-                refreshInFlightRef.current.delete(refreshKey);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, [branchId, canvas.api, refreshKey]);
 
     const normalizedBuiltins = useMemo<BuiltinAsset[]>(() => {
         const items: BuiltinAsset[] = [];
@@ -164,6 +118,7 @@ export default function AssetsPanel() {
                         <LuBox />
                         Saved Templates
                     </h4>
+                    <WorkspaceBootInlineNotice boot={ws.boot} sections={['templates']} className="mb-3" />
                     <div className="grid grid-cols-2 gap-2">
                         {filteredTemplates.length ? (
                             filteredTemplates.map((item) => (

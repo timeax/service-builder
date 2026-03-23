@@ -4,11 +4,13 @@ import { EmptyState } from '@/components/builder';
 import WireframeTagsWidget, { type TagNotice } from '@/panels/right/components/wireframe-tags-widget.tsx';
 import type { Field, Tag } from '@timeax/digital-service-engine';
 import { useOrderFlow, Wrapper } from '@timeax/digital-service-engine/react';
-import { useCanvas } from '@timeax/digital-service-engine/workspace';
+import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { useCallback, useMemo } from 'react';
+import { WorkspaceBootInlineNotice } from '@/workspace/boot-status.tsx';
 
 export function Wireframe() {
     const canvas = useCanvas();
+    const ws = useWorkspace();
     const { openNodeContextMenu, canAcceptDropPayload, handleNodeDrop } = useNodeContextMenu();
     const currentTag = getCurrentTag(canvas);
     const previewFields = useMemo(() => getVisiblePreviewFields(canvas, currentTag?.id), [canvas.props, canvas.selectionInfo, canvas.activeId]);
@@ -92,6 +94,7 @@ export function Wireframe() {
             <div className="min-h-0 flex-1 overflow-auto p-4">
                 <div className="mx-auto max-w-md">
                     <div className="flex flex-col gap-4">
+                        <WorkspaceBootInlineNotice boot={ws.boot} sections={['snapshotBody', 'policies']} />
                         <WireframeTagsWidget
                             visibleTag={visibleTag}
                             parents={parents}

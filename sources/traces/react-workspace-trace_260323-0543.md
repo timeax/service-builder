@@ -2,61 +2,64 @@
 > Note for LLMs: `Lx-Ly` ranges refer to lines in this Prodex trace file, not the original source files. Index metadata is provided via the HTML comment markers in this section.
 
 # Index
-<!-- PRODEX_INDEX_RANGE: L8-L59 -->
-<!-- PRODEX_FILE_COUNT: 52 -->
+<!-- PRODEX_INDEX_RANGE: L8-L62 -->
+<!-- PRODEX_FILE_COUNT: 55 -->
 <!-- PRODEX_INDEX_LIST_START -->
-- [src/react/workspace/__tests__/provider.test.tsx](#1)  L63-L327
-- [src/react/workspace/adapters/reactflow/adapter.ts](#2)  L328-L835
-- [src/react/workspace/adapters/reactflow/toolbar.tsx](#3)  L836-L1294
-- [src/react/workspace/adapters/reactflow/toolbar/icons.tsx](#4)  L1295-L1358
-- [src/react/workspace/adapters/reactflow/toolbar/merge.ts](#5)  L1359-L1432
-- [src/react/workspace/adapters/reactflow/toolbar/types.ts](#6)  L1433-L1517
-- [src/react/workspace/app.tsx](#7)  L1518-L1605
-- [src/react/workspace/components/canvas.tsx](#8)  L1606-L1729
-- [src/react/workspace/components/context-menu-renderer.tsx](#9)  L1730-L1935
-- [src/react/workspace/components/index.tsx](#10)  L1936-L2011
-- [src/react/workspace/components/reactflow/edge.tsx](#11)  L2012-L2034
-- [src/react/workspace/components/reactflow/index.tsx](#12)  L2035-L2056
-- [src/react/workspace/components/reactflow/nodes/comments.tsx](#13)  L2057-L2515
-- [src/react/workspace/components/reactflow/nodes/field.tsx](#14)  L2516-L2549
-- [src/react/workspace/components/reactflow/nodes/node.tsx](#15)  L2550-L2718
-- [src/react/workspace/components/reactflow/nodes/options.tsx](#16)  L2719-L2737
-- [src/react/workspace/components/reactflow/nodes/tags.tsx](#17)  L2738-L2759
-- [src/react/workspace/context/backend.ts](#18)  L2760-L3322
-- [src/react/workspace/context/context.tsx](#19)  L3323-L3634
-- [src/react/workspace/context/ctxmenu.tsx](#20)  L3635-L3933
-- [src/react/workspace/context/hooks/use-canvas.ts](#21)  L3934-L4274
-- [src/react/workspace/context/hooks/use-errors.ts](#22)  L4275-L4614
-- [src/react/workspace/context/index.ts](#23)  L4615-L4665
-- [src/react/workspace/context/memory/errors.ts](#24)  L4666-L4718
-- [src/react/workspace/context/memory/ids.ts](#25)  L4719-L4779
-- [src/react/workspace/context/memory/index.ts](#26)  L4780-L4799
-- [src/react/workspace/context/memory/memory-backend.ts](#27)  L4800-L6100
-- [src/react/workspace/context/memory/seed.ts](#28)  L6101-L6198
-- [src/react/workspace/context/memory/store.ts](#29)  L6199-L6324
-- [src/react/workspace/context/memory/time.ts](#30)  L6325-L6349
-- [src/react/workspace/context/provider/compose/use-branch-cache.ts](#31)  L6350-L6631
-- [src/react/workspace/context/provider/compose/use-live-polling.ts](#32)  L6632-L6919
-- [src/react/workspace/context/provider/compose/use-workspace-refresh.ts](#33)  L6920-L7139
-- [src/react/workspace/context/provider/context.ts](#34)  L7140-L7167
-- [src/react/workspace/context/provider/helpers.ts](#35)  L7168-L7278
-- [src/react/workspace/context/provider/live/adapters/manual.ts](#36)  L7279-L7498
-- [src/react/workspace/context/provider/live/adapters/poll.ts](#37)  L7499-L7579
-- [src/react/workspace/context/provider/live/adapters/sse.ts](#38)  L7580-L7660
-- [src/react/workspace/context/provider/live/adapters/ws.ts](#39)  L7661-L7741
-- [src/react/workspace/context/provider/live/types.ts](#40)  L7742-L7824
-- [src/react/workspace/context/provider/provider.tsx](#41)  L7825-L8343
-- [src/react/workspace/context/provider/runtime/use-backend-runtime.ts](#42)  L8344-L8391
-- [src/react/workspace/context/provider/slices/use-authors-slice.ts](#43)  L8392-L8461
-- [src/react/workspace/context/provider/slices/use-branches-slice.ts](#44)  L8462-L8677
-- [src/react/workspace/context/provider/slices/use-comments-slice.ts](#45)  L8678-L9127
-- [src/react/workspace/context/provider/slices/use-permissions-slice.ts](#46)  L9128-L9205
-- [src/react/workspace/context/provider/slices/use-policies-slice.ts](#47)  L9206-L9422
-- [src/react/workspace/context/provider/slices/use-services-slice.ts](#48)  L9423-L9499
-- [src/react/workspace/context/provider/slices/use-snapshots-slice.ts](#49)  L9500-L9946
-- [src/react/workspace/context/provider/slices/use-templates-slice.ts](#50)  L9947-L10186
-- [src/react/workspace/context/provider/types.ts](#51)  L10187-L10439
-- [src/react/workspace/index.ts](#52)  L10440-L10458
+- [src/react/workspace/__tests__/provider.test.tsx](#1)  L66-L450
+- [src/react/workspace/adapters/reactflow/adapter.ts](#2)  L451-L958
+- [src/react/workspace/adapters/reactflow/toolbar.tsx](#3)  L959-L1417
+- [src/react/workspace/adapters/reactflow/toolbar/icons.tsx](#4)  L1418-L1481
+- [src/react/workspace/adapters/reactflow/toolbar/merge.ts](#5)  L1482-L1555
+- [src/react/workspace/adapters/reactflow/toolbar/types.ts](#6)  L1556-L1640
+- [src/react/workspace/app.tsx](#7)  L1641-L1728
+- [src/react/workspace/components/canvas.tsx](#8)  L1729-L1852
+- [src/react/workspace/components/context-menu-renderer.tsx](#9)  L1853-L2058
+- [src/react/workspace/components/index.tsx](#10)  L2059-L2134
+- [src/react/workspace/components/reactflow/edge.tsx](#11)  L2135-L2157
+- [src/react/workspace/components/reactflow/index.tsx](#12)  L2158-L2179
+- [src/react/workspace/components/reactflow/nodes/comments.tsx](#13)  L2180-L2638
+- [src/react/workspace/components/reactflow/nodes/field.tsx](#14)  L2639-L2672
+- [src/react/workspace/components/reactflow/nodes/node.tsx](#15)  L2673-L2841
+- [src/react/workspace/components/reactflow/nodes/options.tsx](#16)  L2842-L2860
+- [src/react/workspace/components/reactflow/nodes/tags.tsx](#17)  L2861-L2882
+- [src/react/workspace/context/backend.ts](#18)  L2883-L3445
+- [src/react/workspace/context/context.tsx](#19)  L3446-L3731
+- [src/react/workspace/context/ctxmenu.tsx](#20)  L3732-L4030
+- [src/react/workspace/context/hooks/use-canvas.ts](#21)  L4031-L4371
+- [src/react/workspace/context/hooks/use-errors.ts](#22)  L4372-L4711
+- [src/react/workspace/context/index.ts](#23)  L4712-L4767
+- [src/react/workspace/context/memory/errors.ts](#24)  L4768-L4820
+- [src/react/workspace/context/memory/ids.ts](#25)  L4821-L4881
+- [src/react/workspace/context/memory/index.ts](#26)  L4882-L4901
+- [src/react/workspace/context/memory/memory-backend.persistence.test.ts](#27)  L4902-L5320
+- [src/react/workspace/context/memory/memory-backend.ts](#28)  L5321-L6768
+- [src/react/workspace/context/memory/persistence.ts](#29)  L6769-L7083
+- [src/react/workspace/context/memory/seed.ts](#30)  L7084-L7181
+- [src/react/workspace/context/memory/store.ts](#31)  L7182-L7307
+- [src/react/workspace/context/memory/time.ts](#32)  L7308-L7332
+- [src/react/workspace/context/provider/compose/use-branch-cache.ts](#33)  L7333-L7588
+- [src/react/workspace/context/provider/compose/use-live-polling.ts](#34)  L7589-L7876
+- [src/react/workspace/context/provider/compose/use-workspace-boot.ts](#35)  L7877-L8543
+- [src/react/workspace/context/provider/compose/use-workspace-refresh.ts](#36)  L8544-L8763
+- [src/react/workspace/context/provider/context.ts](#37)  L8764-L8795
+- [src/react/workspace/context/provider/helpers.ts](#38)  L8796-L8906
+- [src/react/workspace/context/provider/live/adapters/manual.ts](#39)  L8907-L9126
+- [src/react/workspace/context/provider/live/adapters/poll.ts](#40)  L9127-L9207
+- [src/react/workspace/context/provider/live/adapters/sse.ts](#41)  L9208-L9288
+- [src/react/workspace/context/provider/live/adapters/ws.ts](#42)  L9289-L9369
+- [src/react/workspace/context/provider/live/types.ts](#43)  L9370-L9452
+- [src/react/workspace/context/provider/provider.tsx](#44)  L9453-L9994
+- [src/react/workspace/context/provider/runtime/use-backend-runtime.ts](#45)  L9995-L10042
+- [src/react/workspace/context/provider/slices/use-authors-slice.ts](#46)  L10043-L10121
+- [src/react/workspace/context/provider/slices/use-branches-slice.ts](#47)  L10122-L10351
+- [src/react/workspace/context/provider/slices/use-comments-slice.ts](#48)  L10352-L10815
+- [src/react/workspace/context/provider/slices/use-permissions-slice.ts](#49)  L10816-L10898
+- [src/react/workspace/context/provider/slices/use-policies-slice.ts](#50)  L10899-L11129
+- [src/react/workspace/context/provider/slices/use-services-slice.ts](#51)  L11130-L11213
+- [src/react/workspace/context/provider/slices/use-snapshots-slice.ts](#52)  L11214-L11677
+- [src/react/workspace/context/provider/slices/use-templates-slice.ts](#53)  L11678-L11928
+- [src/react/workspace/context/provider/types.ts](#54)  L11929-L12227
+- [src/react/workspace/index.ts](#55)  L12228-L12246
 <!-- PRODEX_INDEX_LIST_END -->
 
 ---
@@ -67,24 +70,24 @@
 ` File: src/react/workspace/__tests__/provider.test.tsx`  [↑ Back to top](#index)
 
 ```tsx
-// src/react/workspace/context/provider/__tests__/workspace-provider.integration.test.ts
 // @vitest-environment jsdom
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
-import { WorkspaceProvider, useWorkspace } from "@/react/workspace";
-import type { Actor, Branch } from "@/react/workspace";
-import type { WorkspaceAPI } from "@/react/workspace";
+import {
+    WorkspaceProvider,
+    createMemoryWorkspaceBackend,
+    useWorkspace,
+    type Actor,
+    type BackendError,
+    type Branch,
+    type ServiceSnapshot,
+    type WorkspaceAPI,
+} from "@/react/workspace";
 
-import { createMemoryWorkspaceBackend } from "../context/memory";
-
-/**
- * React’s act() warnings happen if the test environment doesn’t opt in.
- * This silences: “The current testing environment is not configured to support act(...)”
- */
 (
     globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT?: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
@@ -92,18 +95,75 @@ import { createMemoryWorkspaceBackend } from "../context/memory";
 async function flushMicrotasks(): Promise<void> {
     await Promise.resolve();
     await Promise.resolve();
+    await Promise.resolve();
+}
+
+async function waitFor(
+    predicate: () => boolean,
+    attempts = 20,
+): Promise<void> {
+    for (let index = 0; index < attempts; index += 1) {
+        await act(async () => {
+            await flushMicrotasks();
+        });
+
+        if (predicate()) {
+            return;
+        }
+    }
+
+    throw new Error("Timed out waiting for condition.");
 }
 
 function makeActor(): Actor {
     return { id: "actor-1", name: "Tester" };
 }
 
-function makeBranch(id: string, isMain: boolean): Branch {
+function makeBranch(id = "main", isMain = true): Branch {
     const iso = new Date(0).toISOString();
     return { id, name: id, isMain, createdAt: iso, updatedAt: iso };
 }
 
-describe("WorkspaceProvider (integration)", () => {
+function makeSnapshot(label: string): ServiceSnapshot {
+    return {
+        schema_version: "1",
+        data: {
+            props: {
+                id: label,
+                label,
+                filters: [],
+                fields: [],
+            },
+        } as ServiceSnapshot["data"],
+    };
+}
+
+function makeBootBackend(workspaceId: string, actor: Actor) {
+    return createMemoryWorkspaceBackend({
+        workspaceId,
+        actorId: actor.id,
+        seed: {
+            authors: [{ id: actor.id, name: actor.name ?? "Tester" }],
+            branches: [makeBranch("main", true)],
+            snapshots: {
+                main: {
+                    snapshot: makeSnapshot(`snapshot-${workspaceId}`),
+                },
+            },
+            policies: { rules: [] },
+        },
+    });
+}
+
+function createDeferred<T = void>() {
+    let resolve!: (value: T | PromiseLike<T>) => void;
+    const promise = new Promise<T>((res) => {
+        resolve = res;
+    });
+    return { promise, resolve };
+}
+
+describe("WorkspaceProvider boot", () => {
     let container: HTMLDivElement;
     let root: Root | null;
 
@@ -119,41 +179,18 @@ describe("WorkspaceProvider (integration)", () => {
             root = null;
         }
         container.remove();
-        vi.useRealTimers();
         vi.restoreAllMocks();
     });
 
-    it("refresh.all() calls workspace-wide refreshers then current-branch context refreshers (memory backend)", async () => {
-        const actor: Actor = makeActor();
+    it("boots from identity alone and loads the snapshot body in the provider", async () => {
+        const actor = makeActor();
+        const backend = makeBootBackend("ws-boot-no-initial", actor);
+        const snapshotLoadSpy = vi.spyOn(backend.snapshots, "load");
 
-        const backend = createMemoryWorkspaceBackend({
-            workspaceId: "ws-1",
-            actorId: actor.id,
-            seed: {
-                authors: [{ id: actor.id, name: actor.name ?? "Tester" }],
-                branches: [makeBranch("b1", true)],
-            },
-        });
-
-        // spy on the real backend methods
-        const spyAuthorsRefresh = vi.spyOn(backend.authors, "refresh");
-        const spyPermissionsRefresh = vi.spyOn(backend.permissions, "refresh");
-        const spyBranchesRefresh = vi.spyOn(backend.branches, "refresh");
-        const spyServicesRefresh = vi.spyOn(backend.services, "refresh");
-        const spyAccessRefreshParticipants = vi.spyOn(
-            backend.access,
-            "refreshParticipants",
-        );
-        const spyTemplatesRefresh = vi.spyOn(backend.templates, "refresh");
-        const spySnapshotsRefresh = vi.spyOn(backend.snapshots, "refresh");
-
-        let api: WorkspaceAPI | null = null;
+        let api: WorkspaceAPI | undefined;
 
         function Capture(): null {
-            const ctx: WorkspaceAPI = useWorkspace();
-            React.useEffect(() => {
-                api = ctx;
-            }, [ctx]);
+            api = useWorkspace();
             return null;
         }
 
@@ -163,11 +200,6 @@ describe("WorkspaceProvider (integration)", () => {
                     backend={backend}
                     actor={actor}
                     autoAutosave={false}
-                    initial={{
-                        branches: [makeBranch("b1", true)],
-                        mainId: "b1",
-                        currentBranchId: "b1",
-                    }}
                 >
                     <Capture />
                 </WorkspaceProvider>,
@@ -175,81 +207,38 @@ describe("WorkspaceProvider (integration)", () => {
             await flushMicrotasks();
         });
 
-        expect(api).not.toBeNull();
+        await waitFor(() => Boolean(api) && api!.boot.isBooting === false);
+        const workspace = api!;
 
-        vi.clearAllMocks();
-
-        await act(async () => {
-            await api!.refresh.all({ strict: true });
-            await flushMicrotasks();
+        expect(snapshotLoadSpy).toHaveBeenCalledWith({
+            workspaceId: backend.info.id,
+            branchId: "main",
+            actorId: actor.id,
+            versionId: undefined,
         });
-
-        const wsId: string = backend.info.id;
-
-        // workspace-wide
-        expect(spyAuthorsRefresh).toHaveBeenCalledWith(wsId);
-        expect(spyPermissionsRefresh).toHaveBeenCalledWith(wsId, actor);
-        expect(spyBranchesRefresh).toHaveBeenCalledWith(wsId);
-
-        // services.refresh(workspaceId, { since? }) — provider may pass a second arg
-        expect(spyServicesRefresh).toHaveBeenCalledWith(
-            wsId,
-            expect.objectContaining({ since: undefined }),
-        );
-
-        // branch-local (participants, templates, snapshot pointers for current branch)
-        expect(spyAccessRefreshParticipants).toHaveBeenCalledWith(
-            wsId,
-            "b1",
-            expect.anything(),
-        );
-
-        expect(spyTemplatesRefresh).toHaveBeenCalledWith(
-            expect.objectContaining({
-                workspaceId: wsId,
-                branchId: "b1",
-            }),
-        );
-
-        expect(spySnapshotsRefresh).toHaveBeenCalledWith(
-            expect.objectContaining({
-                workspaceId: wsId,
-                branchId: "b1",
-                actorId: actor.id,
-            }),
+        expect(workspace.boot.isReady).toBe(true);
+        expect(workspace.boot.sections.snapshotBody.status).toBe("success");
+        expect(workspace.snapshot.data).toEqual(
+            makeSnapshot("snapshot-ws-boot-no-initial").data,
         );
     });
 
-    it("refresh.branchContext({ includeWorkspaceData:false }) refreshes only branch-local context (memory backend)", async () => {
-        const actor: Actor = makeActor();
+    it("treats initial as seeded view only and still performs live boot loading", async () => {
+        const actor = makeActor();
+        const backend = makeBootBackend("ws-initial-live", actor);
+        const authorsGate = createDeferred<void>();
+        const originalRefresh = backend.authors.refresh.bind(backend.authors);
+        const authorsRefreshSpy = vi
+            .spyOn(backend.authors, "refresh")
+            .mockImplementation(async (...args) => {
+                await authorsGate.promise;
+                return originalRefresh(...args);
+            });
 
-        const backend = createMemoryWorkspaceBackend({
-            workspaceId: "ws-1",
-            actorId: actor.id,
-            seed: {
-                authors: [{ id: actor.id, name: actor.name ?? "Tester" }],
-                branches: [makeBranch("b1", true)],
-            },
-        });
-
-        const spyAuthorsRefresh = vi.spyOn(backend.authors, "refresh");
-        const spyPermissionsRefresh = vi.spyOn(backend.permissions, "refresh");
-        const spyServicesRefresh = vi.spyOn(backend.services, "refresh");
-
-        const spyAccessRefreshParticipants = vi.spyOn(
-            backend.access,
-            "refreshParticipants",
-        );
-        const spyTemplatesRefresh = vi.spyOn(backend.templates, "refresh");
-        const spySnapshotsRefresh = vi.spyOn(backend.snapshots, "refresh");
-
-        let api: WorkspaceAPI | null = null;
+        let api: WorkspaceAPI | undefined;
 
         function Capture(): null {
-            const ctx: WorkspaceAPI = useWorkspace();
-            React.useEffect(() => {
-                api = ctx;
-            }, [ctx]);
+            api = useWorkspace();
             return null;
         }
 
@@ -260,9 +249,11 @@ describe("WorkspaceProvider (integration)", () => {
                     actor={actor}
                     autoAutosave={false}
                     initial={{
-                        branches: [makeBranch("b1", true)],
-                        mainId: "b1",
-                        currentBranchId: "b1",
+                        authors: [{ id: actor.id, name: "Seeded Name" }],
+                        branches: [makeBranch("main", true)],
+                        mainId: "main",
+                        currentBranchId: "main",
+                        snapshot: makeSnapshot("seeded"),
                     }}
                 >
                     <Capture />
@@ -271,57 +262,189 @@ describe("WorkspaceProvider (integration)", () => {
             await flushMicrotasks();
         });
 
-        expect(api).not.toBeNull();
+        expect(api!.authors.data?.[0]?.name).toBe("Seeded Name");
+        expect(api!.boot.isSeededView).toBe(true);
 
+        authorsGate.resolve();
+
+        await waitFor(() => Boolean(api) && api!.boot.isBooting === false);
+        const workspace = api!;
+
+        expect(authorsRefreshSpy).toHaveBeenCalled();
+        expect(workspace.authors.data?.[0]?.name).toBe("Tester");
+        expect(workspace.snapshot.data).toEqual(
+            makeSnapshot("snapshot-ws-initial-live").data,
+        );
+        expect(workspace.boot.isReady).toBe(true);
+        expect(workspace.boot.isLiveConfirmed).toBe(true);
+        expect(workspace.boot.isSeededView).toBe(false);
+    });
+
+    it("tracks per-section errors and keeps comments non-blocking", async () => {
+        const actor = makeActor();
+        const backend = makeBootBackend("ws-comment-failure", actor);
+        const commentError: BackendError = {
+            code: "comment_failure",
+            message: "Comment refresh failed.",
+        };
+
+        const commentSpy = vi
+            .spyOn(backend.comments, "listThreads")
+            .mockResolvedValue({
+                ok: false,
+                error: commentError,
+            });
+
+        let api: WorkspaceAPI | undefined;
+
+        function Capture(): null {
+            api = useWorkspace();
+            return null;
+        }
+
+        await act(async () => {
+            root?.render(
+                <WorkspaceProvider
+                    backend={backend}
+                    actor={actor}
+                    autoAutosave={false}
+                >
+                    <Capture />
+                </WorkspaceProvider>,
+            );
+            await flushMicrotasks();
+        });
+
+        await waitFor(
+            () =>
+                Boolean(api) &&
+                api!.boot.sections.comments.status === "error" &&
+                api!.boot.isBooting === false,
+        );
+        const workspace = api!;
+
+        expect(commentSpy).toHaveBeenCalled();
+        expect(workspace.boot.isReady).toBe(true);
+        expect(workspace.boot.hasErrors).toBe(true);
+        expect(workspace.boot.hasPartialFailure).toBe(true);
+        expect(workspace.boot.errorsBySection.comments).toEqual(commentError);
+
+        commentSpy.mockResolvedValue({ ok: true, value: [] });
+
+        await act(async () => {
+            await workspace.boot.retrySection("comments");
+            await flushMicrotasks();
+        });
+
+        expect(api!.boot.sections.comments.status).toBe("success");
+    });
+
+    it("treats policy failures as blocking and exposes the failed section", async () => {
+        const actor = makeActor();
+        const backend = makeBootBackend("ws-policy-failure", actor);
+        const policyError: BackendError = {
+            code: "policy_failure",
+            message: "Policy refresh failed.",
+        };
+
+        vi.spyOn(backend.policies, "load").mockResolvedValue({
+            ok: false,
+            error: policyError,
+        });
+
+        let api: WorkspaceAPI | undefined;
+
+        function Capture(): null {
+            api = useWorkspace();
+            return null;
+        }
+
+        await act(async () => {
+            root?.render(
+                <WorkspaceProvider
+                    backend={backend}
+                    actor={actor}
+                    autoAutosave={false}
+                >
+                    <Capture />
+                </WorkspaceProvider>,
+            );
+            await flushMicrotasks();
+        });
+
+        await waitFor(
+            () =>
+                Boolean(api) &&
+                api!.boot.sections.policies.status === "error" &&
+                api!.boot.isBooting === false,
+        );
+        const workspace = api!;
+
+        expect(workspace.boot.isReady).toBe(false);
+        expect(workspace.boot.hasErrors).toBe(true);
+        expect(workspace.boot.errorsBySection.policies).toEqual(policyError);
+    });
+
+    it("refresh.branchContext without workspace data only reloads branch-local sections", async () => {
+        const actor = makeActor();
+        const backend = makeBootBackend("ws-branch-context", actor);
+
+        const spyAuthorsRefresh = vi.spyOn(backend.authors, "refresh");
+        const spyPermissionsRefresh = vi.spyOn(backend.permissions, "refresh");
+        const spyServicesRefresh = vi.spyOn(backend.services, "refresh");
+        const spyParticipantsRefresh = vi.spyOn(
+            backend.access,
+            "refreshParticipants",
+        );
+        const spyTemplatesRefresh = vi.spyOn(backend.templates, "refresh");
+        const spySnapshotsRefresh = vi.spyOn(backend.snapshots, "refresh");
+        const spySnapshotsLoad = vi.spyOn(backend.snapshots, "load");
+        const spyPoliciesLoad = vi.spyOn(backend.policies, "load");
+        const spyCommentsRefresh = vi.spyOn(backend.comments, "listThreads");
+
+        let api: WorkspaceAPI | undefined;
+
+        function Capture(): null {
+            api = useWorkspace();
+            return null;
+        }
+
+        await act(async () => {
+            root?.render(
+                <WorkspaceProvider
+                    backend={backend}
+                    actor={actor}
+                    autoAutosave={false}
+                >
+                    <Capture />
+                </WorkspaceProvider>,
+            );
+            await flushMicrotasks();
+        });
+
+        await waitFor(() => Boolean(api) && api!.boot.isBooting === false);
+        const workspace = api!;
         vi.clearAllMocks();
 
         await act(async () => {
-            await (
-                api!.refresh.branchContext as (
-                    opts?: Readonly<{
-                        branchId?: string;
-                        strict?: boolean;
-                        includeWorkspaceData?: boolean;
-                    }>,
-                ) => Promise<unknown>
-            )({
-                branchId: "b1",
+            await workspace.refresh.branchContext({
+                branchId: "main",
                 strict: true,
                 includeWorkspaceData: false,
             });
             await flushMicrotasks();
         });
 
-        const wsId: string = backend.info.id;
-
-        // must NOT run workspace-wide refreshers
         expect(spyAuthorsRefresh).not.toHaveBeenCalled();
         expect(spyPermissionsRefresh).not.toHaveBeenCalled();
         expect(spyServicesRefresh).not.toHaveBeenCalled();
-
-        // must run branch-local refreshers
-        expect(spyAccessRefreshParticipants).toHaveBeenCalledWith(
-            wsId,
-            "b1",
-            expect.anything(),
-        );
-
-        expect(spyTemplatesRefresh).toHaveBeenCalledWith(
-            expect.objectContaining({
-                workspaceId: wsId,
-                branchId: "b1",
-            }),
-        );
-
-        expect(spySnapshotsRefresh).toHaveBeenCalledWith(
-            expect.objectContaining({
-                workspaceId: wsId,
-                branchId: "b1",
-                actorId: actor.id,
-            }),
-        );
+        expect(spyParticipantsRefresh).toHaveBeenCalled();
+        expect(spyTemplatesRefresh).toHaveBeenCalled();
+        expect(spySnapshotsRefresh).toHaveBeenCalled();
+        expect(spySnapshotsLoad).toHaveBeenCalled();
+        expect(spyPoliciesLoad).toHaveBeenCalled();
+        expect(spyCommentsRefresh).toHaveBeenCalled();
     });
-
 });
 ```
 
@@ -3392,32 +3515,6 @@ export function CanvasProvider(props: CanvasProviderProps) {
         );
     }
 
-    // 🔹 NEW: if snapshot props aren’t loaded yet, trigger a one-time load
-    const triedInitialLoadRef = useRef<boolean>(false);
-    useEffect(() => {
-        const hasProps = Boolean(ws.snapshot.data?.props);
-        if (!hasProps && !triedInitialLoadRef.current) {
-            triedInitialLoadRef.current = true;
-            void ws.snapshot.load().then((res) => {
-                // dev-only noise; stay silent in prod
-                if (
-                    typeof window !== "undefined" &&
-                    // @ts-expect-error allow host env guard
-                    window.SITE?.env !== "production"
-                ) {
-                    if (!res.ok) {
-                        // eslint-disable-next-line no-console
-                        console.warn(
-                            "[CanvasProvider] snapshot.load() failed:",
-                            res.error?.code ?? "load_error",
-                            res.error?.message ?? "(no message)",
-                        );
-                    }
-                }
-            });
-        }
-    }, [ws]);
-
     // Pull initial ServiceProps from current editor snapshot (if present)
     const initialProps: ServiceProps | undefined = ws.snapshot.data?.props as
         | ServiceProps
@@ -4625,6 +4722,7 @@ export {
     WorkspaceContext,
     useWorkspace,
     useWorkspaceMaybe,
+    useWorkspaceBoot,
 } from "./provider/context";
 
 export { WorkspaceProvider } from "./provider/provider";
@@ -4639,6 +4737,10 @@ export type {
     Loadable,
     SnapshotSlice,
     BranchesSlice,
+    WorkspaceBootSection,
+    WorkspaceBootSectionState,
+    WorkspaceBootSectionStatus,
+    WorkspaceBootState,
 } from "./provider/types";
 
 /**
@@ -4801,6 +4903,425 @@ export type {
 #### 27
 
 
+` File: src/react/workspace/context/memory/memory-backend.persistence.test.ts`  [↑ Back to top](#index)
+
+```ts
+// @vitest-environment jsdom
+
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { createMemoryWorkspaceBackend } from "./memory-backend";
+import type { Actor, Branch, ServiceSnapshot } from "../backend";
+
+class MockRequest<T> {
+    public result!: T;
+    public error: Error | null = null;
+    public onsuccess: ((event: Event) => void) | null = null;
+    public onerror: ((event: Event) => void) | null = null;
+
+    succeed(result: T): void {
+        this.result = result;
+        queueMicrotask(() => this.onsuccess?.(new Event("success")));
+    }
+
+    fail(error: Error): void {
+        this.error = error;
+        queueMicrotask(() => this.onerror?.(new Event("error")));
+    }
+}
+
+class MockOpenRequest extends MockRequest<MockDatabase> {
+    public onupgradeneeded: ((event: Event) => void) | null = null;
+
+    upgrade(): void {
+        this.onupgradeneeded?.(new Event("upgradeneeded"));
+    }
+}
+
+class MockObjectStoreNames {
+    constructor(private readonly stores: Map<string, Map<string, unknown>>) {}
+
+    contains(name: string): boolean {
+        return this.stores.has(name);
+    }
+}
+
+class MockObjectStore {
+    constructor(
+        private readonly records: Map<string, unknown>,
+        private readonly keyPath: string,
+    ) {}
+
+    get(key: string): MockRequest<unknown> {
+        const request = new MockRequest<unknown>();
+        request.succeed(this.records.get(key));
+        return request;
+    }
+
+    put(value: Record<string, unknown>): MockRequest<unknown> {
+        const request = new MockRequest<unknown>();
+        const key = String(value[this.keyPath]);
+        this.records.set(key, JSON.parse(JSON.stringify(value)));
+        request.succeed(value);
+        return request;
+    }
+}
+
+class MockTransaction {
+    constructor(
+        private readonly stores: Map<string, Map<string, unknown>>,
+        private readonly keyPaths: Map<string, string>,
+    ) {}
+
+    objectStore(name: string): MockObjectStore {
+        const records = this.stores.get(name);
+        if (!records) {
+            throw new Error(`Object store not found: ${name}`);
+        }
+        const keyPath = this.keyPaths.get(name) ?? "id";
+        return new MockObjectStore(records, keyPath);
+    }
+}
+
+class MockDatabase {
+    public readonly stores = new Map<string, Map<string, unknown>>();
+    public readonly keyPaths = new Map<string, string>();
+    public readonly objectStoreNames = new MockObjectStoreNames(this.stores);
+
+    createObjectStore(
+        name: string,
+        options?: Readonly<{ keyPath?: string }>,
+    ): MockObjectStore {
+        const records = new Map<string, unknown>();
+        this.stores.set(name, records);
+        this.keyPaths.set(name, options?.keyPath ?? "id");
+        return new MockObjectStore(records, options?.keyPath ?? "id");
+    }
+
+    transaction(name: string, _mode: "readonly" | "readwrite"): MockTransaction {
+        return new MockTransaction(this.stores, this.keyPaths);
+    }
+}
+
+class MockIndexedDbFactory {
+    private readonly dbs = new Map<string, MockDatabase>();
+
+    open(name: string, _version?: number): MockOpenRequest {
+        const request = new MockOpenRequest();
+
+        queueMicrotask(() => {
+            let db = this.dbs.get(name);
+            const isNew = !db;
+            if (!db) {
+                db = new MockDatabase();
+                this.dbs.set(name, db);
+            }
+
+            request.result = db;
+            if (isNew) {
+                request.upgrade();
+            }
+            request.succeed(db);
+        });
+
+        return request;
+    }
+}
+
+function makeActor(): Actor {
+    return { id: "actor-1", name: "Tester" };
+}
+
+function makeBranch(id = "main"): Branch {
+    const now = new Date(0).toISOString();
+    return {
+        id,
+        name: id,
+        isMain: true,
+        createdAt: now,
+        updatedAt: now,
+    };
+}
+
+function makeSnapshot(label: string): ServiceSnapshot {
+    return {
+        schema_version: "1",
+        data: {
+            nodes: [{ id: label, type: "service", position: { x: 0, y: 0 } }],
+            edges: [],
+            viewport: { x: 0, y: 0, zoom: 1 },
+        } as unknown as ServiceSnapshot["data"],
+    };
+}
+
+describe("createMemoryWorkspaceBackend persistence", () => {
+    const actor = makeActor();
+    const workspaceId = "ws-persist";
+    const branchId = "main";
+    let originalIndexedDb: typeof globalThis.indexedDB | undefined;
+
+    beforeEach(() => {
+        originalIndexedDb = globalThis.indexedDB;
+        Object.defineProperty(globalThis, "indexedDB", {
+            configurable: true,
+            writable: true,
+            value: new MockIndexedDbFactory(),
+        });
+    });
+
+    it("uses seeded state when no persisted record exists yet", async () => {
+        const seeded = makeSnapshot("seeded");
+        const backend = createMemoryWorkspaceBackend({
+            workspaceId,
+            actorId: actor.id,
+            seed: {
+                branches: [makeBranch(branchId)],
+                snapshots: {
+                    [branchId]: {
+                        snapshot: seeded,
+                    },
+                },
+            },
+        });
+
+        const res = await backend.snapshots.load({
+            workspaceId,
+            branchId,
+            actorId: actor.id,
+        });
+
+        expect(res.ok).toBe(true);
+        if (!res.ok) return;
+        expect(res.value.snapshot).toEqual(seeded);
+    });
+
+    it("persists fresh seed state once and reuses it for later factory calls with the same workspace id", async () => {
+        const firstSeed = makeSnapshot("first-seed");
+        const secondSeed = makeSnapshot("second-seed");
+
+        const backendA = createMemoryWorkspaceBackend({
+            workspaceId: "ws-seed-bootstrap",
+            actorId: actor.id,
+            seed: {
+                branches: [makeBranch(branchId)],
+                snapshots: {
+                    [branchId]: {
+                        snapshot: firstSeed,
+                    },
+                },
+            },
+        });
+
+        const firstLoad = await backendA.snapshots.load({
+            workspaceId: "ws-seed-bootstrap",
+            branchId,
+            actorId: actor.id,
+        });
+
+        expect(firstLoad.ok).toBe(true);
+        if (!firstLoad.ok) return;
+        expect(firstLoad.value.snapshot).toEqual(firstSeed);
+
+        const backendB = createMemoryWorkspaceBackend({
+            workspaceId: "ws-seed-bootstrap",
+            actorId: actor.id,
+            seed: {
+                branches: [makeBranch(branchId)],
+                snapshots: {
+                    [branchId]: {
+                        snapshot: secondSeed,
+                    },
+                },
+            },
+        });
+
+        const secondLoad = await backendB.snapshots.load({
+            workspaceId: "ws-seed-bootstrap",
+            branchId,
+            actorId: actor.id,
+        });
+
+        expect(secondLoad.ok).toBe(true);
+        if (!secondLoad.ok) return;
+        expect(secondLoad.value.snapshot).toEqual(firstSeed);
+    });
+
+    it("persists autosaved drafts to IndexedDB across backend recreation", async () => {
+        const snapshot = makeSnapshot("drafted");
+        const backendA = createMemoryWorkspaceBackend({
+            workspaceId,
+            actorId: actor.id,
+            seed: {
+                branches: [makeBranch(branchId)],
+            },
+        });
+
+        const autosaveRes = await backendA.snapshots.autosave({
+            workspaceId,
+            branchId,
+            actorId: actor.id,
+            snapshot,
+        });
+
+        expect(autosaveRes.ok).toBe(true);
+        if (!autosaveRes.ok) return;
+
+        const backendB = createMemoryWorkspaceBackend({
+            workspaceId,
+            actorId: actor.id,
+            seed: {
+                branches: [makeBranch(branchId)],
+            },
+        });
+
+        const loadRes = await backendB.snapshots.load({
+            workspaceId,
+            branchId,
+            actorId: actor.id,
+        });
+
+        expect(loadRes.ok).toBe(true);
+        if (!loadRes.ok) return;
+        expect(loadRes.value.draft?.id).toBe(autosaveRes.value.draft.id);
+        expect(loadRes.value.snapshot).toEqual(snapshot);
+    });
+
+    it("persists saved commits to IndexedDB across backend recreation", async () => {
+        const snapshot = makeSnapshot("saved");
+        const backendA = createMemoryWorkspaceBackend({
+            workspaceId: "ws-save",
+            actorId: actor.id,
+            seed: {
+                branches: [makeBranch(branchId)],
+            },
+        });
+
+        const saveRes = await backendA.snapshots.save({
+            workspaceId: "ws-save",
+            branchId,
+            actorId: actor.id,
+            snapshot,
+            message: "Initial save",
+        });
+
+        expect(saveRes.ok).toBe(true);
+        if (!saveRes.ok) return;
+
+        const backendB = createMemoryWorkspaceBackend({
+            workspaceId: "ws-save",
+            actorId: actor.id,
+            seed: {
+                branches: [makeBranch(branchId)],
+            },
+        });
+
+        const loadRes = await backendB.snapshots.load({
+            workspaceId: "ws-save",
+            branchId,
+            actorId: actor.id,
+        });
+
+        expect(loadRes.ok).toBe(true);
+        if (!loadRes.ok) return;
+        expect(loadRes.value.head?.id).toBe(saveRes.value.commit.id);
+        expect(loadRes.value.snapshot).toEqual(snapshot);
+    });
+
+    it("prefers persisted IndexedDB state over seed state for the same workspace", async () => {
+        const persisted = makeSnapshot("persisted");
+        const seeded = makeSnapshot("seeded");
+
+        const backendA = createMemoryWorkspaceBackend({
+            workspaceId: "ws-priority",
+            actorId: actor.id,
+            seed: {
+                branches: [makeBranch(branchId)],
+            },
+        });
+
+        const saveRes = await backendA.snapshots.save({
+            workspaceId: "ws-priority",
+            branchId,
+            actorId: actor.id,
+            snapshot: persisted,
+        });
+
+        expect(saveRes.ok).toBe(true);
+
+        const backendB = createMemoryWorkspaceBackend({
+            workspaceId: "ws-priority",
+            actorId: actor.id,
+            seed: {
+                branches: [makeBranch(branchId)],
+                snapshots: {
+                    [branchId]: {
+                        snapshot: seeded,
+                    },
+                },
+            },
+        });
+
+        const loadRes = await backendB.snapshots.load({
+            workspaceId: "ws-priority",
+            branchId,
+            actorId: actor.id,
+        });
+
+        expect(loadRes.ok).toBe(true);
+        if (!loadRes.ok) return;
+        expect(loadRes.value.snapshot).toEqual(persisted);
+    });
+
+    it("falls back to in-memory behavior when IndexedDB is unavailable", async () => {
+        Object.defineProperty(globalThis, "indexedDB", {
+            configurable: true,
+            writable: true,
+            value: undefined,
+        });
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        const backend = createMemoryWorkspaceBackend({
+            workspaceId: "ws-no-idb",
+            actorId: actor.id,
+            seed: {
+                branches: [makeBranch(branchId)],
+            },
+        });
+
+        const autosaveRes = await backend.snapshots.autosave({
+            workspaceId: "ws-no-idb",
+            branchId,
+            actorId: actor.id,
+            snapshot: makeSnapshot("memory-only"),
+        });
+
+        const saveRes = await backend.snapshots.save({
+            workspaceId: "ws-no-idb",
+            branchId,
+            actorId: actor.id,
+            snapshot: makeSnapshot("memory-only-saved"),
+        });
+
+        expect(autosaveRes.ok).toBe(true);
+        expect(saveRes.ok).toBe(true);
+        expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    afterEach(() => {
+        Object.defineProperty(globalThis, "indexedDB", {
+            configurable: true,
+            writable: true,
+            value: originalIndexedDb,
+        });
+        vi.restoreAllMocks();
+    });
+});
+```
+
+---
+#### 28
+
+
 ` File: src/react/workspace/context/memory/memory-backend.ts`  [↑ Back to top](#index)
 
 ```ts
@@ -4813,29 +5334,29 @@ import type {
     BackendScope,
     Branch,
     BranchAccessBackend,
-    BranchParticipant,
     BranchesBackend,
+    BranchParticipant,
     CommentsBackend,
     Commit,
     Draft,
     FieldTemplate,
+    MergeResult,
+    PermissionsBackend,
+    PermissionsMap,
     PoliciesBackend,
     PoliciesLoadResult,
     PolicyScope,
-    ServiceSnapshot,
     ServicesBackend,
     ServicesInput,
+    ServiceSnapshot,
     SnapshotsBackend,
     SnapshotsLoadResult,
+    TemplateCreateInput,
     TemplatesBackend,
     TemplatesListParams,
-    TemplateCreateInput,
     TemplateUpdatePatch,
     WorkspaceBackend,
     WorkspaceInfo,
-    PermissionsBackend,
-    PermissionsMap,
-    MergeResult,
 } from "../backend";
 
 import type {
@@ -4856,7 +5377,7 @@ import {
     newTemplateKey,
     newThreadId,
 } from "./ids";
-import { ok, fail } from "./errors";
+import { fail, ok } from "./errors";
 import { isoNow } from "./time";
 import type {
     CreateMemoryWorkspaceBackendOptions,
@@ -4865,10 +5386,21 @@ import type {
 import {
     ensureThread,
     findMessageIndex,
+    type MemoryWorkspaceStore,
     newBranchSnapshotState,
     newCommentsBranchState,
-    type MemoryWorkspaceStore,
 } from "./store";
+import {
+    applyPersistedMemoryWorkspaceStore,
+    createIndexedDbMemoryPersistence,
+    type PersistedMemoryWorkspaceStore,
+    serializeMemoryWorkspaceStore,
+} from "./persistence";
+
+const workspaceBootstrapPromises = new Map<
+    string,
+    Promise<PersistedMemoryWorkspaceStore | null>
+>();
 
 function emptySnapshot(): ServiceSnapshot {
     // EditorSnapshot shape is host-defined; keep memory backend generic.
@@ -5182,14 +5714,89 @@ function seedStore(
     return store;
 }
 
+type AsyncBackendMethod = (...args: readonly unknown[]) => Promise<unknown>;
+
+function wrapBackendMethods<T extends object>(
+    backend: T,
+    initStore: () => Promise<void>,
+    persistStore: () => Promise<void>,
+    mutatingKeys: readonly (keyof T)[],
+): T {
+    const wrapped: Partial<T> = {};
+    const mutating = new Set<PropertyKey>(
+        mutatingKeys as readonly PropertyKey[],
+    );
+
+    for (const key of Object.keys(backend) as Array<keyof T>) {
+        const method = backend[key] as AsyncBackendMethod;
+        wrapped[key] = (async (...args: readonly unknown[]) => {
+            await initStore();
+            const result = await method(...args);
+            if (
+                mutating.has(key as PropertyKey) &&
+                typeof result === "object" &&
+                result !== null &&
+                "ok" in result &&
+                result.ok
+            ) {
+                await persistStore();
+            }
+            return result;
+        }) as T[keyof T];
+    }
+
+    return wrapped as T;
+}
+
 export function createMemoryWorkspaceBackend(
     opts: CreateMemoryWorkspaceBackendOptions,
 ): WorkspaceBackend {
     const store: MemoryWorkspaceStore = seedStore(opts);
-
     const info: WorkspaceInfo = store.info;
+    const persistence = createIndexedDbMemoryPersistence();
 
-    const authors: AuthorsBackend = {
+    let initPromise: Promise<void> | null = null;
+    const initStore = async (): Promise<void> => {
+        if (!initPromise) {
+            initPromise = (async () => {
+                if (!persistence) return;
+                let bootstrap = workspaceBootstrapPromises.get(opts.workspaceId);
+                if (!bootstrap) {
+                    bootstrap = (async () => {
+                        try {
+                            const persisted = await persistence.load(
+                                opts.workspaceId,
+                            );
+                            if (persisted) {
+                                return persisted;
+                            }
+
+                            await persistence.save(opts.workspaceId, store);
+                            return serializeMemoryWorkspaceStore(store);
+                        } finally {
+                            workspaceBootstrapPromises.delete(opts.workspaceId);
+                        }
+                    })();
+                    workspaceBootstrapPromises.set(opts.workspaceId, bootstrap);
+                }
+
+                const persisted = await bootstrap;
+                if (persisted) {
+                    applyPersistedMemoryWorkspaceStore(store, persisted);
+                }
+            })();
+        }
+        await initPromise;
+    };
+
+    const persistStore = async (): Promise<void> => {
+        if (!persistence) return;
+        await persistence.save(opts.workspaceId, store);
+    };
+
+    void initStore();
+
+    const authorsBase: AuthorsBackend = {
         list: async (workspaceId: string) => {
             if (workspaceId !== info.id)
                 return fail("not_found", "Workspace not found.");
@@ -5205,8 +5812,14 @@ export function createMemoryWorkspaceBackend(
             return ok(Array.from(store.authors.values()));
         },
     };
+    const authors: AuthorsBackend = wrapBackendMethods(
+        authorsBase,
+        initStore,
+        persistStore,
+        [],
+    );
 
-    const permissions: PermissionsBackend = {
+    const permissionsBase: PermissionsBackend = {
         get: async (workspaceId: string, actor: Actor) => {
             if (workspaceId !== info.id)
                 return fail("not_found", "Workspace not found.");
@@ -5228,8 +5841,14 @@ export function createMemoryWorkspaceBackend(
             return ok(seeded ?? permissivePermissions());
         },
     };
+    const permissions: PermissionsBackend = wrapBackendMethods(
+        permissionsBase,
+        initStore,
+        persistStore,
+        [],
+    );
 
-    const branches: BranchesBackend = {
+    const branchesBase: BranchesBackend = {
         list: async (workspaceId: string) => {
             if (workspaceId !== info.id)
                 return fail("not_found", "Workspace not found.");
@@ -5377,8 +5996,14 @@ export function createMemoryWorkspaceBackend(
             return ok(Array.from(store.branches.values()));
         },
     };
+    const branches: BranchesBackend = wrapBackendMethods(
+        branchesBase,
+        initStore,
+        persistStore,
+        ["create", "setMain", "merge", "delete"],
+    );
 
-    const access: BranchAccessBackend = {
+    const accessBase: BranchAccessBackend = {
         listParticipants: async (workspaceId: string, branchId: string) => {
             if (workspaceId !== info.id)
                 return fail("not_found", "Workspace not found.");
@@ -5394,8 +6019,14 @@ export function createMemoryWorkspaceBackend(
             return ok(list);
         },
     };
+    const access: BranchAccessBackend = wrapBackendMethods(
+        accessBase,
+        initStore,
+        persistStore,
+        [],
+    );
 
-    const services: ServicesBackend = {
+    const servicesBase: ServicesBackend = {
         get: async (workspaceId: string) => {
             if (workspaceId !== info.id)
                 return fail("not_found", "Workspace not found.");
@@ -5409,8 +6040,14 @@ export function createMemoryWorkspaceBackend(
             return ok(store.services);
         },
     };
+    const services: ServicesBackend = wrapBackendMethods(
+        servicesBase,
+        initStore,
+        persistStore,
+        [],
+    );
 
-    const templates: TemplatesBackend = {
+    const templatesBase: TemplatesBackend = {
         list: async (params: TemplatesListParams) => {
             if (params.workspaceId !== info.id)
                 return fail("not_found", "Workspace not found.");
@@ -5611,11 +6248,17 @@ export function createMemoryWorkspaceBackend(
         refresh: async (
             params: Omit<TemplatesListParams, "q" | "tags" | "category">,
         ) => {
-            return templates.list({ ...params });
+            return templatesBase.list({ ...params });
         },
     };
+    const templates: TemplatesBackend = wrapBackendMethods(
+        templatesBase,
+        initStore,
+        persistStore,
+        ["create", "update", "clone", "publish", "unpublish", "delete"],
+    );
 
-    const snapshots: SnapshotsBackend = {
+    const snapshotsBase: SnapshotsBackend = {
         load: async (params) => {
             if (params.workspaceId !== info.id)
                 return fail("not_found", "Workspace not found.");
@@ -5828,6 +6471,12 @@ export function createMemoryWorkspaceBackend(
             return ok({ head, draft });
         },
     };
+    const snapshots: SnapshotsBackend = wrapBackendMethods(
+        snapshotsBase,
+        initStore,
+        persistStore,
+        ["autosave", "save", "publish", "discard"],
+    );
 
     function ensureThreadContext(ctx: BackendScope, threadId: string) {
         if (ctx.workspaceId !== info.id)
@@ -5842,7 +6491,7 @@ export function createMemoryWorkspaceBackend(
         return ok({ st, th, nowN });
     }
 
-    const commentsImpl: CommentsBackend<
+    const commentsImplBase: CommentsBackend<
         CommentThread,
         CommentMessage,
         CommentAnchor
@@ -6020,9 +6669,22 @@ export function createMemoryWorkspaceBackend(
 
     // WorkspaceBackend.comments expects CommentsBackend (default unknown generics);
     // we return a structurally compatible implementation.
-    const comments: WorkspaceBackend["comments"] = commentsImpl;
+    const comments: WorkspaceBackend["comments"] = wrapBackendMethods(
+        commentsImplBase,
+        initStore,
+        persistStore,
+        [
+            "createThread",
+            "addMessage",
+            "editMessage",
+            "deleteMessage",
+            "moveThread",
+            "resolveThread",
+            "deleteThread",
+        ],
+    );
 
-    const policies: PoliciesBackend = {
+    const policiesBase: PoliciesBackend = {
         load: async (ctx: PolicyScope) => {
             if (ctx.workspaceId !== info.id)
                 return fail("not_found", "Workspace not found.");
@@ -6080,6 +6742,12 @@ export function createMemoryWorkspaceBackend(
             return ok({ updatedAt });
         },
     };
+    const policies: PoliciesBackend = wrapBackendMethods(
+        policiesBase,
+        initStore,
+        persistStore,
+        ["save", "clear"],
+    );
 
     const backend: WorkspaceBackend = {
         info,
@@ -6099,7 +6767,322 @@ export function createMemoryWorkspaceBackend(
 ```
 
 ---
-#### 28
+#### 29
+
+
+` File: src/react/workspace/context/memory/persistence.ts`  [↑ Back to top](#index)
+
+```ts
+import type {
+    Author,
+    Branch,
+    BranchParticipant,
+    Commit,
+    Draft,
+    FieldTemplate,
+    PermissionsMap,
+    ServiceSnapshot,
+    ServicesInput,
+    WorkspaceInfo,
+} from "../backend";
+import type {
+    BranchSnapshotState,
+    CommentsBranchState,
+    MemoryWorkspaceStore,
+    PolicyState,
+} from "./store";
+import { newBranchSnapshotState, newCommentsBranchState } from "./store";
+import type { CommentThread, ThreadId } from "@/schema/comments";
+
+interface SerializedBranchSnapshotState {
+    readonly head?: Commit;
+    readonly headSnapshot?: ServiceSnapshot;
+    readonly drafts: ReadonlyArray<
+        readonly [string, { draft: Draft; snapshot: ServiceSnapshot }]
+    >;
+    readonly commits: ReadonlyArray<
+        readonly [string, { commit: Commit; snapshot: ServiceSnapshot }]
+    >;
+}
+
+interface SerializedCommentsBranchState {
+    readonly threads: ReadonlyArray<readonly [ThreadId, CommentThread]>;
+}
+
+export interface PersistedMemoryWorkspaceStore {
+    readonly version: 1;
+    readonly info: WorkspaceInfo;
+    readonly authors: ReadonlyArray<readonly [string, Author]>;
+    readonly permissionsByActor: ReadonlyArray<
+        readonly [string, PermissionsMap]
+    >;
+    readonly branches: ReadonlyArray<readonly [string, Branch]>;
+    readonly participantsByBranch: ReadonlyArray<
+        readonly [string, readonly BranchParticipant[]]
+    >;
+    readonly services: ServicesInput | null;
+    readonly templates: ReadonlyArray<readonly [string, FieldTemplate]>;
+    readonly snapshotsByBranch: ReadonlyArray<
+        readonly [string, SerializedBranchSnapshotState]
+    >;
+    readonly commentsByBranch: ReadonlyArray<
+        readonly [string, SerializedCommentsBranchState]
+    >;
+    readonly policies: PolicyState | null;
+    readonly policiesByBranch: ReadonlyArray<readonly [string, PolicyState]>;
+}
+
+interface PersistedWorkspaceRecord {
+    readonly workspaceId: string;
+    readonly store: PersistedMemoryWorkspaceStore;
+}
+
+export interface MemoryPersistence {
+    load(workspaceId: string): Promise<PersistedMemoryWorkspaceStore | null>;
+    save(workspaceId: string, store: MemoryWorkspaceStore): Promise<void>;
+}
+
+const DB_NAME = "digital-service-ui-builder-memory";
+const DB_VERSION = 1;
+const STORE_NAME = "workspace-backends";
+
+function cloneMapEntries<K, V>(map: ReadonlyMap<K, V>): Array<readonly [K, V]> {
+    return Array.from(map.entries());
+}
+
+function serializeBranchSnapshotState(
+    state: BranchSnapshotState,
+): SerializedBranchSnapshotState {
+    return {
+        head: state.head,
+        headSnapshot: state.headSnapshot,
+        drafts: cloneMapEntries(state.drafts),
+        commits: cloneMapEntries(state.commits),
+    };
+}
+
+function serializeCommentsBranchState(
+    state: CommentsBranchState,
+): SerializedCommentsBranchState {
+    return {
+        threads: cloneMapEntries(state.threads),
+    };
+}
+
+export function serializeMemoryWorkspaceStore(
+    store: MemoryWorkspaceStore,
+): PersistedMemoryWorkspaceStore {
+    return {
+        version: 1,
+        info: store.info,
+        authors: cloneMapEntries(store.authors),
+        permissionsByActor: cloneMapEntries(store.permissionsByActor),
+        branches: cloneMapEntries(store.branches),
+        participantsByBranch: cloneMapEntries(store.participantsByBranch),
+        services: store.services,
+        templates: cloneMapEntries(store.templates),
+        snapshotsByBranch: Array.from(store.snapshotsByBranch.entries()).map(
+            ([branchId, state]) =>
+                [branchId, serializeBranchSnapshotState(state)] as const,
+        ),
+        commentsByBranch: Array.from(store.commentsByBranch.entries()).map(
+            ([branchId, state]) =>
+                [branchId, serializeCommentsBranchState(state)] as const,
+        ),
+        policies: store.policies,
+        policiesByBranch: cloneMapEntries(store.policiesByBranch),
+    };
+}
+
+function deserializeBranchSnapshotState(
+    state: SerializedBranchSnapshotState,
+): BranchSnapshotState {
+    const next: BranchSnapshotState = newBranchSnapshotState();
+    next.head = state.head;
+    next.headSnapshot = state.headSnapshot;
+    next.drafts = new Map(state.drafts);
+    next.commits = new Map(state.commits);
+    return next;
+}
+
+function deserializeCommentsBranchState(
+    state: SerializedCommentsBranchState,
+): CommentsBranchState {
+    const next: CommentsBranchState = newCommentsBranchState();
+    next.threads = new Map(state.threads);
+    return next;
+}
+
+export function deserializeMemoryWorkspaceStore(
+    store: PersistedMemoryWorkspaceStore,
+): MemoryWorkspaceStore {
+    return {
+        info: { ...store.info },
+        authors: new Map(store.authors),
+        permissionsByActor: new Map(store.permissionsByActor),
+        branches: new Map(store.branches),
+        participantsByBranch: new Map(store.participantsByBranch),
+        services: store.services,
+        templates: new Map(store.templates),
+        snapshotsByBranch: new Map(
+            store.snapshotsByBranch.map(([branchId, state]) => [
+                branchId,
+                deserializeBranchSnapshotState(state),
+            ]),
+        ),
+        commentsByBranch: new Map(
+            store.commentsByBranch.map(([branchId, state]) => [
+                branchId,
+                deserializeCommentsBranchState(state),
+            ]),
+        ),
+        policies: store.policies ? { ...store.policies } : null,
+        policiesByBranch: new Map(
+            store.policiesByBranch.map(([branchId, state]) => [
+                branchId,
+                { ...state },
+            ]),
+        ),
+    };
+}
+
+export function applyPersistedMemoryWorkspaceStore(
+    target: MemoryWorkspaceStore,
+    source: PersistedMemoryWorkspaceStore,
+): void {
+    const next: MemoryWorkspaceStore = deserializeMemoryWorkspaceStore(source);
+
+    Object.assign(target.info, next.info);
+
+    target.authors.clear();
+    next.authors.forEach((value, key) => target.authors.set(key, value));
+
+    target.permissionsByActor.clear();
+    next.permissionsByActor.forEach((value, key) =>
+        target.permissionsByActor.set(key, value),
+    );
+
+    target.branches.clear();
+    next.branches.forEach((value, key) => target.branches.set(key, value));
+
+    target.participantsByBranch.clear();
+    next.participantsByBranch.forEach((value, key) =>
+        target.participantsByBranch.set(key, value),
+    );
+
+    target.services = next.services;
+
+    target.templates.clear();
+    next.templates.forEach((value, key) => target.templates.set(key, value));
+
+    target.snapshotsByBranch.clear();
+    next.snapshotsByBranch.forEach((value, key) =>
+        target.snapshotsByBranch.set(key, value),
+    );
+
+    target.commentsByBranch.clear();
+    next.commentsByBranch.forEach((value, key) =>
+        target.commentsByBranch.set(key, value),
+    );
+
+    target.policies = next.policies;
+
+    target.policiesByBranch.clear();
+    next.policiesByBranch.forEach((value, key) =>
+        target.policiesByBranch.set(key, value),
+    );
+}
+
+function supportsIndexedDb(): boolean {
+    return typeof indexedDB !== "undefined";
+}
+
+function requestToPromise<T>(request: IDBRequest<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () =>
+            reject(request.error ?? new Error("IndexedDB request failed."));
+    });
+}
+
+function openDatabase(): Promise<IDBDatabase> {
+    return new Promise<IDBDatabase>((resolve, reject) => {
+        const request: IDBOpenDBRequest = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onupgradeneeded = () => {
+            const db: IDBDatabase = request.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: "workspaceId" });
+            }
+        };
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () =>
+            reject(request.error ?? new Error("Failed to open IndexedDB."));
+    });
+}
+
+export function createIndexedDbMemoryPersistence(): MemoryPersistence | null {
+    if (!supportsIndexedDb()) {
+        return null;
+    }
+
+    let dbPromise: Promise<IDBDatabase> | null = null;
+    let disabled = false;
+
+    const getDb = async (): Promise<IDBDatabase> => {
+        if (!dbPromise) {
+            dbPromise = openDatabase();
+        }
+        return dbPromise;
+    };
+
+    const disable = (error: unknown): void => {
+        disabled = true;
+        dbPromise = null;
+        console.warn(
+            "[memory-backend] IndexedDB persistence disabled for this session.",
+            error,
+        );
+    };
+
+    return {
+        load: async (workspaceId: string) => {
+            if (disabled) return null;
+            try {
+                const db: IDBDatabase = await getDb();
+                const tx = db.transaction(STORE_NAME, "readonly");
+                const store = tx.objectStore(STORE_NAME);
+                const record = await requestToPromise<
+                    PersistedWorkspaceRecord | undefined
+                >(store.get(workspaceId));
+                return record?.store ?? null;
+            } catch (error) {
+                disable(error);
+                return null;
+            }
+        },
+        save: async (workspaceId: string, store: MemoryWorkspaceStore) => {
+            if (disabled) return;
+            try {
+                const db: IDBDatabase = await getDb();
+                const tx = db.transaction(STORE_NAME, "readwrite");
+                const objectStore = tx.objectStore(STORE_NAME);
+                const record: PersistedWorkspaceRecord = {
+                    workspaceId,
+                    store: serializeMemoryWorkspaceStore(store),
+                };
+                await requestToPromise(objectStore.put(record));
+            } catch (error) {
+                disable(error);
+            }
+        },
+    };
+}
+```
+
+---
+#### 30
 
 
 ` File: src/react/workspace/context/memory/seed.ts`  [↑ Back to top](#index)
@@ -6197,7 +7180,7 @@ export interface CreateMemoryWorkspaceBackendOptions {
 ```
 
 ---
-#### 29
+#### 31
 
 
 ` File: src/react/workspace/context/memory/store.ts`  [↑ Back to top](#index)
@@ -6323,7 +7306,7 @@ export function setThreadAnchor(
 ```
 
 ---
-#### 30
+#### 32
 
 
 ` File: src/react/workspace/context/memory/time.ts`  [↑ Back to top](#index)
@@ -6348,7 +7331,7 @@ export function toIso(input?: string | number | Date): string {
 ```
 
 ---
-#### 31
+#### 33
 
 
 ` File: src/react/workspace/context/provider/compose/use-branch-cache.ts`  [↑ Back to top](#index)
@@ -6398,10 +7381,6 @@ export interface BranchCacheApi {
             resetSnapshot: () => void;
 
             setCurrentBranchId: (id: string) => void;
-
-            hasInitialSnapshot: boolean;
-
-            loadSnapshotForBranch: (branchId: string) => void;
         }>,
     ) => void;
 }
@@ -6422,7 +7401,6 @@ const branchPrefixOf = (workspaceId: string): string =>
 type PendingSwitch = Readonly<{
     workspaceId: string;
     nextId: string;
-    hasInitialSnapshot: boolean;
 
     setTemplates: React.Dispatch<
         React.SetStateAction<Loadable<readonly FieldTemplate[]>>
@@ -6431,8 +7409,6 @@ type PendingSwitch = Readonly<{
         React.SetStateAction<Loadable<readonly BranchParticipant[]>>
     >;
     setSnapshot: React.Dispatch<React.SetStateAction<SnapshotSlice>>;
-
-    loadSnapshotForBranch: (branchId: string) => void;
 }>;
 
 export function useBranchCache(workspaceId: string): BranchCacheApi {
@@ -6495,15 +7471,7 @@ export function useBranchCache(workspaceId: string): BranchCacheApi {
             const p = pendingRef.current;
             if (!p) return;
 
-            const { hasCachedSnapshot } = applyCached(
-                p.workspaceId,
-                p.nextId,
-                p,
-            );
-
-            if (!hasCachedSnapshot && !p.hasInitialSnapshot) {
-                p.loadSnapshotForBranch(p.nextId);
-            }
+            applyCached(p.workspaceId, p.nextId, p);
 
             pendingRef.current = null;
         });
@@ -6545,10 +7513,6 @@ export function useBranchCache(workspaceId: string): BranchCacheApi {
                 resetSnapshot: () => void;
 
                 setCurrentBranchId: (id: string) => void;
-
-                hasInitialSnapshot: boolean;
-
-                loadSnapshotForBranch: (branchId: string) => void;
             }>,
         ): void => {
             const hookWsId: string = wsIdRef.current;
@@ -6603,21 +7567,14 @@ export function useBranchCache(workspaceId: string): BranchCacheApi {
                 pendingRef.current = {
                     workspaceId: wsId,
                     nextId: args.nextId,
-                    hasInitialSnapshot: args.hasInitialSnapshot,
                     setTemplates: args.setTemplates,
                     setParticipants: args.setParticipants,
                     setSnapshot: args.setSnapshot,
-                    loadSnapshotForBranch: args.loadSnapshotForBranch,
                 };
                 return;
             }
 
-            // Normal behavior once ready (or when already has cached snapshot).
-            if (!hasCachedSnapshot && !args.hasInitialSnapshot) {
-                args.loadSnapshotForBranch(args.nextId);
-            } else {
-                pendingRef.current = null;
-            }
+            pendingRef.current = null;
         },
         [cache],
     );
@@ -6630,7 +7587,7 @@ export function useBranchCache(workspaceId: string): BranchCacheApi {
 ```
 
 ---
-#### 32
+#### 34
 
 
 ` File: src/react/workspace/context/provider/compose/use-live-polling.ts`  [↑ Back to top](#index)
@@ -6918,7 +7875,674 @@ export function useLivePolling(params: UseLivePollingParams): LiveControl {
 ```
 
 ---
-#### 33
+#### 35
+
+
+` File: src/react/workspace/context/provider/compose/use-workspace-boot.ts`  [↑ Back to top](#index)
+
+```ts
+import * as React from "react";
+
+import type {
+    BackendError,
+    BackendResult,
+    Branch,
+    Commit,
+    Draft,
+} from "../../backend";
+import type {
+    RunResult,
+    WorkspaceBootSection,
+    WorkspaceBootSectionState,
+    WorkspaceBootState,
+} from "../types";
+import type { BackendRuntime } from "../runtime/use-backend-runtime";
+
+const ALL_SECTIONS: readonly WorkspaceBootSection[] = [
+    "authors",
+    "permissions",
+    "branches",
+    "services",
+    "participants",
+    "templates",
+    "snapshotPointers",
+    "snapshotBody",
+    "policies",
+    "comments",
+];
+
+const BLOCKING_SECTIONS: readonly WorkspaceBootSection[] = [
+    "authors",
+    "permissions",
+    "branches",
+    "services",
+    "participants",
+    "templates",
+    "snapshotPointers",
+    "snapshotBody",
+    "policies",
+];
+
+function createInitialSections(): Record<
+    WorkspaceBootSection,
+    WorkspaceBootSectionState
+> {
+    return {
+        authors: { status: "idle" },
+        permissions: { status: "idle" },
+        branches: { status: "idle" },
+        services: { status: "idle" },
+        participants: { status: "idle" },
+        templates: { status: "idle" },
+        snapshotPointers: { status: "idle" },
+        snapshotBody: { status: "idle" },
+        policies: { status: "idle" },
+        comments: { status: "idle" },
+    };
+}
+
+function createNoBranchError(section: WorkspaceBootSection): BackendError {
+    return {
+        code: "no_branch",
+        message: `No current branch available to load ${section}.`,
+    };
+}
+
+function collectErrors(
+    sections: Readonly<Record<WorkspaceBootSection, WorkspaceBootSectionState>>,
+): Partial<Record<WorkspaceBootSection, BackendError>> {
+    const errors: Partial<Record<WorkspaceBootSection, BackendError>> = {};
+    for (const section of ALL_SECTIONS) {
+        const error = sections[section].error;
+        if (error) {
+            errors[section] = error;
+        }
+    }
+    return errors;
+}
+
+function getRunErrors(result: RunResult): BackendError[] {
+    return result.ok ? [] : result.errors;
+}
+
+function resolveBranchId(
+    branches: readonly Branch[],
+    preferredId?: string,
+): string | undefined {
+    if (preferredId && branches.some((branch) => branch.id === preferredId)) {
+        return preferredId;
+    }
+    return branches.find((branch) => branch.isMain)?.id ?? branches[0]?.id;
+}
+
+async function toVoidResult<T>(
+    result: Promise<BackendResult<T>>,
+): Promise<BackendResult<void>> {
+    const res = await result;
+    if (!res.ok) {
+        return res;
+    }
+    return { ok: true, value: undefined };
+}
+
+export interface UseWorkspaceBootParams {
+    readonly workspaceId: string;
+    readonly actorId: string;
+    readonly preferredBranchId?: string;
+    readonly hasInitialData: boolean;
+    readonly runtime: BackendRuntime;
+    readonly getBranchesState: () => readonly Branch[];
+    readonly getCurrentBranchId: () => string | undefined;
+    readonly setCurrentBranchId: (id: string) => void;
+    readonly refreshAuthors: () => Promise<BackendResult<readonly unknown[]>>;
+    readonly refreshPermissions: () => Promise<
+        BackendResult<Readonly<Record<string, boolean>>>
+    >;
+    readonly refreshBranches: () => Promise<BackendResult<readonly Branch[]>>;
+    readonly refreshServices: () => Promise<
+        BackendResult<Readonly<Record<string, unknown>>>
+    >;
+    readonly refreshParticipants: (
+        branchId: string,
+    ) => Promise<BackendResult<readonly unknown[]>>;
+    readonly refreshTemplates: (
+        branchId: string,
+    ) => Promise<BackendResult<readonly unknown[]>>;
+    readonly refreshSnapshotPointers: (
+        branchId: string,
+    ) => Promise<BackendResult<Readonly<{ head?: Commit; draft?: Draft }>>>;
+    readonly loadSnapshotBody: (
+        branchId: string,
+    ) => Promise<BackendResult<void>>;
+    readonly refreshPolicies: (
+        branchId: string,
+    ) => Promise<BackendResult<readonly unknown[]>>;
+    readonly refreshComments: (
+        branchId: string,
+    ) => Promise<BackendResult<readonly unknown[]>>;
+}
+
+export interface WorkspaceBootController {
+    readonly boot: WorkspaceBootState;
+    readonly refreshAll: (opts?: { strict?: boolean }) => Promise<RunResult>;
+    readonly refreshBranchContext: (
+        opts?: Readonly<{
+            branchId?: string;
+            strict?: boolean;
+            includeWorkspaceData?: boolean;
+        }>,
+    ) => Promise<void>;
+    readonly refreshSnapshotPointers: (
+        opts?: Readonly<{ branchId?: string; strict?: boolean }>,
+    ) => Promise<void>;
+}
+
+export function useWorkspaceBoot(
+    params: UseWorkspaceBootParams,
+): WorkspaceBootController {
+    const {
+        workspaceId,
+        actorId,
+        preferredBranchId,
+        hasInitialData,
+        runtime,
+        getBranchesState,
+        getCurrentBranchId,
+        setCurrentBranchId,
+        refreshAuthors,
+        refreshPermissions,
+        refreshBranches,
+        refreshServices,
+        refreshParticipants,
+        refreshTemplates,
+        refreshSnapshotPointers,
+        loadSnapshotBody,
+        refreshPolicies,
+        refreshComments,
+    } = params;
+
+    const [sections, setSections] = React.useState(createInitialSections);
+    const [lastError, setLastError] = React.useState<BackendError | undefined>(
+        undefined,
+    );
+    const runIdRef = React.useRef(0);
+    const refreshAllRef = React.useRef<
+        ((opts?: { strict?: boolean }) => Promise<RunResult>) | null
+    >(null);
+
+    const markLoading = React.useCallback(
+        (section: WorkspaceBootSection): void => {
+            setSections((prev) => ({
+                ...prev,
+                [section]: {
+                    status: "loading",
+                    updatedAt: runtime.now(),
+                },
+            }));
+        },
+        [runtime],
+    );
+
+    const markResult = React.useCallback(
+        (section: WorkspaceBootSection, result: BackendResult<unknown>): void => {
+            if (result.ok) {
+                setSections((prev) => ({
+                    ...prev,
+                    [section]: {
+                        status: "success",
+                        updatedAt: runtime.now(),
+                    },
+                }));
+                return;
+            }
+
+            setLastError(result.error);
+            setSections((prev) => ({
+                ...prev,
+                [section]: {
+                    status: "error",
+                    error: result.error,
+                    updatedAt: runtime.now(),
+                },
+            }));
+        },
+        [runtime],
+    );
+
+    const runSection = React.useCallback(
+        async <T,>(
+            section: WorkspaceBootSection,
+            task: () => Promise<BackendResult<T>>,
+        ): Promise<BackendResult<T>> => {
+            markLoading(section);
+            try {
+                const result = await task();
+                markResult(section, result as BackendResult<unknown>);
+                return result;
+            } catch (error) {
+                const backendError = runtime.toBackendError(error);
+                setLastError(backendError);
+                setSections((prev) => ({
+                    ...prev,
+                    [section]: {
+                        status: "error",
+                        error: backendError,
+                        updatedAt: runtime.now(),
+                    },
+                }));
+                return { ok: false, error: backendError };
+            }
+        },
+        [markLoading, markResult, runtime],
+    );
+
+    const runGroup = React.useCallback(
+        async (
+            tasks: ReadonlyArray<
+                readonly [WorkspaceBootSection, () => Promise<BackendResult<unknown>>]
+            >,
+            strict: boolean,
+        ): Promise<RunResult> => {
+            const errors: BackendError[] = [];
+
+            for (const [section, task] of tasks) {
+                const result = await runSection(section, task);
+                if (!result.ok) {
+                    errors.push(result.error);
+                    if (strict) {
+                        break;
+                    }
+                }
+            }
+
+            return errors.length > 0 ? { ok: false, errors } : { ok: true };
+        },
+        [runSection],
+    );
+
+    const resolveActiveBranch = React.useCallback(
+        (candidateId?: string): string | undefined => {
+            const branches = getBranchesState();
+            const branchId = resolveBranchId(
+                branches,
+                candidateId ?? getCurrentBranchId() ?? preferredBranchId,
+            );
+            if (branchId) {
+                setCurrentBranchId(branchId);
+            }
+            return branchId;
+        },
+        [
+            getBranchesState,
+            getCurrentBranchId,
+            preferredBranchId,
+            setCurrentBranchId,
+        ],
+    );
+
+    const markBranchScopedNoBranch = React.useCallback((): RunResult => {
+        const errors: BackendError[] = [];
+        for (const section of BLOCKING_SECTIONS) {
+            if (!["participants", "templates", "snapshotPointers", "snapshotBody", "policies"].includes(section)) {
+                continue;
+            }
+            const error = createNoBranchError(section);
+            errors.push(error);
+            setLastError(error);
+            setSections((prev) => ({
+                ...prev,
+                [section]: {
+                    status: "error",
+                    error,
+                    updatedAt: runtime.now(),
+                },
+            }));
+        }
+        return { ok: false, errors };
+    }, [runtime]);
+
+    const refreshBranchContext = React.useCallback(
+        async (
+            opts?: Readonly<{
+                branchId?: string;
+                strict?: boolean;
+                includeWorkspaceData?: boolean;
+            }>,
+        ): Promise<void> => {
+            const strict = opts?.strict ?? false;
+            const tasks: Array<
+                readonly [WorkspaceBootSection, () => Promise<BackendResult<unknown>>]
+            > = [];
+            const branchId =
+                resolveActiveBranch(opts?.branchId) ?? opts?.branchId;
+
+            if (opts?.includeWorkspaceData ?? true) {
+                tasks.push(["authors", refreshAuthors]);
+                tasks.push(["permissions", refreshPermissions]);
+                tasks.push(["services", refreshServices]);
+            }
+
+            if (!branchId) {
+                markBranchScopedNoBranch();
+                return;
+            }
+
+            tasks.push([
+                "participants",
+                () => refreshParticipants(branchId),
+            ]);
+            tasks.push(["templates", () => refreshTemplates(branchId)]);
+            tasks.push([
+                "snapshotPointers",
+                () => refreshSnapshotPointers(branchId),
+            ]);
+            tasks.push(["policies", () => refreshPolicies(branchId)]);
+            tasks.push(["snapshotBody", () => loadSnapshotBody(branchId)]);
+
+            await runGroup(tasks, strict);
+            void runSection("comments", () => refreshComments(branchId));
+        },
+        [
+            loadSnapshotBody,
+            markBranchScopedNoBranch,
+            refreshAuthors,
+            refreshComments,
+            refreshParticipants,
+            refreshPermissions,
+            refreshPolicies,
+            refreshServices,
+            refreshSnapshotPointers,
+            refreshTemplates,
+            resolveActiveBranch,
+            runGroup,
+            runSection,
+        ],
+    );
+
+    const refreshAll = React.useCallback(
+        async (opts?: { strict?: boolean }): Promise<RunResult> => {
+            const runId = ++runIdRef.current;
+            const strict = opts?.strict ?? false;
+            const workspaceErrors: BackendError[] = [];
+
+            const authorsResult = await runSection("authors", refreshAuthors);
+            if (!authorsResult.ok) {
+                workspaceErrors.push(authorsResult.error);
+                if (strict) {
+                    return { ok: false, errors: workspaceErrors };
+                }
+            }
+
+            const permissionsResult = await runSection(
+                "permissions",
+                refreshPermissions,
+            );
+            if (!permissionsResult.ok) {
+                workspaceErrors.push(permissionsResult.error);
+                if (strict) {
+                    return { ok: false, errors: workspaceErrors };
+                }
+            }
+
+            const branchesResult = await runSection("branches", refreshBranches);
+            if (!branchesResult.ok) {
+                workspaceErrors.push(branchesResult.error);
+                if (strict) {
+                    return { ok: false, errors: workspaceErrors };
+                }
+            }
+
+            const servicesResult = await runSection("services", refreshServices);
+            if (!servicesResult.ok) {
+                workspaceErrors.push(servicesResult.error);
+                if (strict) {
+                    return { ok: false, errors: workspaceErrors };
+                }
+            }
+
+            if (runIdRef.current !== runId) {
+                return workspaceErrors.length > 0
+                    ? { ok: false, errors: workspaceErrors }
+                    : { ok: true };
+            }
+
+            const resolvedBranches =
+                branchesResult.ok && branchesResult.value
+                    ? (branchesResult.value as readonly Branch[])
+                    : getBranchesState();
+            const branchId = resolveBranchId(
+                resolvedBranches,
+                preferredBranchId ?? getCurrentBranchId(),
+            );
+            if (branchId) {
+                setCurrentBranchId(branchId);
+            }
+            if (!branchId) {
+                const noBranchResult = markBranchScopedNoBranch();
+                if (workspaceErrors.length > 0) {
+                    return {
+                        ok: false,
+                        errors: [
+                            ...workspaceErrors,
+                            ...getRunErrors(noBranchResult),
+                        ],
+                    };
+                }
+                return noBranchResult;
+            }
+
+            const branchResult = await runGroup(
+                [
+                    ["participants", () => refreshParticipants(branchId)],
+                    ["templates", () => refreshTemplates(branchId)],
+                    [
+                        "snapshotPointers",
+                        () => refreshSnapshotPointers(branchId),
+                    ],
+                    ["policies", () => refreshPolicies(branchId)],
+                    ["snapshotBody", () => loadSnapshotBody(branchId)],
+                ],
+                strict,
+            );
+
+            if (runIdRef.current === runId) {
+                void runSection("comments", () => refreshComments(branchId));
+            }
+
+            if (workspaceErrors.length > 0 || !branchResult.ok) {
+                const branchErrors = !branchResult.ok ? branchResult.errors : [];
+                return {
+                    ok: false,
+                    errors: [...workspaceErrors, ...branchErrors],
+                };
+            }
+
+            return { ok: true };
+        },
+        [
+            loadSnapshotBody,
+            markBranchScopedNoBranch,
+            preferredBranchId,
+            refreshAuthors,
+            refreshBranches,
+            refreshComments,
+            refreshParticipants,
+            refreshPermissions,
+            refreshPolicies,
+            refreshServices,
+            refreshSnapshotPointers,
+            refreshTemplates,
+            getBranchesState,
+            getCurrentBranchId,
+            runGroup,
+            runSection,
+            setCurrentBranchId,
+        ],
+    );
+
+    const retrySection = React.useCallback(
+        async (
+            section: WorkspaceBootSection,
+        ): Promise<BackendResult<void>> => {
+            const branchId = resolveActiveBranch();
+
+            switch (section) {
+                case "authors":
+                    return toVoidResult(refreshAuthors());
+                case "permissions":
+                    return toVoidResult(refreshPermissions());
+                case "branches":
+                    return toVoidResult(refreshBranches());
+                case "services":
+                    return toVoidResult(refreshServices());
+                case "participants":
+                    return branchId
+                        ? toVoidResult(
+                              runSection(section, () =>
+                                  refreshParticipants(branchId),
+                              ),
+                          )
+                        : { ok: false, error: createNoBranchError(section) };
+                case "templates":
+                    return branchId
+                        ? toVoidResult(
+                              runSection(section, () =>
+                                  refreshTemplates(branchId),
+                              ),
+                          )
+                        : { ok: false, error: createNoBranchError(section) };
+                case "snapshotPointers":
+                    return branchId
+                        ? toVoidResult(
+                              runSection(section, () =>
+                                  refreshSnapshotPointers(branchId),
+                              ),
+                          )
+                        : { ok: false, error: createNoBranchError(section) };
+                case "snapshotBody":
+                    return branchId
+                        ? toVoidResult(
+                              runSection(section, () =>
+                                  loadSnapshotBody(branchId),
+                              ),
+                          )
+                        : { ok: false, error: createNoBranchError(section) };
+                case "policies":
+                    return branchId
+                        ? toVoidResult(
+                              runSection(section, () =>
+                                  refreshPolicies(branchId),
+                              ),
+                          )
+                        : { ok: false, error: createNoBranchError(section) };
+                case "comments":
+                    return branchId
+                        ? toVoidResult(
+                              runSection(section, () =>
+                                  refreshComments(branchId),
+                              ),
+                          )
+                        : { ok: false, error: createNoBranchError(section) };
+                default:
+                    return {
+                        ok: false,
+                        error: {
+                            code: "invalid_section",
+                            message: `Unknown boot section: ${String(section)}.`,
+                        },
+                    };
+            }
+        },
+        [
+            loadSnapshotBody,
+            refreshAuthors,
+            refreshBranches,
+            refreshComments,
+            refreshParticipants,
+            refreshPermissions,
+            refreshPolicies,
+            refreshServices,
+            refreshSnapshotPointers,
+            refreshTemplates,
+            resolveActiveBranch,
+            runSection,
+        ],
+    );
+
+    const refreshSnapshotPointersOnly = React.useCallback(
+        async (
+            opts?: Readonly<{ branchId?: string; strict?: boolean }>,
+        ): Promise<void> => {
+            const branchId = resolveActiveBranch(opts?.branchId);
+            if (!branchId) {
+                markBranchScopedNoBranch();
+                return;
+            }
+            await runGroup(
+                [["snapshotPointers", () => refreshSnapshotPointers(branchId)]],
+                opts?.strict ?? false,
+            );
+        },
+        [markBranchScopedNoBranch, refreshSnapshotPointers, resolveActiveBranch, runGroup],
+    );
+
+    React.useEffect(() => {
+        refreshAllRef.current = refreshAll;
+    }, [refreshAll]);
+
+    React.useEffect(() => {
+        setSections(createInitialSections());
+        setLastError(undefined);
+        void refreshAllRef.current?.();
+    }, [actorId, workspaceId]);
+
+    const boot = React.useMemo<WorkspaceBootState>(() => {
+        const errorsBySection = collectErrors(sections);
+        const statuses = ALL_SECTIONS.map((section) => sections[section].status);
+        const completedSections = statuses.filter((status) => status !== "idle" && status !== "loading").length;
+        const succeededSections = statuses.filter((status) => status === "success").length;
+        const failedSections = statuses.filter((status) => status === "error").length;
+        const isBooting = statuses.some((status) => status === "loading");
+        const isReady = BLOCKING_SECTIONS.every(
+            (section) => sections[section].status === "success",
+        );
+        const hasErrors = failedSections > 0;
+        const hasPartialFailure = succeededSections > 0 && failedSections > 0;
+        const isLiveConfirmed = isReady;
+
+        return {
+            sections,
+            isBooting,
+            isReady,
+            hasErrors,
+            hasPartialFailure,
+            lastError,
+            errorsBySection,
+            isSeededView: hasInitialData && !isLiveConfirmed,
+            isLiveConfirmed,
+            completedSections,
+            succeededSections,
+            failedSections,
+            totalSections: ALL_SECTIONS.length,
+            retryAll: refreshAll,
+            retrySection,
+        };
+    }, [hasInitialData, lastError, refreshAll, retrySection, sections]);
+
+    return React.useMemo(
+        () => ({
+            boot,
+            refreshAll,
+            refreshBranchContext,
+            refreshSnapshotPointers: refreshSnapshotPointersOnly,
+        }),
+        [boot, refreshAll, refreshBranchContext, refreshSnapshotPointersOnly],
+    );
+}
+```
+
+---
+#### 36
 
 
 ` File: src/react/workspace/context/provider/compose/use-workspace-refresh.ts`  [↑ Back to top](#index)
@@ -7138,7 +8762,7 @@ export function useWorkspaceRefresh(
 ```
 
 ---
-#### 34
+#### 37
 
 
 ` File: src/react/workspace/context/provider/context.ts`  [↑ Back to top](#index)
@@ -7146,7 +8770,7 @@ export function useWorkspaceRefresh(
 ```ts
 // src/react/workspace/context/provider/context.ts
 import * as React from "react";
-import type { WorkspaceAPI } from "./types";
+import type { WorkspaceAPI, WorkspaceBootState } from "./types";
 
 export const WorkspaceContext = React.createContext<WorkspaceAPI | null>(null);
 
@@ -7163,10 +8787,14 @@ export function useWorkspace(): WorkspaceAPI {
 export function useWorkspaceMaybe(): WorkspaceAPI | null {
     return React.useContext(WorkspaceContext);
 }
+
+export function useWorkspaceBoot(): WorkspaceBootState {
+    return useWorkspace().boot;
+}
 ```
 
 ---
-#### 35
+#### 38
 
 
 ` File: src/react/workspace/context/provider/helpers.ts`  [↑ Back to top](#index)
@@ -7277,7 +8905,7 @@ export function toServiceMap(
 ```
 
 ---
-#### 36
+#### 39
 
 
 ` File: src/react/workspace/context/provider/live/adapters/manual.ts`  [↑ Back to top](#index)
@@ -7497,7 +9125,7 @@ export function useWorkspaceRefresh(
 ```
 
 ---
-#### 37
+#### 40
 
 
 ` File: src/react/workspace/context/provider/live/adapters/poll.ts`  [↑ Back to top](#index)
@@ -7578,7 +9206,7 @@ export function createPollAdapter(
 ```
 
 ---
-#### 38
+#### 41
 
 
 ` File: src/react/workspace/context/provider/live/adapters/sse.ts`  [↑ Back to top](#index)
@@ -7659,7 +9287,7 @@ export function createPollAdapter(
 ```
 
 ---
-#### 39
+#### 42
 
 
 ` File: src/react/workspace/context/provider/live/adapters/ws.ts`  [↑ Back to top](#index)
@@ -7740,7 +9368,7 @@ export function createPollAdapter(
 ```
 
 ---
-#### 40
+#### 43
 
 
 ` File: src/react/workspace/context/provider/live/types.ts`  [↑ Back to top](#index)
@@ -7823,7 +9451,7 @@ export type WorkspaceLiveAdapterRegistry = Readonly<
 ```
 
 ---
-#### 41
+#### 44
 
 
 ` File: src/react/workspace/context/provider/provider.tsx`  [↑ Back to top](#index)
@@ -7853,9 +9481,9 @@ import { useServicesSlice } from "./slices/use-services-slice";
 import { useSnapshotsSlice } from "./slices/use-snapshots-slice";
 import { useCommentsSlice } from "./slices/use-comments-slice";
 import { useBranchCache } from "./compose/use-branch-cache";
-import { useWorkspaceRefresh } from "./compose/use-workspace-refresh";
 import { useLivePolling } from "./compose/use-live-polling";
 import { usePoliciesSlice } from "@/react/workspace/context/provider/slices/use-policies-slice";
+import { useWorkspaceBoot } from "./compose/use-workspace-boot";
 
 /* ---------------- provider (thin composition root) ---------------- */
 
@@ -7959,40 +9587,50 @@ export function WorkspaceProvider(
         workspaceId,
         actorId: actor.id,
         getCurrentBranchId,
-        initialPolicies: initial?.policies ?? null, // if you add it to initial
+        initialPolicies: initial?.policies ?? null,
         runtime,
     });
 
-    const refresh = useWorkspaceRefresh({
+    const bootCtl = useWorkspaceBoot({
+        workspaceId,
+        actorId: actor.id,
+        preferredBranchId: initial?.currentBranchId ?? initial?.mainId,
+        hasInitialData: Boolean(
+            initial?.authors ||
+                initial?.permissions ||
+                initial?.branches ||
+                initial?.templates ||
+                initial?.participants ||
+                initial?.services ||
+                initial?.snapshot ||
+                initial?.policies ||
+                initial?.comments,
+        ),
         runtime,
+        getBranchesState: () => branchesSlice.branches.data,
+        getCurrentBranchId,
+        setCurrentBranchId: branchesSlice.setCurrentBranchId,
         refreshAuthors: authorsSlice.refreshAuthors,
         refreshPermissions: permissionsSlice.refreshPermissions,
         refreshBranches: branchesSlice.refreshBranches,
-        refreshServices: servicesSlice.refreshServices,
-        refreshPolicies: policiesSlice.refreshPolicies,
-        refreshComments: comments.refreshThreads,
-        getCurrentBranchId,
-        refreshTemplates: async (p?: Partial<{ branchId: string }>) => {
-            await templatesSlice.refreshTemplates(
-                p?.branchId
-                    ? ({ branchId: p.branchId } as Partial<
-                          Pick<TemplatesListParams, "branchId">
-                      >)
-                    : undefined,
-            );
+        refreshServices: servicesSlice.refreshServices as () => Promise<any>,
+        refreshParticipants: (branchId: string) =>
+            branchesSlice.refreshParticipants({ branchId }),
+        refreshTemplates: (branchId: string) =>
+            templatesSlice.refreshTemplates({ branchId }),
+        refreshSnapshotPointers: (branchId: string) =>
+            snapshotsSlice.refreshSnapshotPointersForBranch(branchId),
+        loadSnapshotBody: async (branchId: string) => {
+            const res = await snapshotsSlice.loadSnapshotForBranch(branchId);
+            if (!res.ok) {
+                return res;
+            }
+            return { ok: true, value: undefined };
         },
-        refreshParticipants: async (p?: Partial<{ branchId: string }>) => {
-            await branchesSlice.refreshParticipants(
-                p?.branchId
-                    ? ({ branchId: p.branchId } as Partial<{
-                          branchId: string;
-                      }>)
-                    : undefined,
-            );
-        },
-        refreshSnapshotPointersForBranch:
-            snapshotsSlice.refreshSnapshotPointersForBranch,
-        refreshSnapshotPointers: snapshotsSlice.refreshSnapshotPointers,
+        refreshPolicies: (branchId: string) =>
+            policiesSlice.refreshPolicies({ branchId }),
+        refreshComments: (branchId: string) =>
+            comments.refreshThreads({ branchId }),
     });
 
     const hasAnyData: boolean = Boolean(
@@ -8003,7 +9641,7 @@ export function WorkspaceProvider(
                 templatesSlice.templates.data.length) ||
             (branchesSlice.participants.data &&
                 branchesSlice.participants.data.length) ||
-            snapshotsSlice.snapshot.data?.props,
+            snapshotsSlice.snapshot.data,
     );
 
     const liveCtl = useLivePolling({
@@ -8012,14 +9650,62 @@ export function WorkspaceProvider(
         actor,
         hasAnyData,
         getCurrentBranchId: () => branchesSlice.branches.currentId,
-        refreshAll: refresh.refreshAll,
-        refreshBranchContext: refresh.refreshBranchContext,
-        refreshSnapshotPointers: refresh.refreshSnapshotPointers,
+        refreshAll: bootCtl.refreshAll,
+        refreshBranchContext: bootCtl.refreshBranchContext,
+        refreshSnapshotPointers: bootCtl.refreshSnapshotPointers,
         adapters: liveAdapters,
         debounceMs: liveDebounceMs,
     });
 
     /* ---------------- branch ops ---------------- */
+
+    const setCurrentBranch = React.useCallback(
+        (id: string): void => {
+            const prevId: string | undefined = branchesSlice.branches.currentId;
+
+            branchCache.switchBranch({
+                workspaceId,
+                nextId: id,
+                prevId,
+                templates: templatesSlice.templates,
+                participants: branchesSlice.participants,
+                snapshot: snapshotsSlice.snapshot,
+                setTemplates: templatesSlice.__setTemplatesState,
+                setParticipants: branchesSlice.__setParticipantsState,
+                setSnapshot: snapshotsSlice.__setSnapshotState,
+                resetTemplates: templatesSlice.resetTemplatesForBranch,
+                resetParticipants: () => {
+                    branchesSlice.__setParticipantsState((state) => ({
+                        ...state,
+                        data: null,
+                        error: undefined,
+                    }));
+                },
+                resetSnapshot: snapshotsSlice.resetSnapshotForBranch,
+                setCurrentBranchId: branchesSlice.setCurrentBranchId,
+            });
+
+            void bootCtl.refreshBranchContext({
+                branchId: id,
+                includeWorkspaceData: false,
+            });
+        },
+        [
+            branchesSlice.branches.currentId,
+            branchesSlice.participants,
+            branchesSlice.setCurrentBranchId,
+            branchesSlice.__setParticipantsState,
+            branchCache,
+            bootCtl,
+            snapshotsSlice.__setSnapshotState,
+            snapshotsSlice.resetSnapshotForBranch,
+            snapshotsSlice.snapshot,
+            templatesSlice.__setTemplatesState,
+            templatesSlice.resetTemplatesForBranch,
+            templatesSlice.templates,
+            workspaceId,
+        ],
+    );
 
     const createBranch = React.useCallback<WorkspaceAPI["createBranch"]>(
         async (name: string, opts?: Readonly<{ fromId?: string }>) => {
@@ -8030,16 +9716,18 @@ export function WorkspaceProvider(
             }
             return res;
         },
-        [backend.branches, workspaceId, branchesSlice /* setCurrentBranch */],
+        [backend.branches, branchesSlice, setCurrentBranch, workspaceId],
     );
 
     const setMain = React.useCallback<WorkspaceAPI["setMain"]>(
         async (branchId: string) => {
             const res = await backend.branches.setMain(workspaceId, branchId);
-            if (res.ok) await branchesSlice.refreshBranches();
+            if (res.ok) {
+                await branchesSlice.refreshBranches();
+            }
             return res;
         },
-        [backend.branches, workspaceId, branchesSlice],
+        [backend.branches, branchesSlice, workspaceId],
     );
 
     const mergeBranch = React.useCallback<WorkspaceAPI["mergeBranch"]>(
@@ -8049,95 +9737,48 @@ export function WorkspaceProvider(
                 sourceId,
                 targetId,
             );
+
             if (res.ok) {
                 await runtime.runTasks(
                     [
-                        () => branchesSlice.refreshBranches(),
-                        () => refresh.refreshBranchContext(),
+                        async () => {
+                            await branchesSlice.refreshBranches();
+                        },
+                        async () => {
+                            await bootCtl.refreshBranchContext();
+                        },
                     ],
                     true,
                 );
             }
+
             return res;
         },
-        [backend.branches, workspaceId, runtime, branchesSlice, refresh],
+        [backend.branches, bootCtl, branchesSlice, runtime, workspaceId],
     );
 
     const deleteBranch = React.useCallback<WorkspaceAPI["deleteBranch"]>(
         async (branchId: string) => {
             const res = await backend.branches.delete(workspaceId, branchId);
             if (res.ok) {
-                await branchesSlice.refreshBranches();
+                const refreshed = await branchesSlice.refreshBranches();
 
-                if (branchesSlice.branches.currentId === branchId) {
-                    const fallback: string | undefined =
-                        branchesSlice.branches.data.find(
-                            (b) => b.id !== branchId,
-                        )?.id;
+                if (
+                    refreshed.ok &&
+                    branchesSlice.branches.currentId === branchId
+                ) {
+                    const fallback = refreshed.value.find(
+                        (branch) => branch.id !== branchId,
+                    )?.id;
 
-                    if (fallback) setCurrentBranch(fallback);
+                    if (fallback) {
+                        setCurrentBranch(fallback);
+                    }
                 }
             }
             return res;
         },
-        [backend.branches, workspaceId, branchesSlice /* setCurrentBranch */],
-    );
-
-    /* ---------------- branch switching (cache-first) ---------------- */
-
-    const hasInitialSnapshot: boolean = Boolean(initial?.snapshot);
-
-    const setCurrentBranch = React.useCallback(
-        (id: string): void => {
-            const prevId: string | undefined = branchesSlice.branches.currentId;
-
-            branchCache.switchBranch({
-                workspaceId: workspaceId,
-                nextId: id,
-                prevId,
-
-                templates: templatesSlice.templates,
-                participants: branchesSlice.participants,
-                snapshot: snapshotsSlice.snapshot,
-
-                setTemplates: templatesSlice.__setTemplatesState,
-                setParticipants: branchesSlice.__setParticipantsState,
-                setSnapshot: snapshotsSlice.__setSnapshotState,
-
-                resetTemplates: templatesSlice.resetTemplatesForBranch,
-                resetParticipants: () => {
-                    branchesSlice.__setParticipantsState((s) => ({
-                        ...s,
-                        data: null,
-                        error: undefined,
-                    }));
-                },
-                resetSnapshot: snapshotsSlice.resetSnapshotForBranch,
-
-                setCurrentBranchId: branchesSlice.setCurrentBranchId,
-
-                hasInitialSnapshot,
-
-                loadSnapshotForBranch: (branchId: string) => {
-                    void snapshotsSlice.loadSnapshotForBranch(branchId);
-                },
-            });
-        },
-        [
-            branchesSlice.branches.currentId,
-            branchesSlice.participants,
-            branchesSlice.setCurrentBranchId,
-            branchesSlice.__setParticipantsState,
-            templatesSlice.templates,
-            templatesSlice.__setTemplatesState,
-            templatesSlice.resetTemplatesForBranch,
-            snapshotsSlice.snapshot,
-            snapshotsSlice.__setSnapshotState,
-            snapshotsSlice.resetSnapshotForBranch,
-            snapshotsSlice.loadSnapshotForBranch,
-            branchCache,
-            hasInitialSnapshot,
-        ],
+        [backend.branches, branchesSlice, setCurrentBranch, workspaceId],
     );
 
     /* ---------------- cache invalidation ---------------- */
@@ -8146,38 +9787,47 @@ export function WorkspaceProvider(
         (keys) => {
             const setAll: boolean = !keys || keys.length === 0;
 
-            if (setAll || keys?.includes("authors"))
+            if (setAll || keys?.includes("authors")) {
                 authorsSlice.invalidateAuthors();
-            if (setAll || keys?.includes("permissions"))
+            }
+            if (setAll || keys?.includes("permissions")) {
                 permissionsSlice.invalidatePermissions();
-            if (setAll || keys?.includes("branches"))
+            }
+            if (setAll || keys?.includes("branches")) {
                 branchesSlice.invalidateBranches();
-            if (setAll || keys?.includes("services"))
+            }
+            if (setAll || keys?.includes("services")) {
                 servicesSlice.invalidateServices();
+            }
 
-            if (setAll || keys?.includes("templates"))
+            if (setAll || keys?.includes("templates")) {
                 templatesSlice.invalidateTemplates();
-            if (setAll || keys?.includes("participants"))
+            }
+            if (setAll || keys?.includes("participants")) {
                 branchesSlice.invalidateParticipants();
+            }
 
             if (
                 setAll ||
                 keys?.includes("templates") ||
-                keys?.includes("participants")
+                keys?.includes("participants") ||
+                keys?.includes("snapshot")
             ) {
                 branchCache.clear();
             }
-            if (setAll || keys?.includes("policies"))
-                policiesSlice.invalidatePolicies();
 
+            if (setAll || keys?.includes("policies")) {
+                policiesSlice.invalidatePolicies();
+            }
         },
         [
             authorsSlice,
-            permissionsSlice,
+            branchCache,
             branchesSlice,
+            permissionsSlice,
+            policiesSlice,
             servicesSlice,
             templatesSlice,
-            branchCache,
         ],
     );
 
@@ -8187,6 +9837,7 @@ export function WorkspaceProvider(
         () => ({
             info: backend.info,
             actor,
+            boot: bootCtl.boot,
 
             authors: authorsSlice.authors,
             permissions: permissionsSlice.permissions,
@@ -8197,30 +9848,39 @@ export function WorkspaceProvider(
             services: servicesSlice.services,
 
             refresh: {
-                all: refresh.refreshAll,
-
-                authors: authorsSlice.refreshAuthors,
-                permissions: permissionsSlice.refreshPermissions,
-                branches: branchesSlice.refreshBranches,
-                services: servicesSlice.refreshServices,
-
-                branchContext: refresh.refreshBranchContext,
-
+                all: bootCtl.refreshAll,
+                authors: async () => {
+                    await authorsSlice.refreshAuthors();
+                },
+                permissions: async () => {
+                    await permissionsSlice.refreshPermissions();
+                },
+                branches: async () => {
+                    await branchesSlice.refreshBranches();
+                },
+                services: async () => {
+                    await servicesSlice.refreshServices();
+                },
+                branchContext: bootCtl.refreshBranchContext,
                 templates: async (
                     params?: Partial<
                         Pick<TemplatesListParams, "branchId" | "since">
                     >,
-                ) => templatesSlice.refreshTemplates(params),
-
+                ) => {
+                    await templatesSlice.refreshTemplates(params);
+                },
                 participants: async (
                     params?: Partial<{
                         branchId: string;
                         since?: number | string;
                     }>,
-                ) => branchesSlice.refreshParticipants(params),
-
-                snapshotPointers: refresh.refreshSnapshotPointers,
-                policies: () => policiesSlice.refreshPolicies(),
+                ) => {
+                    await branchesSlice.refreshParticipants(params);
+                },
+                snapshotPointers: bootCtl.refreshSnapshotPointers,
+                policies: async () => {
+                    await policiesSlice.refreshPolicies();
+                },
             },
 
             setCurrentBranch,
@@ -8259,7 +9919,9 @@ export function WorkspaceProvider(
 
                 set: snapshotsSlice.setSnapshotData,
                 load: snapshotsSlice.loadSnapshot,
-                refresh: snapshotsSlice.refreshSnapshotPointers,
+                refresh: async () => {
+                    await snapshotsSlice.refreshSnapshotPointers();
+                },
 
                 autosave: snapshotsSlice.autosave,
                 save: snapshotsSlice.save,
@@ -8280,56 +9942,45 @@ export function WorkspaceProvider(
             policies: policiesSlice,
         }),
         [
-            backend.info,
             actor,
-
             authorsSlice.authors,
             authorsSlice.refreshAuthors,
-
-            permissionsSlice.permissions,
-            permissionsSlice.refreshPermissions,
-
+            backend.info,
+            bootCtl,
             branchesSlice.branches,
             branchesSlice.participants,
             branchesSlice.refreshBranches,
             branchesSlice.refreshParticipants,
-
-            templatesSlice.templates,
-            templatesSlice.refreshTemplates,
-            templatesSlice.createTemplate,
-            templatesSlice.updateTemplate,
-            templatesSlice.cloneTemplate,
-            templatesSlice.publishTemplate,
-            templatesSlice.unpublishTemplate,
-            templatesSlice.deleteTemplate,
-
-            servicesSlice.services,
-            servicesSlice.refreshServices,
-
-            refresh.refreshAll,
-            refresh.refreshBranchContext,
-            refresh.refreshSnapshotPointers,
-
-            setCurrentBranch,
-
+            comments,
             createBranch,
-            setMain,
-            mergeBranch,
             deleteBranch,
-
             invalidate,
-
             liveCtl.connected,
             liveCtl.lastEventAt,
-
-            snapshotsSlice.snapshot,
-            snapshotsSlice.setSnapshotData,
-            snapshotsSlice.loadSnapshot,
-            snapshotsSlice.refreshSnapshotPointers,
+            mergeBranch,
+            permissionsSlice.permissions,
+            permissionsSlice.refreshPermissions,
+            policiesSlice,
+            servicesSlice.refreshServices,
+            servicesSlice.services,
+            setCurrentBranch,
+            setMain,
             snapshotsSlice.autosave,
-            snapshotsSlice.save,
-            snapshotsSlice.publish,
             snapshotsSlice.discardDraft,
+            snapshotsSlice.loadSnapshot,
+            snapshotsSlice.publish,
+            snapshotsSlice.refreshSnapshotPointers,
+            snapshotsSlice.save,
+            snapshotsSlice.setSnapshotData,
+            snapshotsSlice.snapshot,
+            templatesSlice.createTemplate,
+            templatesSlice.deleteTemplate,
+            templatesSlice.publishTemplate,
+            templatesSlice.refreshTemplates,
+            templatesSlice.templates,
+            templatesSlice.cloneTemplate,
+            templatesSlice.unpublishTemplate,
+            templatesSlice.updateTemplate,
         ],
     );
 
@@ -8342,7 +9993,7 @@ export function WorkspaceProvider(
 ```
 
 ---
-#### 42
+#### 45
 
 
 ` File: src/react/workspace/context/provider/runtime/use-backend-runtime.ts`  [↑ Back to top](#index)
@@ -8390,7 +10041,7 @@ export function useBackendRuntime(): BackendRuntime {
 ```
 
 ---
-#### 43
+#### 46
 
 
 ` File: src/react/workspace/context/provider/slices/use-authors-slice.ts`  [↑ Back to top](#index)
@@ -8398,13 +10049,18 @@ export function useBackendRuntime(): BackendRuntime {
 ```ts
 // src/react/workspace/context/provider/slices/use-authors-slice.ts
 import * as React from "react";
-import type { Author, BackendError, WorkspaceBackend } from "../../backend";
+import type {
+    Author,
+    BackendError,
+    BackendResult,
+    WorkspaceBackend,
+} from "../../backend";
 import type { Loadable } from "@/react/workspace";
 import type { BackendRuntime } from "../runtime/use-backend-runtime";
 
 export interface AuthorsSliceApi {
     readonly authors: Loadable<readonly Author[]>;
-    readonly refreshAuthors: () => Promise<void>;
+    readonly refreshAuthors: () => Promise<BackendResult<readonly Author[]>>;
     readonly invalidateAuthors: () => void;
 }
 
@@ -8433,7 +10089,9 @@ export function useAuthorsSlice(
         updatedAt: initialAuthors ? runtime.now() : undefined,
     });
 
-    const refreshAuthors = React.useCallback(async (): Promise<void> => {
+    const refreshAuthors = React.useCallback(async (): Promise<
+        BackendResult<readonly Author[]>
+    > => {
         setAuthors((s) => ({ ...s, loading: true }));
         const res = await backend.authors.refresh(workspaceId);
 
@@ -8443,8 +10101,10 @@ export function useAuthorsSlice(
                 loading: false,
                 updatedAt: runtime.now(),
             });
+            return res;
         } else {
             setLoadableError(setAuthors, res.error);
+            return res;
         }
     }, [backend.authors, workspaceId, runtime]);
 
@@ -8460,7 +10120,7 @@ export function useAuthorsSlice(
 ```
 
 ---
-#### 44
+#### 47
 
 
 ` File: src/react/workspace/context/provider/slices/use-branches-slice.ts`  [↑ Back to top](#index)
@@ -8470,6 +10130,7 @@ export function useAuthorsSlice(
 import * as React from "react";
 import type {
     BackendError,
+    BackendResult,
     Branch,
     BranchParticipant,
     WorkspaceBackend,
@@ -8483,10 +10144,10 @@ export interface BranchesSliceApi {
 
     readonly setCurrentBranchId: (id: string) => void;
 
-    readonly refreshBranches: () => Promise<void>;
+    readonly refreshBranches: () => Promise<BackendResult<readonly Branch[]>>;
     readonly refreshParticipants: (
         params?: Partial<{ branchId: string; since?: number | string }>,
-    ) => Promise<void>;
+    ) => Promise<BackendResult<readonly BranchParticipant[]>>;
 
     readonly invalidateBranches: () => void;
     readonly invalidateParticipants: () => void;
@@ -8578,13 +10239,15 @@ export function useBranchesSlice(
         setBranches((s) => ({ ...s, currentId: id }));
     }, []);
 
-    const refreshBranches = React.useCallback(async (): Promise<void> => {
+    const refreshBranches = React.useCallback(async (): Promise<
+        BackendResult<readonly Branch[]>
+    > => {
         setBranches((s) => ({ ...s, loading: true }));
         const res = await backend.branches.refresh(workspaceId);
 
         if (!res.ok) {
             setBranches((s) => ({ ...s, loading: false, error: res.error }));
-            return;
+            return res;
         }
 
         const data: readonly Branch[] = res.value;
@@ -8606,15 +10269,24 @@ export function useBranchesSlice(
                 updatedAt: runtime.now(),
             };
         });
+        return res;
     }, [backend.branches, workspaceId, runtime]);
 
     const refreshParticipants = React.useCallback(
         async (
             params?: Partial<{ branchId: string; since?: number | string }>,
-        ): Promise<void> => {
+        ): Promise<BackendResult<readonly BranchParticipant[]>> => {
             const branchId: string | undefined =
                 params?.branchId ?? branches.currentId;
-            if (!branchId) return;
+            if (!branchId) {
+                return {
+                    ok: false,
+                    error: {
+                        code: "no_branch",
+                        message: "No current branch to load participants for.",
+                    },
+                };
+            }
 
             setParticipants((s) => ({ ...s, loading: true }));
 
@@ -8630,8 +10302,10 @@ export function useBranchesSlice(
                     loading: false,
                     updatedAt: runtime.now(),
                 });
+                return res;
             } else {
                 setLoadableError(setParticipants, res.error);
+                return res;
             }
         },
         [
@@ -8676,7 +10350,7 @@ export function useBranchesSlice(
 ```
 
 ---
-#### 45
+#### 48
 
 
 ` File: src/react/workspace/context/provider/slices/use-comments-slice.ts`  [↑ Back to top](#index)
@@ -8688,6 +10362,7 @@ import * as React from "react";
 
 import type {
     BackendError,
+    BackendResult,
     BackendScope,
     Result,
     WorkspaceBackend,
@@ -8705,7 +10380,7 @@ export interface CommentsSliceApi {
 
     readonly refreshThreads: (
         params?: Readonly<{ branchId?: string }>,
-    ) => Promise<void>;
+    ) => Promise<BackendResult<readonly CommentThread[]>>;
 
     readonly createThread: (
         input: Readonly<{
@@ -8829,9 +10504,20 @@ export function useCommentsSlice(
     );
 
     const refreshThreads = React.useCallback(
-        async (p?: Readonly<{ branchId?: string }>): Promise<void> => {
+        async (
+            p?: Readonly<{ branchId?: string }>,
+        ): Promise<BackendResult<readonly CommentThread[]>> => {
             const scope: BackendScope | null = resolveScope(p?.branchId);
-            if (!scope) return;
+            if (!scope) {
+                return {
+                    ok: false,
+                    error: {
+                        code: "missing_scope",
+                        message:
+                            "Workspace comments require workspaceId, actorId, and branchId.",
+                    },
+                };
+            }
 
             setThreads((s) => ({ ...s, loading: true }));
             const res = await backend.listThreads(scope);
@@ -8842,8 +10528,10 @@ export function useCommentsSlice(
                     loading: false,
                     updatedAt: now(),
                 });
+                return res as BackendResult<readonly CommentThread[]>;
             } else {
                 setLoadableError(setThreads, res.error);
+                return res as BackendResult<readonly CommentThread[]>;
             }
         },
         [backend, resolveScope],
@@ -9126,7 +10814,7 @@ export function useCommentsSlice(
 ```
 
 ---
-#### 46
+#### 49
 
 
 ` File: src/react/workspace/context/provider/slices/use-permissions-slice.ts`  [↑ Back to top](#index)
@@ -9137,6 +10825,7 @@ import * as React from "react";
 import type {
     Actor,
     BackendError,
+    BackendResult,
     PermissionsMap,
     WorkspaceBackend,
 } from "../../backend";
@@ -9145,7 +10834,7 @@ import type { BackendRuntime } from "../runtime/use-backend-runtime";
 
 export interface PermissionsSliceApi {
     readonly permissions: Loadable<PermissionsMap>;
-    readonly refreshPermissions: () => Promise<void>;
+    readonly refreshPermissions: () => Promise<BackendResult<PermissionsMap>>;
     readonly invalidatePermissions: () => void;
 }
 
@@ -9177,7 +10866,9 @@ export function usePermissionsSlice(
         updatedAt: initialPermissions ? runtime.now() : undefined,
     });
 
-    const refreshPermissions = React.useCallback(async (): Promise<void> => {
+    const refreshPermissions = React.useCallback(async (): Promise<
+        BackendResult<PermissionsMap>
+    > => {
         setPermissions((s) => ({ ...s, loading: true }));
         const res = await backend.permissions.refresh(workspaceId, actor);
 
@@ -9187,8 +10878,10 @@ export function usePermissionsSlice(
                 loading: false,
                 updatedAt: runtime.now(),
             });
+            return res;
         } else {
             setLoadableError(setPermissions, res.error);
+            return res;
         }
     }, [backend.permissions, workspaceId, actor, runtime]);
 
@@ -9204,7 +10897,7 @@ export function usePermissionsSlice(
 ```
 
 ---
-#### 47
+#### 50
 
 
 ` File: src/react/workspace/context/provider/slices/use-policies-slice.ts`  [↑ Back to top](#index)
@@ -9213,7 +10906,12 @@ export function usePermissionsSlice(
 // src/react/workspace/context/provider/slices/use-policies-slice.ts
 import * as React from "react";
 
-import type { WorkspaceBackend, Result, BackendError } from "../../backend";
+import type {
+    WorkspaceBackend,
+    Result,
+    BackendError,
+    BackendResult,
+} from "../../backend";
 import type { Loadable } from "@/react/workspace";
 
 import type { DynamicRule } from "@/schema";
@@ -9259,7 +10957,7 @@ export type PoliciesSlice = {
 
     readonly refreshPolicies: (
         params?: Readonly<{ since?: number | string; branchId?: string }>,
-    ) => Promise<void>;
+    ) => Promise<BackendResult<readonly DynamicRule[]>>;
 
     readonly savePolicies: (
         rules: readonly DynamicRule[],
@@ -9311,21 +11009,24 @@ export function usePoliciesSlice(
     const refreshPolicies = React.useCallback(
         async (
             params?: Readonly<{ since?: number | string; branchId?: string }>,
-        ): Promise<void> => {
+        ): Promise<BackendResult<readonly DynamicRule[]>> => {
             const branchId: string | undefined =
                 params?.branchId ?? getCurrentBranchId();
 
             const api: any = (backend as any).policies;
 
-            // Prefer refresh(); fallback to get()
-            const fn: any = api?.refresh ?? api?.get;
-            const fnKey: string = api?.refresh ? "refresh" : "get";
+            // Prefer refresh(); fallback to get(); backend contract exposes load().
+            const fn: any = api?.refresh ?? api?.get ?? api?.load;
+            const fnKey: string = api?.refresh
+                ? "refresh"
+                : api?.get
+                  ? "get"
+                  : "load";
 
             if (!fn) {
-                __setPoliciesState((s) =>
-                    failed(s, missingBackendError(fnKey)),
-                );
-                return;
+                const error = missingBackendError(fnKey);
+                __setPoliciesState((s) => failed(s, error));
+                return { ok: false, error };
             }
 
             __setPoliciesState((s) => loading(s));
@@ -9338,17 +11039,23 @@ export function usePoliciesSlice(
             });
 
             if (!res?.ok) {
-                __setPoliciesState((s) =>
-                    failed(s, res?.error ?? missingBackendError(fnKey)),
-                );
-                return;
+                const error = res?.error ?? missingBackendError(fnKey);
+                __setPoliciesState((s) => failed(s, error));
+                return { ok: false, error };
             }
 
-            const list: readonly DynamicRule[] = (res.value?.policies ??
-                res.value ??
-                []) as readonly DynamicRule[];
+            const loaded = res.value;
+            const raw = loaded?.raw;
+            const compiled =
+                loaded?.compiled ??
+                (raw != null ? compilePolicies(raw).policies : []);
+            const diagnostics =
+                loaded?.diagnostics ??
+                (raw != null ? compilePolicies(raw).diagnostics : []);
 
-            __setPoliciesState(() => ready(list));
+            __setPoliciesState(() => ready(compiled));
+            __setPolicyDiagnosticsState(() => ready(diagnostics));
+            return { ok: true, value: compiled };
         },
         [backend, workspaceId, actorId, getCurrentBranchId],
     );
@@ -9421,7 +11128,7 @@ export function usePoliciesSlice(
 ```
 
 ---
-#### 48
+#### 51
 
 
 ` File: src/react/workspace/context/provider/slices/use-services-slice.ts`  [↑ Back to top](#index)
@@ -9429,7 +11136,11 @@ export function usePoliciesSlice(
 ```ts
 // src/react/workspace/context/provider/slices/use-services-slice.ts
 import * as React from "react";
-import type { BackendError, WorkspaceBackend } from "../../backend";
+import type {
+    BackendError,
+    BackendResult,
+    WorkspaceBackend,
+} from "../../backend";
 import type { DgpServiceMap } from "@/schema";
 import type { Loadable } from "@/react/workspace";
 import type { BackendRuntime } from "../runtime/use-backend-runtime";
@@ -9437,7 +11148,7 @@ import { toServiceMap } from "../helpers";
 
 export interface ServicesSliceApi {
     readonly services: Loadable<DgpServiceMap>;
-    readonly refreshServices: () => Promise<void>;
+    readonly refreshServices: () => Promise<BackendResult<DgpServiceMap>>;
     readonly invalidateServices: () => void;
 }
 
@@ -9466,7 +11177,9 @@ export function useServicesSlice(
         updatedAt: initialServices ? runtime.now() : undefined,
     });
 
-    const refreshServices = React.useCallback(async (): Promise<void> => {
+    const refreshServices = React.useCallback(async (): Promise<
+        BackendResult<DgpServiceMap>
+    > => {
         setServices((s) => ({ ...s, loading: true }));
 
         const res = await backend.services.refresh(workspaceId, {
@@ -9475,7 +11188,7 @@ export function useServicesSlice(
 
         if (!res.ok) {
             setLoadableError(setServices, res.error);
-            return;
+            return res;
         }
 
         const map: DgpServiceMap | null = toServiceMap(res.value);
@@ -9484,6 +11197,7 @@ export function useServicesSlice(
             loading: false,
             updatedAt: runtime.now(),
         });
+        return { ok: true, value: map ?? ({} as DgpServiceMap) };
     }, [backend.services, workspaceId, services.updatedAt, runtime]);
 
     const invalidateServices = React.useCallback((): void => {
@@ -9498,7 +11212,7 @@ export function useServicesSlice(
 ```
 
 ---
-#### 49
+#### 52
 
 
 ` File: src/react/workspace/context/provider/slices/use-snapshots-slice.ts`  [↑ Back to top](#index)
@@ -9509,6 +11223,7 @@ import * as React from "react";
 import type {
     Actor,
     BackendError,
+    BackendResult,
     Commit,
     Draft,
     Result,
@@ -9530,8 +11245,10 @@ export interface SnapshotsSliceApi {
     readonly loadSnapshot: WorkspaceAPI["snapshot"]["load"];
     readonly refreshSnapshotPointersForBranch: (
         branchId: string,
-    ) => Promise<void>;
-    readonly refreshSnapshotPointers: () => Promise<void>;
+    ) => Promise<BackendResult<Readonly<{ head?: Commit; draft?: Draft }>>>;
+    readonly refreshSnapshotPointers: () => Promise<
+        BackendResult<Readonly<{ head?: Commit; draft?: Draft }>>
+    >;
 
     readonly setSnapshotData: WorkspaceAPI["snapshot"]["set"];
     readonly autosave: WorkspaceAPI["snapshot"]["autosave"];
@@ -9663,7 +11380,9 @@ export function useSnapshotsSlice(
     );
 
     const refreshSnapshotPointersForBranch = React.useCallback(
-        async (branchId: string): Promise<void> => {
+        async (
+            branchId: string,
+        ): Promise<BackendResult<Readonly<{ head?: Commit; draft?: Draft }>>> => {
             const res = await backend.snapshots.refresh({
                 workspaceId,
                 branchId,
@@ -9671,7 +11390,7 @@ export function useSnapshotsSlice(
                 since: snapshot.lastSavedAt ?? snapshot.lastDraftAt,
             });
 
-            if (!res.ok) return;
+            if (!res.ok) return res;
 
             setSnapshot((s) => ({
                 ...s,
@@ -9683,6 +11402,7 @@ export function useSnapshotsSlice(
                       ? "dirty"
                       : "clean",
             }));
+            return res;
         },
         [
             backend.snapshots,
@@ -9694,10 +11414,21 @@ export function useSnapshotsSlice(
     );
 
     const refreshSnapshotPointers =
-        React.useCallback(async (): Promise<void> => {
+        React.useCallback(async (): Promise<
+            BackendResult<Readonly<{ head?: Commit; draft?: Draft }>>
+        > => {
             const branchId = getCurrentBranchId();
-            if (!branchId) return;
-            await refreshSnapshotPointersForBranch(branchId);
+            if (!branchId) {
+                return {
+                    ok: false,
+                    error: {
+                        code: "no_branch",
+                        message:
+                            "No current branch to refresh snapshot pointers for.",
+                    },
+                };
+            }
+            return refreshSnapshotPointersForBranch(branchId);
         }, [getCurrentBranchId, refreshSnapshotPointersForBranch]);
 
     const autosave = React.useCallback<
@@ -9945,7 +11676,7 @@ export function useSnapshotsSlice(
 ```
 
 ---
-#### 50
+#### 53
 
 
 ` File: src/react/workspace/context/provider/slices/use-templates-slice.ts`  [↑ Back to top](#index)
@@ -9955,6 +11686,7 @@ export function useSnapshotsSlice(
 import * as React from "react";
 import type {
     BackendError,
+    BackendResult,
     FieldTemplate,
     TemplateCreateInput,
     TemplateUpdatePatch,
@@ -9969,7 +11701,7 @@ export interface TemplatesSliceApi {
 
     readonly refreshTemplates: (
         params?: Partial<Pick<TemplatesListParams, "branchId" | "since">>,
-    ) => Promise<void>;
+    ) => Promise<BackendResult<readonly FieldTemplate[]>>;
 
     readonly createTemplate: WorkspaceAPI["createTemplate"];
     readonly updateTemplate: WorkspaceAPI["updateTemplate"];
@@ -10028,10 +11760,18 @@ export function useTemplatesSlice(
     const refreshTemplates = React.useCallback(
         async (
             params?: Partial<Pick<TemplatesListParams, "branchId" | "since">>,
-        ): Promise<void> => {
+        ): Promise<BackendResult<readonly FieldTemplate[]>> => {
             const branchId: string | undefined =
                 params?.branchId ?? getCurrentBranchId();
-            if (!branchId) return;
+            if (!branchId) {
+                return {
+                    ok: false,
+                    error: {
+                        code: "no_branch",
+                        message: "No current branch to load templates for.",
+                    },
+                };
+            }
 
             setTemplates((s) => ({ ...s, loading: true }));
 
@@ -10047,8 +11787,10 @@ export function useTemplatesSlice(
                     loading: false,
                     updatedAt: runtime.now(),
                 });
+                return res;
             } else {
                 setLoadableError(setTemplates, res.error);
+                return res;
             }
         },
         [
@@ -10185,7 +11927,7 @@ export function useTemplatesSlice(
 ```
 
 ---
-#### 51
+#### 54
 
 
 ` File: src/react/workspace/context/provider/types.ts`  [↑ Back to top](#index)
@@ -10196,6 +11938,7 @@ import type {
     Actor,
     Author,
     BackendError,
+    BackendResult,
     Branch,
     BranchParticipant,
     Commit,
@@ -10235,6 +11978,50 @@ export type SnapshotState = "clean" | "dirty" | "uncommitted" | "saving";
 export type RunOk = { ok: true };
 export type RunErr = { ok: false; errors: BackendError[] };
 export type RunResult = RunOk | RunErr;
+
+export type WorkspaceBootSection =
+    | "authors"
+    | "permissions"
+    | "branches"
+    | "services"
+    | "participants"
+    | "templates"
+    | "snapshotPointers"
+    | "snapshotBody"
+    | "policies"
+    | "comments";
+
+export type WorkspaceBootSectionStatus = "idle" | "loading" | "success" | "error";
+
+export interface WorkspaceBootSectionState {
+    readonly status: WorkspaceBootSectionStatus;
+    readonly error?: BackendError;
+    readonly updatedAt?: number;
+}
+
+export interface WorkspaceBootState {
+    readonly sections: Readonly<
+        Record<WorkspaceBootSection, WorkspaceBootSectionState>
+    >;
+    readonly isBooting: boolean;
+    readonly isReady: boolean;
+    readonly hasErrors: boolean;
+    readonly hasPartialFailure: boolean;
+    readonly lastError?: BackendError;
+    readonly errorsBySection: Readonly<
+        Partial<Record<WorkspaceBootSection, BackendError>>
+    >;
+    readonly isSeededView: boolean;
+    readonly isLiveConfirmed: boolean;
+    readonly completedSections: number;
+    readonly succeededSections: number;
+    readonly failedSections: number;
+    readonly totalSections: number;
+    retryAll(opts?: { strict?: boolean }): Promise<RunResult>;
+    retrySection(
+        section: WorkspaceBootSection,
+    ): Promise<BackendResult<void>>;
+}
 
 export interface WorkspaceProviderProps {
     readonly backend: WorkspaceBackend;
@@ -10311,6 +12098,7 @@ export interface BranchCacheEntry {
 export interface WorkspaceAPI {
     readonly info: WorkspaceInfo;
     readonly actor: Actor;
+    readonly boot: WorkspaceBootState;
 
     readonly authors: Loadable<readonly Author[]>;
     readonly permissions: Loadable<PermissionsMap>;
@@ -10438,7 +12226,7 @@ export interface WorkspaceAPI {
 ```
 
 ---
-#### 52
+#### 55
 
 
 ` File: src/react/workspace/index.ts`  [↑ Back to top](#index)
@@ -10456,4 +12244,4 @@ export * from './components'
 
 ---
 *Generated with [Prodex](https://github.com/emxhive/prodex) — Codebase decoded.*
-<!-- PRODEx v1.4.11 | 2026-03-22T17:16:55.018Z -->
+<!-- PRODEx v1.4.11 | 2026-03-23T04:43:36.071Z -->

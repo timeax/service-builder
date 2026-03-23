@@ -6,9 +6,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { cn } from '@/lib/utils.ts';
 import { useWorkspace } from '@timeax/digital-service-engine/workspace';
-import { useEffect, useMemo, useState, type MouseEventHandler, type ReactNode } from 'react';
+import { type MouseEventHandler, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { MdCheck, MdOutlineFileCopy, MdOutlineRefresh } from 'react-icons/md';
 import { RiGitBranchLine, RiGitMergeLine, RiLoader4Line } from 'react-icons/ri';
+import { getBootActionReason } from '@/workspace/boot.ts';
 
 type PermissionReason = {
     allowed: boolean;
@@ -86,6 +87,7 @@ function ActionIconButton({
 
 const Drafts = ({ trigger }: DraftsProps) => {
     const ws = useWorkspace();
+    const bootActionReason = getBootActionReason(ws.boot);
     const [open, setOpen] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
     const [query, setQuery] = useState('');
@@ -175,8 +177,6 @@ const Drafts = ({ trigger }: DraftsProps) => {
         setActionKey(`switch:${branchId}`);
         try {
             ws.setCurrentBranch(branchId);
-            await ws.refresh.branchContext();
-            await ws.refresh.participants({ branchId });
             setOpen(false);
         } finally {
             setActionKey(null);
@@ -199,10 +199,7 @@ const Drafts = ({ trigger }: DraftsProps) => {
         try {
             const result = await ws.deleteBranch(branchId);
             if (!result.ok) return;
-            await Promise.all([
-                ws.refresh.branches(),
-                ws.refresh.participants({ branchId: ws.branches.currentId ?? currentBranch?.id ?? branchId }),
-            ]);
+            await Promise.all([ws.refresh.branches(), ws.refresh.participants({ branchId: ws.branches.currentId ?? currentBranch?.id ?? branchId })]);
         } finally {
             setActionKey(null);
         }
@@ -225,47 +222,54 @@ const Drafts = ({ trigger }: DraftsProps) => {
     };
 
     const createPermission = useMemo<PermissionReason>(() => {
+        if (!ws.boot.isReady) return { allowed: false, reason: bootActionReason ?? 'Workspace data is still loading.' };
         if (!workspaceRead) return { allowed: false, reason: 'You do not have workspace access.' };
         if (!canCreateBranch) return { allowed: false, reason: 'Branch creation is disabled by workspace permissions.' };
         if (!createFromId) return { allowed: false, reason: 'Choose a source branch first.' };
         return { allowed: true };
-    }, [canCreateBranch, createFromId, workspaceRead]);
+    }, [bootActionReason, canCreateBranch, createFromId, workspaceRead, ws.boot.isReady]);
 
     const branchActionMenu = (item: (typeof visibleBranches)[number]): MenuData => {
         const currentId = ws.branches.currentId;
 
-        const switchPermission: PermissionReason =
-            item.branch.id === currentId ? { allowed: false, reason: 'This branch is already active.' } : { allowed: true };
+        const switchPermission: PermissionReason = !ws.boot.isReady
+            ? { allowed: false, reason: bootActionReason ?? 'Workspace data is still loading.' }
+            : item.branch.id === currentId
+              ? { allowed: false, reason: 'This branch is already active.' }
+              : { allowed: true };
 
-        const setMainPermission: PermissionReason =
-            item.branch.isMain
-                ? { allowed: false, reason: 'This branch is already the main branch.' }
-                : !canWriteWorkspace
-                  ? { allowed: false, reason: 'Setting the main branch requires workspace write access.' }
-                  : !item.canWrite
-                    ? { allowed: false, reason: 'You need write access to this branch to make it main.' }
-                    : { allowed: true };
+        const setMainPermission: PermissionReason = !ws.boot.isReady
+            ? { allowed: false, reason: bootActionReason ?? 'Workspace data is still loading.' }
+            : item.branch.isMain
+              ? { allowed: false, reason: 'This branch is already the main branch.' }
+              : !canWriteWorkspace
+                ? { allowed: false, reason: 'Setting the main branch requires workspace write access.' }
+                : !item.canWrite
+                  ? { allowed: false, reason: 'You need write access to this branch to make it main.' }
+                  : { allowed: true };
 
-        const deletePermission: PermissionReason =
-            item.branch.isMain
-                ? { allowed: false, reason: 'Set another branch as main before deleting this branch.' }
-                : !canWriteWorkspace
-                  ? { allowed: false, reason: 'Deleting branches requires workspace write access.' }
-                  : !item.canWrite
-                    ? { allowed: false, reason: 'You need write access to delete this branch.' }
-                    : { allowed: true };
+        const deletePermission: PermissionReason = !ws.boot.isReady
+            ? { allowed: false, reason: bootActionReason ?? 'Workspace data is still loading.' }
+            : item.branch.isMain
+              ? { allowed: false, reason: 'Set another branch as main before deleting this branch.' }
+              : !canWriteWorkspace
+                ? { allowed: false, reason: 'Deleting branches requires workspace write access.' }
+                : !item.canWrite
+                  ? { allowed: false, reason: 'You need write access to delete this branch.' }
+                  : { allowed: true };
 
         const mergeTargets = visibleBranches
             .filter((target) => target.branch.id !== item.branch.id)
             .map((target) => {
-                const mergePermission: PermissionReason =
-                    !canMergeBranches
-                        ? { allowed: false, reason: 'Merging is disabled by workspace permissions.' }
-                        : !item.canWrite
-                          ? { allowed: false, reason: 'You need write access to the source branch to merge it.' }
-                          : !target.canWrite
-                            ? { allowed: false, reason: 'You need write access to the target branch to merge into it.' }
-                            : { allowed: true };
+                const mergePermission: PermissionReason = !ws.boot.isReady
+                    ? { allowed: false, reason: bootActionReason ?? 'Workspace data is still loading.' }
+                    : !canMergeBranches
+                      ? { allowed: false, reason: 'Merging is disabled by workspace permissions.' }
+                      : !item.canWrite
+                        ? { allowed: false, reason: 'You need write access to the source branch to merge it.' }
+                        : !target.canWrite
+                          ? { allowed: false, reason: 'You need write access to the target branch to merge into it.' }
+                          : { allowed: true };
 
                 return {
                     type: 'action' as const,
@@ -337,11 +341,17 @@ const Drafts = ({ trigger }: DraftsProps) => {
             }}
         >
             <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-            <PopoverContent align="start" sideOffset={10} className="w-[420px] rounded-[28px] border-slate-200 bg-white/98 p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-950/98">
+            <PopoverContent
+                align="start"
+                sideOffset={10}
+                className="w-[420px] rounded-[28px] border-slate-200 bg-white/98 p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-950/98"
+            >
                 <div className="border-b border-slate-200 px-4 py-4 dark:border-slate-800">
                     <div className="flex items-start justify-between gap-3">
                         <div>
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Branch manager</div>
+                            <div className="text-[10px] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">
+                                Branch manager
+                            </div>
                             <h3 className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-100">Workspace drafts</h3>
                             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Switch, merge, delete, and refresh branches.</p>
                         </div>
@@ -349,7 +359,12 @@ const Drafts = ({ trigger }: DraftsProps) => {
                         <div className="flex items-center gap-2">
                             <Popover modal={false} open={createOpen} onOpenChange={setCreateOpen}>
                                 <PopoverTrigger asChild>
-                                    <Button type="button" variant="outline" size="sm" className="rounded-xl border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="rounded-xl border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+                                    >
                                         <MdOutlineFileCopy />
                                         Create branch
                                     </Button>
@@ -364,7 +379,9 @@ const Drafts = ({ trigger }: DraftsProps) => {
                                     <div className="space-y-3">
                                         <div>
                                             <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Create branch</h4>
-                                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Branch names are normalized to lowercase slug format.</p>
+                                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                                Branch names are normalized to lowercase slug format.
+                                            </p>
                                         </div>
 
                                         <label className="space-y-2">
@@ -373,7 +390,7 @@ const Drafts = ({ trigger }: DraftsProps) => {
                                                 value={createName}
                                                 onChange={(event) => setCreateName(event.target.value)}
                                                 placeholder="feature-checkout"
-                                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500/40"
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-blue-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500/40"
                                             />
                                         </label>
 
@@ -382,7 +399,7 @@ const Drafts = ({ trigger }: DraftsProps) => {
                                             <select
                                                 value={createFromId}
                                                 onChange={(event) => setCreateFromId(event.target.value)}
-                                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500/40"
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none focus:border-blue-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500/40"
                                             >
                                                 {createSourceBranches.map((item) => (
                                                     <option key={item.branch.id} value={item.branch.id}>
@@ -445,7 +462,9 @@ const Drafts = ({ trigger }: DraftsProps) => {
                                     <div
                                         className={cn(
                                             'flex h-10 w-10 items-center justify-center rounded-xl',
-                                            isCurrent ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+                                            isCurrent
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
                                         )}
                                     >
                                         {isBusy ? <RiLoader4Line className="animate-spin text-lg" /> : <RiGitBranchLine className="text-lg" />}
@@ -453,14 +472,16 @@ const Drafts = ({ trigger }: DraftsProps) => {
 
                                     <div className="min-w-0 flex-1">
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <div className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{item.branch.name}</div>
+                                            <div className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                                {item.branch.name}
+                                            </div>
                                             {isCurrent ? (
-                                                <span className="rounded-full border border-blue-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+                                                <span className="rounded-full border border-blue-200 bg-white px-2 py-0.5 text-[10px] font-semibold tracking-[0.16em] text-blue-700 uppercase dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
                                                     Current
                                                 </span>
                                             ) : null}
                                             {item.branch.isMain ? (
-                                                <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
+                                                <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold tracking-[0.16em] text-amber-700 uppercase dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
                                                     Main
                                                 </span>
                                             ) : null}

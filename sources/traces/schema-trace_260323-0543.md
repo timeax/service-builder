@@ -6,18 +6,18 @@
 <!-- PRODEX_FILE_COUNT: 13 -->
 <!-- PRODEX_INDEX_LIST_START -->
 - [src/schema/base.ts](#1)  L24-L354
-- [src/schema/canvas-types.ts](#2)  L355-L427
-- [src/schema/catalog.ts](#3)  L428-L513
-- [src/schema/comments.ts](#4)  L514-L552
-- [src/schema/editor.ts](#5)  L553-L591
-- [src/schema/editor.types.ts](#6)  L592-L643
-- [src/schema/fallback-editor.ts](#7)  L644-L868
-- [src/schema/graph.ts](#8)  L869-L911
-- [src/schema/index.ts](#9)  L912-L932
-- [src/schema/order.ts](#10)  L933-L1089
-- [src/schema/policies.ts](#11)  L1090-L1106
-- [src/schema/provider.ts](#12)  L1107-L1166
-- [src/schema/validation.ts](#13)  L1167-L1335
+- [src/schema/canvas-types.ts](#2)  L355-L428
+- [src/schema/catalog.ts](#3)  L429-L514
+- [src/schema/comments.ts](#4)  L515-L553
+- [src/schema/editor.ts](#5)  L554-L592
+- [src/schema/editor.types.ts](#6)  L593-L644
+- [src/schema/fallback-editor.ts](#7)  L645-L869
+- [src/schema/graph.ts](#8)  L870-L912
+- [src/schema/index.ts](#9)  L913-L933
+- [src/schema/order.ts](#10)  L934-L1090
+- [src/schema/policies.ts](#11)  L1091-L1107
+- [src/schema/provider.ts](#12)  L1108-L1167
+- [src/schema/validation.ts](#13)  L1168-L1336
 <!-- PRODEX_INDEX_LIST_END -->
 
 ---
@@ -361,6 +361,7 @@ export interface ServicePropsNotice {
 ```ts
 import type { GraphSnapshot, GraphNode, GraphEdge, EdgeKind } from "./graph";
 import { CommentMessage, CommentThread } from "./comments";
+import { EditorEvents } from "@/schema/editor.types";
 
 export type Viewport = { x: number; y: number; zoom: number };
 
@@ -414,7 +415,7 @@ export type CanvasEvents = {
         nextDelayMs?: number;
         error?: any;
     };
-};
+} & EditorEvents;
 
 export type NodeView = GraphNode & { position?: NodePos };
 export type EdgeView = GraphEdge;
@@ -596,13 +597,13 @@ export type EditorSnapshot = {
 ` File: src/schema/editor.types.ts`  [↑ Back to top](#index)
 
 ```ts
-import type { ServiceProps } from "./index";
+import type { EditorSnapshot, ServiceProps } from "./index";
 import { SelectionOptions } from "@/react/canvas/selection";
 import { ServiceCatalogState } from "@/schema/catalog";
 
 export type EditorEvents = {
     "editor:command": { name: string; payload?: any };
-    "editor:change": { props: ServiceProps; reason: string; command?: string };
+    "editor:change": { props: ServiceProps; reason: string; command?: string, snapshot: EditorSnapshot };
     "editor:undo": { stackSize: number; index: number };
     "editor:redo": { stackSize: number; index: number };
     "editor:error": { message: string; code?: string; meta?: any };
@@ -1333,4 +1334,4 @@ export type FallbackSettings = {
 
 ---
 *Generated with [Prodex](https://github.com/emxhive/prodex) — Codebase decoded.*
-<!-- PRODEx v1.4.11 | 2026-03-22T17:16:55.018Z -->
+<!-- PRODEx v1.4.11 | 2026-03-23T04:43:36.071Z -->

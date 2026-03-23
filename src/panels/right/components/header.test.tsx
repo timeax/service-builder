@@ -22,6 +22,10 @@ vi.mock('@timeax/digital-service-engine/workspace', () => ({
 }));
 
 describe('RightPanel Header callbacks', () => {
+    const readyBoot = {
+        isReady: true,
+    };
+
     beforeEach(() => {
         mockUseWorkspace.mockReset();
         mockUseCanvas.mockReset();
@@ -40,6 +44,7 @@ describe('RightPanel Header callbacks', () => {
             info: { id: 'ws:local' },
             branches: { currentId: 'branch:main' },
             snapshot: { data: snapshotData },
+            boot: readyBoot,
         });
         mockUseCanvas.mockReturnValue({
             props: serviceProps,
@@ -79,6 +84,7 @@ describe('RightPanel Header callbacks', () => {
             info: { id: 'ws:local' },
             branches: { currentId: undefined },
             snapshot: { data: undefined },
+            boot: readyBoot,
         });
         mockUseCanvas.mockReturnValue({
             props: undefined,
@@ -110,6 +116,7 @@ describe('RightPanel Header callbacks', () => {
             info: { id: 'ws:local' },
             branches: { currentId: 'branch:main' },
             snapshot: { data: undefined },
+            boot: readyBoot,
         });
         mockUseCanvas.mockReturnValue({
             props: { filters: [], fields: [] },
@@ -122,5 +129,34 @@ describe('RightPanel Header callbacks', () => {
 
         expect(() => fireEvent.click(screen.getByTitle('Preview current branch'))).not.toThrow();
         expect(() => fireEvent.click(screen.getByTitle('Share branch'))).not.toThrow();
+    });
+
+    it('disables preview and share until required workspace boot sections are ready', () => {
+        mockUseWorkspace.mockReturnValue({
+            participants: { data: [] },
+            authors: { data: [] },
+            actor: { id: 'actor:1', meta: {} },
+            services: { data: {} },
+            info: { id: 'ws:local' },
+            branches: { currentId: 'branch:main' },
+            snapshot: { data: undefined },
+            boot: {
+                isReady: false,
+                isSeededView: true,
+                hasErrors: false,
+            },
+        });
+        mockUseCanvas.mockReturnValue({
+            props: { filters: [], fields: [] },
+            api: {
+                getServiceProps: vi.fn(() => ({ filters: [], fields: [] })),
+            },
+        });
+
+        render(<Header onPlay={vi.fn()} onShare={vi.fn()} />);
+
+        const disabledActions = screen.getAllByTitle('Live workspace data is still syncing.');
+        expect(disabledActions).toHaveLength(2);
+        for (const action of disabledActions) expect(action).toBeDisabled();
     });
 });

@@ -3,11 +3,15 @@ import Drafts from '@/panels/left/components/drafts.tsx';
 import { useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { GoChevronDown } from 'react-icons/go';
 import { MdMenuOpen, MdOutlineSpaceDashboard } from 'react-icons/md';
+import { getWorkspaceBootHeadline } from '@/workspace/boot.ts';
 
 const Header = () => {
     const ws = useWorkspace();
 
     const currentBranch = ws.branches.data?.find((branch) => branch.id === ws.branches.currentId);
+    const workspaceStatus = getWorkspaceBootHeadline(ws.boot);
+
+    // console.log(currentBranch)
 
     return (
         <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-800">
@@ -25,7 +29,7 @@ const Header = () => {
                                     type="button"
                                     className="mt-0.5 inline-flex items-center gap-1 rounded-md px-1 text-xs text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                                 >
-                                    <span>{currentBranch?.name ?? 'Main branch'} loaded</span>
+                                    <span>{currentBranch?.name ?? 'Main branch'} · {workspaceStatus}</span>
                                     <GoChevronDown className="text-sm" />
                                 </button>
                             }

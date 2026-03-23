@@ -9,11 +9,12 @@ import OptionProperties from '@/panels/right/partials/properties/option-properti
 import { TagProperties } from '@/panels/right/partials/properties/tag.tsx';
 import type { NodeKind } from '@timeax/digital-service-engine';
 import type { FieldNode, OptionNode, TagNode } from '@timeax/digital-service-engine/core';
-import { useCanvas } from '@timeax/digital-service-engine/workspace';
+import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
 import { useMemo, useState } from 'react';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { MdOutlineContentCopy } from 'react-icons/md';
+import { WorkspaceBootInlineNotice } from '@/workspace/boot-status.tsx';
 
 const kinds: Record<Exclude<NodeKind, 'comment'>, any> = {
     tag: TagProperties,
@@ -23,6 +24,7 @@ const kinds: Record<Exclude<NodeKind, 'comment'>, any> = {
 
 export const Properties = () => {
     const canvas = useCanvas();
+    const ws = useWorkspace();
     const node: TagNode | FieldNode | OptionNode = useMemo(() => {
         if (!canvas.activeId) return { kind: 'none' };
         return canvas.selector.getNode(canvas.activeId) as any;
@@ -44,6 +46,7 @@ export const Properties = () => {
         <div className="flex h-full flex-col overflow-hidden">
             <ScrollArea className="min-h-0 flex-1">
                 <div className="flex flex-col gap-4 px-4 py-4">
+                    <WorkspaceBootInlineNotice boot={ws.boot} sections={['snapshotBody', 'policies']} />
                     <Section>
                         <Section.Header>
                             <Section.Title>Selection overview</Section.Title>

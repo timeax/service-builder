@@ -20,21 +20,21 @@
 - [src/react/canvas/api.ts](#13)  L2548-L2878
 - [src/react/canvas/backend.ts](#14)  L2879-L2903
 - [src/react/canvas/comments.ts](#15)  L2904-L3575
-- [src/react/canvas/editor.ts](#16)  L3576-L4320
-- [src/react/canvas/editor/editor-catalog.ts](#17)  L4321-L4762
-- [src/react/canvas/editor/editor-constraints.ts](#18)  L4763-L4885
-- [src/react/canvas/editor/editor-duplicate.ts](#19)  L4886-L5141
-- [src/react/canvas/editor/editor-field-rules.ts](#20)  L5142-L5301
-- [src/react/canvas/editor/editor-ids.ts](#21)  L5302-L5389
-- [src/react/canvas/editor/editor-nodes.ts](#22)  L5390-L6079
-- [src/react/canvas/editor/editor-notices.ts](#23)  L6080-L6155
-- [src/react/canvas/editor/editor-placement.ts](#24)  L6156-L6310
-- [src/react/canvas/editor/editor-relations.ts](#25)  L6311-L6808
-- [src/react/canvas/editor/editor-service-filter.ts](#26)  L6809-L6853
-- [src/react/canvas/editor/editor-types.ts](#27)  L6854-L6933
-- [src/react/canvas/editor/editor-utils.ts](#28)  L6934-L7002
-- [src/react/canvas/events.ts](#29)  L7003-L7047
-- [src/react/canvas/selection.ts](#30)  L7048-L7547
+- [src/react/canvas/editor.ts](#16)  L3576-L4324
+- [src/react/canvas/editor/editor-catalog.ts](#17)  L4325-L4766
+- [src/react/canvas/editor/editor-constraints.ts](#18)  L4767-L4889
+- [src/react/canvas/editor/editor-duplicate.ts](#19)  L4890-L5145
+- [src/react/canvas/editor/editor-field-rules.ts](#20)  L5146-L5305
+- [src/react/canvas/editor/editor-ids.ts](#21)  L5306-L5393
+- [src/react/canvas/editor/editor-nodes.ts](#22)  L5394-L6083
+- [src/react/canvas/editor/editor-notices.ts](#23)  L6084-L6159
+- [src/react/canvas/editor/editor-placement.ts](#24)  L6160-L6314
+- [src/react/canvas/editor/editor-relations.ts](#25)  L6315-L6812
+- [src/react/canvas/editor/editor-service-filter.ts](#26)  L6813-L6857
+- [src/react/canvas/editor/editor-types.ts](#27)  L6858-L6937
+- [src/react/canvas/editor/editor-utils.ts](#28)  L6938-L7006
+- [src/react/canvas/events.ts](#29)  L7007-L7051
+- [src/react/canvas/selection.ts](#30)  L7052-L7551
 <!-- PRODEX_INDEX_LIST_END -->
 
 ---
@@ -4190,19 +4190,22 @@ export class Editor {
 
     private afterMutation(command: string, _before: EditorSnapshot) {
         if (this.txnDepth > 0) return;
-        this.pushHistory(this.makeSnapshot(command));
+        const snap = this.makeSnapshot(command);
+        this.pushHistory(snap);
         this.emit("editor:command", { name: command });
         if (this.opts.validateAfterEach) {
             this.emit("editor:change", {
-                props: this.builder.getProps(),
+                props: snap.props,
                 reason: "validate",
                 command,
+                snapshot: snap,
             });
         } else {
             this.emit("editor:change", {
-                props: this.builder.getProps(),
+                props: snap.props,
                 reason: "mutation",
                 command,
+                snapshot: snap,
             });
         }
     }
@@ -4214,6 +4217,7 @@ export class Editor {
             props: snap.props,
             reason: "transaction",
             command: this.txnLabel,
+            snapshot: snap,
         });
     }
 
@@ -4248,7 +4252,7 @@ export class Editor {
         } else {
             this.api.refreshGraph();
         }
-        this.emit("editor:change", { props: this.builder.getProps(), reason });
+        this.emit("editor:change", { props: s.props, reason, snapshot: s });
     }
 
     private pushHistory(snap: EditorSnapshot) {
@@ -7545,4 +7549,4 @@ export class Selection {
 
 ---
 *Generated with [Prodex](https://github.com/emxhive/prodex) — Codebase decoded.*
-<!-- PRODEx v1.4.11 | 2026-03-22T17:16:55.018Z -->
+<!-- PRODEx v1.4.11 | 2026-03-23T04:43:36.071Z -->

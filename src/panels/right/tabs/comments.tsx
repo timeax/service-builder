@@ -5,6 +5,7 @@ import { useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
 import { useMemo, useState } from 'react';
 import { MdOutlineSend } from 'react-icons/md';
+import { WorkspaceBootInlineNotice } from '@/workspace/boot-status.tsx';
 
 const Comments = () => {
     const ws = useWorkspace();
@@ -32,6 +33,7 @@ const Comments = () => {
 
             <div className="px-4 pt-3">
                 <PanelSearch value={query} onChange={setQuery} placeholder="Search comments or authors" />
+                <WorkspaceBootInlineNotice boot={ws.boot} sections={['comments']} className="mt-3" />
             </div>
 
             <ScrollArea className="mt-3 min-h-0 flex-1 px-4">
@@ -81,6 +83,7 @@ const Comments = () => {
                                     .finally(() => setValue(''));
                             }}
                             className="cursor-pointer rounded-xl bg-blue-600 px-3 py-2 text-white transition hover:bg-blue-700"
+                            disabled={!ws.boot.isReady}
                         >
                             <MdOutlineSend />
                         </button>

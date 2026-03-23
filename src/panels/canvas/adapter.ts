@@ -9,6 +9,7 @@ import type {
     OnConnectEnd,
     OnConnectStart,
     OnEdgesChange,
+    OnMoveStart,
     OnNodesChange,
     Viewport as RFViewport,
 } from '@xyflow/react';
@@ -81,6 +82,7 @@ function commentPosition(anchor: any, state: ReturnType<CanvasAPI['snapshot']>) 
 }
 
 function toRF(state: ReturnType<CanvasAPI['snapshot']>, api: CanvasAPI, opts?: Pick<AdapterOptions, 'nodeDecorators' | 'edgeDecorators'>): RFModel {
+    // console.log(state)
     const nodes: Node[] = state.graph.nodes.map((n, index) => {
         const fallback = {
             x: 120 + (index % 4) * 260,
@@ -156,6 +158,75 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     const beforeConnectRef = useRef(options.beforeConnect);
     const afterConnectRef = useRef(options.afterConnect);
     const lastViewportRef = useRef<RFViewport | null>(null);
+    const interactionInProgressRef = useRef(false);
+    const pendingSyncRef = useRef(false);
+    const pendingNodeHistoryRef = useRef<Record<string, { x: number; y: number }>>({});
+    const dragStartPositionsRef = useRef<Record<string, { x: number; y: number } | undefined>>({});
+
+    const syncFromSnapshot = useCallback(() => {
+        const snap = api.snapshot();
+        setRF(
+            toRF(snap, api, {
+                nodeDecorators: nodeDecoratorsRef.current,
+                edgeDecorators: edgeDecoratorsRef.current,
+            }),
+        );
+    }, [api]);
+
+    const requestSync = useCallback(() => {
+        if (interactionInProgressRef.current) {
+            pendingSyncRef.current = true;
+            return;
+        }
+        pendingSyncRef.current = false;
+        syncFromSnapshot();
+    }, [syncFromSnapshot]);
+
+    const flushDeferredSync = useCallback(() => {
+        if (interactionInProgressRef.current || !pendingSyncRef.current) return;
+        pendingSyncRef.current = false;
+        syncFromSnapshot();
+    }, [syncFromSnapshot]);
+
+    const startInteraction = useCallback(() => {
+        interactionInProgressRef.current = true;
+    }, []);
+
+    const endInteraction = useCallback(() => {
+        if (!interactionInProgressRef.current) return;
+        interactionInProgressRef.current = false;
+        flushDeferredSync();
+    }, [flushDeferredSync]);
+
+    const commitNodePositionHistory = useCallback(() => {
+        const updates = pendingNodeHistoryRef.current;
+        const ids = Object.keys(updates);
+        if (ids.length === 0) return;
+
+        const dragStartPositions = dragStartPositionsRef.current;
+        const changedEntries = ids.filter((id) => {
+            const next = updates[id];
+            const start = dragStartPositions[id];
+            return !start || start.x !== next.x || start.y !== next.y;
+        });
+
+        if (changedEntries.length === 0) {
+            pendingNodeHistoryRef.current = {};
+            dragStartPositionsRef.current = {};
+            return;
+        }
+
+        const finalPositions = changedEntries.reduce<Record<string, { x: number; y: number }>>((acc, id) => {
+            acc[id] = updates[id];
+            return acc;
+        }, {});
+
+        pendingNodeHistoryRef.current = {};
+        dragStartPositionsRef.current = {};
+        api.editor.transact('canvas:move-nodes', () => {
+            api.setPositions(finalPositions);
+        });
+    }, [api]);
 
     useEffect(() => {
         beforeConnectRef.current = options.beforeConnect;
@@ -174,14 +245,8 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     }, [edgeDecorators]);
 
     useEffect(() => {
-        const snap = api.snapshot();
-        setRF(
-            toRF(snap, api, {
-                nodeDecorators: nodeDecoratorsRef.current,
-                edgeDecorators: edgeDecoratorsRef.current,
-            }),
-        );
-    }, [api, nodeDecorators, edgeDecorators]);
+        requestSync();
+    }, [api, nodeDecorators, edgeDecorators, requestSync]);
 
     const [rf, setRF] = useState<RFModel>(() =>
         toRF(api.snapshot(), api, {
@@ -197,25 +262,20 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     }, [options.snapToGrid]);
 
     useEffect(() => {
-        const sync = () => {
-            const snap = api.snapshot();
-            setRF(
-                toRF(snap, api, {
-                    nodeDecorators: nodeDecoratorsRef.current,
-                    edgeDecorators: edgeDecoratorsRef.current,
-                }),
-            );
-        };
-        const offGraph = api.on('graph:update', sync);
-        const offSelection = api.on('selection:change', sync);
-        const offState = api.on('state:change', sync);
-        const offCommentCreate = api.on('comment:thread:create', sync);
-        const offCommentUpdate = api.on('comment:thread:update', sync);
-        const offCommentDelete = api.on('comment:thread:delete', sync);
-        const offCommentMove = api.on('comment:move', sync);
-        const offCommentResolve = api.on('comment:resolve', sync);
+        const offGraph = api.on('graph:update', requestSync);
+        const offSelection = api.on('selection:change', requestSync);
+        const offState = api.on('state:change', requestSync);
+        const offCommentCreate = api.on('comment:thread:create', requestSync);
+        const offCommentUpdate = api.on('comment:thread:update', requestSync);
+        const offCommentDelete = api.on('comment:thread:delete', requestSync);
+        const offCommentMove = api.on('comment:move', requestSync);
+        const offCommentResolve = api.on('comment:resolve', requestSync);
 
         return () => {
+            interactionInProgressRef.current = false;
+            pendingSyncRef.current = false;
+            pendingNodeHistoryRef.current = {};
+            dragStartPositionsRef.current = {};
             offGraph();
             offSelection();
             offState();
@@ -225,7 +285,7 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
             offCommentMove();
             offCommentResolve();
         };
-    }, [api]);
+    }, [api, requestSync]);
 
     const applySnap = useCallback(
         (pos: { x: number; y: number }) => {
@@ -245,6 +305,7 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     const onNodesChange: OnNodesChange = useCallback(
         async (changes) => {
             let nextNodesSnapshot: Node[] = [];
+            let dragEnded = false;
             setRF((prev) => {
                 const nextNodes = applyNodeChanges(changes, prev.nodes);
                 nextNodesSnapshot = nextNodes;
@@ -258,6 +319,14 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
             let selectionDirty = false;
 
             for (const change of changes) {
+                if (change.type === 'position' && typeof change.dragging === 'boolean') {
+                    if (change.dragging) {
+                        startInteraction();
+                    } else if (interactionInProgressRef.current) {
+                        dragEnded = true;
+                    }
+                }
+
                 if (change.type === 'position' && change.position) {
                     if (isCommentId(change.id)) {
                         const threadId = change.id.slice(3);
@@ -285,7 +354,12 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
                         }
                     }
 
-                    posUpdates[change.id] = applySnap(change.position);
+                    const snapped = applySnap(change.position);
+                    if (!(change.id in dragStartPositionsRef.current)) {
+                        dragStartPositionsRef.current[change.id] = api.snapshot().positions[change.id];
+                    }
+                    posUpdates[change.id] = snapped;
+                    pendingNodeHistoryRef.current[change.id] = snapped;
                     continue;
                 }
 
@@ -304,8 +378,13 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
                 const current = api.getSelection().map(String);
                 if (!sameIdSet(next, current)) api.select(next);
             }
+
+            if (dragEnded) {
+                commitNodePositionHistory();
+                endInteraction();
+            }
         },
-        [api, applySnap, setPositionsThrottled],
+        [api, applySnap, commitNodePositionHistory, endInteraction, setPositionsThrottled, startInteraction],
     );
 
     const onEdgesChange: OnEdgesChange = useCallback(
@@ -404,12 +483,16 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
             const prev = lastViewportRef.current;
             const changed =
                 !prev || Math.abs(prev.x - viewport.x) > 0.5 || Math.abs(prev.y - viewport.y) > 0.5 || Math.abs(prev.zoom - viewport.zoom) > 1e-4;
-            if (!changed) return;
             lastViewportRef.current = viewport;
-            setViewportThrottled(viewport);
+            if (changed) setViewportThrottled(viewport);
+            endInteraction();
         },
-        [setViewportThrottled],
+        [endInteraction, setViewportThrottled],
     );
+
+    const onMoveStart: OnMoveStart = useCallback(() => {
+        startInteraction();
+    }, [startInteraction]);
 
     const onSelectionChange = useCallback(
         (_arg: { nodes: Node[]; edges: Edge[] }) => {
@@ -426,6 +509,7 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
         onConnect,
         onConnectStart,
         onConnectEnd,
+        onMoveStart,
         onMoveEnd,
         onSelectionChange,
         isValidConnection,

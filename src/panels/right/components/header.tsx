@@ -5,6 +5,7 @@ import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspac
 import { useMemo } from 'react';
 import { MdOutlinePlayArrow } from 'react-icons/md';
 import { PiShareFatThin } from 'react-icons/pi';
+import { getBootActionReason } from '@/workspace/boot.ts';
 
 type HeaderProps = {
     onShare?: (snapshotData: EditorSnapshot | undefined) => void | Promise<void>;
@@ -14,6 +15,7 @@ type HeaderProps = {
 const Header = ({ onShare, onPlay }: HeaderProps) => {
     const ws = useWorkspace();
     const canvas = useCanvas();
+    const bootActionReason = getBootActionReason(ws.boot);
 
     const users = useMemo<User[]>(() => {
         const participants = ws.participants.data ?? [];
@@ -63,16 +65,18 @@ const Header = ({ onShare, onPlay }: HeaderProps) => {
             <div className="min-w-0 flex items-center gap-3">
                 <Users users={users} />
                 <BuilderIconButton
-                    title="Preview current branch"
+                    title={bootActionReason ?? 'Preview current branch'}
                     onClick={onPlayClick}
+                    disabled={!ws.boot.isReady}
                     className="h-9 w-9 rounded-xl border border-slate-200 bg-white/80 text-slate-600 hover:bg-white dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-300"
                 >
                     <MdOutlinePlayArrow className="text-2xl" />
                 </BuilderIconButton>
             </div>
             <BuilderIconButton
-                title="Share branch"
+                title={bootActionReason ?? 'Share branch'}
                 onClick={onShareClick}
+                disabled={!ws.boot.isReady}
                 className="h-9 w-9 rounded-xl bg-sky-500 text-white hover:border-sky-500 hover:bg-sky-600 hover:text-white dark:bg-sky-500 dark:text-white"
             >
                 <PiShareFatThin />

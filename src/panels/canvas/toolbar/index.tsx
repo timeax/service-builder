@@ -1,5 +1,5 @@
 import type { UseCanvasReturn } from '@timeax/digital-service-engine/workspace';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { LuPanelBottom, LuPanelRight } from 'react-icons/lu';
 import { useReactFlow } from '@xyflow/react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
@@ -33,6 +33,7 @@ export type ToolbarProps = {
 };
 
 type CanvasAPI = UseCanvasReturn['api'];
+type EdgeRelation = ReturnType<CanvasAPI['getEdgeRel']>;
 
 export type ToolRender = {
     id: string;
@@ -77,7 +78,7 @@ export function Toolbar({
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
     const selectionCount = api.getSelection().length;
-    const relation = api.getEdgeRel();
+    const relation = useCanvasEdgeRelation(api);
 
     const ctx: ToolContext = useMemo(
         () => ({
@@ -223,6 +224,14 @@ export function Toolbar({
                 </button>
             </div>
         </div>
+    );
+}
+
+function useCanvasEdgeRelation(api: CanvasAPI): EdgeRelation {
+    return useSyncExternalStore(
+        (onStoreChange) => api.on('edge:change', onStoreChange),
+        () => api.getEdgeRel(),
+        () => api.getEdgeRel(),
     );
 }
 

@@ -1,23 +1,23 @@
-import { Button } from '@/components/ui/button.tsx';
 import { EmptyState } from '@/components/builder/index.tsx';
+import { Button } from '@/components/ui/button.tsx';
 import { cn } from '@/lib/utils.ts';
-import { type UseErrorsReturn, type ErrorLog, type ValidationRow, useCanvas } from '@timeax/digital-service-engine/workspace';
-import { FiTrash2, FiInfo, FiX } from 'react-icons/fi';
+import { type ErrorLog, useCanvas, type UseErrorsReturn, type ValidationRow } from '@timeax/digital-service-engine/workspace';
+import { FiInfo, FiTrash2, FiX } from 'react-icons/fi';
 import {
     type ConsoleIntroState,
     type ConsoleScopeFilter,
     type ConsoleSeverityFilter,
     type ConsoleSubTab,
-    type ServiceNotice,
+    describeValidationScope,
     getConsoleIntroCopy,
     iconForSeverity,
     matchesLogScope,
     matchesNoticeScope,
     matchesSeverity,
     matchesValidationScope,
+    type ServiceNotice,
     severityBadgeClassName,
-    describeValidationScope,
-    toNodeChip
+    toNodeChip,
 } from './utils.tsx';
 
 export function ConsoleTab({
@@ -54,9 +54,13 @@ export function ConsoleTab({
     onNodeClick: (nodeId: string) => void;
 }) {
     const hasActiveSelection = activeNodeIds.size > 0;
-    const validationRows = errors.validation.filter((row) => matchesValidationScope(row, scopeFilter, activeNodeIds)).filter((row) => matchesSeverity(row.severity, severityFilter));
+    const validationRows = errors.validation
+        .filter((row) => matchesValidationScope(row, scopeFilter, activeNodeIds))
+        .filter((row) => matchesSeverity(row.severity, severityFilter));
     const logRows = errors.logs.filter((row) => matchesLogScope(row, scopeFilter, activeNodeIds));
-    const noticeRows = notices.filter((notice) => matchesNoticeScope(notice, scopeFilter, activeNodeIds)).filter((notice) => matchesSeverity(notice.severity, severityFilter));
+    const noticeRows = notices
+        .filter((notice) => matchesNoticeScope(notice, scopeFilter, activeNodeIds))
+        .filter((notice) => matchesSeverity(notice.severity, severityFilter));
 
     const subTabs: Array<{ id: ConsoleSubTab; label: string; count: number }> = [
         { id: 'validation', label: 'Validation', count: validationRows.length },
@@ -115,7 +119,7 @@ export function ConsoleTab({
                                 type="button"
                                 onClick={() => onSubTabChange(tab.id)}
                                 className={cn(
-                                    'inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors',
+                                    'inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold tracking-[0.14em] uppercase transition-colors',
                                     subTab === tab.id
                                         ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
                                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800',
@@ -136,7 +140,7 @@ export function ConsoleTab({
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Scope</span>
+                    <span className="text-[11px] font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">Scope</span>
                     <button
                         type="button"
                         onClick={() => onScopeFilterChange('all')}
@@ -164,7 +168,9 @@ export function ConsoleTab({
 
                     {subTab !== 'logs' ? (
                         <>
-                            <span className="ml-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Severity</span>
+                            <span className="ml-2 text-[11px] font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">
+                                Severity
+                            </span>
                             {(['all', 'error', 'warning', 'info'] as const).map((option) => (
                                 <button
                                     key={option}
@@ -185,39 +191,63 @@ export function ConsoleTab({
                 </div>
 
                 {scopeFilter === 'activeNode' && !hasActiveSelection ? (
-                    <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">No active node selected. Select a node to filter by active scope.</p>
+                    <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+                        No active node selected. Select a node to filter by active scope.
+                    </p>
                 ) : null}
             </div>
 
             {subTab === 'validation' ? (
                 validationRows.length ? (
-                    <div className="space-y-3">{validationRows.map((row) => <ValidationCard key={row.id} row={row} />)}</div>
+                    <div className="space-y-3">
+                        {validationRows.map((row) => (
+                            <ValidationCard onNodeClick={onNodeClick} key={row.id} row={row} />
+                        ))}
+                    </div>
                 ) : (
                     <EmptyState
                         title="No validation rows for this filter"
-                        description={scopeFilter === 'activeNode' ? 'No validation rows match the current active node scope.' : 'No validation rows match the current severity filter.'}
+                        description={
+                            scopeFilter === 'activeNode'
+                                ? 'No validation rows match the current active node scope.'
+                                : 'No validation rows match the current severity filter.'
+                        }
                     />
                 )
             ) : null}
 
             {subTab === 'logs' ? (
                 logRows.length ? (
-                    <div className="space-y-3">{logRows.map((row) => <LogCard key={row.id} row={row} onRemove={() => errors.removeLog(row.id)} />)}</div>
+                    <div className="space-y-3">
+                        {logRows.map((row) => (
+                            <LogCard key={row.id} row={row} onRemove={() => errors.removeLog(row.id)} />
+                        ))}
+                    </div>
                 ) : (
                     <EmptyState
                         title="No logs for this filter"
-                        description={scopeFilter === 'activeNode' ? 'No logs are linked to the current active node scope.' : 'No logs have been captured yet.'}
+                        description={
+                            scopeFilter === 'activeNode' ? 'No logs are linked to the current active node scope.' : 'No logs have been captured yet.'
+                        }
                     />
                 )
             ) : null}
 
             {subTab === 'notices' ? (
                 noticeRows.length ? (
-                    <div className="space-y-3">{noticeRows.map((row) => <NoticeCard key={row.id} notice={row} onNodeClick={onNodeClick} />)}</div>
+                    <div className="space-y-3">
+                        {noticeRows.map((row) => (
+                            <NoticeCard key={row.id} notice={row} onNodeClick={onNodeClick} />
+                        ))}
+                    </div>
                 ) : (
                     <EmptyState
                         title="No notices for this filter"
-                        description={scopeFilter === 'activeNode' ? 'No node-scoped notices match the current active node.' : 'No notices match the current severity filter.'}
+                        description={
+                            scopeFilter === 'activeNode'
+                                ? 'No node-scoped notices match the current active node.'
+                                : 'No notices match the current severity filter.'
+                        }
                     />
                 )
             ) : null}
@@ -229,10 +259,7 @@ function NoticeCard({ notice, onNodeClick }: { notice: ServiceNotice; onNodeClic
     const canvas = useCanvas();
     const targetNodeId = notice.target.scope === 'node' ? notice.target.node_id : null;
 
-    const targetChip =
-        notice.target.scope === 'node'
-            ? toNodeChip(canvas, notice.target.node_id)
-            : 'Global notice';
+    const targetChip = notice.target.scope === 'node' ? toNodeChip(canvas, notice.target.node_id) : 'Global notice';
 
     return (
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/90">
@@ -241,7 +268,7 @@ function NoticeCard({ notice, onNodeClick }: { notice: ServiceNotice; onNodeClic
                 <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                         <span className={severityBadgeClassName(notice.severity)}>{notice.kind}</span>
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em] text-slate-600 uppercase dark:bg-slate-900 dark:text-slate-300">
                             {notice.type}
                         </span>
                         <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{notice.title}</span>
@@ -258,7 +285,9 @@ function NoticeCard({ notice, onNodeClick }: { notice: ServiceNotice; onNodeClic
                                 {targetChip}
                             </button>
                         ) : (
-                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700 dark:bg-slate-900 dark:text-slate-300">{targetChip}</span>
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                {targetChip}
+                            </span>
                         )}
                         {notice.marked_at ? <span>{new Date(notice.marked_at).toLocaleString()}</span> : null}
                         {notice.icon ? <span>Icon: {notice.icon}</span> : null}
@@ -270,12 +299,15 @@ function NoticeCard({ notice, onNodeClick }: { notice: ServiceNotice; onNodeClic
     );
 }
 
-function ValidationCard({ row }: { row: ValidationRow }) {
+function ValidationCard({ row, onNodeClick }: { row: ValidationRow; onNodeClick: (nodeId: string) => void }) {
     const canvas = useCanvas();
     const scope = describeValidationScope(canvas, row);
 
     return (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/90">
+        <div
+            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/90"
+            onClick={() => scope.length && canvas.api.setHighlighted(scope)}
+        >
             <div className="flex items-start gap-3">
                 <div className="mt-0.5">{iconForSeverity(row.severity)}</div>
                 <div className="min-w-0 flex-1">
@@ -288,6 +320,7 @@ function ValidationCard({ row }: { row: ValidationRow }) {
                             {scope.map((item) => (
                                 <span
                                     key={item}
+                                    onClick={() => onNodeClick(row.nodeId)}
                                     className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-900 dark:text-slate-300"
                                 >
                                     {item}
@@ -310,7 +343,7 @@ function LogCard({ row, onRemove }: { row: ErrorLog; onRemove: () => void }) {
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-sky-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700 dark:bg-sky-500/15 dark:text-sky-200">
+                        <span className="rounded-full bg-sky-100 px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em] text-sky-700 uppercase dark:bg-sky-500/15 dark:text-sky-200">
                             {row.code ?? 'log'}
                         </span>
                         <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{row.message}</span>

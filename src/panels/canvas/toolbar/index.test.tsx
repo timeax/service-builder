@@ -1,22 +1,40 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { useState } from 'react';
 import { Toolbar } from './index.tsx';
 
 function createApiMock() {
     let relation: 'bind' | 'include' | 'exclude' = 'bind';
+    const listeners = new Map<string, Set<() => void>>();
+    const notify = (event: string) => {
+        for (const listener of listeners.get(event) ?? []) listener();
+    };
+
     return {
         getSelection: () => [],
         getEdgeRel: () => relation,
         setEdgeRel: (next: 'bind' | 'include' | 'exclude') => {
             relation = next;
+            notify('edge:change');
+        },
+        on: (event: string, cb: () => void) => {
+            const current = listeners.get(event) ?? new Set<() => void>();
+            current.add(cb);
+            listeners.set(event, current);
+            return () => {
+                current.delete(cb);
+                if (current.size === 0) listeners.delete(event);
+            };
+        },
+        emitEdgeChange: (next: 'bind' | 'include' | 'exclude') => {
+            relation = next;
+            notify('edge:change');
         },
         emit: vi.fn(),
     };
 }
 
-function ToolbarHarness() {
-    const api = createApiMock() as any;
+function ToolbarHarness({ api = createApiMock() }: { api?: ReturnType<typeof createApiMock> }) {
     const [showGrid, setShowGrid] = useState(true);
     const [showMiniMap, setShowMiniMap] = useState(false);
     const [showBindEdges, setShowBindEdges] = useState(true);
@@ -27,7 +45,7 @@ function ToolbarHarness() {
     return (
         <ReactFlowProvider>
             <Toolbar
-                api={api}
+                api={api as any}
                 showGrid={showGrid}
                 setShowGrid={setShowGrid}
                 showMiniMap={showMiniMap}
@@ -102,5 +120,48 @@ describe('canvas toolbar view toggles', () => {
         expect(viewMenu).toHaveAttribute('aria-expanded', 'true');
         expect(viewMenu).not.toHaveClass('ring-1');
         expect(screen.getByText(/\d+ active view options/i)).toBeInTheDocument();
+    });
+
+    it('updates the active relation button immediately after clicking a relation tool', () => {
+        render(<ToolbarHarness />);
+
+        const bindButton = screen.getByTitle('Bind');
+        const includeButton = screen.getByTitle('Include');
+        const excludeButton = screen.getByTitle('Exclude');
+
+        expect(bindButton).toHaveAttribute('aria-pressed', 'true');
+        expect(includeButton).toHaveAttribute('aria-pressed', 'false');
+        expect(excludeButton).toHaveAttribute('aria-pressed', 'false');
+
+        fireEvent.click(includeButton);
+
+        expect(bindButton).toHaveAttribute('aria-pressed', 'false');
+        expect(includeButton).toHaveAttribute('aria-pressed', 'true');
+        expect(excludeButton).toHaveAttribute('aria-pressed', 'false');
+
+        fireEvent.click(excludeButton);
+
+        expect(bindButton).toHaveAttribute('aria-pressed', 'false');
+        expect(includeButton).toHaveAttribute('aria-pressed', 'false');
+        expect(excludeButton).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('updates the active relation button when edge:change is emitted externally', () => {
+        const api = createApiMock();
+        render(<ToolbarHarness api={api} />);
+
+        const bindButton = screen.getByTitle('Bind');
+        const includeButton = screen.getByTitle('Include');
+        const excludeButton = screen.getByTitle('Exclude');
+
+        expect(bindButton).toHaveAttribute('aria-pressed', 'true');
+
+        act(() => {
+            api.emitEdgeChange('include');
+        });
+
+        expect(bindButton).toHaveAttribute('aria-pressed', 'false');
+        expect(includeButton).toHaveAttribute('aria-pressed', 'true');
+        expect(excludeButton).toHaveAttribute('aria-pressed', 'false');
     });
 });

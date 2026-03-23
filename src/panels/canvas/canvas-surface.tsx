@@ -1,8 +1,8 @@
 import type { AnyNode } from '@timeax/digital-service-engine/core';
 import { type UseCanvasReturn, useWorkspace } from '@timeax/digital-service-engine/workspace';
-import { Background, ConnectionMode, MiniMap, type Node, ReactFlow } from '@xyflow/react';
+import { Background, ConnectionMode, MiniMap, type Node, ReactFlow, useReactFlow, type Viewport as RFViewport } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { type AdapterOptions, useReactFlowAdapter } from './adapter.ts';
 import { edgeTypes, nodeTypes } from './reactflow/index.tsx';
 import { Toolbar } from './toolbar/index.tsx';
@@ -41,6 +41,26 @@ export type CanvasSurfaceProps = {
 };
 
 type CanvasAPI = UseCanvasReturn['api'];
+
+function hasPersistedViewport(viewport: RFViewport | null | undefined): boolean {
+    if (!viewport) return false;
+    return Math.abs(viewport.x) > 0.5 || Math.abs(viewport.y) > 0.5 || Math.abs(viewport.zoom - 1) > 1e-4;
+}
+
+function InitialFitController({ enabled, nodeCount }: { enabled: boolean; nodeCount: number }) {
+    const rf = useReactFlow();
+    const didFitRef = useRef(false);
+
+    useEffect(() => {
+        if (!enabled || didFitRef.current || nodeCount === 0) return;
+        didFitRef.current = true;
+        requestAnimationFrame(() => {
+            rf.fitView?.();
+        });
+    }, [enabled, nodeCount, rf]);
+
+    return null;
+}
 
 export function CanvasSurface({
     api,
@@ -85,6 +105,7 @@ export function CanvasSurface({
         onConnect,
         onConnectStart,
         onConnectEnd,
+        onMoveStart,
         onMoveEnd,
         onSelectionChange,
         isValidConnection,
@@ -92,6 +113,8 @@ export function CanvasSurface({
     } = useReactFlowAdapter(api, options);
     const snapToGrid = useMemo(() => !!options?.snapToGrid, [options?.snapToGrid]);
     const snapGrid = useMemo<[number, number] | undefined>(() => snapVector, [snapVector]);
+    const initialViewport = useMemo(() => api.snapshot().viewport ?? { x: 0, y: 0, zoom: 1 }, [api]);
+    const shouldInitialFit = useMemo(() => nodes.length > 0 && !hasPersistedViewport(initialViewport), [initialViewport, nodes.length]);
 
     useEffect(() => {
         if (!persistToolbarOrientation || typeof window === 'undefined') {
@@ -113,6 +136,7 @@ export function CanvasSurface({
             <ReactFlow
                 nodes={nodes as Node[]}
                 edges={edges}
+                defaultViewport={initialViewport}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 connectionMode={ConnectionMode.Loose}
@@ -121,10 +145,10 @@ export function CanvasSurface({
                 onConnectStart={onConnectStart}
                 onConnectEnd={onConnectEnd}
                 onConnect={onConnect}
+                onMoveStart={onMoveStart}
                 onMoveEnd={onMoveEnd}
                 onSelectionChange={onSelectionChange}
                 isValidConnection={isValidConnection}
-                fitView
                 snapToGrid={snapToGrid}
                 snapGrid={snapGrid}
                 className="bg-transparent!"
@@ -141,6 +165,7 @@ export function CanvasSurface({
                     });
                 }}
             >
+                <InitialFitController enabled={shouldInitialFit} nodeCount={nodes.length} />
                 {showToolbar ? (
                     <div className={`pointer-events-none absolute z-10 ${toolbarPositionClassName}`}>
                         <Toolbar
