@@ -2,21 +2,22 @@
 > Note for LLMs: `Lx-Ly` ranges refer to lines in this Prodex trace file, not the original source files. Index metadata is provided via the HTML comment markers in this section.
 
 # Index
-<!-- PRODEX_INDEX_RANGE: L8-L19 -->
-<!-- PRODEX_FILE_COUNT: 12 -->
+<!-- PRODEX_INDEX_RANGE: L8-L20 -->
+<!-- PRODEX_FILE_COUNT: 13 -->
 <!-- PRODEX_INDEX_LIST_START -->
-- [src/schema/base.ts](#1)  L23-L350
-- [src/schema/canvas-types.ts](#2)  L351-L423
-- [src/schema/comments.ts](#3)  L424-L462
-- [src/schema/editor.ts](#4)  L463-L498
-- [src/schema/editor.types.ts](#5)  L499-L541
-- [src/schema/fallback-editor.ts](#6)  L542-L767
-- [src/schema/graph.ts](#7)  L768-L810
-- [src/schema/index.ts](#8)  L811-L830
-- [src/schema/order.ts](#9)  L831-L978
-- [src/schema/policies.ts](#10)  L979-L995
-- [src/schema/provider.ts](#11)  L996-L1055
-- [src/schema/validation.ts](#12)  L1056-L1225
+- [src/schema/base.ts](#1)  L24-L354
+- [src/schema/canvas-types.ts](#2)  L355-L427
+- [src/schema/catalog.ts](#3)  L428-L513
+- [src/schema/comments.ts](#4)  L514-L552
+- [src/schema/editor.ts](#5)  L553-L591
+- [src/schema/editor.types.ts](#6)  L592-L643
+- [src/schema/fallback-editor.ts](#7)  L644-L868
+- [src/schema/graph.ts](#8)  L869-L911
+- [src/schema/index.ts](#9)  L912-L932
+- [src/schema/order.ts](#10)  L933-L1089
+- [src/schema/policies.ts](#11)  L1090-L1106
+- [src/schema/provider.ts](#12)  L1107-L1166
+- [src/schema/validation.ts](#13)  L1167-L1335
 <!-- PRODEX_INDEX_LIST_END -->
 
 ---
@@ -28,7 +29,10 @@
 
 ```ts
 // persisted schema + shared types
-import { ServiceFallback } from "@/schema/fallback-editor";
+import type { ServiceFallback } from "@/schema/fallback-editor";
+import type { IdType } from "./provider";
+
+export type ServiceIdRef = IdType;
 
 export type PricingRole = "base" | "utility";
 export type FieldType = "custom" | (string & {});
@@ -228,7 +232,7 @@ export type FieldOption = {
     id: string;
     label: string;
     value?: string | number;
-    service_id?: number;
+    service_id?: ServiceIdRef;
     pricing_role?: PricingRole;
     meta?: Record<string, unknown> & UtilityMark & WithQuantityDefault;
 };
@@ -253,7 +257,7 @@ export type Field = BaseFieldUI & {
           }
         | ({
               button: true;
-              service_id?: number;
+              service_id?: ServiceIdRef;
           } & WithQuantityDefault)
     );
 
@@ -269,7 +273,7 @@ export type Tag = {
     id: string;
     label: string;
     bind_id?: string;
-    service_id?: number;
+    service_id?: ServiceIdRef;
     includes?: string[];
     excludes?: string[];
     meta?: Record<string, unknown> & WithQuantityDefault;
@@ -425,6 +429,92 @@ export type CanvasOptions = {
 #### 3
 
 
+` File: src/schema/catalog.ts`  [↑ Back to top](#index)
+
+```ts
+export type CatalogId = string;
+export type CatalogServiceId = string | number;
+
+export type CatalogNodeKind = "group" | "smart-group";
+
+export type CatalogSmartRule =
+    | {
+          type: "service-field";
+          field: string;
+          op:
+              | "eq"
+              | "neq"
+              | "in"
+              | "contains"
+              | "startsWith"
+              | "endsWith"
+              | "gt"
+              | "gte"
+              | "lt"
+              | "lte"
+              | "between"
+              | "exists";
+          value?: unknown;
+          min?: number;
+          max?: number;
+      }
+    | {
+          type: "policy-family";
+          key: string;
+          value?: unknown;
+      }
+    | {
+          type: "compatibility";
+          scope: "tag" | "field" | "option" | "visible-group";
+          targetId?: string;
+          mode: "safe" | "assignable" | "same-family" | "conflicts";
+      };
+
+export type CatalogNodeBase = {
+    id: CatalogId;
+    label: string;
+    parentId?: CatalogId;
+    description?: string;
+    order?: number;
+    color?: string;
+    icon?: string;
+    collapsed?: boolean;
+    meta?: Record<string, unknown>;
+};
+
+export type CatalogGroupNode = CatalogNodeBase & {
+    kind: "group";
+    serviceIds: CatalogServiceId[];
+};
+
+export type CatalogSmartGroupNode = CatalogNodeBase & {
+    kind: "smart-group";
+    rules: CatalogSmartRule[];
+    match: "all" | "any";
+    resolvedServiceIds?: CatalogServiceId[];
+    resolvedAt?: number;
+};
+
+export type CatalogNode = CatalogGroupNode | CatalogSmartGroupNode;
+
+export type CatalogViewMode = "all" | "grouped" | "smart" | "assigned";
+
+export interface ServiceCatalogState {
+    version: 1;
+    nodes: CatalogNode[];
+    activeNodeId?: CatalogId;
+    expandedIds?: CatalogId[];
+    pinnedNodeIds?: CatalogId[];
+    selectedServiceId?: CatalogServiceId;
+    viewMode?: CatalogViewMode;
+    meta?: Record<string, unknown>;
+}
+```
+
+---
+#### 4
+
+
 ` File: src/schema/comments.ts`  [↑ Back to top](#index)
 
 ```ts
@@ -461,7 +551,7 @@ export type CommentThread = {
 ```
 
 ---
-#### 4
+#### 5
 
 
 ` File: src/schema/editor.ts`  [↑ Back to top](#index)
@@ -469,6 +559,8 @@ export type CommentThread = {
 ```ts
 import type { ServiceProps } from "./index";
 import { CanvasState } from "./canvas-types";
+import { ServiceCatalogState } from "@/schema/catalog";
+
 
 export type CommentNode = {
     id: string;
@@ -492,12 +584,13 @@ export type EditorSnapshot = {
     props: ServiceProps;
     layout?: LayoutState;
     comments?: CommentNode[];
+    catalog?: ServiceCatalogState;
     meta?: Record<string, unknown>;
 };
 ```
 
 ---
-#### 5
+#### 6
 
 
 ` File: src/schema/editor.types.ts`  [↑ Back to top](#index)
@@ -505,6 +598,7 @@ export type EditorSnapshot = {
 ```ts
 import type { ServiceProps } from "./index";
 import { SelectionOptions } from "@/react/canvas/selection";
+import { ServiceCatalogState } from "@/schema/catalog";
 
 export type EditorEvents = {
     "editor:command": { name: string; payload?: any };
@@ -512,6 +606,14 @@ export type EditorEvents = {
     "editor:undo": { stackSize: number; index: number };
     "editor:redo": { stackSize: number; index: number };
     "editor:error": { message: string; code?: string; meta?: any };
+
+    "catalog:change": {
+        catalog?: ServiceCatalogState;
+        reason: string;
+    };
+    "catalog:active-change": {
+        activeNodeId?: string;
+    };
 };
 
 export type Command = {
@@ -540,7 +642,7 @@ export type ConnectKind = "bind" | "include" | "exclude";
 ```
 
 ---
-#### 6
+#### 7
 
 
 ` File: src/schema/fallback-editor.ts`  [↑ Back to top](#index)
@@ -548,12 +650,11 @@ export type ConnectKind = "bind" | "include" | "exclude";
 ```ts
 // src/schema/fallback-editor.ts
 
-import type { DgpServiceMap, ServiceProps } from "@/schema";
+import type { DgpServiceMap, ServiceIdRef, ServiceProps } from "@/schema";
 import type { OrderSnapshot } from "@/schema/order";
 import type { FallbackSettings } from "@/schema/validation";
 
 // Ids
-export type ServiceIdRef = number | string; // provider service id
 export type NodeIdRef = string; // tag.id or option.id
 
 export type ServiceFallback = {
@@ -766,7 +867,7 @@ export declare function createFallbackEditor(
 ```
 
 ---
-#### 7
+#### 8
 
 
 ` File: src/schema/graph.ts`  [↑ Back to top](#index)
@@ -809,7 +910,7 @@ Node<{
 ```
 
 ---
-#### 8
+#### 9
 
 
 ` File: src/schema/index.ts`  [↑ Back to top](#index)
@@ -826,23 +927,29 @@ export * from "./policies";
 export * from "./provider";
 export * from "./validation";
 export * from "./fallback-editor"
+export * from './catalog'
 ```
 
 ---
-#### 9
+#### 10
 
 
 ` File: src/schema/order.ts`  [↑ Back to top](#index)
 
 ```ts
 // src/schema/order.ts
-import { ServiceFallback, UtilityMark, WithQuantityDefault } from "./index";
+import {
+    ServiceFallback,
+    ServiceIdRef,
+    UtilityMark,
+    WithQuantityDefault,
+} from "./index";
 
 export interface ButtonValue {
     id: string; // option id OR field id (for option-less buttons)
     value: string | number; // host’s payload
     // Enrichment added by InputWrapper (not required from host):
-    service_id?: number;
+    service_id?: ServiceIdRef;
     pricing_role?: "base" | "utility";
     meta?: Record<string, unknown> & UtilityMark & WithQuantityDefault;
 }
@@ -910,7 +1017,11 @@ export type SnapshotContext = {
 
     /** Client pruning policy used (so server can mirror/compare). */
     policy: {
-        ratePolicy: { kind: "lte_primary" | "none"; thresholdPct?: number };
+        ratePolicy:
+            | { kind: "eq_primary" }
+            | { kind: "lte_primary"; pct: number }
+            | { kind: "within_pct"; pct: number }
+            | { kind: "at_least_pct_lower"; pct: number };
         requireConstraintFit: boolean; // node-level constraint enforcement on client
     };
 };
@@ -977,7 +1088,7 @@ export type OrderSnapshot = {
 ```
 
 ---
-#### 10
+#### 11
 
 
 ` File: src/schema/policies.ts`  [↑ Back to top](#index)
@@ -994,7 +1105,7 @@ export type { DynamicRule };
 ```
 
 ---
-#### 11
+#### 12
 
 
 ` File: src/schema/provider.ts`  [↑ Back to top](#index)
@@ -1054,7 +1165,7 @@ export type DgpServiceMap = Record<string, DgpServiceCapability> &
 ```
 
 ---
-#### 12
+#### 13
 
 
 ` File: src/schema/validation.ts`  [↑ Back to top](#index)
@@ -1082,6 +1193,7 @@ export type ValidationCode =
     | "user_input_field_has_service_option"
     // rates & pricing roles
     | "rate_mismatch_across_base"
+    | "rate_coherence_violation"
     | "utility_without_base"
     // constraints
     | "unsupported_constraint"
@@ -1201,17 +1313,15 @@ export type ValidatorOptions = {
 };
 
 export type RatePolicy =
-    | { kind: "lte_primary" }
+    | { kind: "eq_primary" }
+    | { kind: "lte_primary"; pct: number }
     | { kind: "within_pct"; pct: number }
-    | {
-          kind: "at_least_pct_lower";
-          pct: number;
-      };
+    | { kind: "at_least_pct_lower"; pct: number };
 
 export type FallbackSettings = {
     /** Require fallbacks to satisfy tag constraints (dripfeed/refill/cancel) when a tag context is known. Default: true */
     requireConstraintFit?: boolean;
-    /** Rate rule policy. Default: { kind: 'lte_primary' } i.e. candidate.rate <= primary.rate */
+    /** Rate rule policy. Default: { kind: 'lte_primary', pct: 5 }. */
     ratePolicy?: RatePolicy;
     /** When multiple candidates remain, choose first (priority) or cheapest. Default: 'priority' */
     selectionStrategy?: "priority" | "cheapest";
@@ -1223,4 +1333,4 @@ export type FallbackSettings = {
 
 ---
 *Generated with [Prodex](https://github.com/emxhive/prodex) — Codebase decoded.*
-<!-- PRODEx v1.4.11 | 2026-03-19T00:38:56.151Z -->
+<!-- PRODEx v1.4.11 | 2026-03-22T17:16:55.018Z -->

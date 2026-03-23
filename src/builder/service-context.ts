@@ -54,6 +54,8 @@ export type ServiceListRowVM = {
     summary: BuilderServiceSummary;
     service: DgpServiceCapability | null;
     check?: ServiceCheck;
+    matchesSearch: boolean;
+    isCompatible: boolean;
     passesCurrentFilter: boolean;
     statusTone: 'success' | 'warning' | 'danger' | 'default';
     statusLabel: string;
@@ -143,7 +145,7 @@ export function buildServiceRowVM(args: {
         .toLowerCase();
     const search = args.search?.trim().toLowerCase() ?? '';
     const matchesSearch = !search || searchText.includes(search);
-    const passesCurrentFilter = matchesSearch && (!check || servicePassesCurrentFilter(check, args.state));
+    const isCompatible = !check || servicePassesCurrentFilter(check, args.state);
     const status = describeCheck(check, args.state);
 
     return {
@@ -151,7 +153,9 @@ export function buildServiceRowVM(args: {
         summary: args.summary,
         service,
         check,
-        passesCurrentFilter,
+        matchesSearch,
+        isCompatible,
+        passesCurrentFilter: matchesSearch,
         statusTone: status.tone,
         statusLabel: status.label,
         reasonLabels: status.reasons,

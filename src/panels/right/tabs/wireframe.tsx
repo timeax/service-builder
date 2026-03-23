@@ -1,11 +1,11 @@
+import { useNodeContextMenu } from '@/builder/node-context-menu.tsx';
 import { getCurrentTag, getVisiblePreviewFields } from '@/builder/view-models.tsx';
 import { EmptyState } from '@/components/builder';
-import { useNodeContextMenu } from '@/builder/node-context-menu.tsx';
+import WireframeTagsWidget, { type TagNotice } from '@/panels/right/components/wireframe-tags-widget.tsx';
 import type { Field, Tag } from '@timeax/digital-service-engine';
-import { Wrapper } from '@timeax/digital-service-engine/react';
+import { useOrderFlow, Wrapper } from '@timeax/digital-service-engine/react';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { useCallback, useMemo } from 'react';
-import WireframeTagsWidget, { type TagNotice } from '@/panels/right/components/wireframe-tags-widget.tsx';
 
 export function Wireframe() {
     const canvas = useCanvas();
@@ -13,6 +13,7 @@ export function Wireframe() {
     const currentTag = getCurrentTag(canvas);
     const previewFields = useMemo(() => getVisiblePreviewFields(canvas, currentTag?.id), [canvas.props, canvas.selectionInfo, canvas.activeId]);
     const selectedOptionsCount = canvas.selectionInfo.optionIds.length;
+    const flow = useOrderFlow();
 
     const footerLine = currentTag
         ? `Tag: ${currentTag.raw.label} · Visible fields: ${previewFields.length} · Selected options: ${selectedOptionsCount}`
@@ -53,7 +54,7 @@ export function Wireframe() {
             visibleFields,
             notices,
         };
-    }, [canvas.props, canvas.selectionInfo, canvas.activeId]);
+    }, [canvas.props, canvas.selectionInfo, canvas.activeId, flow.visibleGroup]);
 
     const noticesByTagId = useMemo(() => {
         const map = new Map<string, TagNotice[]>();

@@ -5,58 +5,58 @@
 <!-- PRODEX_INDEX_RANGE: L8-L59 -->
 <!-- PRODEX_FILE_COUNT: 52 -->
 <!-- PRODEX_INDEX_LIST_START -->
-- [src/react/workspace/__tests__/provider.test.tsx](#1)  L63-L326
-- [src/react/workspace/adapters/reactflow/adapter.ts](#2)  L327-L834
-- [src/react/workspace/adapters/reactflow/toolbar.tsx](#3)  L835-L1293
-- [src/react/workspace/adapters/reactflow/toolbar/icons.tsx](#4)  L1294-L1357
-- [src/react/workspace/adapters/reactflow/toolbar/merge.ts](#5)  L1358-L1431
-- [src/react/workspace/adapters/reactflow/toolbar/types.ts](#6)  L1432-L1516
-- [src/react/workspace/app.tsx](#7)  L1517-L1604
-- [src/react/workspace/components/canvas.tsx](#8)  L1605-L1728
-- [src/react/workspace/components/context-menu-renderer.tsx](#9)  L1729-L1934
-- [src/react/workspace/components/index.tsx](#10)  L1935-L2010
-- [src/react/workspace/components/reactflow/edge.tsx](#11)  L2011-L2033
-- [src/react/workspace/components/reactflow/index.tsx](#12)  L2034-L2055
-- [src/react/workspace/components/reactflow/nodes/comments.tsx](#13)  L2056-L2514
-- [src/react/workspace/components/reactflow/nodes/field.tsx](#14)  L2515-L2548
-- [src/react/workspace/components/reactflow/nodes/node.tsx](#15)  L2549-L2717
-- [src/react/workspace/components/reactflow/nodes/options.tsx](#16)  L2718-L2736
-- [src/react/workspace/components/reactflow/nodes/tags.tsx](#17)  L2737-L2758
-- [src/react/workspace/context/backend.ts](#18)  L2759-L3321
-- [src/react/workspace/context/context.tsx](#19)  L3322-L3633
-- [src/react/workspace/context/ctxmenu.tsx](#20)  L3634-L3932
-- [src/react/workspace/context/hooks/use-canvas.ts](#21)  L3933-L4273
-- [src/react/workspace/context/hooks/use-errors.ts](#22)  L4274-L4613
-- [src/react/workspace/context/index.ts](#23)  L4614-L4664
-- [src/react/workspace/context/memory/errors.ts](#24)  L4665-L4717
-- [src/react/workspace/context/memory/ids.ts](#25)  L4718-L4778
-- [src/react/workspace/context/memory/index.ts](#26)  L4779-L4798
-- [src/react/workspace/context/memory/memory-backend.ts](#27)  L4799-L6099
-- [src/react/workspace/context/memory/seed.ts](#28)  L6100-L6197
-- [src/react/workspace/context/memory/store.ts](#29)  L6198-L6323
-- [src/react/workspace/context/memory/time.ts](#30)  L6324-L6348
-- [src/react/workspace/context/provider/compose/use-branch-cache.ts](#31)  L6349-L6630
-- [src/react/workspace/context/provider/compose/use-live-polling.ts](#32)  L6631-L6918
-- [src/react/workspace/context/provider/compose/use-workspace-refresh.ts](#33)  L6919-L7138
-- [src/react/workspace/context/provider/context.ts](#34)  L7139-L7166
-- [src/react/workspace/context/provider/helpers.ts](#35)  L7167-L7277
-- [src/react/workspace/context/provider/live/adapters/manual.ts](#36)  L7278-L7497
-- [src/react/workspace/context/provider/live/adapters/poll.ts](#37)  L7498-L7578
-- [src/react/workspace/context/provider/live/adapters/sse.ts](#38)  L7579-L7659
-- [src/react/workspace/context/provider/live/adapters/ws.ts](#39)  L7660-L7740
-- [src/react/workspace/context/provider/live/types.ts](#40)  L7741-L7823
-- [src/react/workspace/context/provider/provider.tsx](#41)  L7824-L8342
-- [src/react/workspace/context/provider/runtime/use-backend-runtime.ts](#42)  L8343-L8390
-- [src/react/workspace/context/provider/slices/use-authors-slice.ts](#43)  L8391-L8460
-- [src/react/workspace/context/provider/slices/use-branches-slice.ts](#44)  L8461-L8676
-- [src/react/workspace/context/provider/slices/use-comments-slice.ts](#45)  L8677-L9126
-- [src/react/workspace/context/provider/slices/use-permissions-slice.ts](#46)  L9127-L9204
-- [src/react/workspace/context/provider/slices/use-policies-slice.ts](#47)  L9205-L9421
-- [src/react/workspace/context/provider/slices/use-services-slice.ts](#48)  L9422-L9498
-- [src/react/workspace/context/provider/slices/use-snapshots-slice.ts](#49)  L9499-L9945
-- [src/react/workspace/context/provider/slices/use-templates-slice.ts](#50)  L9946-L10185
-- [src/react/workspace/context/provider/types.ts](#51)  L10186-L10432
-- [src/react/workspace/index.ts](#52)  L10433-L10451
+- [src/react/workspace/__tests__/provider.test.tsx](#1)  L63-L327
+- [src/react/workspace/adapters/reactflow/adapter.ts](#2)  L328-L835
+- [src/react/workspace/adapters/reactflow/toolbar.tsx](#3)  L836-L1294
+- [src/react/workspace/adapters/reactflow/toolbar/icons.tsx](#4)  L1295-L1358
+- [src/react/workspace/adapters/reactflow/toolbar/merge.ts](#5)  L1359-L1432
+- [src/react/workspace/adapters/reactflow/toolbar/types.ts](#6)  L1433-L1517
+- [src/react/workspace/app.tsx](#7)  L1518-L1605
+- [src/react/workspace/components/canvas.tsx](#8)  L1606-L1729
+- [src/react/workspace/components/context-menu-renderer.tsx](#9)  L1730-L1935
+- [src/react/workspace/components/index.tsx](#10)  L1936-L2011
+- [src/react/workspace/components/reactflow/edge.tsx](#11)  L2012-L2034
+- [src/react/workspace/components/reactflow/index.tsx](#12)  L2035-L2056
+- [src/react/workspace/components/reactflow/nodes/comments.tsx](#13)  L2057-L2515
+- [src/react/workspace/components/reactflow/nodes/field.tsx](#14)  L2516-L2549
+- [src/react/workspace/components/reactflow/nodes/node.tsx](#15)  L2550-L2718
+- [src/react/workspace/components/reactflow/nodes/options.tsx](#16)  L2719-L2737
+- [src/react/workspace/components/reactflow/nodes/tags.tsx](#17)  L2738-L2759
+- [src/react/workspace/context/backend.ts](#18)  L2760-L3322
+- [src/react/workspace/context/context.tsx](#19)  L3323-L3634
+- [src/react/workspace/context/ctxmenu.tsx](#20)  L3635-L3933
+- [src/react/workspace/context/hooks/use-canvas.ts](#21)  L3934-L4274
+- [src/react/workspace/context/hooks/use-errors.ts](#22)  L4275-L4614
+- [src/react/workspace/context/index.ts](#23)  L4615-L4665
+- [src/react/workspace/context/memory/errors.ts](#24)  L4666-L4718
+- [src/react/workspace/context/memory/ids.ts](#25)  L4719-L4779
+- [src/react/workspace/context/memory/index.ts](#26)  L4780-L4799
+- [src/react/workspace/context/memory/memory-backend.ts](#27)  L4800-L6100
+- [src/react/workspace/context/memory/seed.ts](#28)  L6101-L6198
+- [src/react/workspace/context/memory/store.ts](#29)  L6199-L6324
+- [src/react/workspace/context/memory/time.ts](#30)  L6325-L6349
+- [src/react/workspace/context/provider/compose/use-branch-cache.ts](#31)  L6350-L6631
+- [src/react/workspace/context/provider/compose/use-live-polling.ts](#32)  L6632-L6919
+- [src/react/workspace/context/provider/compose/use-workspace-refresh.ts](#33)  L6920-L7139
+- [src/react/workspace/context/provider/context.ts](#34)  L7140-L7167
+- [src/react/workspace/context/provider/helpers.ts](#35)  L7168-L7278
+- [src/react/workspace/context/provider/live/adapters/manual.ts](#36)  L7279-L7498
+- [src/react/workspace/context/provider/live/adapters/poll.ts](#37)  L7499-L7579
+- [src/react/workspace/context/provider/live/adapters/sse.ts](#38)  L7580-L7660
+- [src/react/workspace/context/provider/live/adapters/ws.ts](#39)  L7661-L7741
+- [src/react/workspace/context/provider/live/types.ts](#40)  L7742-L7824
+- [src/react/workspace/context/provider/provider.tsx](#41)  L7825-L8343
+- [src/react/workspace/context/provider/runtime/use-backend-runtime.ts](#42)  L8344-L8391
+- [src/react/workspace/context/provider/slices/use-authors-slice.ts](#43)  L8392-L8461
+- [src/react/workspace/context/provider/slices/use-branches-slice.ts](#44)  L8462-L8677
+- [src/react/workspace/context/provider/slices/use-comments-slice.ts](#45)  L8678-L9127
+- [src/react/workspace/context/provider/slices/use-permissions-slice.ts](#46)  L9128-L9205
+- [src/react/workspace/context/provider/slices/use-policies-slice.ts](#47)  L9206-L9422
+- [src/react/workspace/context/provider/slices/use-services-slice.ts](#48)  L9423-L9499
+- [src/react/workspace/context/provider/slices/use-snapshots-slice.ts](#49)  L9500-L9946
+- [src/react/workspace/context/provider/slices/use-templates-slice.ts](#50)  L9947-L10186
+- [src/react/workspace/context/provider/types.ts](#51)  L10187-L10439
+- [src/react/workspace/index.ts](#52)  L10440-L10458
 <!-- PRODEX_INDEX_LIST_END -->
 
 ---
@@ -321,6 +321,7 @@ describe("WorkspaceProvider (integration)", () => {
             }),
         );
     });
+
 });
 ```
 
@@ -2015,7 +2016,7 @@ export type { ToolsConfig, LabelPlacement, AdapterOptions };
 ` File: src/react/workspace/components/reactflow/edge.tsx`  [↑ Back to top](#index)
 
 ```tsx
-import Node from "./node";
+import Node from "./nodes/node";
 import React from "react";
 import type { FlowNode } from "@/schema/graph";
 
@@ -2063,15 +2064,15 @@ export { nodeTypes, edgeTypes };
 import React, { useMemo, useState, useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
 import type { CanvasAPI } from "@/react";
-import { resolveTools } from "./toolbar/merge";
-import type {
+import {
+    LabelPlacement,
     ResolvedTools,
     ToolContext,
-    ToolsConfig,
-    LabelPlacement,
     ToolDescriptor,
-} from "./toolbar/types";
-import { Icons } from "./toolbar/icons";
+    ToolsConfig,
+} from "@/react/workspace/adapters/reactflow/toolbar/types";
+import { resolveTools } from "@/react/workspace/adapters/reactflow/toolbar/merge";
+import { Icons } from "@/react/workspace/adapters/reactflow/toolbar/icons";
 
 export type ToolbarProps = {
     api: CanvasAPI;
@@ -7284,10 +7285,10 @@ export function toServiceMap(
 ```ts
 // src/react/workspace/context/provider/compose/use-workspace-refresh.ts
 import * as React from "react";
-import type { RunResult } from "../types";
-import type { BackendRuntime } from "../runtime/use-backend-runtime";
 import { PoliciesSlice } from "@/react/workspace/context/provider/slices/use-policies-slice";
 import { CommentsSliceApi } from "@/react/workspace/context/provider/slices/use-comments-slice";
+import type { RunResult } from "@/react/workspace/context/provider/types";
+import type { BackendRuntime } from "@/react/workspace/context/provider/runtime/use-backend-runtime";
 
 export interface WorkspaceRefreshApi {
     readonly refreshAll: (opts?: { strict?: boolean }) => Promise<RunResult>;
@@ -10332,7 +10333,13 @@ export interface WorkspaceAPI {
         services(): Promise<void>;
 
         /** Current branch-scoped refreshers */
-        branchContext(): Promise<void>;
+        branchContext(
+            opts?: Readonly<{
+                branchId?: string;
+                strict?: boolean;
+                includeWorkspaceData?: boolean;
+            }>,
+        ): Promise<void>;
         templates(
             params?: Partial<Pick<TemplatesListParams, "branchId" | "since">>,
         ): Promise<void>;
@@ -10449,4 +10456,4 @@ export * from './components'
 
 ---
 *Generated with [Prodex](https://github.com/emxhive/prodex) — Codebase decoded.*
-<!-- PRODEx v1.4.11 | 2026-03-19T00:38:56.151Z -->
+<!-- PRODEx v1.4.11 | 2026-03-22T17:16:55.018Z -->

@@ -7,8 +7,8 @@
 <!-- PRODEX_INDEX_LIST_START -->
 - [src/react/hooks/evalute-field-validation.ts](#1)  L15-L118
 - [src/react/hooks/index.ts](#2)  L119-L129
-- [src/react/hooks/order-flow-provider.tsx](#3)  L130-L746
-- [src/react/hooks/use-order-flow.ts](#4)  L747-L1242
+- [src/react/hooks/order-flow-provider.tsx](#3)  L130-L832
+- [src/react/hooks/use-order-flow.ts](#4)  L833-L1333
 <!-- PRODEX_INDEX_LIST_END -->
 
 ---
@@ -340,7 +340,7 @@ function makeDefaultFallback(
 ): FallbackSettings {
     return {
         requireConstraintFit: true,
-        ratePolicy: { kind: "lte_primary" },
+        ratePolicy: { kind: "lte_primary", pct: 5 },
         selectionStrategy: "priority",
         mode: mode === "dev" ? "dev" : "strict",
         ...(patch ?? {}),
@@ -353,6 +353,33 @@ function normalizeInit(init: OrderFlowInit): NormalizedInit {
         ? Number(init.hostDefaultQuantity ?? 1)
         : 1;
     return { ...init, mode, hostDefaultQuantity };
+}
+
+function sameNormalizedInit(
+    a: NormalizedInit | null,
+    b: NormalizedInit | null,
+): boolean {
+    if (a === b) return true;
+    if (!a || !b) return false;
+
+    return (
+        a.mode === b.mode &&
+        a.hostDefaultQuantity === b.hostDefaultQuantity &&
+        a.services === b.services &&
+        a.fallback === b.fallback &&
+        a.hydrateFrom === b.hydrateFrom &&
+        a.initialTagId === b.initialTagId &&
+        a.resolveService === b.resolveService &&
+        a.ctx === b.ctx &&
+        a.normalizeRate === b.normalizeRate
+    );
+}
+
+function sameServiceProps(
+    a: ServiceProps | null | undefined,
+    b: ServiceProps | null | undefined,
+): boolean {
+    return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 }
 
 /* ───────────────────────── Bridge ───────────────────────── */
@@ -436,6 +463,27 @@ export const OrderFlowProvider = forwardRef<
         },
         [],
     );
+
+    const resolvedBuilder = useMemo(
+        () =>
+            resolveBuilder({
+                flow,
+                builder: builderProp,
+                serviceProps,
+                builderOptions,
+            }),
+        [builderOptions, builderProp, flow, resolveBuilder, serviceProps],
+    );
+
+    const effectiveInit = useMemo<NormalizedInit | null>(() => {
+        if (init) return normalizeInit(init);
+        if (!resolvedBuilder) return null;
+        return normalizeInit({
+            services: {},
+            mode: "prod",
+            hostDefaultQuantity: 1,
+        });
+    }, [init, resolvedBuilder]);
 
     useEffect(() => {
         return () => {
@@ -552,29 +600,67 @@ export const OrderFlowProvider = forwardRef<
         [resolveBuilder, resolveSelection],
     );
 
-    // auto initialize from initial props if possible
+    // auto initialize from mount props or reactively resync when sources change
     useEffect(() => {
-        if (ready()) return;
-        if (!init) return;
+        if (!resolvedBuilder || !effectiveInit) return;
 
-        const b = resolveBuilder({
+        const nextSelection = resolveSelection(resolvedBuilder, effectiveInit, {
             flow,
-            builder: builderProp,
-            serviceProps,
-            builderOptions,
-        });
-        if (!b) return;
-
-        initialize({
-            flow,
-            builder: builderProp,
-            serviceProps,
-            builderOptions,
             selection: selectionProp,
-            init,
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+
+        if (
+            !ready() ||
+            builderRef.current !== resolvedBuilder ||
+            selectionRef.current !== nextSelection ||
+            !sameNormalizedInit(initRef.current, effectiveInit)
+        ) {
+            initialize({
+                flow,
+                builder: builderProp,
+                serviceProps,
+                builderOptions,
+                selection: selectionProp,
+                init: effectiveInit,
+            });
+        }
+    }, [
+        builderOptions,
+        builderProp,
+        effectiveInit,
+        flow,
+        initialize,
+        ready,
+        resolveSelection,
+        resolvedBuilder,
+        selectionProp,
+        serviceProps,
+    ]);
+
+    useEffect(() => {
+        if (!serviceProps) return;
+        if (!ready()) return;
+
+        const currentBuilder = builderRef.current;
+        if (!currentBuilder || currentBuilder !== resolvedBuilder) return;
+        if (!sameServiceProps(currentBuilder.getProps(), serviceProps)) {
+            currentBuilder.load(serviceProps);
+
+            const currentTag = selectionRef.current?.currentTag();
+            if (
+                selectionRef.current &&
+                currentTag &&
+                !currentBuilder.isTagId(currentTag)
+            ) {
+                const nextTag =
+                    findDefaultTagId(currentBuilder.getProps().filters ?? []) ??
+                    currentBuilder.getProps().filters?.[0]?.id;
+                if (nextTag) selectionRef.current.replace(nextTag);
+            }
+
+            bump();
+        }
+    }, [ready, resolvedBuilder, serviceProps]);
 
     // attach selection listener whenever selection changes
     useEffect(() => {
@@ -754,7 +840,7 @@ export const OrderFlowProvider = forwardRef<
 // src/react/hooks/use-order-flow.ts
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { ServiceProps } from "@/schema";
+import type { ServiceProps, ServicePropsNotice } from "@/schema";
 import type { OrderSnapshot, Scalar } from "@/schema/order";
 import type { FallbackSettings } from "@/schema/validation";
 
@@ -833,6 +919,8 @@ export type UseOrderFlowReturn = {
 
     /** VALIDATES via form.submit() */
     buildSnapshot: () => OrderSnapshot | undefined;
+
+    notices: ServicePropsNotice[];
 
     fallbackPolicy: FallbackSettings;
     setFallbackPolicy: (next: FallbackSettings) => void;
@@ -945,7 +1033,7 @@ export function useOrderFlow(): UseOrderFlowReturn {
                         constraints: {},
                         nodeContexts: {},
                         policy: {
-                            ratePolicy: { kind: "lte_primary" },
+                            ratePolicy: { kind: "lte_primary", pct: 5 },
                             requireConstraintFit: true,
                         },
                     },
@@ -1200,12 +1288,15 @@ export function useOrderFlow(): UseOrderFlowReturn {
         return ctx.ensureReady("raw").builder.getProps();
     }, [ctx, ready, selTick]);
 
+    const notices = useMemo(() => raw.notices ?? [], [raw]);
+
     return {
         ready,
         initialize,
 
         activeTagId,
         raw,
+        notices,
 
         visibleGroup,
 
@@ -1240,4 +1331,4 @@ export function useOrderFlow(): UseOrderFlowReturn {
 
 ---
 *Generated with [Prodex](https://github.com/emxhive/prodex) — Codebase decoded.*
-<!-- PRODEx v1.4.11 | 2026-03-19T00:38:56.151Z -->
+<!-- PRODEx v1.4.11 | 2026-03-22T17:16:55.018Z -->

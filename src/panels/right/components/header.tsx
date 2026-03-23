@@ -1,12 +1,19 @@
 import { BuilderIconButton } from '@/components/builder/index.tsx';
 import Users, { type User } from '@/panels/right/components/users.tsx';
-import { useWorkspace } from '@timeax/digital-service-engine/workspace';
+import type { DgpServiceMap, EditorSnapshot, ServiceProps } from '@timeax/digital-service-engine/schema';
+import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { useMemo } from 'react';
 import { MdOutlinePlayArrow } from 'react-icons/md';
 import { PiShareFatThin } from 'react-icons/pi';
 
-const Header = () => {
+type HeaderProps = {
+    onShare?: (snapshotData: EditorSnapshot | undefined) => void | Promise<void>;
+    onPlay?: (payload: { serviceProps: ServiceProps; capabilitiesMap: DgpServiceMap; workspaceId: string; branchId?: string }) => void | Promise<void>;
+};
+
+const Header = ({ onShare, onPlay }: HeaderProps) => {
     const ws = useWorkspace();
+    const canvas = useCanvas();
 
     const users = useMemo<User[]>(() => {
         const participants = ws.participants.data ?? [];
@@ -38,16 +45,34 @@ const Header = () => {
         });
     }, [ws.participants.data, ws.authors.data, ws.actor]);
 
+    const onPlayClick = () => {
+        onPlay?.({
+            serviceProps: canvas.props ?? canvas.api.getServiceProps(),
+            capabilitiesMap: (ws.services.data ?? {}) as DgpServiceMap,
+            workspaceId: ws.info.id,
+            branchId: ws.branches.currentId ?? undefined,
+        });
+    };
+
+    const onShareClick = () => {
+        onShare?.(ws.snapshot.data);
+    };
+
     return (
         <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-3 dark:border-slate-800">
             <div className="min-w-0 flex items-center gap-3">
                 <Users users={users} />
-                <BuilderIconButton title="Preview current branch" className="h-9 w-9 rounded-xl border border-slate-200 bg-white/80 text-slate-600 hover:bg-white dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-300">
+                <BuilderIconButton
+                    title="Preview current branch"
+                    onClick={onPlayClick}
+                    className="h-9 w-9 rounded-xl border border-slate-200 bg-white/80 text-slate-600 hover:bg-white dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-300"
+                >
                     <MdOutlinePlayArrow className="text-2xl" />
                 </BuilderIconButton>
             </div>
             <BuilderIconButton
                 title="Share branch"
+                onClick={onShareClick}
                 className="h-9 w-9 rounded-xl bg-sky-500 text-white hover:border-sky-500 hover:bg-sky-600 hover:text-white dark:bg-sky-500 dark:text-white"
             >
                 <PiShareFatThin />

@@ -1,4 +1,5 @@
 import { getNodePropertyCapabilities } from '@/panels/right/partials/properties/components/node-capabilities.ts';
+import { useFallbackQuickAdd } from '@/workspace/fallback-quick-add.tsx';
 import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { useCallback, useMemo } from 'react';
 import {
@@ -16,6 +17,12 @@ import {
 } from './types.ts';
 import { buildFieldId, draftToNotice, inferNodeKindFromId, makeTemplateKey, normalizeNotice, parseJson, toDraft } from './utils.ts';
 
+type MoveDirection = 'up' | 'down';
+
+function moveIndex(index: number, direction: MoveDirection) {
+    return direction === 'up' ? index - 1 : index + 1;
+}
+
 export function useNodeActions(
     target: { nodeId: string; nodeKind: NodeKind; surface: string } | null,
     setTarget: (target: { nodeId: string; nodeKind: NodeKind; surface: string } | null) => void,
@@ -26,6 +33,7 @@ export function useNodeActions(
 ) {
     const canvas = useCanvas();
     const ws = useWorkspace();
+    const fallbackQuickAdd = useFallbackQuickAdd();
     const emitNodeError = useCallback(
         (message: string, meta?: Record<string, unknown>) => {
             canvas.api.emit('error', {
@@ -42,6 +50,114 @@ export function useNodeActions(
         },
         [canvas.api, canvas.setActive],
     );
+    const resolveCurrentTagId = useCallback(() => {
+        return canvas.api.selection.currentTag?.() ?? 't:root';
+    }, [canvas.api.selection]);
+    const resolveFieldContextOrder = useCallback(
+        (tagId: string) => {
+            const props = canvas.api.builder.getProps() as { fields?: Array<{ id: string }>; order_for_tags?: Record<string, string[]> };
+            const fieldIds = new Set((props.fields ?? []).map((field) => field.id));
+            const visibleGroup = canvas.api.selection.visibleGroup?.();
+            const visibleFromSelection =
+                visibleGroup?.kind === 'single' && visibleGroup.group.tagId === tagId
+                    ? (visibleGroup.group.fieldIds ?? []).map(String)
+                    : canvas.api.builder.visibleFields(tagId, (canvas.selectionInfo.optionIds ?? []) as string[]).map(String);
+
+            const pinned = (props.order_for_tags?.[tagId] ?? []).filter((fieldId) => fieldIds.has(fieldId));
+            const pinnedSet = new Set(pinned);
+            const merged = [...pinned, ...visibleFromSelection.filter((fieldId) => fieldIds.has(fieldId) && !pinnedSet.has(fieldId))];
+            return merged;
+        },
+        [canvas.api.builder, canvas.api.selection, canvas.selectionInfo.optionIds],
+    );
+    const moveFieldInGlobalOrder = useCallback(
+        (fieldId: string, direction: MoveDirection) => {
+            const editorAny = canvas.api.editor as any;
+            if (typeof editorAny.transact !== 'function' || typeof editorAny.patchProps !== 'function') {
+                emitNodeError('Field order mutation APIs are unavailable on this editor instance', {
+                    action: 'move-field-global',
+                    fieldId,
+                    direction,
+                });
+                return false;
+            }
+
+            let moved = false;
+            editorAny.transact(direction === 'up' ? 'Move field up' : 'Move field down', () => {
+                editorAny.patchProps((props: { fields?: Array<{ id: string }> }) => {
+                    const fields = props.fields ?? [];
+                    const current = fields.findIndex((field) => field.id === fieldId);
+                    const next = moveIndex(current, direction);
+                    if (current < 0 || next < 0 || next >= fields.length) return;
+                    const [pulled] = fields.splice(current, 1);
+                    fields.splice(next, 0, pulled);
+                    moved = true;
+                });
+            });
+
+            return moved;
+        },
+        [canvas.api.editor, emitNodeError],
+    );
+    const moveState = useMemo(() => {
+        if (!target) {
+            return {
+                canMoveUp: false,
+                canMoveDown: false,
+                canMoveContextUp: false,
+                canMoveContextDown: false,
+            };
+        }
+
+        const props = canvas.api.builder.getProps() as {
+            filters?: Array<{ id: string; bind_id?: string }>;
+            fields?: Array<{ id: string; options?: Array<{ id: string }> }>;
+        };
+        if (target.nodeKind === 'tag') {
+            const tags = props.filters ?? [];
+            const tag = tags.find((item) => item.id === target.nodeId);
+            const groupKey = tag?.bind_id ?? '__root__';
+            const siblings = tags.filter((item) => (item.bind_id ?? '__root__') === groupKey);
+            const index = siblings.findIndex((item) => item.id === target.nodeId);
+            return {
+                canMoveUp: index > 0,
+                canMoveDown: index >= 0 && index < siblings.length - 1,
+                canMoveContextUp: false,
+                canMoveContextDown: false,
+            };
+        }
+
+        if (target.nodeKind === 'option') {
+            const ownerField = (props.fields ?? []).find((field) => (field.options ?? []).some((option) => option.id === target.nodeId));
+            const options = ownerField?.options ?? [];
+            const index = options.findIndex((option) => option.id === target.nodeId);
+            return {
+                canMoveUp: index > 0,
+                canMoveDown: index >= 0 && index < options.length - 1,
+                canMoveContextUp: false,
+                canMoveContextDown: false,
+            };
+        }
+
+        const fields = props.fields ?? [];
+        const fieldIndex = fields.findIndex((field) => field.id === target.nodeId);
+        const tagId = resolveCurrentTagId();
+        const contextOrder = resolveFieldContextOrder(tagId);
+        const contextIndex = contextOrder.indexOf(target.nodeId);
+        return {
+            canMoveUp: fieldIndex > 0,
+            canMoveDown: fieldIndex >= 0 && fieldIndex < fields.length - 1,
+            canMoveContextUp: contextIndex > 0,
+            canMoveContextDown: contextIndex >= 0 && contextIndex < contextOrder.length - 1,
+        };
+    }, [
+        canvas.api.builder,
+        target,
+        canvas.props,
+        canvas.selectionInfo,
+        resolveCurrentTagId,
+        resolveFieldContextOrder,
+    ]);
 
     const handleDuplicate = useCallback(() => {
         if (!target) return;
@@ -157,7 +273,169 @@ export function useNodeActions(
         setTarget(null);
     }, [canvas.api, emitNodeError, setTarget, target]);
 
-    return { handleDuplicate, handleCopyId, handleSaveAsTemplate, isFieldOptionsShown, handleToggleFieldOptions };
+    const fallbackTarget = useMemo(() => {
+        if (!target) return null;
+
+        try {
+            const node = canvas.selector.getNode(target.nodeId) as {
+                id: string;
+                kind: NodeKind;
+                raw?: { label?: string; service_id?: number | string; bind_id?: string };
+                field?: () => { raw?: { bind_id?: string } };
+            };
+            const serviceId = node?.raw?.service_id;
+            if (serviceId === undefined || serviceId === null) return null;
+            const tagId =
+                target.nodeKind === 'tag'
+                    ? target.nodeId
+                    : target.nodeKind === 'field'
+                      ? node.raw?.bind_id ?? resolveCurrentTagId()
+                      : node.field?.()?.raw?.bind_id ?? resolveCurrentTagId();
+
+            return {
+                nodeId: target.nodeId,
+                nodeKind: target.nodeKind,
+                nodeLabel: String(node?.raw?.label ?? target.nodeId),
+                serviceId,
+                tagId,
+            };
+        } catch {
+            return null;
+        }
+    }, [canvas.selector, resolveCurrentTagId, target]);
+
+    const handleOpenFallbackQuickAdd = useCallback(() => {
+        if (!fallbackTarget) return;
+        fallbackQuickAdd.openForNode({
+            nodeId: fallbackTarget.nodeId,
+            nodeKind: fallbackTarget.nodeKind,
+            nodeLabel: fallbackTarget.nodeLabel,
+            serviceId: fallbackTarget.serviceId,
+            tagId: fallbackTarget.tagId,
+        });
+        setTarget(null);
+    }, [fallbackQuickAdd, fallbackTarget, setTarget]);
+
+    const handleMove = useCallback(
+        (direction: MoveDirection) => {
+            if (!target) return;
+            try {
+                if (target.nodeKind === 'tag') {
+                    if (direction === 'up' && !moveState.canMoveUp) return;
+                    if (direction === 'down' && !moveState.canMoveDown) return;
+                    const props = canvas.api.builder.getProps() as { filters?: Array<{ id: string; bind_id?: string }> };
+                    const tags = props.filters ?? [];
+                    const tag = tags.find((item) => item.id === target.nodeId);
+                    const groupKey = tag?.bind_id ?? '__root__';
+                    const siblings = tags.filter((item) => (item.bind_id ?? '__root__') === groupKey);
+                    const index = siblings.findIndex((item) => item.id === target.nodeId);
+                    const next = moveIndex(index, direction);
+                    if (index < 0 || next < 0 || next >= siblings.length) return;
+                    canvas.api.editor.placeNode(target.nodeId, { index: next });
+                    setTarget(null);
+                    return;
+                }
+
+                if (target.nodeKind === 'option') {
+                    if (direction === 'up' && !moveState.canMoveUp) return;
+                    if (direction === 'down' && !moveState.canMoveDown) return;
+                    const props = canvas.api.builder.getProps() as { fields?: Array<{ id: string; options?: Array<{ id: string }> }> };
+                    const ownerField = (props.fields ?? []).find((field) => (field.options ?? []).some((option) => option.id === target.nodeId));
+                    const options = ownerField?.options ?? [];
+                    const index = options.findIndex((option) => option.id === target.nodeId);
+                    const next = moveIndex(index, direction);
+                    if (index < 0 || next < 0 || next >= options.length) return;
+                    canvas.api.editor.placeOption(target.nodeId, { index: next });
+                    setTarget(null);
+                    return;
+                }
+
+                if (direction === 'up' && !moveState.canMoveUp) return;
+                if (direction === 'down' && !moveState.canMoveDown) return;
+                const moved = moveFieldInGlobalOrder(target.nodeId, direction);
+                if (moved) setTarget(null);
+            } catch (error) {
+                emitNodeError((error as Error)?.message ?? 'Failed to move node', {
+                    action: 'move-node-global',
+                    nodeId: target.nodeId,
+                    nodeKind: target.nodeKind,
+                    surface: target.surface,
+                    direction,
+                });
+            }
+        },
+        [canvas.api.builder, canvas.api.editor, emitNodeError, moveFieldInGlobalOrder, moveState.canMoveDown, moveState.canMoveUp, setTarget, target],
+    );
+
+    const handleMoveInContext = useCallback(
+        (direction: MoveDirection) => {
+            if (!target || target.nodeKind !== 'field') return;
+            if (direction === 'up' && !moveState.canMoveContextUp) return;
+            if (direction === 'down' && !moveState.canMoveContextDown) return;
+            const currentTagId = resolveCurrentTagId();
+            const contextOrder = resolveFieldContextOrder(currentTagId);
+            const index = contextOrder.indexOf(target.nodeId);
+            const next = moveIndex(index, direction);
+            if (index < 0 || next < 0 || next >= contextOrder.length) return;
+
+            try {
+                const editorAny = canvas.api.editor as any;
+                if (typeof editorAny.transact === 'function' && typeof editorAny.patchProps === 'function') {
+                    canvas.api.editor.transact(direction === 'up' ? 'Move field up in context' : 'Move field down in context', () => {
+                        editorAny.patchProps((props: { order_for_tags?: Record<string, string[]> }) => {
+                            const map = (props.order_for_tags ??= {});
+                            map[currentTagId] = [...contextOrder];
+                        });
+                        canvas.api.editor.placeNode(target.nodeId, {
+                            scopeTagId: currentTagId,
+                            index: next,
+                        });
+                    });
+                } else {
+                    canvas.api.editor.placeNode(target.nodeId, {
+                        scopeTagId: currentTagId,
+                        index: next,
+                    });
+                }
+                setTarget(null);
+            } catch (error) {
+                emitNodeError((error as Error)?.message ?? 'Failed to move field in context', {
+                    action: 'move-field-context',
+                    nodeId: target.nodeId,
+                    currentTagId,
+                    direction,
+                });
+            }
+        },
+        [
+            canvas.api.editor,
+            emitNodeError,
+            moveState.canMoveContextDown,
+            moveState.canMoveContextUp,
+            resolveCurrentTagId,
+            resolveFieldContextOrder,
+            setTarget,
+            target,
+        ],
+    );
+
+    return {
+        handleDuplicate,
+        handleCopyId,
+        handleSaveAsTemplate,
+        canQuickAddFallbacks: fallbackTarget != null,
+        handleOpenFallbackQuickAdd,
+        isFieldOptionsShown,
+        handleToggleFieldOptions,
+        canMoveUp: moveState.canMoveUp,
+        canMoveDown: moveState.canMoveDown,
+        canMoveContextUp: moveState.canMoveContextUp,
+        canMoveContextDown: moveState.canMoveContextDown,
+        handleMoveUp: () => handleMove('up'),
+        handleMoveDown: () => handleMove('down'),
+        handleMoveUpInContext: () => handleMoveInContext('up'),
+        handleMoveDownInContext: () => handleMoveInContext('down'),
+    };
 }
 
 export function useDropHandling(

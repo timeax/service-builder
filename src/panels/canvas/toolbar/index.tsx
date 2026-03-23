@@ -188,7 +188,7 @@ export function Toolbar({
 
     return (
         <div className={className ?? 'pointer-events-none absolute top-4 left-4 z-20'}>
-            <div className={orientation === 'horizontal' ? 'flex items-start gap-2' : 'grid gap-2'}>
+            <div className={orientation === 'horizontal' ? 'flex items-center gap-2' : 'grid gap-2'}>
                 {relationTools.length ? (
                     <div
                         className={
@@ -215,7 +215,8 @@ export function Toolbar({
                 <button
                     type="button"
                     onClick={onToggleOrientation}
-                    className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200/90 bg-white/92 text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/92 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100"
+                    aria-label={orientation === 'horizontal' ? 'Switch to vertical toolbar' : 'Switch to horizontal toolbar'}
+                    className={toolbarStandaloneButtonClass()}
                     title={orientation === 'horizontal' ? 'Switch to vertical toolbar' : 'Switch to horizontal toolbar'}
                 >
                     {orientation === 'horizontal' ? <LuPanelRight /> : <LuPanelBottom />}
@@ -464,12 +465,7 @@ function ViewMenuTool({
                     title={labelPlacement === 'tooltip' ? tool.label : undefined}
                     aria-expanded={tool.open ? 'true' : 'false'}
                     aria-label={tool.label}
-                    className={
-                        'pointer-events-auto relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border bg-white/92 text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-slate-100 hover:text-slate-900 dark:bg-slate-950/92 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100 ' +
-                        (tool.active
-                            ? 'border-blue-200 text-blue-700 ring-1 ring-blue-300/70 dark:border-blue-500/30 dark:text-blue-300'
-                            : 'border-slate-200/90 dark:border-slate-800')
-                    }
+                    className={toolbarStandaloneButtonClass(tool.active)}
                 >
                     {tool.icon}
                     {tool.active ? (
@@ -541,6 +537,16 @@ function compactLabel(label?: string) {
         default:
             return label;
     }
+}
+
+function toolbarStandaloneButtonClass(active = false) {
+    return (
+        'pointer-events-auto relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border bg-white/92 text-[18px] leading-none shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition ' +
+        '[&_svg]:h-5 [&_svg]:w-5 ' +
+        (active
+            ? 'border-blue-200 bg-blue-50 text-blue-700 shadow-[inset_0_0_0_1px_rgba(96,165,250,0.3),0_10px_24px_rgba(15,23,42,0.12)] hover:bg-blue-100 hover:text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-300 dark:hover:bg-blue-500/20 dark:hover:text-blue-200 '
+            : 'border-slate-200/90 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/92 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100 ')
+    );
 }
 
 function mapIcon(token: string, active: boolean): React.ReactNode {

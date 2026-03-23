@@ -4,8 +4,11 @@ import CanvasPanel from '@/panels/canvas';
 import Left from '@/panels/left';
 import RightPanel from '@/panels/right';
 import { BottomConsolePanel } from '@/workspace/bottom-console-panel.tsx';
+import { FallbackEditorModalProvider } from '@/workspace/fallback-editor-modal.tsx';
+import { FallbackQuickAddProvider } from '@/workspace/fallback-quick-add.tsx';
 import { Provider as InputsProvider, createInputRegistry, registerEntries } from '@timeax/digital-service-engine/react';
 import { Workspace, useCanvas, useErrors, useWorkspace, type WorkspaceProviderProps } from '@timeax/digital-service-engine/workspace';
+import type { DgpServiceMap, EditorSnapshot, ServiceProps } from '@timeax/digital-service-engine/schema';
 import { useMemo, useState } from 'react';
 import { workspaceActor, workspaceBackend, workspaceInitial } from '../backend';
 import './index.css';
@@ -13,7 +16,19 @@ import './index.css';
 const inputRegistry = createInputRegistry();
 registerEntries(inputRegistry);
 
-function WorkspaceLayout() {
+export type ServiceBuilderPlayPayload = {
+    serviceProps: ServiceProps;
+    capabilitiesMap: DgpServiceMap;
+    workspaceId: string;
+    branchId?: string;
+};
+
+export type ServiceBuilderCallbacks = {
+    onShare?: (snapshotData: EditorSnapshot | undefined) => void | Promise<void>;
+    onPlay?: (payload: ServiceBuilderPlayPayload) => void | Promise<void>;
+};
+
+function WorkspaceLayout({ onShare, onPlay }: ServiceBuilderCallbacks) {
     const canvas = useCanvas();
     const ws = useWorkspace();
     const errors = useErrors();
@@ -23,46 +38,51 @@ function WorkspaceLayout() {
     const serviceSummary = useMemo(() => buildServiceSummaries(canvas, ws), [canvas.props, canvas.selectionInfo, canvas.activeId, ws.services.data]);
 
     return (
-        <NodeContextMenuProvider>
-            <div className={'relative flex h-screen flex-col overflow-hidden *:font-display'}>
-                <div className={'flex grow overflow-hidden'}>
-                    <Left />
-                    <CanvasPanel
-                        errors={errors}
-                        bottomPanel={bottomPanel}
-                        draggingServiceId={draggingServiceId}
-                        onServiceDragStateChange={(serviceId) => setDraggingServiceId(serviceId)}
-                    />
-                    <RightPanel />
-                </div>
+        <FallbackQuickAddProvider>
+            <NodeContextMenuProvider>
+                <FallbackEditorModalProvider>
+                    <div className={'relative flex h-screen flex-col overflow-hidden *:font-display'}>
+                        <div className={'flex grow overflow-hidden'}>
+                            <Left />
+                            <CanvasPanel
+                                errors={errors}
+                                bottomPanel={bottomPanel}
+                                draggingServiceId={draggingServiceId}
+                                onServiceDragStateChange={(serviceId) => setDraggingServiceId(serviceId)}
+                            />
+                            <RightPanel onShare={onShare} onPlay={onPlay} />
+                        </div>
 
-                <div className="pointer-events-none absolute inset-0 z-5">
-                    <BottomConsolePanel
-                        controller={bottomPanel}
-                        errors={errors}
-                        activeServices={serviceSummary.activeServices}
-                        allServices={serviceSummary.allServices}
-                        onServiceDragStateChange={(serviceId) => setDraggingServiceId(serviceId)}
-                    />
-                </div>
-            </div>
-        </NodeContextMenuProvider>
+                        <div className="pointer-events-none absolute inset-0 z-5">
+                            <BottomConsolePanel
+                                controller={bottomPanel}
+                                errors={errors}
+                                activeServices={serviceSummary.activeServices}
+                                allServices={serviceSummary.allServices}
+                                onServiceDragStateChange={(serviceId) => setDraggingServiceId(serviceId)}
+                            />
+                        </div>
+                    </div>
+                </FallbackEditorModalProvider>
+            </NodeContextMenuProvider>
+        </FallbackQuickAddProvider>
     );
 }
 
-export type ServiceBuilderProps = Pick<WorkspaceProviderProps, 'backend' | 'actor' | 'initial'>;
+export type ServiceBuilderProps = Pick<WorkspaceProviderProps, 'backend' | 'actor' | 'initial'> & ServiceBuilderCallbacks;
 
-export function ServiceBuilder({ backend, actor, initial }: ServiceBuilderProps) {
+export function ServiceBuilder({ backend, actor, initial, onShare, onPlay }: ServiceBuilderProps) {
     return (
         <InputsProvider initialRegistry={inputRegistry}>
             <Workspace backend={backend} actor={actor} initial={initial}>
-                {() => <WorkspaceLayout />}
+                {() => <WorkspaceLayout onShare={onShare} onPlay={onPlay} />}
             </Workspace>
         </InputsProvider>
     );
 }
 
-export function ServiceBuilderWorkspace() {
-    return <ServiceBuilder backend={workspaceBackend} actor={workspaceActor} initial={workspaceInitial} />;
-}
+export type ServiceBuilderWorkspaceProps = ServiceBuilderCallbacks;
 
+export function ServiceBuilderWorkspace({ onShare, onPlay }: ServiceBuilderWorkspaceProps) {
+    return <ServiceBuilder backend={workspaceBackend} actor={workspaceActor} initial={workspaceInitial} onShare={onShare} onPlay={onPlay} />;
+}

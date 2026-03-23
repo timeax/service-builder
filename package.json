@@ -41,8 +41,6 @@
         "@radix-ui/react-tooltip": "^1.2.8",
         "@tailwindcss/vite": "^4.2.1",
         "@timeax/cache-store": "^0.0.1",
-        "@timeax/digital-service-engine": "^0.0.7",
-        "@timeax/form-palette": "^0.1.33",
         "@timeax/scaffold": "^0.1.3",
         "@xyflow/react": "^12.10.1",
         "class-variance-authority": "^0.7.1",
@@ -58,6 +56,8 @@
         "tailwindcss": "^4.1.17"
     },
     "peerDependencies": {
+        "@timeax/digital-service-engine": "^0.0.7",
+        "@timeax/form-palette": "^0.1.34",
         "react": "^18.3.1",
         "react-dom": "^18.3.1"
     },

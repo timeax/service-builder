@@ -2,44 +2,45 @@
 > Note for LLMs: `Lx-Ly` ranges refer to lines in this Prodex trace file, not the original source files. Index metadata is provided via the HTML comment markers in this section.
 
 # Index
-<!-- PRODEX_INDEX_RANGE: L8-L42 -->
-<!-- PRODEX_FILE_COUNT: 35 -->
+<!-- PRODEX_INDEX_RANGE: L8-L43 -->
+<!-- PRODEX_FILE_COUNT: 36 -->
 <!-- PRODEX_INDEX_LIST_START -->
-- [src/react/inputs/__tests__/form-based-selection.tsx](#1)  L46-L278
-- [src/react/inputs/__tests__/form-context.coinmarketcap.tsx](#2)  L279-L376
-- [src/react/inputs/__tests__/input-registery.ts](#3)  L377-L446
-- [src/react/inputs/__tests__/use-order-flow.coinmarketcap.tsx](#4)  L447-L666
-- [src/react/inputs/entries/checkbox.tsx](#5)  L667-L833
-- [src/react/inputs/entries/chips.tsx](#6)  L834-L974
-- [src/react/inputs/entries/color.tsx](#7)  L975-L1034
-- [src/react/inputs/entries/custom.tsx](#8)  L1035-L1094
-- [src/react/inputs/entries/date.tsx](#9)  L1095-L1214
-- [src/react/inputs/entries/editor.tsx](#10)  L1215-L1318
-- [src/react/inputs/entries/file.tsx](#11)  L1319-L1458
-- [src/react/inputs/entries/icon.tsx](#12)  L1459-L1598
-- [src/react/inputs/entries/image-icon.tsx](#13)  L1599-L1738
-- [src/react/inputs/entries/index.ts](#14)  L1739-L2041
-- [src/react/inputs/entries/json-editor.tsx](#15)  L2042-L2344
-- [src/react/inputs/entries/keyvalue.tsx](#16)  L2345-L2473
-- [src/react/inputs/entries/lister.tsx](#17)  L2474-L2689
-- [src/react/inputs/entries/multiselect.tsx](#18)  L2690-L2757
-- [src/react/inputs/entries/number.tsx](#19)  L2758-L2929
-- [src/react/inputs/entries/password.tsx](#20)  L2930-L3091
-- [src/react/inputs/entries/phone.tsx](#21)  L3092-L3260
-- [src/react/inputs/entries/radio.tsx](#22)  L3261-L3304
-- [src/react/inputs/entries/select.tsx](#23)  L3305-L3356
-- [src/react/inputs/entries/shared.ts](#24)  L3357-L3628
-- [src/react/inputs/entries/slider.tsx](#25)  L3629-L3729
-- [src/react/inputs/entries/text.tsx](#26)  L3730-L3815
-- [src/react/inputs/entries/textarea.tsx](#27)  L3816-L3872
-- [src/react/inputs/entries/toggle-group.tsx](#28)  L3873-L4050
-- [src/react/inputs/entries/toggle.tsx](#29)  L4051-L4102
-- [src/react/inputs/entries/treeselect.tsx](#30)  L4103-L4212
-- [src/react/inputs/form-context.tsx](#31)  L4213-L4439
-- [src/react/inputs/provider.tsx](#32)  L4440-L4508
-- [src/react/inputs/register-custom.ts](#33)  L4509-L4575
-- [src/react/inputs/registry.ts](#34)  L4576-L4704
-- [src/react/inputs/wrapper.tsx](#35)  L4705-L5071
+- [src/react/inputs/__tests__/form-based-selection.tsx](#1)  L47-L279
+- [src/react/inputs/__tests__/form-context.coinmarketcap.tsx](#2)  L280-L377
+- [src/react/inputs/__tests__/input-registery.ts](#3)  L378-L447
+- [src/react/inputs/__tests__/order-flow.dev-mount.spec.tsx](#4)  L448-L802
+- [src/react/inputs/__tests__/use-order-flow.coinmarketcap.tsx](#5)  L803-L1022
+- [src/react/inputs/entries/checkbox.tsx](#6)  L1023-L1189
+- [src/react/inputs/entries/chips.tsx](#7)  L1190-L1330
+- [src/react/inputs/entries/color.tsx](#8)  L1331-L1390
+- [src/react/inputs/entries/custom.tsx](#9)  L1391-L1450
+- [src/react/inputs/entries/date.tsx](#10)  L1451-L1570
+- [src/react/inputs/entries/editor.tsx](#11)  L1571-L1674
+- [src/react/inputs/entries/file.tsx](#12)  L1675-L1814
+- [src/react/inputs/entries/icon.tsx](#13)  L1815-L1954
+- [src/react/inputs/entries/image-icon.tsx](#14)  L1955-L2094
+- [src/react/inputs/entries/index.ts](#15)  L2095-L2411
+- [src/react/inputs/entries/json-editor.tsx](#16)  L2412-L2728
+- [src/react/inputs/entries/keyvalue.tsx](#17)  L2729-L2857
+- [src/react/inputs/entries/lister.tsx](#18)  L2858-L3073
+- [src/react/inputs/entries/multiselect.tsx](#19)  L3074-L3141
+- [src/react/inputs/entries/number.tsx](#20)  L3142-L3313
+- [src/react/inputs/entries/password.tsx](#21)  L3314-L3475
+- [src/react/inputs/entries/phone.tsx](#22)  L3476-L3644
+- [src/react/inputs/entries/radio.tsx](#23)  L3645-L3688
+- [src/react/inputs/entries/select.tsx](#24)  L3689-L3740
+- [src/react/inputs/entries/shared.ts](#25)  L3741-L4012
+- [src/react/inputs/entries/slider.tsx](#26)  L4013-L4113
+- [src/react/inputs/entries/text.tsx](#27)  L4114-L4199
+- [src/react/inputs/entries/textarea.tsx](#28)  L4200-L4256
+- [src/react/inputs/entries/toggle-group.tsx](#29)  L4257-L4434
+- [src/react/inputs/entries/toggle.tsx](#30)  L4435-L4486
+- [src/react/inputs/entries/treeselect.tsx](#31)  L4487-L4596
+- [src/react/inputs/form-context.tsx](#32)  L4597-L4823
+- [src/react/inputs/provider.tsx](#33)  L4824-L4892
+- [src/react/inputs/register-custom.ts](#34)  L4893-L4959
+- [src/react/inputs/registry.ts](#35)  L4960-L5088
+- [src/react/inputs/wrapper.tsx](#36)  L5089-L5455
 <!-- PRODEX_INDEX_LIST_END -->
 
 ---
@@ -448,6 +449,361 @@ describe('InputRegistry variant resolution', () => {
 #### 4
 
 
+` File: src/react/inputs/__tests__/order-flow.dev-mount.spec.tsx`  [↑ Back to top](#index)
+
+```tsx
+import { describe, expect, it } from "vitest";
+import * as React from "react";
+import { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+
+import { createBuilder } from "@/core";
+import type { ServiceProps, ServicePropsNotice } from "@/schema";
+import { CanvasAPI } from "@/react/canvas/api";
+import { OrderFlowProvider, useOrderFlow, useOrderFlowContext } from "@/react/hooks";
+import { registerEntries } from "@/react/inputs/entries";
+import { createInputRegistry, type InputDescriptor, Wrapper } from "@/react";
+
+async function flush(): Promise<void> {
+    await Promise.resolve();
+    await Promise.resolve();
+}
+
+function makeNotice(
+    id: string,
+    title: string,
+    severity: "info" | "warning" | "error" = "info",
+    target: ServicePropsNotice["target"] = { scope: "global" },
+): ServicePropsNotice {
+    return {
+        id,
+        type: "public",
+        kind: "label",
+        severity,
+        target,
+        title,
+    };
+}
+
+function makeProps(noticeTitle: string, optionNoticeTitle: string): ServiceProps {
+    return {
+        schema_version: "1.0",
+        filters: [{ id: "t:root", label: "Root" }],
+        fields: [
+            {
+                id: "f:text",
+                type: "text",
+                bind_id: "t:root",
+                label: "Text input",
+            },
+            {
+                id: "f:select",
+                type: "select",
+                bind_id: "t:root",
+                label: "Select input",
+                options: [
+                    { id: "o:alpha", label: "Alpha" },
+                    { id: "o:beta", label: "Beta" },
+                ],
+            },
+        ],
+        notices: [
+            makeNotice("f:text", noticeTitle),
+            makeNotice("o:alpha", optionNoticeTitle, "warning"),
+        ],
+    };
+}
+
+function makeNodeScopedProps(
+    noticeTitle: string,
+    optionNoticeTitle: string,
+): ServiceProps {
+    return {
+        schema_version: "1.0",
+        filters: [{ id: "t:root", label: "Root" }],
+        fields: [
+            {
+                id: "f:text",
+                type: "text",
+                bind_id: "t:root",
+                label: "Text input",
+            },
+            {
+                id: "f:select",
+                type: "select",
+                bind_id: "t:root",
+                label: "Select input",
+                options: [
+                    { id: "o:alpha", label: "Alpha" },
+                    { id: "o:beta", label: "Beta" },
+                ],
+            },
+        ],
+        notices: [
+            makeNotice("n:f:text", noticeTitle, "info", {
+                scope: "node",
+                node_kind: "field",
+                node_id: "f:text",
+            }),
+            makeNotice("n:o:alpha", optionNoticeTitle, "warning", {
+                scope: "node",
+                node_kind: "option",
+                node_id: "o:alpha",
+            }),
+        ],
+    };
+}
+
+type CapturedProps = Record<string, Record<string, unknown>>;
+
+function createRegistry(records: CapturedProps) {
+    const registry = createInputRegistry();
+    registerEntries(registry);
+
+    const withSpy = (kind: "text" | "select") => {
+        const descriptor = registry.get(kind);
+        if (!descriptor) {
+            throw new Error(`Missing descriptor for ${kind}`);
+        }
+
+        const SpyComponent = (props: Record<string, unknown>) => {
+            records[String(props.id)] = props;
+            return React.createElement("div", {
+                "data-testid": `${kind}:${String(props.id)}`,
+            });
+        };
+
+        registry.register(kind, {
+            ...descriptor,
+            Component: SpyComponent,
+        } satisfies InputDescriptor);
+    };
+
+    withSpy("text");
+    withSpy("select");
+
+    return registry;
+}
+
+describe("OrderFlowProvider dev mount regressions", () => {
+    it("auto-initializes from dev/service-builder props and keeps raw + wrapper tags reactive", async () => {
+        const initialProps = makeProps("Initial field notice", "Initial option notice");
+        const updatedProps = makeProps("Updated field notice", "Updated option notice");
+        const swappedProps = makeProps("Swapped field notice", "Swapped option notice");
+
+        const initialBuilder = createBuilder();
+        initialBuilder.load(initialProps);
+        const initialApi = new CanvasAPI(initialBuilder, { autoEmitState: false });
+
+        const swappedBuilder = createBuilder();
+        swappedBuilder.load(swappedProps);
+        const swappedApi = new CanvasAPI(swappedBuilder, { autoEmitState: false });
+
+        const renderedProps: CapturedProps = {};
+        const registry = createRegistry(renderedProps);
+
+        let flow: ReturnType<typeof useOrderFlow> | null = null;
+        let ctx: ReturnType<typeof useOrderFlowContext> | null = null;
+
+        function Consumer({
+            props,
+        }: {
+            props: ServiceProps;
+        }) {
+            flow = useOrderFlow();
+            ctx = useOrderFlowContext();
+
+            return (
+                <>
+                    {props.fields.map((field) => (
+                        <Wrapper key={field.id} field={field} />
+                    ))}
+                </>
+            );
+        }
+
+        const host = document.createElement("div");
+        document.body.appendChild(host);
+
+        let root: Root | null = null;
+
+        const renderApp = async (
+            props: ServiceProps,
+            builder = initialApi.builder,
+            selection = initialApi.selection,
+        ) => {
+            await act(async () => {
+                if (!root) root = createRoot(host);
+                root.render(
+                    <OrderFlowProvider
+                        serviceProps={props}
+                        builder={builder}
+                        selection={selection}
+                        registry={registry}
+                    >
+                        <Consumer props={props} />
+                    </OrderFlowProvider>,
+                );
+                await flush();
+            });
+        };
+
+        await renderApp(initialProps);
+
+        expect(flow).not.toBeNull();
+        expect(ctx).not.toBeNull();
+        expect(flow!.ready).toBe(true);
+        expect(ctx!.builder).toBe(initialApi.builder);
+        expect(ctx!.selection).toBe(initialApi.selection);
+        expect(flow!.raw).toBeDefined();
+        expect(flow!.raw).toEqual(initialApi.builder.getProps());
+        expect(flow!.raw.notices?.map((notice) => notice.title)).toEqual([
+            "Initial field notice",
+            "Initial option notice",
+        ]);
+        expect(
+            (renderedProps["f:text"]?.tags as Array<{ label: string }> | undefined)?.map(
+                (tag) => tag.label,
+            ),
+        ).toEqual(["Initial field notice"]);
+        expect(
+            (
+                renderedProps["f:select"]?.options as Array<{
+                    id: string;
+                    tags?: Array<{ label: string }>;
+                }>
+            )?.find((option) => option.id === "o:alpha")?.tags?.map((tag) => tag.label),
+        ).toEqual(["Initial option notice"]);
+
+        await renderApp(updatedProps);
+
+        expect(flow!.ready).toBe(true);
+        expect(ctx!.builder).toBe(initialApi.builder);
+        expect(initialApi.builder.getProps().notices?.map((notice) => notice.title)).toEqual([
+            "Updated field notice",
+            "Updated option notice",
+        ]);
+        expect(flow!.raw).toEqual(initialApi.builder.getProps());
+        expect(flow!.raw.notices?.map((notice) => notice.title)).toEqual([
+            "Updated field notice",
+            "Updated option notice",
+        ]);
+        expect(
+            (renderedProps["f:text"]?.tags as Array<{ label: string }> | undefined)?.map(
+                (tag) => tag.label,
+            ),
+        ).toEqual(["Updated field notice"]);
+        expect(
+            (
+                renderedProps["f:select"]?.options as Array<{
+                    id: string;
+                    tags?: Array<{ label: string }>;
+                }>
+            )?.find((option) => option.id === "o:alpha")?.tags?.map((tag) => tag.label),
+        ).toEqual(["Updated option notice"]);
+
+        await renderApp(swappedProps, swappedApi.builder, swappedApi.selection);
+
+        expect(flow!.ready).toBe(true);
+        expect(ctx!.builder).toBe(swappedApi.builder);
+        expect(ctx!.selection).toBe(swappedApi.selection);
+        expect(flow!.raw).toEqual(swappedApi.builder.getProps());
+        expect(flow!.raw.notices?.map((notice) => notice.title)).toEqual([
+            "Swapped field notice",
+            "Swapped option notice",
+        ]);
+        expect(
+            (renderedProps["f:text"]?.tags as Array<{ label: string }> | undefined)?.map(
+                (tag) => tag.label,
+            ),
+        ).toEqual(["Swapped field notice"]);
+        expect(
+            (
+                renderedProps["f:select"]?.options as Array<{
+                    id: string;
+                    tags?: Array<{ label: string }>;
+                }>
+            )?.find((option) => option.id === "o:alpha")?.tags?.map((tag) => tag.label),
+        ).toEqual(["Swapped option notice"]);
+
+        await act(async () => {
+            root?.unmount();
+            await flush();
+        });
+    });
+
+    it("maps node-scoped notices to field and option tags on mount", async () => {
+        const props = makeNodeScopedProps(
+            "Node-targeted field notice",
+            "Node-targeted option notice",
+        );
+
+        const builder = createBuilder();
+        builder.load(props);
+        const api = new CanvasAPI(builder, { autoEmitState: false });
+
+        const renderedProps: CapturedProps = {};
+        const registry = createRegistry(renderedProps);
+
+        function Consumer({
+            consumerProps,
+        }: {
+            consumerProps: ServiceProps;
+        }) {
+            return (
+                <>
+                    {consumerProps.fields.map((field) => (
+                        <Wrapper key={field.id} field={field} />
+                    ))}
+                </>
+            );
+        }
+
+        const host = document.createElement("div");
+        document.body.appendChild(host);
+        const root = createRoot(host);
+
+        await act(async () => {
+            root.render(
+                <OrderFlowProvider
+                    serviceProps={props}
+                    builder={api.builder}
+                    selection={api.selection}
+                    registry={registry}
+                >
+                    <Consumer consumerProps={props} />
+                </OrderFlowProvider>,
+            );
+            await flush();
+        });
+
+        expect(
+            (renderedProps["f:text"]?.tags as Array<{ label: string }> | undefined)?.map(
+                (tag) => tag.label,
+            ),
+        ).toEqual(["Node-targeted field notice"]);
+        expect(
+            (
+                renderedProps["f:select"]?.options as Array<{
+                    id: string;
+                    tags?: Array<{ label: string }>;
+                }>
+            )?.find((option) => option.id === "o:alpha")?.tags?.map((tag) => tag.label),
+        ).toEqual(["Node-targeted option notice"]);
+
+        await act(async () => {
+            root.unmount();
+            host.remove();
+            await flush();
+        });
+    });
+});
+```
+
+---
+#### 5
+
+
 ` File: src/react/inputs/__tests__/use-order-flow.coinmarketcap.tsx`  [↑ Back to top](#index)
 
 ```tsx
@@ -665,7 +1021,7 @@ describe("useOrderFlow (CoinMarketCap props) – dripfeed reveals runs/interval"
 ```
 
 ---
-#### 5
+#### 6
 
 
 ` File: src/react/inputs/entries/checkbox.tsx`  [↑ Back to top](#index)
@@ -832,7 +1188,7 @@ export const checkboxDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 6
+#### 7
 
 
 ` File: src/react/inputs/entries/chips.tsx`  [↑ Back to top](#index)
@@ -973,7 +1329,7 @@ export const chipsDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 7
+#### 8
 
 
 ` File: src/react/inputs/entries/color.tsx`  [↑ Back to top](#index)
@@ -1033,7 +1389,7 @@ export const colorDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 8
+#### 9
 
 
 ` File: src/react/inputs/entries/custom.tsx`  [↑ Back to top](#index)
@@ -1093,7 +1449,7 @@ export const colorDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 9
+#### 10
 
 
 ` File: src/react/inputs/entries/date.tsx`  [↑ Back to top](#index)
@@ -1213,7 +1569,7 @@ export const dateDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 10
+#### 11
 
 
 ` File: src/react/inputs/entries/editor.tsx`  [↑ Back to top](#index)
@@ -1317,7 +1673,7 @@ export const editorDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 11
+#### 12
 
 
 ` File: src/react/inputs/entries/file.tsx`  [↑ Back to top](#index)
@@ -1457,7 +1813,7 @@ export const fileDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 12
+#### 13
 
 
 ` File: src/react/inputs/entries/icon.tsx`  [↑ Back to top](#index)
@@ -1597,7 +1953,7 @@ export const fileDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 13
+#### 14
 
 
 ` File: src/react/inputs/entries/image-icon.tsx`  [↑ Back to top](#index)
@@ -1737,339 +2093,36 @@ export const fileDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 14
+#### 15
 
 
 ` File: src/react/inputs/entries/index.ts`  [↑ Back to top](#index)
 
 ```ts
 // src/react/inputs/registry/entries/index.ts
-import type { InputDescriptor, Registry } from "@/react";
+import type {InputDescriptor, Registry} from "@/react";
 
-import { textDescriptor } from "./text";
-import { textareaDescriptor } from "./textarea";
-import { phoneDescriptor } from "./phone";
-import { toggleGroupDescriptor } from "./toggle-group";
-import { numberDescriptor } from "./number";
-import { passwordDescriptor } from "./password";
-import { sliderDescriptor } from "./slider";
-import { toggleDescriptor } from "./toggle";
-import { treeSelectDescriptor } from "./treeselect";
-import { multiSelectDescriptor } from "./multiselect";
-import { selectDescriptor } from "./select";
-import { radioDescriptor } from "./radio";
-import { checkboxDescriptor } from "./checkbox";
-import { chipsDescriptor } from "./chips";
-import { colorDescriptor } from "./color";
-import { dateDescriptor } from "./date";
-import { keyValueDescriptor } from "./keyvalue";
-import { editorDescriptor } from "./editor";
-import { listerDescriptor } from "./lister";
-import { fileDescriptor } from "./file";
-import {Ui} from "@/schema";
-
-/**
- * InputField-level UI props (injected for every descriptor at registration time).
- * NOTE: keep this list tight—only props that truly belong to InputField itself.
- */
-const inputFieldUi: Record<string, Ui> = {
-    // --- Chrome / helper text (builder-friendly) ---
-    sublabel: {
-        type: "string",
-        label: "Sublabel",
-        description:
-            "Secondary label text shown near the main label (if supported).",
-    },
-
-    description: {
-        type: "string",
-        label: "Description",
-        description: "Helper description shown under the label.",
-    },
-
-    helpText: {
-        type: "string",
-        label: "Help text",
-        description: "Additional helper text shown in the help slot.",
-    },
-
-    // --- Placement hints (layout-only; host decides exact behavior) ---
-    labelPlacement: {
-        type: "string",
-        label: "Label placement",
-        description: "Layout hint for where the label is rendered.",
-    } as Ui,
-
-    sublabelPlacement: {
-        type: "string",
-        label: "Sublabel placement",
-        description: "Layout hint for where the sublabel is rendered.",
-    } as Ui,
-
-    descriptionPlacement: {
-        type: "string",
-        label: "Description placement",
-        description: "Layout hint for where the description is rendered.",
-    } as Ui,
-
-    helpTextPlacement: {
-        type: "string",
-        label: "Help text placement",
-        description: "Layout hint for where the help text is rendered.",
-    } as Ui,
-
-    tagPlacement: {
-        type: "string",
-        label: "Tag placement",
-        description: "Layout hint for where tags are rendered.",
-    } as Ui,
-
-    // --- Tags (builder-safe subset; host maps to FieldTag) ---
-    tags: {
-        type: "array",
-        label: "Tags",
-        description:
-            "Small tag badges shown near the label. Builder-safe subset (label/color/bgColor).",
-        editable: true,
-        item: {
-            type: "object",
-            label: "Tag",
-            description: "A label tag.",
-            editable: true,
-            fields: {
-                label: {
-                    type: "string",
-                    label: "Label",
-                    description: "Tag text.",
-                },
-                color: {
-                    type: "string",
-                    label: "Text color",
-                    description: 'CSS color value (e.g. "#fff" or "rgb(...)").',
-                },
-                bgColor: {
-                    type: "string",
-                    label: "Background color",
-                    description: 'CSS color value (e.g. "#111").',
-                },
-            },
-            order: ["label", "color", "bgColor"],
-        } as Ui,
-    } satisfies Ui,
-
-    disabled: {
-        type: "boolean",
-        label: "Disabled",
-        description: "Disable user interaction with the field.",
-    },
-
-    readOnly: {
-        type: "boolean",
-        label: "Read-only",
-        description: "Prevent edits while still allowing focus/selection.",
-    },
-
-    // --- Layout flags ---
-    inline: {
-        type: "boolean",
-        label: "Inline",
-        description:
-            "Render label + input in an inline row layout (if supported).",
-    },
-
-    fullWidth: {
-        type: "boolean",
-        label: "Full width",
-        description:
-            "Stretch the field to fill its container width (if supported).",
-    },
-};
-
-function withInputFieldUi(desc: InputDescriptor): InputDescriptor {
-    return {
-        ...desc,
-        adapter: {
-            getValue(e: any) {
-                return e.value;
-            },
-            valueProp: "value",
-            changeProp: "onChange",
-            getInputPropsFromField({ field, props }) {
-                const severityPillClassMap = {
-                    info: "border-blue-200 bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200",
-                    warning:
-                        "border-amber-200 bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200",
-                    error: "border-red-200 bg-red-50 text-red-700 ring-1 ring-inset ring-red-200",
-                } as const;
-
-                const pillBaseClassName =
-                    "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium";
-
-                const toTagPill = (tag: any) => ({
-                    label: tag.title,
-                    bgColor: tag.color,
-                    className: `${pillBaseClassName} ${severityPillClassMap[tag.severity as keyof typeof severityPillClassMap] ?? severityPillClassMap.info}`,
-                });
-
-                const matchesNotice = (
-                    target: { id?: unknown; service_id?: unknown },
-                    notice: { id?: unknown },
-                ) =>
-                    notice.id === target.id ||
-                    (!!target.service_id && target.service_id == notice.id);
-
-                const notices = props.notices ?? [];
-
-                const fieldNotices = notices.filter((notice) =>
-                    matchesNotice(field, notice),
-                );
-
-                return {
-                    label: field.label,
-                    tags: fieldNotices.map(toTagPill),
-                    required: field.required,
-
-                    ...(field.options?.length
-                        ? {
-                              options: field.options.map((item) => {
-                                  // @ts-ignore
-                                  const optionNotices = notices.filter(
-                                      (notice) => matchesNotice(item, notice),
-                                  );
-
-                                  return {
-                                      ...item,
-                                      tags: optionNotices.map(toTagPill),
-                                  };
-                              }),
-                          }
-                        : {}),
-                };
-            },
-            getSelectedOptions(next, currentt, ctx) {
-                return ((next as any)?.selectedOptions ?? [])?.map(
-                    (item: any) => item.id,
-                );
-            },
-
-            isActive(stored, ctx) {
-                return Boolean(stored);
-            },
-        },
-        ui: {
-            ...inputFieldUi,
-            ...(desc.ui ?? {}),
-        },
-    };
-}
-
-function variantOf(desc: InputDescriptor): string {
-    const v = (desc.defaultProps as any)?.variant;
-    if (!v || typeof v !== "string") {
-        throw new Error(
-            `[inputs] Descriptor is missing defaultProps.variant: ${String(v)}`,
-        );
-    }
-    return v;
-}
-
-/**
- * Register all built-in entries.
- * - You said "variant is the only thing necessary", so we treat kind as a constant.
- */
-export function registerEntries(registry: Registry): void {
-    const entries: InputDescriptor[] = [
-        textDescriptor,
-        textareaDescriptor,
-        phoneDescriptor,
-        toggleGroupDescriptor,
-        numberDescriptor,
-        passwordDescriptor,
-        sliderDescriptor,
-        toggleDescriptor,
-        treeSelectDescriptor,
-        multiSelectDescriptor,
-        selectDescriptor,
-        radioDescriptor,
-        checkboxDescriptor,
-        chipsDescriptor,
-        colorDescriptor,
-        dateDescriptor,
-        keyValueDescriptor,
-        editorDescriptor,
-        listerDescriptor,
-        fileDescriptor,
-    ];
-
-    registry.registerMany(
-        entries.map((descriptor) => {
-            const finalDescriptor = withInputFieldUi(descriptor);
-            const variant = variantOf(finalDescriptor);
-
-            return {
-                kind: variant,
-                descriptor: finalDescriptor,
-            };
-        }),
-    );
-}
-
-// re-export entries (optional convenience)
-export {
-    textDescriptor,
-    textareaDescriptor,
-    phoneDescriptor,
-    toggleGroupDescriptor,
-    numberDescriptor,
-    passwordDescriptor,
-    sliderDescriptor,
-    toggleDescriptor,
-    treeSelectDescriptor,
-    multiSelectDescriptor,
-    selectDescriptor,
-    radioDescriptor,
-    checkboxDescriptor,
-    chipsDescriptor,
-    colorDescriptor,
-    dateDescriptor,
-    keyValueDescriptor,
-    editorDescriptor,
-    listerDescriptor,
-    fileDescriptor,
-};
-```
-
----
-#### 15
-
-
-` File: src/react/inputs/entries/json-editor.tsx`  [↑ Back to top](#index)
-
-```tsx
-// src/react/inputs/registry/entries/index.ts
-import type { InputDescriptor, Registry } from "@/react";
-
-import { textDescriptor } from "./text";
-import { textareaDescriptor } from "./textarea";
-import { phoneDescriptor } from "./phone";
-import { toggleGroupDescriptor } from "./toggle-group";
-import { numberDescriptor } from "./number";
-import { passwordDescriptor } from "./password";
-import { sliderDescriptor } from "./slider";
-import { toggleDescriptor } from "./toggle";
-import { treeSelectDescriptor } from "./treeselect";
-import { multiSelectDescriptor } from "./multiselect";
-import { selectDescriptor } from "./select";
-import { radioDescriptor } from "./radio";
-import { checkboxDescriptor } from "./checkbox";
-import { chipsDescriptor } from "./chips";
-import { colorDescriptor } from "./color";
-import { dateDescriptor } from "./date";
-import { keyValueDescriptor } from "./keyvalue";
-import { editorDescriptor } from "./editor";
-import { listerDescriptor } from "./lister";
-import { fileDescriptor } from "./file";
-import {Ui} from "@/schema";
+import {textDescriptor} from "./text";
+import {textareaDescriptor} from "./textarea";
+import {phoneDescriptor} from "./phone";
+import {toggleGroupDescriptor} from "./toggle-group";
+import {numberDescriptor} from "./number";
+import {passwordDescriptor} from "./password";
+import {sliderDescriptor} from "./slider";
+import {toggleDescriptor} from "./toggle";
+import {treeSelectDescriptor} from "./treeselect";
+import {multiSelectDescriptor} from "./multiselect";
+import {selectDescriptor} from "./select";
+import {radioDescriptor} from "./radio";
+import {checkboxDescriptor} from "./checkbox";
+import {chipsDescriptor} from "./chips";
+import {colorDescriptor} from "./color";
+import {dateDescriptor} from "./date";
+import {keyValueDescriptor} from "./keyvalue";
+import {editorDescriptor} from "./editor";
+import {listerDescriptor} from "./lister";
+import {fileDescriptor} from "./file";
+import {Field, FieldOption, ServicePropsNotice, Ui} from "@/schema";
 
 /**
  * InputField-level UI props (injected for every descriptor at registration time).
@@ -2215,11 +2268,25 @@ function withInputFieldUi(desc: InputDescriptor): InputDescriptor {
                 });
 
                 const matchesNotice = (
-                    target: { id?: unknown; service_id?: unknown },
-                    notice: { id?: unknown },
-                ) =>
-                    notice.id === target.id ||
-                    (!!target.service_id && target.service_id == notice.id);
+                    target: Field | FieldOption,
+                    notice: ServicePropsNotice,
+                ) => {
+                    const isNodeTargetMatch =
+                        notice.target.scope === "node" &&
+                        notice.target.node_id === target.id;
+                    const isLegacyGlobalIdMatch =
+                        notice.target.scope === "global" &&
+                        notice.id === target.id;
+                    const isServiceMatch =
+                        !!target.service_id &&
+                        String(target.service_id) === notice.id;
+
+                    return (
+                        isNodeTargetMatch ||
+                        isLegacyGlobalIdMatch ||
+                        isServiceMatch
+                    );
+                };
 
                 const notices = props.notices ?? [];
 
@@ -2250,7 +2317,7 @@ function withInputFieldUi(desc: InputDescriptor): InputDescriptor {
                 };
             },
             getSelectedOptions(next, currentt, ctx) {
-                return ((next as any)?.selectedOptions ?? [])?.map(
+                return ((next as any)?.detail?.selectedOptions ?? [])?.map(
                     (item: any) => item.id,
                 );
             },
@@ -2344,6 +2411,323 @@ export {
 
 ---
 #### 16
+
+
+` File: src/react/inputs/entries/json-editor.tsx`  [↑ Back to top](#index)
+
+```tsx
+// src/react/inputs/registry/entries/index.ts
+import type { InputDescriptor, Registry } from "@/react";
+
+import { textDescriptor } from "./text";
+import { textareaDescriptor } from "./textarea";
+import { phoneDescriptor } from "./phone";
+import { toggleGroupDescriptor } from "./toggle-group";
+import { numberDescriptor } from "./number";
+import { passwordDescriptor } from "./password";
+import { sliderDescriptor } from "./slider";
+import { toggleDescriptor } from "./toggle";
+import { treeSelectDescriptor } from "./treeselect";
+import { multiSelectDescriptor } from "./multiselect";
+import { selectDescriptor } from "./select";
+import { radioDescriptor } from "./radio";
+import { checkboxDescriptor } from "./checkbox";
+import { chipsDescriptor } from "./chips";
+import { colorDescriptor } from "./color";
+import { dateDescriptor } from "./date";
+import { keyValueDescriptor } from "./keyvalue";
+import { editorDescriptor } from "./editor";
+import { listerDescriptor } from "./lister";
+import { fileDescriptor } from "./file";
+import { Field, FieldOption, ServicePropsNotice, Ui } from "@/schema";
+
+/**
+ * InputField-level UI props (injected for every descriptor at registration time).
+ * NOTE: keep this list tight—only props that truly belong to InputField itself.
+ */
+const inputFieldUi: Record<string, Ui> = {
+    // --- Chrome / helper text (builder-friendly) ---
+    sublabel: {
+        type: "string",
+        label: "Sublabel",
+        description:
+            "Secondary label text shown near the main label (if supported).",
+    },
+
+    description: {
+        type: "string",
+        label: "Description",
+        description: "Helper description shown under the label.",
+    },
+
+    helpText: {
+        type: "string",
+        label: "Help text",
+        description: "Additional helper text shown in the help slot.",
+    },
+
+    // --- Placement hints (layout-only; host decides exact behavior) ---
+    labelPlacement: {
+        type: "string",
+        label: "Label placement",
+        description: "Layout hint for where the label is rendered.",
+    } as Ui,
+
+    sublabelPlacement: {
+        type: "string",
+        label: "Sublabel placement",
+        description: "Layout hint for where the sublabel is rendered.",
+    } as Ui,
+
+    descriptionPlacement: {
+        type: "string",
+        label: "Description placement",
+        description: "Layout hint for where the description is rendered.",
+    } as Ui,
+
+    helpTextPlacement: {
+        type: "string",
+        label: "Help text placement",
+        description: "Layout hint for where the help text is rendered.",
+    } as Ui,
+
+    tagPlacement: {
+        type: "string",
+        label: "Tag placement",
+        description: "Layout hint for where tags are rendered.",
+    } as Ui,
+
+    // --- Tags (builder-safe subset; host maps to FieldTag) ---
+    tags: {
+        type: "array",
+        label: "Tags",
+        description:
+            "Small tag badges shown near the label. Builder-safe subset (label/color/bgColor).",
+        editable: true,
+        item: {
+            type: "object",
+            label: "Tag",
+            description: "A label tag.",
+            editable: true,
+            fields: {
+                label: {
+                    type: "string",
+                    label: "Label",
+                    description: "Tag text.",
+                },
+                color: {
+                    type: "string",
+                    label: "Text color",
+                    description: 'CSS color value (e.g. "#fff" or "rgb(...)").',
+                },
+                bgColor: {
+                    type: "string",
+                    label: "Background color",
+                    description: 'CSS color value (e.g. "#111").',
+                },
+            },
+            order: ["label", "color", "bgColor"],
+        } as Ui,
+    } satisfies Ui,
+
+    disabled: {
+        type: "boolean",
+        label: "Disabled",
+        description: "Disable user interaction with the field.",
+    },
+
+    readOnly: {
+        type: "boolean",
+        label: "Read-only",
+        description: "Prevent edits while still allowing focus/selection.",
+    },
+
+    // --- Layout flags ---
+    inline: {
+        type: "boolean",
+        label: "Inline",
+        description:
+            "Render label + input in an inline row layout (if supported).",
+    },
+
+    fullWidth: {
+        type: "boolean",
+        label: "Full width",
+        description:
+            "Stretch the field to fill its container width (if supported).",
+    },
+};
+
+function withInputFieldUi(desc: InputDescriptor): InputDescriptor {
+    return {
+        ...desc,
+        adapter: {
+            getValue(e: any) {
+                return e.value;
+            },
+            valueProp: "value",
+            changeProp: "onChange",
+            getInputPropsFromField({ field, props }) {
+                const severityPillClassMap = {
+                    info: "border-blue-200 bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200",
+                    warning:
+                        "border-amber-200 bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200",
+                    error: "border-red-200 bg-red-50 text-red-700 ring-1 ring-inset ring-red-200",
+                } as const;
+
+                const pillBaseClassName =
+                    "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium";
+
+                const toTagPill = (tag: any) => ({
+                    label: tag.title,
+                    bgColor: tag.color,
+                    className: `${pillBaseClassName} ${severityPillClassMap[tag.severity as keyof typeof severityPillClassMap] ?? severityPillClassMap.info}`,
+                });
+
+                const matchesNotice = (
+                    target: Field | FieldOption,
+                    notice: ServicePropsNotice,
+                ) => {
+                    const isNodeTargetMatch =
+                        notice.target.scope === "node" &&
+                        notice.target.node_id === target.id;
+                    const isLegacyGlobalIdMatch =
+                        notice.target.scope === "global" &&
+                        notice.id === target.id;
+                    const isServiceMatch =
+                        !!target.service_id &&
+                        String(target.service_id) === notice.id;
+
+                    return (
+                        isNodeTargetMatch ||
+                        isLegacyGlobalIdMatch ||
+                        isServiceMatch
+                    );
+                };
+
+                const notices = props.notices ?? [];
+
+                const fieldNotices = notices.filter((notice) =>
+                    matchesNotice(field, notice),
+                );
+
+                return {
+                    label: field.label,
+                    tags: fieldNotices.map(toTagPill),
+                    required: field.required,
+
+                    ...(field.options?.length
+                        ? {
+                              options: field.options.map((item) => {
+                                  // @ts-ignore
+                                  const optionNotices = notices.filter(
+                                      (notice) => matchesNotice(item, notice),
+                                  );
+
+                                  return {
+                                      ...item,
+                                      tags: optionNotices.map(toTagPill),
+                                  };
+                              }),
+                          }
+                        : {}),
+                };
+            },
+            getSelectedOptions(next, currentt, ctx) {
+                return ((next as any)?.selectedOptions ?? [])?.map(
+                    (item: any) => item.id,
+                );
+            },
+
+            isActive(stored, ctx) {
+                return Boolean(stored);
+            },
+        },
+        ui: {
+            ...inputFieldUi,
+            ...(desc.ui ?? {}),
+        },
+    };
+}
+
+function variantOf(desc: InputDescriptor): string {
+    const v = (desc.defaultProps as any)?.variant;
+    if (!v || typeof v !== "string") {
+        throw new Error(
+            `[inputs] Descriptor is missing defaultProps.variant: ${String(v)}`,
+        );
+    }
+    return v;
+}
+
+/**
+ * Register all built-in entries.
+ * - You said "variant is the only thing necessary", so we treat kind as a constant.
+ */
+export function registerEntries(registry: Registry): void {
+    const entries: InputDescriptor[] = [
+        textDescriptor,
+        textareaDescriptor,
+        phoneDescriptor,
+        toggleGroupDescriptor,
+        numberDescriptor,
+        passwordDescriptor,
+        sliderDescriptor,
+        toggleDescriptor,
+        treeSelectDescriptor,
+        multiSelectDescriptor,
+        selectDescriptor,
+        radioDescriptor,
+        checkboxDescriptor,
+        chipsDescriptor,
+        colorDescriptor,
+        dateDescriptor,
+        keyValueDescriptor,
+        editorDescriptor,
+        listerDescriptor,
+        fileDescriptor,
+    ];
+
+    registry.registerMany(
+        entries.map((descriptor) => {
+            const finalDescriptor = withInputFieldUi(descriptor);
+            const variant = variantOf(finalDescriptor);
+
+            return {
+                kind: variant,
+                descriptor: finalDescriptor,
+            };
+        }),
+    );
+}
+
+// re-export entries (optional convenience)
+export {
+    textDescriptor,
+    textareaDescriptor,
+    phoneDescriptor,
+    toggleGroupDescriptor,
+    numberDescriptor,
+    passwordDescriptor,
+    sliderDescriptor,
+    toggleDescriptor,
+    treeSelectDescriptor,
+    multiSelectDescriptor,
+    selectDescriptor,
+    radioDescriptor,
+    checkboxDescriptor,
+    chipsDescriptor,
+    colorDescriptor,
+    dateDescriptor,
+    keyValueDescriptor,
+    editorDescriptor,
+    listerDescriptor,
+    fileDescriptor,
+};
+```
+
+---
+#### 17
 
 
 ` File: src/react/inputs/entries/keyvalue.tsx`  [↑ Back to top](#index)
@@ -2472,7 +2856,7 @@ export const keyValueDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 17
+#### 18
 
 
 ` File: src/react/inputs/entries/lister.tsx`  [↑ Back to top](#index)
@@ -2688,7 +3072,7 @@ export const listerDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 18
+#### 19
 
 
 ` File: src/react/inputs/entries/multiselect.tsx`  [↑ Back to top](#index)
@@ -2756,7 +3140,7 @@ export const multiSelectDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 19
+#### 20
 
 
 ` File: src/react/inputs/entries/number.tsx`  [↑ Back to top](#index)
@@ -2928,7 +3312,7 @@ export const numberDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 20
+#### 21
 
 
 ` File: src/react/inputs/entries/password.tsx`  [↑ Back to top](#index)
@@ -3090,7 +3474,7 @@ export const passwordDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 21
+#### 22
 
 
 ` File: src/react/inputs/entries/phone.tsx`  [↑ Back to top](#index)
@@ -3259,7 +3643,7 @@ export const phoneDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 22
+#### 23
 
 
 ` File: src/react/inputs/entries/radio.tsx`  [↑ Back to top](#index)
@@ -3303,7 +3687,7 @@ export const radioDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 23
+#### 24
 
 
 ` File: src/react/inputs/entries/select.tsx`  [↑ Back to top](#index)
@@ -3355,7 +3739,7 @@ export const selectDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 24
+#### 25
 
 
 ` File: src/react/inputs/entries/shared.ts`  [↑ Back to top](#index)
@@ -3627,7 +4011,7 @@ export const sharedUi = {
 ```
 
 ---
-#### 25
+#### 26
 
 
 ` File: src/react/inputs/entries/slider.tsx`  [↑ Back to top](#index)
@@ -3728,7 +4112,7 @@ export const sliderDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 26
+#### 27
 
 
 ` File: src/react/inputs/entries/text.tsx`  [↑ Back to top](#index)
@@ -3814,7 +4198,7 @@ export const textDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 27
+#### 28
 
 
 ` File: src/react/inputs/entries/textarea.tsx`  [↑ Back to top](#index)
@@ -3871,7 +4255,7 @@ export const textareaDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 28
+#### 29
 
 
 ` File: src/react/inputs/entries/toggle-group.tsx`  [↑ Back to top](#index)
@@ -4049,7 +4433,7 @@ export const toggleGroupDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 29
+#### 30
 
 
 ` File: src/react/inputs/entries/toggle.tsx`  [↑ Back to top](#index)
@@ -4101,7 +4485,7 @@ export const toggleDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 30
+#### 31
 
 
 ` File: src/react/inputs/entries/treeselect.tsx`  [↑ Back to top](#index)
@@ -4211,7 +4595,7 @@ export const treeSelectDescriptor: InputDescriptor = {
 ```
 
 ---
-#### 31
+#### 32
 
 
 ` File: src/react/inputs/form-context.tsx`  [↑ Back to top](#index)
@@ -4438,7 +4822,7 @@ export function FormProvider({ children, schema, initial }: FormProviderProps) {
 ```
 
 ---
-#### 32
+#### 33
 
 
 ` File: src/react/inputs/provider.tsx`  [↑ Back to top](#index)
@@ -4507,7 +4891,7 @@ export function useInputs(): InputsCtxValue {
 ```
 
 ---
-#### 33
+#### 34
 
 
 ` File: src/react/inputs/register-custom.ts`  [↑ Back to top](#index)
@@ -4574,7 +4958,7 @@ export async function preloadCustomModule(url: string): Promise<void> {
 ```
 
 ---
-#### 34
+#### 35
 
 
 ` File: src/react/inputs/registry.ts`  [↑ Back to top](#index)
@@ -4703,7 +5087,7 @@ export function resolveInputDescriptor(
 ```
 
 ---
-#### 35
+#### 36
 
 
 ` File: src/react/inputs/wrapper.tsx`  [↑ Back to top](#index)
@@ -4928,7 +5312,7 @@ export function Wrapper({
 
     const adapterCtx = React.useMemo<AdapterCtx>(
         () => ({ field, props: flow.raw }),
-        [field],
+        [field, flow.raw],
     );
 
     const onHostChange = React.useCallback(
@@ -5069,4 +5453,4 @@ export function Wrapper({
 
 ---
 *Generated with [Prodex](https://github.com/emxhive/prodex) — Codebase decoded.*
-<!-- PRODEx v1.4.11 | 2026-03-19T00:38:56.151Z -->
+<!-- PRODEx v1.4.11 | 2026-03-22T17:16:55.018Z -->

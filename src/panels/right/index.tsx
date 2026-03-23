@@ -6,9 +6,15 @@ import Comments from '@/panels/right/tabs/comments.tsx';
 import { Properties } from '@/panels/right/tabs/properties.tsx';
 import Wireframe from '@/panels/right/tabs/wireframe.tsx';
 import { OrderFlowProvider, useInputs } from '@timeax/digital-service-engine/react';
+import type { DgpServiceMap, EditorSnapshot, ServiceProps } from '@timeax/digital-service-engine/schema';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 
-const RightPanel = () => {
+export type RightPanelProps = {
+    onShare?: (snapshotData: EditorSnapshot | undefined) => void | Promise<void>;
+    onPlay?: (payload: { serviceProps: ServiceProps; capabilitiesMap: DgpServiceMap; workspaceId: string; branchId?: string }) => void | Promise<void>;
+};
+
+const RightPanel = ({ onShare, onPlay }: RightPanelProps) => {
     const tabClassName = cn(
         'm-0! rounded-none! border-t-0! border-r-0! border-b-2! border-l-0! border-transparent! py-2.5! shadow-none!',
         'bg-transparent! text-slate-400 hover:bg-transparent hover:text-slate-700! data-[state=active]:text-slate-900!',
@@ -30,7 +36,7 @@ const RightPanel = () => {
             }
         >
             <div className="flex h-full flex-col">
-                <Header />
+                <Header onShare={onShare} onPlay={onPlay} />
                 <Tabs className={'grow gap-0 overflow-hidden'} defaultValue="wireframe">
                     <TabsList className="grid h-fit w-full grid-cols-3 rounded-none! border-b border-slate-200 bg-transparent p-0 dark:border-slate-800">
                         <TabsTrigger className={tabClassName} value="comments">

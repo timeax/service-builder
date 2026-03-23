@@ -5,9 +5,9 @@
 <!-- PRODEX_INDEX_RANGE: L8-L10 -->
 <!-- PRODEX_FILE_COUNT: 3 -->
 <!-- PRODEX_INDEX_LIST_START -->
-- [schema/editor-snapshot.schema.json](#1)  L14-L1146
-- [schema/policies.schema.json](#2)  L1147-L1303
-- [schema/service-props.schema.json](#3)  L1304-L2073
+- [schema/editor-snapshot.schema.json](#1)  L14-L1436
+- [schema/policies.schema.json](#2)  L1437-L1593
+- [schema/service-props.schema.json](#3)  L1594-L2366
 <!-- PRODEX_INDEX_LIST_END -->
 
 ---
@@ -36,6 +36,9 @@
           "items": {
             "$ref": "#/definitions/CommentNode"
           }
+        },
+        "catalog": {
+          "$ref": "#/definitions/ServiceCatalogState"
         },
         "meta": {
           "type": "object",
@@ -122,7 +125,7 @@
           "type": "string"
         },
         "service_id": {
-          "type": "number"
+          "$ref": "#/definitions/ServiceIdRef"
         },
         "includes": {
           "type": "array",
@@ -185,6 +188,15 @@
       "required": [
         "id",
         "label"
+      ]
+    },
+    "ServiceIdRef": {
+      "$ref": "#/definitions/IdType"
+    },
+    "IdType": {
+      "type": [
+        "string",
+        "number"
       ]
     },
     "Field": {
@@ -354,7 +366,7 @@
               "const": true
             },
             "service_id": {
-              "type": "number"
+              "$ref": "#/definitions/ServiceIdRef"
             },
             "id": {
               "type": "string"
@@ -522,7 +534,7 @@
           ]
         },
         "service_id": {
-          "type": "number"
+          "$ref": "#/definitions/ServiceIdRef"
         },
         "pricing_role": {
           "$ref": "#/definitions/PricingRole"
@@ -673,12 +685,6 @@
           "description": "Primary→fallback list used when no node-scoped entry is present"
         }
       }
-    },
-    "ServiceIdRef": {
-      "type": [
-        "number",
-        "string"
-      ]
     },
     "ServicePropsNotice": {
       "type": "object",
@@ -1139,6 +1145,290 @@
         "text",
         "status"
       ]
+    },
+    "ServiceCatalogState": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "number",
+          "const": 1
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CatalogNode"
+          }
+        },
+        "activeNodeId": {
+          "$ref": "#/definitions/CatalogId"
+        },
+        "expandedIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CatalogId"
+          }
+        },
+        "pinnedNodeIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CatalogId"
+          }
+        },
+        "selectedServiceId": {
+          "$ref": "#/definitions/CatalogServiceId"
+        },
+        "viewMode": {
+          "$ref": "#/definitions/CatalogViewMode"
+        },
+        "meta": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "version",
+        "nodes"
+      ]
+    },
+    "CatalogNode": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/CatalogGroupNode"
+        },
+        {
+          "$ref": "#/definitions/CatalogSmartGroupNode"
+        }
+      ]
+    },
+    "CatalogGroupNode": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "group"
+        },
+        "serviceIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CatalogServiceId"
+          }
+        },
+        "id": {
+          "$ref": "#/definitions/CatalogId"
+        },
+        "label": {
+          "type": "string"
+        },
+        "parentId": {
+          "$ref": "#/definitions/CatalogId"
+        },
+        "description": {
+          "type": "string"
+        },
+        "order": {
+          "type": "number"
+        },
+        "color": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "collapsed": {
+          "type": "boolean"
+        },
+        "meta": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "label",
+        "serviceIds"
+      ]
+    },
+    "CatalogServiceId": {
+      "type": [
+        "string",
+        "number"
+      ]
+    },
+    "CatalogId": {
+      "type": "string"
+    },
+    "CatalogSmartGroupNode": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "smart-group"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CatalogSmartRule"
+          }
+        },
+        "match": {
+          "type": "string",
+          "enum": [
+            "all",
+            "any"
+          ]
+        },
+        "resolvedServiceIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CatalogServiceId"
+          }
+        },
+        "resolvedAt": {
+          "type": "number"
+        },
+        "id": {
+          "$ref": "#/definitions/CatalogId"
+        },
+        "label": {
+          "type": "string"
+        },
+        "parentId": {
+          "$ref": "#/definitions/CatalogId"
+        },
+        "description": {
+          "type": "string"
+        },
+        "order": {
+          "type": "number"
+        },
+        "color": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "collapsed": {
+          "type": "boolean"
+        },
+        "meta": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "label",
+        "match",
+        "rules"
+      ]
+    },
+    "CatalogSmartRule": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "service-field"
+            },
+            "field": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "enum": [
+                "eq",
+                "neq",
+                "in",
+                "contains",
+                "startsWith",
+                "endsWith",
+                "gt",
+                "gte",
+                "lt",
+                "lte",
+                "between",
+                "exists"
+              ]
+            },
+            "value": {},
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "type",
+            "field",
+            "op"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "policy-family"
+            },
+            "key": {
+              "type": "string"
+            },
+            "value": {}
+          },
+          "required": [
+            "type",
+            "key"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "compatibility"
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "tag",
+                "field",
+                "option",
+                "visible-group"
+              ]
+            },
+            "targetId": {
+              "type": "string"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "safe",
+                "assignable",
+                "same-family",
+                "conflicts"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "scope",
+            "mode"
+          ]
+        }
+      ]
+    },
+    "CatalogViewMode": {
+      "type": "string",
+      "enum": [
+        "all",
+        "grouped",
+        "smart",
+        "assigned"
+      ]
     }
   }
 }
@@ -1388,7 +1678,7 @@
           "type": "string"
         },
         "service_id": {
-          "type": "number"
+          "$ref": "#/definitions/ServiceIdRef"
         },
         "includes": {
           "type": "array",
@@ -1451,6 +1741,15 @@
       "required": [
         "id",
         "label"
+      ]
+    },
+    "ServiceIdRef": {
+      "$ref": "#/definitions/IdType"
+    },
+    "IdType": {
+      "type": [
+        "string",
+        "number"
       ]
     },
     "Field": {
@@ -1620,7 +1919,7 @@
               "const": true
             },
             "service_id": {
-              "type": "number"
+              "$ref": "#/definitions/ServiceIdRef"
             },
             "id": {
               "type": "string"
@@ -1788,7 +2087,7 @@
           ]
         },
         "service_id": {
-          "type": "number"
+          "$ref": "#/definitions/ServiceIdRef"
         },
         "pricing_role": {
           "$ref": "#/definitions/PricingRole"
@@ -1940,12 +2239,6 @@
         }
       }
     },
-    "ServiceIdRef": {
-      "type": [
-        "number",
-        "string"
-      ]
-    },
     "ServicePropsNotice": {
       "type": "object",
       "properties": {
@@ -2071,4 +2364,4 @@
 
 ---
 *Generated with [Prodex](https://github.com/emxhive/prodex) — Codebase decoded.*
-<!-- PRODEx v1.4.11 | 2026-03-19T00:38:56.151Z -->
+<!-- PRODEx v1.4.11 | 2026-03-22T17:16:55.018Z -->

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { getNodeLabel } from '../utils.ts';
 import { useNodeActions } from '../hooks.ts';
 
@@ -13,14 +14,80 @@ export function ContextMenu({
     menuRef,
     setRenameValue
 }) {
-    const { handleDuplicate, handleCopyId, handleSaveAsTemplate, isFieldOptionsShown, handleToggleFieldOptions } = useNodeActions(
-        target,
-        setTarget,
-        setDialogTarget,
-        setRenameOpen,
-        setDeleteOpen,
-        openNoticeManager,
-    );
+    const {
+        handleDuplicate,
+        handleCopyId,
+        handleSaveAsTemplate,
+        canQuickAddFallbacks,
+        handleOpenFallbackQuickAdd,
+        isFieldOptionsShown,
+        handleToggleFieldOptions,
+        canMoveUp,
+        canMoveDown,
+        canMoveContextUp,
+        canMoveContextDown,
+        handleMoveUp,
+        handleMoveDown,
+        handleMoveUpInContext,
+        handleMoveDownInContext,
+    } = useNodeActions(target, setTarget, setDialogTarget, setRenameOpen, setDeleteOpen, openNoticeManager);
+    const showWireframeMoveActions = target.surface === 'wireframe';
+    const showWireframeContextMoveActions = showWireframeMoveActions && target.nodeKind === 'field';
+
+    useEffect(() => {
+        if (!showWireframeMoveActions) return;
+
+        const isEditableTarget = (eventTarget: EventTarget | null) => {
+            const element = eventTarget as HTMLElement | null;
+            if (!element) return false;
+            if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) return true;
+            if (element.isContentEditable) return true;
+            if (typeof (element as any).closest !== 'function') return false;
+            return element.closest('[contenteditable=""],[contenteditable="true"],[role="combobox"],input,textarea') !== null;
+        };
+
+        const onKeyDown = (event: KeyboardEvent) => {
+            const isArrow = event.key === 'ArrowUp' || event.key === 'ArrowDown';
+            if (!isArrow || !event.altKey || event.ctrlKey || event.metaKey) return;
+            if (isEditableTarget(event.target)) return;
+
+            if (event.shiftKey) {
+                if (!showWireframeContextMoveActions) return;
+                if (event.key === 'ArrowUp' && canMoveContextUp) {
+                    event.preventDefault();
+                    handleMoveUpInContext();
+                }
+                if (event.key === 'ArrowDown' && canMoveContextDown) {
+                    event.preventDefault();
+                    handleMoveDownInContext();
+                }
+                return;
+            }
+
+            if (event.key === 'ArrowUp' && canMoveUp) {
+                event.preventDefault();
+                handleMoveUp();
+            }
+            if (event.key === 'ArrowDown' && canMoveDown) {
+                event.preventDefault();
+                handleMoveDown();
+            }
+        };
+
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [
+        canMoveContextDown,
+        canMoveContextUp,
+        canMoveDown,
+        canMoveUp,
+        handleMoveDown,
+        handleMoveDownInContext,
+        handleMoveUp,
+        handleMoveUpInContext,
+        showWireframeContextMoveActions,
+        showWireframeMoveActions,
+    ]);
 
     return (
         <div
@@ -48,6 +115,46 @@ export function ContextMenu({
             >
                 Duplicate
             </button>
+            {showWireframeMoveActions ? (
+                <>
+                    <button
+                        type="button"
+                        className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-200 dark:hover:bg-slate-900"
+                        onClick={handleMoveUp}
+                        disabled={!canMoveUp}
+                    >
+                        Move up
+                    </button>
+                    <button
+                        type="button"
+                        className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-200 dark:hover:bg-slate-900"
+                        onClick={handleMoveDown}
+                        disabled={!canMoveDown}
+                    >
+                        Move down
+                    </button>
+                </>
+            ) : null}
+            {showWireframeContextMoveActions ? (
+                <>
+                    <button
+                        type="button"
+                        className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-200 dark:hover:bg-slate-900"
+                        onClick={handleMoveUpInContext}
+                        disabled={!canMoveContextUp}
+                    >
+                        Move up (in context)
+                    </button>
+                    <button
+                        type="button"
+                        className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-200 dark:hover:bg-slate-900"
+                        onClick={handleMoveDownInContext}
+                        disabled={!canMoveContextDown}
+                    >
+                        Move down (in context)
+                    </button>
+                </>
+            ) : null}
             <button
                 type="button"
                 className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
@@ -55,6 +162,15 @@ export function ContextMenu({
             >
                 Copy ID
             </button>
+            {canQuickAddFallbacks ? (
+                <button
+                    type="button"
+                    className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
+                    onClick={handleOpenFallbackQuickAdd}
+                >
+                    Add fallbacks
+                </button>
+            ) : null}
             <button
                 type="button"
                 className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"

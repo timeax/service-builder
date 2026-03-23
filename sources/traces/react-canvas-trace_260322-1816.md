@@ -2,42 +2,388 @@
 > Note for LLMs: `Lx-Ly` ranges refer to lines in this Prodex trace file, not the original source files. Index metadata is provided via the HTML comment markers in this section.
 
 # Index
-<!-- PRODEX_INDEX_RANGE: L8-L35 -->
-<!-- PRODEX_FILE_COUNT: 28 -->
+<!-- PRODEX_INDEX_RANGE: L8-L37 -->
+<!-- PRODEX_FILE_COUNT: 30 -->
 <!-- PRODEX_INDEX_LIST_START -->
-- [src/react/canvas/__tests__/editor.constraints-emitter.spec.ts](#1)  L39-L191
-- [src/react/canvas/__tests__/editor.constraints.spec.ts](#2)  L192-L648
-- [src/react/canvas/__tests__/editor.history-redo.regression.spec.ts](#3)  L649-L807
-- [src/react/canvas/__tests__/editor.includes.test.ts](#4)  L808-L979
-- [src/react/canvas/__tests__/editor.notices.spec.ts](#5)  L980-L1118
-- [src/react/canvas/__tests__/editor.quantity-rule.spec.ts](#6)  L1119-L1204
-- [src/react/canvas/__tests__/editor.service-filter.spec.ts](#7)  L1205-L1330
-- [src/react/canvas/__tests__/editor.utility-guard.spec.ts](#8)  L1331-L1425
-- [src/react/canvas/__tests__/selection-get-selected-options.spec.ts](#9)  L1426-L1541
-- [src/react/canvas/__tests__/selection.inheritance.test.ts](#10)  L1542-L1985
-- [src/react/canvas/__tests__/selection.test.ts](#11)  L1986-L2201
-- [src/react/canvas/api.ts](#12)  L2202-L2532
-- [src/react/canvas/backend.ts](#13)  L2533-L2557
-- [src/react/canvas/comments.ts](#14)  L2558-L3229
-- [src/react/canvas/editor.ts](#15)  L3230-L3753
-- [src/react/canvas/editor/editor-constraints.ts](#16)  L3754-L3876
-- [src/react/canvas/editor/editor-duplicate.ts](#17)  L3877-L4132
-- [src/react/canvas/editor/editor-field-rules.ts](#18)  L4133-L4292
-- [src/react/canvas/editor/editor-ids.ts](#19)  L4293-L4380
-- [src/react/canvas/editor/editor-nodes.ts](#20)  L4381-L5056
-- [src/react/canvas/editor/editor-notices.ts](#21)  L5057-L5132
-- [src/react/canvas/editor/editor-placement.ts](#22)  L5133-L5287
-- [src/react/canvas/editor/editor-relations.ts](#23)  L5288-L5785
-- [src/react/canvas/editor/editor-service-filter.ts](#24)  L5786-L5830
-- [src/react/canvas/editor/editor-types.ts](#25)  L5831-L5910
-- [src/react/canvas/editor/editor-utils.ts](#26)  L5911-L5979
-- [src/react/canvas/events.ts](#27)  L5980-L6024
-- [src/react/canvas/selection.ts](#28)  L6025-L6524
+- [src/react/canvas/__tests__/editor.catalog.spec.ts](#1)  L41-L384
+- [src/react/canvas/__tests__/editor.constraints-emitter.spec.ts](#2)  L385-L537
+- [src/react/canvas/__tests__/editor.constraints.spec.ts](#3)  L538-L994
+- [src/react/canvas/__tests__/editor.history-redo.regression.spec.ts](#4)  L995-L1153
+- [src/react/canvas/__tests__/editor.includes.test.ts](#5)  L1154-L1325
+- [src/react/canvas/__tests__/editor.notices.spec.ts](#6)  L1326-L1464
+- [src/react/canvas/__tests__/editor.quantity-rule.spec.ts](#7)  L1465-L1550
+- [src/react/canvas/__tests__/editor.service-filter.spec.ts](#8)  L1551-L1676
+- [src/react/canvas/__tests__/editor.utility-guard.spec.ts](#9)  L1677-L1771
+- [src/react/canvas/__tests__/selection-get-selected-options.spec.ts](#10)  L1772-L1887
+- [src/react/canvas/__tests__/selection.inheritance.test.ts](#11)  L1888-L2331
+- [src/react/canvas/__tests__/selection.test.ts](#12)  L2332-L2547
+- [src/react/canvas/api.ts](#13)  L2548-L2878
+- [src/react/canvas/backend.ts](#14)  L2879-L2903
+- [src/react/canvas/comments.ts](#15)  L2904-L3575
+- [src/react/canvas/editor.ts](#16)  L3576-L4320
+- [src/react/canvas/editor/editor-catalog.ts](#17)  L4321-L4762
+- [src/react/canvas/editor/editor-constraints.ts](#18)  L4763-L4885
+- [src/react/canvas/editor/editor-duplicate.ts](#19)  L4886-L5141
+- [src/react/canvas/editor/editor-field-rules.ts](#20)  L5142-L5301
+- [src/react/canvas/editor/editor-ids.ts](#21)  L5302-L5389
+- [src/react/canvas/editor/editor-nodes.ts](#22)  L5390-L6079
+- [src/react/canvas/editor/editor-notices.ts](#23)  L6080-L6155
+- [src/react/canvas/editor/editor-placement.ts](#24)  L6156-L6310
+- [src/react/canvas/editor/editor-relations.ts](#25)  L6311-L6808
+- [src/react/canvas/editor/editor-service-filter.ts](#26)  L6809-L6853
+- [src/react/canvas/editor/editor-types.ts](#27)  L6854-L6933
+- [src/react/canvas/editor/editor-utils.ts](#28)  L6934-L7002
+- [src/react/canvas/events.ts](#29)  L7003-L7047
+- [src/react/canvas/selection.ts](#30)  L7048-L7547
 <!-- PRODEX_INDEX_LIST_END -->
 
 ---
 ---
 #### 1
+
+
+` File: src/react/canvas/__tests__/editor.catalog.spec.ts`  [↑ Back to top](#index)
+
+```ts
+import { describe, expect, it, vi } from "vitest";
+import { createBuilder } from "@/core";
+import type {
+    CatalogNode,
+    CatalogServiceId,
+    CatalogSmartRule,
+    ServiceCatalogState,
+    ServiceProps,
+} from "@/schema";
+import { CanvasAPI } from "../api";
+
+function baseProps(): ServiceProps {
+    return {
+        schema_version: "1.0",
+        filters: [{ id: "t:root", label: "Root" }],
+        fields: [{ id: "f:seed", type: "text", bind_id: "t:root", label: "Seed" }],
+    };
+}
+
+function setup() {
+    const builder = createBuilder();
+    builder.load(baseProps());
+    const api = new CanvasAPI(builder, { autoEmitState: false });
+    return { builder, api, editor: api.editor };
+}
+
+function getNode(
+    catalog: ServiceCatalogState | undefined,
+    id: string,
+): CatalogNode | undefined {
+    return catalog?.nodes.find((node) => node.id === id);
+}
+
+describe("Editor catalog API", () => {
+    it("starts without a catalog, ensures a default catalog, and returns clones", () => {
+        const { editor } = setup();
+
+        expect(editor.getCatalog()).toBeUndefined();
+
+        const ensured = editor.ensureCatalog();
+        expect(ensured).toEqual({
+            version: 1,
+            nodes: [],
+            activeNodeId: undefined,
+            expandedIds: [],
+            pinnedNodeIds: [],
+            selectedServiceId: undefined,
+            viewMode: "all",
+        });
+
+        const snapshot = editor.getCatalog();
+        expect(snapshot).toEqual(ensured);
+
+        snapshot!.nodes.push({
+            id: "cg:mutated",
+            kind: "group",
+            label: "Mutated",
+            serviceIds: [],
+        });
+        snapshot!.expandedIds?.push("cg:mutated");
+
+        const fresh = editor.getCatalog();
+        expect(fresh?.nodes).toHaveLength(0);
+        expect(fresh?.expandedIds).toEqual([]);
+    });
+
+    it("sets, clears, and emits catalog change events without emitting editor:change", () => {
+        const { api, editor } = setup();
+        const onCatalogChange = vi.fn();
+        const onEditorChange = vi.fn();
+        api.on("catalog:change" as any, onCatalogChange);
+        api.on("editor:change" as any, onEditorChange);
+
+        const catalog: ServiceCatalogState = {
+            version: 1,
+            nodes: [
+                {
+                    id: "cg:seed",
+                    kind: "group",
+                    label: "Seed",
+                    serviceIds: [101],
+                },
+            ],
+            activeNodeId: "cg:seed",
+            expandedIds: [],
+            pinnedNodeIds: [],
+            selectedServiceId: 101,
+            viewMode: "grouped",
+        };
+
+        editor.setCatalog(catalog);
+        expect(editor.getCatalog()).toEqual(catalog);
+        expect(onCatalogChange).toHaveBeenNthCalledWith(1, {
+            catalog,
+            reason: "catalog:set",
+        });
+
+        editor.clearCatalog();
+        expect(editor.getCatalog()).toBeUndefined();
+        expect(onCatalogChange).toHaveBeenNthCalledWith(2, {
+            catalog: undefined,
+            reason: "catalog:clear",
+        });
+        expect(onEditorChange).not.toHaveBeenCalled();
+    });
+
+    it("creates groups, creates smart groups, updates nodes, and emits the expected reasons", () => {
+        const { api, editor } = setup();
+        const onCatalogChange = vi.fn();
+        api.on("catalog:change" as any, onCatalogChange);
+
+        const groupId = editor.createCatalogGroup({
+            label: "Payments",
+            serviceIds: [1, 1, "1", 2],
+        });
+        expect(groupId).toBe("cg:1");
+
+        const smartRules: CatalogSmartRule[] = [
+            { type: "policy-family", key: "risk", value: "safe" },
+        ];
+        const smartId = editor.createSmartCatalogGroup({
+            label: "Safe",
+            parentId: groupId,
+            rules: smartRules,
+        });
+
+        editor.updateCatalogNode(groupId, {
+            label: "Payments Updated",
+            serviceIds: [2, 2, 3],
+        } as Partial<Omit<CatalogNode, "id" | "kind">>);
+
+        const catalog = editor.getCatalog();
+        expect(catalog?.activeNodeId).toBe(smartId);
+        expect(getNode(catalog, groupId)).toMatchObject({
+            id: groupId,
+            kind: "group",
+            label: "Payments Updated",
+            serviceIds: [2, 3],
+        });
+        expect(getNode(catalog, smartId)).toMatchObject({
+            id: smartId,
+            kind: "smart-group",
+            parentId: groupId,
+            label: "Safe",
+            match: "all",
+            rules: smartRules,
+        });
+
+        expect(onCatalogChange.mock.calls.map((call) => call[0].reason)).toEqual([
+            "catalog:create-group",
+            "catalog:create-smart-group",
+            "catalog:update-node",
+        ]);
+    });
+
+    it("assigns services, updates catalog view state, and emits active change events", () => {
+        const { api, editor } = setup();
+        const onCatalogChange = vi.fn();
+        const onActiveChange = vi.fn();
+        api.on("catalog:change" as any, onCatalogChange);
+        api.on("catalog:active-change" as any, onActiveChange);
+
+        const groupId = editor.createCatalogGroup({
+            label: "Assigned",
+            serviceIds: [10, 10],
+        });
+
+        editor.assignServicesToCatalogGroup(groupId, [11, "11", 12], "append");
+        editor.assignServicesToCatalogGroup(groupId, [12], "remove");
+        editor.assignServicesToCatalogGroup(groupId, [99, 99, 100], "replace");
+        editor.setCatalogViewMode("assigned");
+        editor.setSelectedCatalogService(100);
+        editor.toggleCatalogExpanded(groupId);
+        editor.setCatalogExpanded(groupId, false);
+        editor.toggleCatalogPinned(groupId);
+        editor.setActiveCatalogNode(groupId);
+
+        const catalog = editor.getCatalog();
+        expect(getNode(catalog, groupId)).toMatchObject({
+            serviceIds: [99, 100],
+        });
+        expect(catalog?.viewMode).toBe("assigned");
+        expect(catalog?.selectedServiceId).toBe(100);
+        expect(catalog?.expandedIds).toEqual([]);
+        expect(catalog?.pinnedNodeIds).toEqual([groupId]);
+        expect(catalog?.activeNodeId).toBe(groupId);
+
+        expect(onActiveChange).toHaveBeenCalledWith({ activeNodeId: groupId });
+        expect(onCatalogChange.mock.calls.map((call) => call[0].reason)).toEqual([
+            "catalog:create-group",
+            "catalog:assign-services",
+            "catalog:assign-services",
+            "catalog:assign-services",
+            "catalog:set-view-mode",
+            "catalog:set-selected-service",
+            "catalog:toggle-expanded",
+            "catalog:set-expanded",
+            "catalog:toggle-pinned",
+            "catalog:set-active",
+        ]);
+    });
+
+    it("moves nodes by index, beforeId, and afterId and removes cascaded descendants with cleanup", () => {
+        const { editor } = setup();
+
+        const parentId = editor.createCatalogGroup({ label: "Parent" });
+        const childId = editor.createCatalogGroup({
+            label: "Child",
+            parentId,
+        });
+        const siblingA = editor.createCatalogGroup({ label: "Sibling A" });
+        const siblingB = editor.createCatalogGroup({ label: "Sibling B" });
+        const siblingC = editor.createCatalogGroup({ label: "Sibling C" });
+
+        editor.toggleCatalogExpanded(parentId);
+        editor.toggleCatalogExpanded(childId);
+        editor.toggleCatalogPinned(parentId);
+        editor.toggleCatalogPinned(childId);
+        editor.setActiveCatalogNode(childId);
+
+        editor.moveCatalogNode(siblingC, { index: 0 });
+        editor.moveCatalogNode(siblingA, { afterId: siblingB });
+        editor.moveCatalogNode(siblingB, { beforeId: siblingC });
+
+        let catalog = editor.getCatalog();
+        let rootNodes = catalog?.nodes
+            .filter((node) => node.parentId === undefined)
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+            .map((node) => node.id);
+        expect(rootNodes).toEqual([siblingB, siblingC, parentId, siblingA]);
+
+        editor.removeCatalogNode(parentId, { cascade: true });
+
+        catalog = editor.getCatalog();
+        expect(getNode(catalog, parentId)).toBeUndefined();
+        expect(getNode(catalog, childId)).toBeUndefined();
+        expect(catalog?.activeNodeId).toBeUndefined();
+        expect(catalog?.expandedIds).toEqual([]);
+        expect(catalog?.pinnedNodeIds).toEqual([]);
+    });
+
+    it("resolves smart groups for all and any match modes and persists the resolved ids", () => {
+        const { editor } = setup();
+        const nowSpy = vi.spyOn(Date, "now").mockReturnValue(1_717_171_717_000);
+
+        try {
+            const allId = editor.createSmartCatalogGroup({
+                label: "All Match",
+                rules: [
+                    {
+                        type: "service-field",
+                        field: "tier",
+                        op: "eq",
+                        value: "gold",
+                    },
+                    {
+                        type: "compatibility",
+                        scope: "tag",
+                        targetId: "t:root",
+                        mode: "safe",
+                    },
+                ],
+            });
+
+            const anyId = editor.createSmartCatalogGroup({
+                label: "Any Match",
+                match: "any",
+                rules: [
+                    {
+                        type: "service-field",
+                        field: "tier",
+                        op: "eq",
+                        value: "gold",
+                    },
+                    { type: "policy-family", key: "family", value: "core" },
+                ],
+            });
+
+            const candidates: CatalogServiceId[] = [1, 2, 3];
+            const allResolved = editor.resolveSmartCatalogGroup(allId, candidates, {
+                serviceField: (candidate) => candidate !== 2,
+                compatibility: (candidate) => candidate === 1 || candidate === 3,
+            });
+            const anyResolved = editor.resolveSmartCatalogGroup(anyId, candidates, {
+                serviceField: (candidate) => candidate === 2,
+                policyFamily: (candidate) => candidate === 3,
+            });
+
+            const catalog = editor.getCatalog();
+            expect(allResolved).toEqual([1, 3]);
+            expect(getNode(catalog, allId)).toMatchObject({
+                resolvedServiceIds: [1, 3],
+                resolvedAt: 1_717_171_717_000,
+            });
+
+            expect(anyResolved).toEqual([2, 3]);
+            expect(getNode(catalog, anyId)).toMatchObject({
+                resolvedServiceIds: [2, 3],
+                resolvedAt: 1_717_171_717_000,
+            });
+        } finally {
+            nowSpy.mockRestore();
+        }
+    });
+
+    it("keeps catalog state unchanged across undo and redo while normal editor history still works", () => {
+        const { builder, editor } = setup();
+
+        const groupId = editor.createCatalogGroup({
+            label: "Stable Catalog",
+            serviceIds: [101, 102],
+        });
+        editor.toggleCatalogPinned(groupId);
+        editor.setCatalogViewMode("grouped");
+
+        const catalogBeforeMutation = editor.getCatalog();
+
+        editor.addTag({ label: "Undoable Tag" });
+        expect(builder.getProps().filters.some((tag) => tag.label === "Undoable Tag")).toBe(
+            true,
+        );
+
+        expect(editor.undo()).toBe(true);
+        expect(builder.getProps().filters.some((tag) => tag.label === "Undoable Tag")).toBe(
+            false,
+        );
+        expect(editor.getCatalog()).toEqual(catalogBeforeMutation);
+
+        expect(editor.redo()).toBe(true);
+        expect(builder.getProps().filters.some((tag) => tag.label === "Undoable Tag")).toBe(
+            true,
+        );
+        expect(editor.getCatalog()).toEqual(catalogBeforeMutation);
+    });
+});
+```
+
+---
+#### 2
 
 
 ` File: src/react/canvas/__tests__/editor.constraints-emitter.spec.ts`  [↑ Back to top](#index)
@@ -190,7 +536,7 @@ describe("Editor constraints (Emitter)", () => {
 ```
 
 ---
-#### 2
+#### 3
 
 
 ` File: src/react/canvas/__tests__/editor.constraints.spec.ts`  [↑ Back to top](#index)
@@ -647,7 +993,7 @@ describe("Editor constraints", () => {
 ```
 
 ---
-#### 3
+#### 4
 
 
 ` File: src/react/canvas/__tests__/editor.history-redo.regression.spec.ts`  [↑ Back to top](#index)
@@ -806,7 +1152,7 @@ describe("Editor history redo regression", () => {
 ```
 
 ---
-#### 4
+#### 5
 
 
 ` File: src/react/canvas/__tests__/editor.includes.test.ts`  [↑ Back to top](#index)
@@ -978,7 +1324,7 @@ describe("Editor includes/excludes", () => {
 ```
 
 ---
-#### 5
+#### 6
 
 
 ` File: src/react/canvas/__tests__/editor.notices.spec.ts`  [↑ Back to top](#index)
@@ -1117,7 +1463,7 @@ describe("Editor notice helpers", () => {
 ```
 
 ---
-#### 6
+#### 7
 
 
 ` File: src/react/canvas/__tests__/editor.quantity-rule.spec.ts`  [↑ Back to top](#index)
@@ -1203,7 +1549,7 @@ describe('Editor field quantity rule helpers', () => {
 ```
 
 ---
-#### 7
+#### 8
 
 
 ` File: src/react/canvas/__tests__/editor.service-filter.spec.ts`  [↑ Back to top](#index)
@@ -1329,7 +1675,7 @@ describe("Editor.filterServicesForVisibleGroup", () => {
 ```
 
 ---
-#### 8
+#### 9
 
 
 ` File: src/react/canvas/__tests__/editor.utility-guard.spec.ts`  [↑ Back to top](#index)
@@ -1424,7 +1770,7 @@ describe('Editor utility guard (utilities cannot have service_id)', () => {
 ```
 
 ---
-#### 9
+#### 10
 
 
 ` File: src/react/canvas/__tests__/selection-get-selected-options.spec.ts`  [↑ Back to top](#index)
@@ -1540,7 +1886,7 @@ describe("Selection button helpers", () => {
 ```
 
 ---
-#### 10
+#### 11
 
 
 ` File: src/react/canvas/__tests__/selection.inheritance.test.ts`  [↑ Back to top](#index)
@@ -1984,7 +2330,7 @@ describe("Selection.visibleGroup() — inheritance rules", () => {
 ```
 
 ---
-#### 11
+#### 12
 
 
 ` File: src/react/canvas/__tests__/selection.test.ts`  [↑ Back to top](#index)
@@ -2200,7 +2546,7 @@ describe("Selection.visibleGroup()", () => {
 ```
 
 ---
-#### 12
+#### 13
 
 
 ` File: src/react/canvas/api.ts`  [↑ Back to top](#index)
@@ -2531,7 +2877,7 @@ export class CanvasAPI {
 ```
 
 ---
-#### 13
+#### 14
 
 
 ` File: src/react/canvas/backend.ts`  [↑ Back to top](#index)
@@ -2556,7 +2902,7 @@ export type CanvasBackendOptions = {
 ```
 
 ---
-#### 14
+#### 15
 
 
 ` File: src/react/canvas/comments.ts`  [↑ Back to top](#index)
@@ -3228,7 +3574,7 @@ export class CommentsAPI {
 ```
 
 ---
-#### 15
+#### 16
 
 
 ` File: src/react/canvas/editor.ts`  [↑ Back to top](#index)
@@ -3237,6 +3583,10 @@ export class CommentsAPI {
 import { cloneDeep } from "lodash-es";
 import { Builder, normalise } from "@/core";
 import type {
+    CatalogId,
+    CatalogNode,
+    CatalogServiceId,
+    CatalogSmartRule,
     Command,
     EditorEvents,
     EditorOptions,
@@ -3244,6 +3594,8 @@ import type {
     FallbackSettings,
     Field,
     FieldValidationRule,
+    ServiceIdRef,
+    ServiceCatalogState,
     ServiceProps,
     ServicePropsNotice,
     Tag,
@@ -3262,11 +3614,7 @@ import type {
     WireKind,
 } from "./editor/editor-types";
 import { duplicate } from "./editor/editor-duplicate";
-import {
-    addNotice,
-    removeNotice,
-    updateNotice,
-} from "./editor/editor-notices";
+import { addNotice, removeNotice, updateNotice } from "./editor/editor-notices";
 import {
     addField,
     addOption,
@@ -3307,6 +3655,22 @@ import {
 import { filterServicesForVisibleGroup } from "./editor/editor-service-filter";
 import { genId, uniqueId, uniqueOptionId } from "./editor/editor-ids";
 import { placeNode, placeOption } from "./editor/editor-placement";
+import {
+    addCatalogGroup,
+    addSmartCatalogGroup,
+    assignServicesToCatalogGroup,
+    createEmptyCatalog,
+    moveCatalogNode as moveCatalogNodeState,
+    removeCatalogNode as removeCatalogNodeState,
+    resolveSmartCatalogGroup,
+    setActiveCatalogNode as setActiveCatalogNodeState,
+    setCatalogExpanded,
+    setCatalogViewMode,
+    setSelectedCatalogService,
+    toggleCatalogExpanded,
+    toggleCatalogPinned,
+    updateCatalogNode as updateCatalogNodeState,
+} from "./editor/editor-catalog";
 
 const MAX_LIMIT = 100;
 
@@ -3322,6 +3686,7 @@ export class Editor {
     private txnLabel?: string;
     private stagedBefore?: EditorSnapshot;
     private _lastPolicyDiagnostics?: PolicyDiagnostic[];
+    private catalog?: ServiceCatalogState;
 
     constructor(builder: Builder, api: CanvasAPI, opts: EditorOptions = {}) {
         this.builder = builder;
@@ -3459,7 +3824,7 @@ export class Editor {
         input: {
             id?: string;
             label: string;
-            service_id?: number;
+            service_id?: ServiceIdRef;
             pricing_role?: "base" | "utility" | "addon";
             [k: string]: any;
         },
@@ -3472,7 +3837,7 @@ export class Editor {
         patch: Partial<
             {
                 label: string;
-                service_id: number;
+                service_id: ServiceIdRef;
                 pricing_role: "base" | "utility" | "addon";
             } & Record<string, any>
         >,
@@ -3494,7 +3859,7 @@ export class Editor {
 
     setService(
         id: string,
-        input: { service_id?: number; pricing_role?: "base" | "utility" },
+        input: { service_id?: ServiceIdRef; pricing_role?: "base" | "utility" },
     ): void {
         return setService(this.moduleCtx(), id, input);
     }
@@ -3513,9 +3878,7 @@ export class Editor {
         return removeTag(this.moduleCtx(), id);
     }
 
-    addNotice(
-        input: Omit<ServicePropsNotice, "id"> & { id?: string },
-    ): string {
+    addNotice(input: Omit<ServicePropsNotice, "id"> & { id?: string }): string {
         return addNotice(this.moduleCtx(), input);
     }
 
@@ -3605,6 +3968,209 @@ export class Editor {
         return clearFieldValidation(this.moduleCtx(), id);
     }
 
+    getCatalog(): ServiceCatalogState | undefined {
+        return cloneDeep(this.catalog);
+    }
+
+    setCatalog(next?: ServiceCatalogState): void {
+        this.replaceCatalog(next, "catalog:set");
+    }
+
+    clearCatalog(): void {
+        this.replaceCatalog(undefined, "catalog:clear");
+    }
+
+    ensureCatalog(): ServiceCatalogState {
+        const next = this.catalog
+            ? cloneDeep(this.catalog)
+            : createEmptyCatalog();
+        this.catalog = cloneDeep(next);
+        return next;
+    }
+
+    createCatalogGroup(input: {
+        id?: string;
+        label: string;
+        parentId?: string;
+        description?: string;
+        serviceIds?: CatalogServiceId[];
+        collapsed?: boolean;
+        order?: number;
+        color?: string;
+        icon?: string;
+    }): string {
+        const next = addCatalogGroup(this.catalog, input);
+        this.replaceCatalog(next, "catalog:create-group");
+        return next.activeNodeId!;
+    }
+
+    createSmartCatalogGroup(input: {
+        id?: string;
+        label: string;
+        parentId?: string;
+        description?: string;
+        rules: CatalogSmartRule[];
+        match?: "all" | "any";
+        collapsed?: boolean;
+        order?: number;
+        color?: string;
+        icon?: string;
+    }): string {
+        const next = addSmartCatalogGroup(this.catalog, input);
+        this.replaceCatalog(next, "catalog:create-smart-group");
+        return next.activeNodeId!;
+    }
+
+    updateCatalogNode(
+        id: CatalogId,
+        patch: Partial<Omit<CatalogNode, "id" | "kind">>,
+    ): void {
+        this.replaceCatalog(
+            updateCatalogNodeState(this.catalog, id, patch),
+            "catalog:update-node",
+        );
+    }
+
+    removeCatalogNode(id: CatalogId, opts?: { cascade?: boolean }): void {
+        this.replaceCatalog(
+            removeCatalogNodeState(this.catalog, id, opts),
+            "catalog:remove-node",
+        );
+    }
+
+    moveCatalogNode(
+        nodeId: CatalogId,
+        opts: {
+            parentId?: CatalogId;
+            beforeId?: CatalogId;
+            afterId?: CatalogId;
+            index?: number;
+        },
+    ): void {
+        this.replaceCatalog(
+            moveCatalogNodeState(this.catalog, nodeId, opts),
+            "catalog:move-node",
+        );
+    }
+
+    assignServicesToCatalogGroup(
+        nodeId: CatalogId,
+        serviceIds: CatalogServiceId[],
+        mode: "append" | "replace" | "remove" = "append",
+    ): void {
+        this.replaceCatalog(
+            assignServicesToCatalogGroup(
+                this.catalog,
+                nodeId,
+                serviceIds,
+                mode,
+            ),
+            "catalog:assign-services",
+        );
+    }
+
+    setActiveCatalogNode(id?: CatalogId): void {
+        const next = setActiveCatalogNodeState(this.catalog, id);
+        this.catalog = cloneDeep(next);
+
+        this.emit(
+            "catalog:active-change" as any,
+            {
+                activeNodeId: id,
+            } as any,
+        );
+
+        this.emit(
+            "catalog:change" as any,
+            {
+                catalog: cloneDeep(this.catalog),
+                reason: "catalog:set-active",
+            } as any,
+        );
+    }
+
+    setCatalogViewMode(mode: ServiceCatalogState["viewMode"]): void {
+        this.replaceCatalog(
+            setCatalogViewMode(this.catalog, mode),
+            "catalog:set-view-mode",
+        );
+    }
+
+    setSelectedCatalogService(serviceId?: CatalogServiceId): void {
+        this.replaceCatalog(
+            setSelectedCatalogService(this.catalog, serviceId),
+            "catalog:set-selected-service",
+        );
+    }
+
+    toggleCatalogExpanded(id: CatalogId): void {
+        this.replaceCatalog(
+            toggleCatalogExpanded(this.catalog, id),
+            "catalog:toggle-expanded",
+        );
+    }
+
+    setCatalogExpanded(id: CatalogId, expanded: boolean): void {
+        this.replaceCatalog(
+            setCatalogExpanded(this.catalog, id, expanded),
+            "catalog:set-expanded",
+        );
+    }
+
+    toggleCatalogPinned(id: CatalogId): void {
+        this.replaceCatalog(
+            toggleCatalogPinned(this.catalog, id),
+            "catalog:toggle-pinned",
+        );
+    }
+
+    resolveSmartCatalogGroup(
+        nodeId: CatalogId,
+        candidates: CatalogServiceId[],
+        matchers: {
+            serviceField?: (
+                candidate: CatalogServiceId,
+                rule: Extract<CatalogSmartRule, { type: "service-field" }>,
+            ) => boolean;
+            policyFamily?: (
+                candidate: CatalogServiceId,
+                rule: Extract<CatalogSmartRule, { type: "policy-family" }>,
+            ) => boolean;
+            compatibility?: (
+                candidate: CatalogServiceId,
+                rule: Extract<CatalogSmartRule, { type: "compatibility" }>,
+            ) => boolean;
+        },
+    ): CatalogServiceId[] {
+        const next = resolveSmartCatalogGroup(
+            this.catalog,
+            nodeId,
+            candidates,
+            matchers,
+        );
+
+        this.replaceCatalog(next, "catalog:resolve-smart-group");
+
+        const node = next?.nodes.find(
+            (x) => x.id === nodeId && x.kind === "smart-group",
+        ) as Extract<CatalogNode, { kind: "smart-group" }> | undefined;
+
+        return node?.resolvedServiceIds?.slice() ?? [];
+    }
+
+    private replaceCatalog(
+        next: ServiceCatalogState | undefined,
+        reason = "catalog:set",
+    ) {
+        this.catalog = cloneDeep(next);
+        this.emit(
+            "catalog:change" as any,
+            {
+                catalog: cloneDeep(this.catalog),
+                reason,
+            } as any,
+        );
+    }
     private replaceProps(next: ServiceProps): void {
         const norm = normalise(next, {
             constraints: this.builder
@@ -3659,6 +4225,7 @@ export class Editor {
             layout: {
                 canvas,
             },
+            catalog: cloneDeep(this.catalog),
         };
     }
 
@@ -3742,7 +4309,7 @@ export class Editor {
             uniqueId: (base) => uniqueId(this.moduleCtx(), base),
             uniqueOptionId: (fieldId, base) =>
                 uniqueOptionId(this.moduleCtx(), fieldId, base),
-            genId: (prefix) => genId(this.moduleCtx(), prefix),
+            genId: (prefix) => genId(this.moduleCtx(), prefix as any),
             setLastPolicyDiagnostics: (value) => {
                 this._lastPolicyDiagnostics = value;
             },
@@ -3752,7 +4319,449 @@ export class Editor {
 ```
 
 ---
-#### 16
+#### 17
+
+
+` File: src/react/canvas/editor/editor-catalog.ts`  [↑ Back to top](#index)
+
+```ts
+// src/react/canvas/editor/editor-catalog.ts
+
+import type {
+    CatalogId,
+    CatalogNode,
+    CatalogServiceId,
+    CatalogSmartRule,
+    ServiceCatalogState,
+} from "@/schema";
+
+function clone<T>(value: T): T {
+    return JSON.parse(JSON.stringify(value));
+}
+
+function normalizeServiceIds(
+    ids: Array<CatalogServiceId> | undefined,
+): Array<CatalogServiceId> {
+    if (!ids?.length) return [];
+    const seen = new Set<string>();
+    const out: Array<CatalogServiceId> = [];
+
+    for (const id of ids) {
+        const key = String(id);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(id);
+    }
+
+    return out;
+}
+
+function sortNodes(nodes: CatalogNode[]): CatalogNode[] {
+    return [...nodes].sort((a, b) => {
+        const ao = a.order ?? 0;
+        const bo = b.order ?? 0;
+        if (ao !== bo) return ao - bo;
+        return a.label.localeCompare(b.label);
+    });
+}
+
+export function createEmptyCatalog(): ServiceCatalogState {
+    return {
+        version: 1,
+        nodes: [],
+        activeNodeId: undefined,
+        expandedIds: [],
+        pinnedNodeIds: [],
+        selectedServiceId: undefined,
+        viewMode: "all",
+    };
+}
+
+export function ensureCatalog(
+    catalog?: ServiceCatalogState,
+): ServiceCatalogState {
+    return clone(catalog ?? createEmptyCatalog());
+}
+
+export function getCatalogNode(
+    catalog: ServiceCatalogState | undefined,
+    id: CatalogId,
+): CatalogNode | undefined {
+    return (catalog?.nodes ?? []).find((x) => x.id === id);
+}
+
+export function getCatalogChildren(
+    catalog: ServiceCatalogState | undefined,
+    parentId?: CatalogId,
+): CatalogNode[] {
+    return sortNodes(
+        (catalog?.nodes ?? []).filter((x) => x.parentId === parentId),
+    );
+}
+
+export function hasCatalogNode(
+    catalog: ServiceCatalogState | undefined,
+    id: CatalogId,
+): boolean {
+    return !!getCatalogNode(catalog, id);
+}
+
+export function createCatalogId(
+    catalog: ServiceCatalogState | undefined,
+    prefix = "cg",
+): string {
+    const taken = new Set((catalog?.nodes ?? []).map((x) => x.id));
+    for (let i = 1; i < 10000; i++) {
+        const id = `${prefix}:${i}`;
+        if (!taken.has(id)) return id;
+    }
+    throw new Error("Unable to generate catalog id");
+}
+
+export function addCatalogGroup(
+    catalog: ServiceCatalogState | undefined,
+    input: {
+        id?: string;
+        label: string;
+        parentId?: string;
+        description?: string;
+        serviceIds?: Array<CatalogServiceId>;
+        collapsed?: boolean;
+        order?: number;
+        color?: string;
+        icon?: string;
+    },
+): ServiceCatalogState {
+    const next = ensureCatalog(catalog);
+    const id = input.id ?? createCatalogId(next, "cg");
+
+    next.nodes.push({
+        id,
+        kind: "group",
+        label: input.label,
+        parentId: input.parentId,
+        description: input.description,
+        serviceIds: normalizeServiceIds(input.serviceIds),
+        collapsed: input.collapsed,
+        order: input.order,
+        color: input.color,
+        icon: input.icon,
+    });
+
+    next.activeNodeId = id;
+    return next;
+}
+
+export function addSmartCatalogGroup(
+    catalog: ServiceCatalogState | undefined,
+    input: {
+        id?: string;
+        label: string;
+        parentId?: string;
+        description?: string;
+        rules: CatalogSmartRule[];
+        match?: "all" | "any";
+        collapsed?: boolean;
+        order?: number;
+        color?: string;
+        icon?: string;
+    },
+): ServiceCatalogState {
+    const next = ensureCatalog(catalog);
+    const id = input.id ?? createCatalogId(next, "csg");
+
+    next.nodes.push({
+        id,
+        kind: "smart-group",
+        label: input.label,
+        parentId: input.parentId,
+        description: input.description,
+        rules: clone(input.rules ?? []),
+        match: input.match ?? "all",
+        collapsed: input.collapsed,
+        order: input.order,
+        color: input.color,
+        icon: input.icon,
+    });
+
+    next.activeNodeId = id;
+    return next;
+}
+
+export function updateCatalogNode(
+    catalog: ServiceCatalogState | undefined,
+    id: CatalogId,
+    patch: Partial<Omit<CatalogNode, "id" | "kind">>,
+): ServiceCatalogState | undefined {
+    if (!catalog) return catalog;
+
+    const next = ensureCatalog(catalog);
+    const idx = next.nodes.findIndex((x) => x.id === id);
+    if (idx < 0) return next;
+
+    const current = next.nodes[idx]!;
+    next.nodes[idx] = {
+        ...current,
+        ...patch,
+    } as CatalogNode;
+
+    if (next.nodes[idx]?.kind === "group") {
+        next.nodes[idx] = {
+            ...next.nodes[idx],
+            serviceIds: normalizeServiceIds(
+                (next.nodes[idx] as Extract<CatalogNode, { kind: "group" }>)
+                    .serviceIds,
+            ),
+        } as CatalogNode;
+    }
+
+    return next;
+}
+
+export function setActiveCatalogNode(
+    catalog: ServiceCatalogState | undefined,
+    id?: CatalogId,
+): ServiceCatalogState {
+    const next = ensureCatalog(catalog);
+    next.activeNodeId = id;
+    return next;
+}
+
+export function setCatalogViewMode(
+    catalog: ServiceCatalogState | undefined,
+    mode: ServiceCatalogState["viewMode"],
+): ServiceCatalogState {
+    const next = ensureCatalog(catalog);
+    next.viewMode = mode;
+    return next;
+}
+
+export function setSelectedCatalogService(
+    catalog: ServiceCatalogState | undefined,
+    serviceId?: CatalogServiceId,
+): ServiceCatalogState {
+    const next = ensureCatalog(catalog);
+    next.selectedServiceId = serviceId;
+    return next;
+}
+
+export function toggleCatalogExpanded(
+    catalog: ServiceCatalogState | undefined,
+    id: CatalogId,
+): ServiceCatalogState {
+    const next = ensureCatalog(catalog);
+    const expanded = new Set(next.expandedIds ?? []);
+
+    if (expanded.has(id)) expanded.delete(id);
+    else expanded.add(id);
+
+    next.expandedIds = Array.from(expanded);
+    return next;
+}
+
+export function setCatalogExpanded(
+    catalog: ServiceCatalogState | undefined,
+    id: CatalogId,
+    expanded: boolean,
+): ServiceCatalogState {
+    const next = ensureCatalog(catalog);
+    const set = new Set(next.expandedIds ?? []);
+
+    if (expanded) set.add(id);
+    else set.delete(id);
+
+    next.expandedIds = Array.from(set);
+    return next;
+}
+
+export function toggleCatalogPinned(
+    catalog: ServiceCatalogState | undefined,
+    id: CatalogId,
+): ServiceCatalogState {
+    const next = ensureCatalog(catalog);
+    const pinned = new Set(next.pinnedNodeIds ?? []);
+
+    if (pinned.has(id)) pinned.delete(id);
+    else pinned.add(id);
+
+    next.pinnedNodeIds = Array.from(pinned);
+    return next;
+}
+
+export function assignServicesToCatalogGroup(
+    catalog: ServiceCatalogState | undefined,
+    nodeId: CatalogId,
+    serviceIds: Array<CatalogServiceId>,
+    mode: "append" | "replace" | "remove" = "append",
+): ServiceCatalogState | undefined {
+    if (!catalog) return catalog;
+
+    const next = ensureCatalog(catalog);
+    const node = next.nodes.find(
+        (x) => x.id === nodeId && x.kind === "group",
+    ) as Extract<CatalogNode, { kind: "group" }> | undefined;
+
+    if (!node) return next;
+
+    const incoming = normalizeServiceIds(serviceIds);
+    const current = normalizeServiceIds(node.serviceIds);
+
+    if (mode === "replace") {
+        node.serviceIds = incoming;
+        return next;
+    }
+
+    if (mode === "append") {
+        node.serviceIds = normalizeServiceIds([...current, ...incoming]);
+        return next;
+    }
+
+    node.serviceIds = current.filter(
+        (id) => !incoming.some((x) => String(x) === String(id)),
+    );
+    return next;
+}
+
+export function clearCatalog(): ServiceCatalogState {
+    return createEmptyCatalog();
+}
+
+export function removeCatalogNode(
+    catalog: ServiceCatalogState | undefined,
+    id: CatalogId,
+    opts?: { cascade?: boolean },
+): ServiceCatalogState | undefined {
+    if (!catalog) return catalog;
+
+    const next = ensureCatalog(catalog);
+
+    const ids = new Set<string>([id]);
+
+    if (opts?.cascade) {
+        const queue = [id];
+        while (queue.length) {
+            const current = queue.shift()!;
+            for (const child of next.nodes.filter(
+                (x) => x.parentId === current,
+            )) {
+                if (!ids.has(child.id)) {
+                    ids.add(child.id);
+                    queue.push(child.id);
+                }
+            }
+        }
+    }
+
+    next.nodes = next.nodes.filter((x) => !ids.has(x.id));
+
+    if (next.activeNodeId && ids.has(next.activeNodeId)) {
+        next.activeNodeId = undefined;
+    }
+
+    next.expandedIds = (next.expandedIds ?? []).filter((x) => !ids.has(x));
+    next.pinnedNodeIds = (next.pinnedNodeIds ?? []).filter((x) => !ids.has(x));
+
+    return next;
+}
+
+export function moveCatalogNode(
+    catalog: ServiceCatalogState | undefined,
+    nodeId: CatalogId,
+    opts: {
+        parentId?: CatalogId;
+        beforeId?: CatalogId;
+        afterId?: CatalogId;
+        index?: number;
+    },
+): ServiceCatalogState | undefined {
+    if (!catalog) return catalog;
+
+    const next = ensureCatalog(catalog);
+    const node = next.nodes.find((x) => x.id === nodeId);
+    if (!node) return next;
+
+    node.parentId = opts.parentId;
+
+    const siblings = next.nodes
+        .filter((x) => x.parentId === opts.parentId && x.id !== nodeId)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    let dest = typeof opts.index === "number" ? opts.index : siblings.length;
+
+    if (opts.beforeId) {
+        const idx = siblings.findIndex((x) => x.id === opts.beforeId);
+        if (idx >= 0) dest = idx;
+    }
+
+    if (opts.afterId) {
+        const idx = siblings.findIndex((x) => x.id === opts.afterId);
+        if (idx >= 0) dest = idx + 1;
+    }
+
+    const ordered = [...siblings];
+    ordered.splice(dest, 0, node);
+
+    ordered.forEach((item, i) => {
+        item.order = i;
+    });
+
+    return next;
+}
+
+export function resolveSmartCatalogGroup(
+    catalog: ServiceCatalogState | undefined,
+    nodeId: CatalogId,
+    candidates: Array<CatalogServiceId>,
+    matchers: {
+        serviceField?: (
+            candidate: CatalogServiceId,
+            rule: Extract<CatalogSmartRule, { type: "service-field" }>,
+        ) => boolean;
+        policyFamily?: (
+            candidate: CatalogServiceId,
+            rule: Extract<CatalogSmartRule, { type: "policy-family" }>,
+        ) => boolean;
+        compatibility?: (
+            candidate: CatalogServiceId,
+            rule: Extract<CatalogSmartRule, { type: "compatibility" }>,
+        ) => boolean;
+    },
+): ServiceCatalogState | undefined {
+    if (!catalog) return catalog;
+
+    const next = ensureCatalog(catalog);
+    const node = next.nodes.find(
+        (x) => x.id === nodeId && x.kind === "smart-group",
+    ) as Extract<CatalogNode, { kind: "smart-group" }> | undefined;
+
+    if (!node) return next;
+
+    const rules = node.rules ?? [];
+    const mode = node.match ?? "all";
+
+    const resolved = candidates.filter((candidate) => {
+        const results = rules.map((rule) => {
+            if (rule.type === "service-field") {
+                return matchers.serviceField?.(candidate, rule) ?? false;
+            }
+            if (rule.type === "policy-family") {
+                return matchers.policyFamily?.(candidate, rule) ?? false;
+            }
+            return matchers.compatibility?.(candidate, rule) ?? false;
+        });
+
+        return mode === "all" ? results.every(Boolean) : results.some(Boolean);
+    });
+
+    node.resolvedServiceIds = normalizeServiceIds(resolved);
+    node.resolvedAt = Date.now();
+
+    return next;
+}
+```
+
+---
+#### 18
 
 
 ` File: src/react/canvas/editor/editor-constraints.ts`  [↑ Back to top](#index)
@@ -3875,7 +4884,7 @@ export function clearConstraint(
 ```
 
 ---
-#### 17
+#### 19
 
 
 ` File: src/react/canvas/editor/editor-duplicate.ts`  [↑ Back to top](#index)
@@ -4131,7 +5140,7 @@ export function duplicateOption(
 ```
 
 ---
-#### 18
+#### 20
 
 
 ` File: src/react/canvas/editor/editor-field-rules.ts`  [↑ Back to top](#index)
@@ -4291,7 +5300,7 @@ export function normalizeQuantityRule(input: unknown): QuantityRule | undefined 
 ```
 
 ---
-#### 19
+#### 21
 
 
 ` File: src/react/canvas/editor/editor-ids.ts`  [↑ Back to top](#index)
@@ -4379,14 +5388,14 @@ export function bumpSuffix(old: string): string {
 ```
 
 ---
-#### 20
+#### 22
 
 
 ` File: src/react/canvas/editor/editor-nodes.ts`  [↑ Back to top](#index)
 
 ```ts
 import { cloneDeep } from "lodash-es";
-import type { Field, ServiceProps, Tag } from "@/schema";
+import type { Field, ServiceIdRef, ServiceProps, Tag } from "@/schema";
 import type {
     EditorModuleContext,
     EditorNodeLookup,
@@ -4458,9 +5467,19 @@ export function setFieldName(
                     return;
                 }
 
-                const fieldHasService = typeof (f as any).service_id === "number";
+                const fieldHasService =
+                    (typeof (f as any).service_id === "number" &&
+                        Number.isFinite((f as any).service_id)) ||
+                    (typeof (f as any).service_id === "string" &&
+                        (f as any).service_id.trim().length > 0);
                 const optionHasService = Array.isArray(f.options)
-                    ? f.options.some((o) => typeof (o as any).service_id === "number")
+                    ? f.options.some(
+                          (o) =>
+                              (typeof (o as any).service_id === "number" &&
+                                  Number.isFinite((o as any).service_id)) ||
+                              (typeof (o as any).service_id === "string" &&
+                                  (o as any).service_id.trim().length > 0),
+                      )
                     : false;
 
                 if (fieldHasService || optionHasService) {
@@ -4506,7 +5525,7 @@ export function addOption(
     input: {
         id?: string;
         label: string;
-        service_id?: number;
+        service_id?: ServiceIdRef;
         pricing_role?: "base" | "utility" | "addon";
         [k: string]: any;
     },
@@ -4537,7 +5556,7 @@ export function updateOption(
     patch: Partial<
         {
             label: string;
-            service_id: number;
+            service_id: ServiceIdRef;
             pricing_role: "base" | "utility" | "addon";
         } & Record<string, any>
     >,
@@ -4641,7 +5660,7 @@ export function editName(
 export function setService(
     ctx: EditorModuleContext,
     id: string,
-    input: { service_id?: number; pricing_role?: "base" | "utility" },
+    input: { service_id?: ServiceIdRef; pricing_role?: "base" | "utility" },
 ): void {
     ctx.exec({
         name: "setService",
@@ -4653,10 +5672,14 @@ export function setService(
                 );
                 const validId =
                     hasSidKey &&
-                    typeof input.service_id === "number" &&
-                    Number.isFinite(input.service_id);
-                const sid: number | undefined = validId
-                    ? Number(input.service_id)
+                    ((typeof input.service_id === "number" &&
+                        Number.isFinite(input.service_id)) ||
+                        (typeof input.service_id === "string" &&
+                            input.service_id.trim().length > 0));
+                const sid: ServiceIdRef | undefined = validId
+                    ? typeof input.service_id === "string"
+                        ? input.service_id.trim()
+                        : Number(input.service_id)
                     : undefined;
                 const nextRole = input.pricing_role;
 
@@ -5055,7 +6078,7 @@ export function getNode(ctx: EditorModuleContext, id: string): EditorNodeLookup 
 ```
 
 ---
-#### 21
+#### 23
 
 
 ` File: src/react/canvas/editor/editor-notices.ts`  [↑ Back to top](#index)
@@ -5131,7 +6154,7 @@ export function removeNotice(ctx: EditorModuleContext, id: string): void {
 ```
 
 ---
-#### 22
+#### 24
 
 
 ` File: src/react/canvas/editor/editor-placement.ts`  [↑ Back to top](#index)
@@ -5286,7 +6309,7 @@ export function placeOption(
 ```
 
 ---
-#### 23
+#### 25
 
 
 ` File: src/react/canvas/editor/editor-relations.ts`  [↑ Back to top](#index)
@@ -5784,7 +6807,7 @@ export function disconnect(
 ```
 
 ---
-#### 24
+#### 26
 
 
 ` File: src/react/canvas/editor/editor-service-filter.ts`  [↑ Back to top](#index)
@@ -5829,7 +6852,7 @@ export function filterServicesForVisibleGroup(
 ```
 
 ---
-#### 25
+#### 27
 
 
 ` File: src/react/canvas/editor/editor-types.ts`  [↑ Back to top](#index)
@@ -5903,13 +6926,13 @@ export type EditorModuleContext = {
     getNode: (id: string) => EditorNodeLookup;
     uniqueId: (base: string) => string;
     uniqueOptionId: (fieldId: string, base: string) => string;
-    genId: (prefix: "t" | "f" | "o") => string;
+    genId: (prefix: "t" | "f" | "o" | {}) => string;
     setLastPolicyDiagnostics: (value: PolicyDiagnostic[] | undefined) => void;
 };
 ```
 
 ---
-#### 26
+#### 28
 
 
 ` File: src/react/canvas/editor/editor-utils.ts`  [↑ Back to top](#index)
@@ -5978,7 +7001,7 @@ export function ensureServiceExists(opts: EditorOptions, id: any) {
 ```
 
 ---
-#### 27
+#### 29
 
 
 ` File: src/react/canvas/events.ts`  [↑ Back to top](#index)
@@ -6023,7 +7046,7 @@ export class EventBus<E extends EventMap> {
 ```
 
 ---
-#### 28
+#### 30
 
 
 ` File: src/react/canvas/selection.ts`  [↑ Back to top](#index)
@@ -6522,4 +7545,4 @@ export class Selection {
 
 ---
 *Generated with [Prodex](https://github.com/emxhive/prodex) — Codebase decoded.*
-<!-- PRODEx v1.4.11 | 2026-03-19T00:38:56.151Z -->
+<!-- PRODEx v1.4.11 | 2026-03-22T17:16:55.018Z -->

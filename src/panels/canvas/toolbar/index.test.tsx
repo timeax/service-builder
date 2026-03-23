@@ -79,8 +79,28 @@ describe('canvas toolbar view toggles', () => {
         fireEvent.click(excludeButton);
         fireEvent.click(focusButton);
 
-        expect(screen.getByRole('button', { name: /canvas view/i })).toHaveClass('ring-1');
+        expect(screen.getByRole('button', { name: /canvas view/i })).toHaveClass('border-blue-200');
         expect(screen.getByRole('menuitemcheckbox', { name: /exclude edges/i })).toHaveAttribute('aria-checked', 'true');
         expect(screen.getByRole('menuitemcheckbox', { name: /focus context/i })).toHaveAttribute('aria-checked', 'true');
+    });
+
+    it('uses the same standalone button sizing for the view trigger and orientation toggle', () => {
+        render(<ToolbarHarness />);
+
+        const viewMenu = screen.getByRole('button', { name: /canvas view/i });
+        const orientationToggle = screen.getByRole('button', { name: /switch to vertical toolbar/i });
+
+        for (const className of ['h-11', 'w-11', 'rounded-2xl', '[&_svg]:h-5', '[&_svg]:w-5']) {
+            expect(viewMenu).toHaveClass(className);
+            expect(orientationToggle).toHaveClass(className);
+        }
+
+        fireEvent.click(viewMenu);
+        const excludeButton = screen.getByRole('menuitemcheckbox', { name: /exclude edges/i });
+        fireEvent.click(excludeButton);
+
+        expect(viewMenu).toHaveAttribute('aria-expanded', 'true');
+        expect(viewMenu).not.toHaveClass('ring-1');
+        expect(screen.getByText(/\d+ active view options/i)).toBeInTheDocument();
     });
 });
