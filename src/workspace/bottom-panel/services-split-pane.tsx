@@ -10,9 +10,12 @@ import { cn } from '@/lib/utils.ts';
 import type { CatalogGroupNode } from '@timeax/digital-service-engine/schema';
 import { InputField } from '@timeax/form-palette';
 import { type DragEvent, type ReactNode, useEffect, useState } from 'react';
-import { FiChevronRight, FiEdit2, FiFilter, FiFolderPlus, FiPlus, FiTrash2 } from 'react-icons/fi';
+import { FaFolderOpen } from 'react-icons/fa';
+import { FiEdit2, FiFilter, FiFolderPlus, FiPlus, FiTrash2 } from 'react-icons/fi';
 import { ServiceDetailCard } from './service-detail-card.tsx';
 import { filterChipClassName, statusBadgeClassName } from './utils.tsx';
+
+const UNGROUPED_TREE_VALUE = '__catalog_ungrouped__';
 
 type ServicesSplitPaneProps = {
     mode: 'active' | 'all' | 'catalog';
@@ -76,9 +79,16 @@ export function ServicesSplitPane(props: ServicesSplitPaneProps) {
                                               : 'All services'}
                                     </h4>
                                 </div>
-                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em] text-slate-600 uppercase dark:bg-slate-900 dark:text-slate-300">
-                                    {props.rows.length}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    {props.mode === 'catalog' ? (
+                                        <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em] text-blue-700 uppercase dark:bg-blue-500/10 dark:text-blue-200">
+                                            {props.selectedCatalogGroupLabel ?? 'Ungrouped'}
+                                        </span>
+                                    ) : null}
+                                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em] text-slate-600 uppercase dark:bg-slate-900 dark:text-slate-300">
+                                        {props.rows.length}
+                                    </span>
+                                </div>
                             </div>
 
                             {props.mode === 'all' && props.appliedSnapshot?.selectedTag ? (
@@ -96,49 +106,22 @@ export function ServicesSplitPane(props: ServicesSplitPaneProps) {
                             {props.mode === 'catalog' ? (
                                 <div className="space-y-3 pb-3">
                                     <CatalogToolbar
+                                        groups={props.catalogGroups ?? []}
                                         selectedGroupId={props.catalogActiveGroupId ?? null}
                                         selectedGroupLabel={props.selectedCatalogGroupLabel ?? null}
+                                        ungroupedSelected={props.catalogUngrouped ?? false}
+                                        onSelectGroup={props.onCatalogSelectGroup ?? (() => {})}
                                         onCreateRootGroup={props.onCatalogCreateRootGroup ?? (() => {})}
                                         onCreateChildGroup={props.onCatalogCreateChildGroup ?? (() => {})}
                                         onRenameGroup={props.onCatalogRenameGroup ?? (() => {})}
                                         onDeleteGroup={props.onCatalogDeleteGroup ?? (() => {})}
                                         onAssignServices={props.onCatalogAssignServices ?? (() => {})}
                                     />
-                                    <div className="rounded-2xl border border-slate-200 bg-white/80 dark:border-slate-800 dark:bg-slate-950/60">
-                                        <div className="border-b border-slate-100 px-3 py-2 text-[11px] font-semibold tracking-[0.16em] text-slate-500 uppercase dark:border-slate-800 dark:text-slate-400">
-                                            Groups
-                                        </div>
-                                        <ScrollArea className="h-[min(calc(var(--bottom-panel-height)-18rem),18rem)]">
-                                            <div className="space-y-1 p-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => props.onCatalogSelectGroup?.(null)}
-                                                    className={cn(
-                                                        'flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition',
-                                                        props.catalogUngrouped
-                                                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-200'
-                                                            : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900',
-                                                    )}
-                                                >
-                                                    <span>Ungrouped</span>
-                                                    <span className="text-xs">{props.rows.length}</span>
-                                                </button>
-                                                <CatalogTree
-                                                    groups={(props.catalogGroups ?? []).filter((group) => !group.parentId)}
-                                                    allGroups={props.catalogGroups ?? []}
-                                                    expandedIds={new Set(props.catalogExpandedIds ?? [])}
-                                                    activeGroupId={props.catalogActiveGroupId ?? null}
-                                                    onSelectGroup={props.onCatalogSelectGroup ?? (() => {})}
-                                                    onToggleGroupExpanded={props.onCatalogToggleGroupExpanded ?? (() => {})}
-                                                />
-                                            </div>
-                                        </ScrollArea>
-                                    </div>
                                 </div>
                             ) : null}
                         </div>
 
-                        <ScrollArea className="h-[calc(var(--bottom-panel-height)-12rem)] max-h-[calc(var(--bottom-panel-height)-12rem)] min-h-0 flex-1">
+                        <ScrollArea className="h-[calc(var(--bottom-panel-height)-15rem)] max-h-[calc(var(--bottom-panel-height)-15rem)] min-h-0 flex-1">
                             <div className="space-y-2 p-3 pl-0">
                                 {props.rows.length === 0 ? (
                                     <EmptyState title={emptyTitle} description={emptyDescription} />
@@ -219,7 +202,7 @@ export function ServicesSplitPane(props: ServicesSplitPaneProps) {
                             </p>
                         </div>
 
-                        <ScrollArea className="h-[calc(var(--bottom-panel-height)-11rem)] min-h-0 flex-1">
+                        <ScrollArea className="h-[calc(var(--bottom-panel-height)-15rem)] min-h-0 flex-1">
                             <div className="p-5">
                                 {props.detailRow ? (
                                     <ServiceDetailCard
@@ -452,60 +435,88 @@ export function CatalogContextPopover({
 }
 
 function CatalogToolbar({
+    groups,
     selectedGroupId,
     selectedGroupLabel,
+    ungroupedSelected,
+    onSelectGroup,
     onCreateRootGroup,
     onCreateChildGroup,
     onRenameGroup,
     onDeleteGroup,
     onAssignServices,
 }: {
+    groups: CatalogGroupNode[];
     selectedGroupId: string | null;
     selectedGroupLabel: string | null;
+    ungroupedSelected: boolean;
+    onSelectGroup: (groupId: string | null) => void;
     onCreateRootGroup: (label: string) => void;
     onCreateChildGroup: (label: string) => void;
     onRenameGroup: (label: string) => void;
     onDeleteGroup: () => void;
     onAssignServices: () => void;
 }) {
+    const treeValue = selectedGroupId ?? (ungroupedSelected ? UNGROUPED_TREE_VALUE : undefined);
+    const treeOptions = buildCatalogGroupTreeOptions(groups);
+
     return (
-        <div className="flex flex-wrap items-center gap-2">
-            <GroupInputPopoverButton
-                label="Create top-level group"
-                icon={<FiPlus />}
-                submitLabel="Create"
-                title="Create root group"
-                onSubmit={onCreateRootGroup}
+        <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+                <GroupInputPopoverButton
+                    label="Create top-level group"
+                    icon={<FiPlus />}
+                    submitLabel="Create"
+                    title="Create root group"
+                    onSubmit={onCreateRootGroup}
+                />
+                <GroupInputPopoverButton
+                    label="Create child group"
+                    icon={<FiFolderPlus />}
+                    title="Create child group"
+                    submitLabel="Create"
+                    disabled={!selectedGroupId}
+                    onSubmit={onCreateChildGroup}
+                />
+                <GroupInputPopoverButton
+                    label="Rename selected group"
+                    icon={<FiEdit2 />}
+                    title="Rename group"
+                    submitLabel="Save"
+                    disabled={!selectedGroupId}
+                    initialValue={selectedGroupLabel ?? ''}
+                    onSubmit={onRenameGroup}
+                />
+                <ConfirmPopoverButton
+                    label="Delete selected group"
+                    icon={<FiTrash2 />}
+                    title="Delete group?"
+                    description={
+                        selectedGroupLabel ? `Remove ${selectedGroupLabel} and its child groups.` : 'Remove this group and its child groups.'
+                    }
+                    confirmLabel="Delete"
+                    disabled={!selectedGroupId}
+                    onConfirm={onDeleteGroup}
+                />
+                <ToolbarIconButton label="Assign services to selected group" disabled={!selectedGroupId} onClick={onAssignServices}>
+                    <FiPlus />
+                </ToolbarIconButton>
+            </div>
+            <InputField
+                variant="treeselect"
+                mode="button"
+                className={'w-fit!'}
+                multiple={false}
+                value={treeValue}
+                options={[{ key: UNGROUPED_TREE_VALUE, label: 'Ungrouped' }, ...treeOptions] as any}
+                searchable
+                clearable
+                onChange={(event) => {
+                    const next = event.value == null ? null : String(event.value);
+                    onSelectGroup(next === UNGROUPED_TREE_VALUE ? null : next);
+                }}
+                button={<FaFolderOpen />}
             />
-            <GroupInputPopoverButton
-                label="Create child group"
-                icon={<FiFolderPlus />}
-                title="Create child group"
-                submitLabel="Create"
-                disabled={!selectedGroupId}
-                onSubmit={onCreateChildGroup}
-            />
-            <GroupInputPopoverButton
-                label="Rename selected group"
-                icon={<FiEdit2 />}
-                title="Rename group"
-                submitLabel="Save"
-                disabled={!selectedGroupId}
-                initialValue={selectedGroupLabel ?? ''}
-                onSubmit={onRenameGroup}
-            />
-            <ConfirmPopoverButton
-                label="Delete selected group"
-                icon={<FiTrash2 />}
-                title="Delete group?"
-                description={selectedGroupLabel ? `Remove ${selectedGroupLabel} and its child groups.` : 'Remove this group and its child groups.'}
-                confirmLabel="Delete"
-                disabled={!selectedGroupId}
-                onConfirm={onDeleteGroup}
-            />
-            <ToolbarIconButton label="Assign services to selected group" disabled={!selectedGroupId} onClick={onAssignServices}>
-                <FiPlus />
-            </ToolbarIconButton>
         </div>
     );
 }
@@ -692,76 +703,21 @@ function ToolbarIconButton({
     );
 }
 
-function CatalogTree({
-    groups,
-    allGroups = groups,
-    expandedIds,
-    activeGroupId,
-    onSelectGroup,
-    onToggleGroupExpanded,
-    depth = 0,
-}: {
-    groups: CatalogGroupNode[];
-    allGroups?: CatalogGroupNode[];
-    expandedIds: Set<string>;
-    activeGroupId: string | null;
-    onSelectGroup: (groupId: string) => void;
-    onToggleGroupExpanded: (groupId: string, expanded: boolean) => void;
-    depth?: number;
-}) {
-    return (
-        <>
-            {groups.map((group) => {
-                const children = allGroups.filter((candidate) => candidate.parentId === group.id);
-                const hasChildren = children.length > 0;
-                const expanded = hasChildren ? expandedIds.has(group.id) : false;
-                return (
-                    <div key={group.id} className="space-y-1">
-                        <div className="flex items-center gap-1" style={{ paddingLeft: `${depth * 12}px` }}>
-                            <button
-                                type="button"
-                                disabled={!hasChildren}
-                                aria-label={expanded ? `Collapse ${group.label}` : `Expand ${group.label}`}
-                                onClick={() => hasChildren && onToggleGroupExpanded(group.id, !expanded)}
-                                className={cn(
-                                    'inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-900 dark:hover:text-slate-200',
-                                    !hasChildren && 'cursor-default opacity-40 hover:bg-transparent hover:text-slate-400',
-                                )}
-                            >
-                                <FiChevronRight className={cn('transition-transform', expanded && 'rotate-90')} />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => onSelectGroup(group.id)}
-                                className={cn(
-                                    'flex min-w-0 flex-1 items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition',
-                                    activeGroupId === group.id
-                                        ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-200'
-                                        : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900',
-                                )}
-                            >
-                                <span className="truncate">{group.label}</span>
-                                <span className="ml-2 text-xs">{group.serviceIds.length}</span>
-                            </button>
-                        </div>
-                        {hasChildren && expanded ? (
-                            <CatalogTree
-                                groups={children}
-                                allGroups={allGroups}
-                                expandedIds={expandedIds}
-                                activeGroupId={activeGroupId}
-                                onSelectGroup={onSelectGroup}
-                                onToggleGroupExpanded={onToggleGroupExpanded}
-                                depth={depth + 1}
-                            />
-                        ) : null}
-                    </div>
-                );
-            })}
-        </>
-    );
-}
-
 function FilterChip({ label, tone = 'default' }: { label: string; tone?: 'default' | 'success' | 'warning' | 'danger' }) {
     return <span className={cn('rounded-full px-2.5 py-1 text-[11px] font-medium', filterChipClassName(tone))}>{label}</span>;
+}
+
+function buildCatalogGroupTreeOptions(groups: CatalogGroupNode[], parentId: string | null = null): Array<Record<string, unknown>> {
+    return groups
+        .filter((group) => (group.parentId ?? null) === parentId)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.label.localeCompare(b.label))
+        .map((group) => {
+            const children = buildCatalogGroupTreeOptions(groups, group.id);
+            return {
+                key: group.id,
+                label: group.label,
+                description: `${group.serviceIds.length} service${group.serviceIds.length === 1 ? '' : 's'}`,
+                children: children.length ? children : undefined,
+            };
+        });
 }

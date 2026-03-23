@@ -181,6 +181,24 @@ vi.mock('@/components/ui/resizable.tsx', () => ({
 vi.mock('@timeax/form-palette', () => ({
     InputField: ({ variant, label, value, onChange, options, placeholder, disabled, autoComplete }: any) => {
         const ariaLabel = label ?? placeholder ?? 'input-field';
+        if (variant === 'treeselect') {
+            const flattenedOptions = flattenTreeOptions(options ?? []);
+            return (
+                <select
+                    aria-label={ariaLabel}
+                    value={value ?? ''}
+                    disabled={disabled}
+                    onChange={(event) => onChange?.({ value: event.target.value || undefined })}
+                >
+                    <option value="">{placeholder ?? 'Select'}</option>
+                    {flattenedOptions.map((option: any) => (
+                        <option key={String(option.key)} value={option.key}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+            );
+        }
         if (variant === 'select') {
             return (
                 <select
@@ -280,6 +298,10 @@ function getPopoverCheckbox(label: string) {
 function clickPopoverCheckbox(label: string) {
     const input = getPopoverCheckbox(label);
     fireEvent.click(input);
+}
+
+function flattenTreeOptions(options: Array<any>): Array<any> {
+    return options.flatMap((option) => [option, ...flattenTreeOptions(option.children ?? [])]);
 }
 
 class ResizeObserverMock {
@@ -447,12 +469,13 @@ describe('BottomConsolePanel service catalog', () => {
 
         await waitFor(() => {
             expect(screen.getByRole('button', { name: 'Create top-level group' })).toBeInTheDocument();
-            expect(screen.getByText('Payments')).toBeInTheDocument();
+            expect(screen.getByLabelText('Catalog group selector')).toBeInTheDocument();
+            expect(screen.queryByText('Groups')).not.toBeInTheDocument();
             expect(screen.queryByText('Compatible Active Service')).not.toBeInTheDocument();
             expect(screen.getAllByText('Incompatible Available Service').length).toBeGreaterThan(0);
         });
 
-        fireEvent.click(screen.getByText('Payments'));
+        fireEvent.change(screen.getByLabelText('Catalog group selector'), { target: { value: 'cg:1' } });
 
         await waitFor(() => {
             expect(screen.getAllByText('Compatible Active Service').length).toBeGreaterThan(0);
@@ -527,6 +550,30 @@ describe('BottomConsolePanel service catalog', () => {
             expect(patchProps).not.toHaveBeenCalled();
             expect(replaceProps).not.toHaveBeenCalled();
             expect(transact).not.toHaveBeenCalled();
+        });
+    });
+
+    it('shows the selected group chip beside the count and supports ungrouped via the toolbar treeselect', async () => {
+        renderPanel();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Catalog' }));
+        await screen.findByLabelText('Catalog group selector');
+
+        expect(screen.getByText('Ungrouped', { selector: 'span' })).toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('Catalog group selector'), { target: { value: 'cg:1' } });
+
+        await waitFor(() => {
+            expect(setActiveCatalogNode).toHaveBeenCalledWith('cg:1');
+            expect(screen.getByText('Payments', { selector: 'span' })).toBeInTheDocument();
+        });
+
+        fireEvent.change(screen.getByLabelText('Catalog group selector'), { target: { value: '__catalog_ungrouped__' } });
+
+        await waitFor(() => {
+            expect(setActiveCatalogNode).toHaveBeenCalledWith(undefined);
+            expect(screen.getByText('Ungrouped', { selector: 'span' })).toBeInTheDocument();
+            expect(screen.getAllByText('Incompatible Available Service').length).toBeGreaterThan(0);
         });
     });
 });
