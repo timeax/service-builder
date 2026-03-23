@@ -1,5 +1,5 @@
 {
-    "name": "service-builder",
+    "name": "@timeax/service-builder",
     "version": "0.0.1",
     "type": "module",
     "main": "./dist/index.js",
@@ -28,7 +28,7 @@
         "test:watch": "vitest",
         "git:commit-if-dirty": "git diff --quiet && git diff --cached --quiet || (git add -A && git commit -m \"chore: publish build\")",
         "version:patch:commit": "npm version patch -m \"chore(release): %s\"",
-        "push": "npm run git:commit-if-dirty && npm publish && npm run version:patch:commit && git push --follow-tags"
+        "push": "npm run git:commit-if-dirty && npm publish --access=public && npm run version:patch:commit && git push --follow-tags"
     },
     "dependencies": {
         "@dnd-kit/core": "^6.3.1",
