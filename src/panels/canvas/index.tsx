@@ -7,11 +7,11 @@ import {
     edgeStyleForState,
     parseEdgeId as parseRelationEdgeId,
 } from '@/panels/canvas/presentation.ts';
-import { useCanvas, type UseErrorsReturn, useWorkspace } from '@timeax/digital-service-engine/workspace';
+import { BOOT_SECTION_LABELS, getBootActionReason, getFailedBlockingSections } from '@/workspace/boot.ts';
 import type { EditorSnapshot } from '@timeax/digital-service-engine';
+import { useCanvas, type UseErrorsReturn, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FiAlertCircle } from 'react-icons/fi';
-import { BOOT_SECTION_LABELS, getBootActionReason, getFailedBlockingSections } from '@/workspace/boot.ts';
 import type { AdapterOptions } from './adapter.ts';
 import { AppToolbar } from './app-toolbar.tsx';
 import { CanvasOverlays } from './canvas-overlays.tsx';
@@ -158,20 +158,25 @@ export default function CanvasPanel({
         };
     }, [canvas.api]);
 
+    function setSnapshot(event: any) {
+        const nextSnapshot = event?.snapshot;
+        if (!nextSnapshot) return;
+
+        const nextHash = hashSnapshot(nextSnapshot);
+
+        setCurrentSnapshotHash((current) => (current === nextHash ? current : nextHash));
+
+        if (nextHash !== lastSyncedSnapshotHashRef.current) {
+            lastSyncedSnapshotHashRef.current = nextHash;
+            ws.snapshot.set(() => nextSnapshot);
+        }
+    }
+
     useEffect(() => {
+        const catalogChange = canvas.api.on('catalog:change', setSnapshot);
+
         const offEditorChange = (canvas.api.on as any)('editor:change', (event: EditorChangeEvent) => {
-            const nextSnapshot = event?.snapshot;
-            if (!nextSnapshot) return;
-
-            const nextHash = hashSnapshot(nextSnapshot);
-
-            setCurrentSnapshotHash((current) => (current === nextHash ? current : nextHash));
-
-            if (nextHash !== lastSyncedSnapshotHashRef.current) {
-                lastSyncedSnapshotHashRef.current = nextHash;
-                ws.snapshot.set(() => nextSnapshot);
-            }
-
+            setSnapshot(event);
             if (event?.reason === 'mutation' || event?.reason === 'transaction') {
                 setHistoryState({ canUndo: true, canRedo: false });
             }
@@ -201,6 +206,7 @@ export default function CanvasPanel({
             offEditorChange?.();
             offUndo?.();
             offRedo?.();
+            catalogChange?.();
         };
     }, [canvas.api, ws.snapshot]);
 
