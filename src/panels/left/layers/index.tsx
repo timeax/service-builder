@@ -1,9 +1,9 @@
+import { useNodeContextMenu } from '@/builder/node-context-menu.tsx';
 import { EmptyState, PanelSearch } from '@/components/builder/index.tsx';
 import { SortTree, type SortTreeProps, type TreeNode } from '@/components/sort-tree';
 import type { SortTreeRef } from '@/components/sort-tree/types.ts';
 import { Panel } from '@/components/ui/panel.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
-import { useNodeContextMenu } from '@/builder/node-context-menu.tsx';
 import type { Field, FieldOption, Tag } from '@timeax/digital-service-engine/schema';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { type FocusEventHandler, useMemo, useRef, useState } from 'react';
@@ -79,6 +79,11 @@ const Layers = () => {
         if (detail.type === 'update') {
             detail.preventDefault();
             canvas.api.editor.editLabel(detail.node.id as string, detail.node.title);
+        }
+
+        if (detail.type === 'insert' && detail.context.via == 'ui.create') {
+            const parent = detail.to.parent.id as string;
+            canvas.api.editor.addOption(parent, { label: detail.node.title });
         }
     };
 
@@ -278,7 +283,7 @@ const Layers = () => {
                     ) : null}
                     <ScrollArea className="min-h-0 flex-1 pr-1">
                         {fields.length ? (
-                                <SortTree
+                            <SortTree
                                 nodeClassName="text-[13px]! font-medium"
                                 defaultNodeIcon={(node) => {
                                     const id = String(node.id);
@@ -305,33 +310,33 @@ const Layers = () => {
                                 value={[...canvas.selectionInfo.fieldIds, ...canvas.selectionInfo.optionIds] as string[]}
                                 rowClassName="mb-1 rounded-xl border border-transparent px-1 hover:border-slate-200 hover:bg-slate-50 dark:hover:border-slate-800 dark:hover:bg-slate-900/70"
                                 data={fields}
-                                    onChange={handleFieldChange as any}
-                                    onContextMenu={(detail) => {
-                                        const nodeId = String(detail.node.id);
-                                        const resolvedKind = nodeId.startsWith('o:') ? 'option' : 'field';
-                                        openNodeContextMenu({
-                                            nodeId,
-                                            nodeKind: resolvedKind,
-                                            surface: 'layers',
-                                            clientX: detail.event.clientX,
-                                            clientY: detail.event.clientY,
-                                        });
-                                    }}
-                                    onExternalDrop={({ over, dataTransfer }) => {
-                                        if (!canAcceptDropPayload(dataTransfer)) return;
-                                        const receiverId = String(over.id);
-                                        handleNodeDrop({
-                                            receiverId,
-                                            receiverKind: receiverId.startsWith('o:') ? 'option' : 'field',
-                                            surface: 'layers',
-                                            clientX: 0,
-                                            clientY: 0,
-                                            dataTransfer,
-                                        });
-                                    }}
-                                    activeClassName={(e) =>
-                                        e.node.id === canvas.activeId
-                                            ? 'border-blue-300! bg-blue-50/80 dark:border-blue-500/40! dark:bg-blue-500/10!'
+                                onChange={handleFieldChange as any}
+                                onContextMenu={(detail) => {
+                                    const nodeId = String(detail.node.id);
+                                    const resolvedKind = nodeId.startsWith('o:') ? 'option' : 'field';
+                                    openNodeContextMenu({
+                                        nodeId,
+                                        nodeKind: resolvedKind,
+                                        surface: 'layers',
+                                        clientX: detail.event.clientX,
+                                        clientY: detail.event.clientY,
+                                    });
+                                }}
+                                onExternalDrop={({ over, dataTransfer }) => {
+                                    if (!canAcceptDropPayload(dataTransfer)) return;
+                                    const receiverId = String(over.id);
+                                    handleNodeDrop({
+                                        receiverId,
+                                        receiverKind: receiverId.startsWith('o:') ? 'option' : 'field',
+                                        surface: 'layers',
+                                        clientX: 0,
+                                        clientY: 0,
+                                        dataTransfer,
+                                    });
+                                }}
+                                activeClassName={(e) =>
+                                    e.node.id === canvas.activeId
+                                        ? 'border-blue-300! bg-blue-50/80 dark:border-blue-500/40! dark:bg-blue-500/10!'
                                         : ''
                                 }
                             />

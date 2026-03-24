@@ -89,6 +89,82 @@ function WorkspaceLayout({ onShare, onPlay, menu }: ServiceBuilderLayoutProps) {
     );
 }
 
+const Styles = `
+/* line theming via CSS vars (can be overridden upstream) */
+:root {
+    --tree-line-color: #d1d5db; /* gray-300 */
+    --tree-line-width: 1px;
+    --tree-line-style: solid; /* solid | dashed | dotted */
+    --elbow-v-h: 100%
+}
+
+/* container for each row */
+.tree-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* matches your gap-2 */
+    /*padding: 0.25rem 0.5rem; !* py-1 px-2 *!*/
+}
+
+/* left rail: N ancestor columns (width given inline) */
+.tree-rail {
+    display: flex;
+    position: relative;
+}
+
+/* a single ancestor column; width is set inline to \`indent\` */
+.tree-col {
+    position: relative;
+}
+
+/* draw vertical guideline IF data-show="1" */
+.tree-col[data-show="1"]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: var(--tree-line-width) var(--tree-line-style) var(--tree-line-color);
+}
+
+/* the elbow cell for the current node (one per row) */
+.tree-elbow {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* vertical segment (full for mid siblings, half for last) */
+.tree-elbow::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0;
+    height: var(--elbow-v-h, 100%); /* "50%" for last sibling, else "100%" */
+    border-left: var(--tree-line-width) var(--tree-line-style) var(--tree-line-color);
+}
+
+/* horizontal segment (elbow) from center to the content area */
+.tree-elbow::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateY(-50%);
+    width: 50%;
+    border-top: var(--tree-line-width) var(--tree-line-style) var(--tree-line-color);
+}
+
+/* apply to the element that receives selectedRowClassName / rowClassName */
+.tree-row-clip {
+    background-clip: content-box; /* don’t paint under the left padding (indent) */
+}
+
+`;
+
 export type ServiceBuilderProps = Pick<WorkspaceProviderProps, 'backend' | 'actor' | 'initial'> &
     ServiceBuilderCallbacks & {
         menu?: Menu[];
@@ -96,11 +172,14 @@ export type ServiceBuilderProps = Pick<WorkspaceProviderProps, 'backend' | 'acto
 
 export function ServiceBuilder({ backend, actor, onShare, onPlay, menu }: ServiceBuilderProps) {
     return (
-        <InputsProvider initialRegistry={inputRegistry}>
-            <Workspace backend={backend} actor={actor}>
-                {() => <WorkspaceLayout onShare={onShare} onPlay={onPlay} menu={menu} />}
-            </Workspace>
-        </InputsProvider>
+        <>
+            <style>{Styles}</style>
+            <InputsProvider initialRegistry={inputRegistry}>
+                <Workspace backend={backend} actor={actor}>
+                    {() => <WorkspaceLayout onShare={onShare} onPlay={onPlay} menu={menu} />}
+                </Workspace>
+            </InputsProvider>
+        </>
     );
 }
 
