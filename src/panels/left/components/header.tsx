@@ -51,7 +51,7 @@ const MenuRenderer = ({ items, depth = 0 }: { items: Menu[]; depth?: number }) =
                             )}
                         </button>
                         {hasChildren && isOpen && (
-                            <div className="ml-4 mt-1 border-l border-slate-200 pl-2 dark:border-slate-800">
+                            <div className="mt-1 ml-4 border-l border-slate-200 pl-2 dark:border-slate-800">
                                 <MenuRenderer items={item.children!} depth={depth + 1} />
                             </div>
                         )}
@@ -71,11 +71,7 @@ const Header = ({ menu = [] }: HeaderProps) => {
     const fullMenu: Menu[] = [
         {
             name: 'Status',
-            render: () => (
-                <div className="px-2 py-1.5 text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    {workspaceStatus}
-                </div>
-            ),
+            render: () => <div className="px-2 py-1.5 text-xs font-medium tracking-wider text-slate-500 uppercase">{workspaceStatus}</div>,
         },
         ...menu,
     ];
@@ -107,9 +103,11 @@ const Header = ({ menu = [] }: HeaderProps) => {
 
                 <Popover>
                     <PopoverTrigger asChild>
-                        <BuilderIconButton title="Menu">
-                            <MdMenuOpen />
-                        </BuilderIconButton>
+                        <span>
+                            <BuilderIconButton title="Menu">
+                                <MdMenuOpen />
+                            </BuilderIconButton>
+                        </span>
                     </PopoverTrigger>
                     <PopoverContent className="w-56 p-2" align="end">
                         <MenuRenderer items={fullMenu} />
