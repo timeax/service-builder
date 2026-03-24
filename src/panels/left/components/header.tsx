@@ -1,9 +1,9 @@
-import { BuilderIconButton } from '@/components/builder/index.tsx';
+import { BuilderIconButton } from '@/components/builder';
 import Drafts from '@/panels/left/components/drafts.tsx';
-import { useWorkspace } from '@timeax/digital-service-engine/workspace';
-import { GoChevronDown } from 'react-icons/go';
-import { MdMenuOpen, MdOutlineSpaceDashboard } from 'react-icons/md';
 import { getWorkspaceBootHeadline } from '@/workspace/boot.ts';
+import { useWorkspace } from '@timeax/digital-service-engine/workspace';
+import { BsChevronDown } from 'react-icons/bs';
+import { MdMenuOpen, MdOutlineSpaceDashboard } from 'react-icons/md';
 
 const Header = () => {
     const ws = useWorkspace();
@@ -20,24 +20,25 @@ const Header = () => {
                     <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
                         <MdOutlineSpaceDashboard className="text-base" />
                     </span>
-                    <div>
-                        <div className="text-[10px] uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Workspace</div>
-                        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Service Builder</h1>
+                    <div className={'flex flex-col justify-center gap-0'}>
+                        <h1 className="text-base leading-tight font-semibold text-slate-900 dark:text-slate-100">Service Builder</h1>
                         <Drafts
                             trigger={
                                 <button
                                     type="button"
-                                    className="mt-0.5 inline-flex items-center gap-1 rounded-md px-1 text-xs text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+                                    className="inline-flex cursor-pointer items-center gap-1 rounded-md text-xs text-slate-500 transition hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                                 >
-                                    <span>{currentBranch?.name ?? 'Main branch'} · {workspaceStatus}</span>
-                                    <GoChevronDown className="text-sm" />
+                                    <span>
+                                        Active branch - <b>{currentBranch?.name ?? 'Main branch'}</b>
+                                    </span>
+                                    <BsChevronDown />
                                 </button>
                             }
                         />
                     </div>
                 </div>
 
-                <BuilderIconButton title="Collapse left panel">
+                <BuilderIconButton title="Menu">
                     <MdMenuOpen />
                 </BuilderIconButton>
             </div>

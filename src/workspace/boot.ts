@@ -57,7 +57,7 @@ export function getBootSectionTone(sectionState: WorkspaceBootSectionState) {
 
 export function getWorkspaceBootHeadline(boot: WorkspaceBootState) {
     if (boot.isReady && boot.hasPartialFailure) return 'Workspace loaded with issues';
-    if (boot.isReady) return 'Workspace ready';
+    if (boot.isReady) return 'ready';
     if (boot.hasErrors && !boot.isBooting) return 'Workspace load needs attention';
     if (boot.isSeededView) return 'Syncing live workspace data';
     return 'Loading workspace';

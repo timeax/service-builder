@@ -2,7 +2,6 @@ import type { BottomConsolePanelState } from '@/builder/bottom-panel.ts';
 import { useNodeContextMenu } from '@/builder/node-context-menu.tsx';
 import { EmptyState } from '@/components/builder/index.tsx';
 import {
-    type CanvasViewPrefs,
     defaultCanvasViewPrefs,
     deriveCanvasPresentation,
     edgeStyleForState,
@@ -19,15 +18,15 @@ import { CanvasOverlays } from './canvas-overlays.tsx';
 import { FlowCanvas } from './flow-canvas.tsx';
 import type { LabelPlacement, ToolbarOrientation, ToolsConfig } from './toolbar/types.ts';
 import {
-    type CanvasViewPrefsState,
-    type HistoryState,
-    OVERLAY_DEFAULTS,
-    type OverlayState,
     canAssignService,
+    type CanvasViewPrefsState,
     getNodeLabel,
     hashSnapshot,
+    type HistoryState,
     loadCanvasViewPrefs,
     loadOverlayState,
+    OVERLAY_DEFAULTS,
+    type OverlayState,
     persistCanvasViewPrefs,
     persistOverlayState,
     restoreAllOverlays,
@@ -206,8 +205,10 @@ export default function CanvasPanel({
     }, [canvas.api, ws.snapshot]);
 
     const hasChanges = currentSnapshotHash !== persistedBaselineHash;
-    const canSave = hasChanges || !!ws.snapshot.draft;
-    const canPublish = hasChanges || !!ws.snapshot.draft;
+
+    const canSave = hasChanges;
+    const canPublish = !!ws.snapshot.draft && !hasChanges;
+
     const bootActionReason = getBootActionReason(ws.boot);
     const failedBlockingSections = getFailedBlockingSections(ws.boot);
 
