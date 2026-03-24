@@ -13,6 +13,7 @@ import { useCanvas, useErrors, useWorkspace, Workspace, type WorkspaceProviderPr
 import { useMemo, useState } from 'react';
 import { workspaceActor, workspaceBackend } from '../backend';
 import './index.css';
+import './node-row.css';
 
 const inputRegistry = createInputRegistry();
 registerEntries(inputRegistry);

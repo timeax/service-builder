@@ -2,7 +2,6 @@ import * as React from 'react';
 import { TbChevronDownRight } from 'react-icons/tb';
 import { VscChevronRight } from 'react-icons/vsc';
 import { Node } from './node.tsx';
-import './node-row.css';
 import type { NodePath, TreeNode } from './types';
 
 export interface NodeRowProps<T = unknown> {
