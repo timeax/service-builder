@@ -6,8 +6,13 @@ import { Panel } from '@/components/ui/panel.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
 import { CiGrid32 } from 'react-icons/ci';
 import { MdOutlineLayers } from 'react-icons/md';
+import type { Menu } from '@/index';
 
-const Left = () => {
+interface LeftProps {
+    menu?: Menu[];
+}
+
+const Left = ({ menu }: LeftProps) => {
     const tabClassName = cn(
         'rounded-xl! py-2! shadow-none!',
         'text-slate-500 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm',
@@ -22,7 +27,7 @@ const Left = () => {
             minWidth={320}
         >
             <div className="flex h-full flex-col">
-                <Header />
+                <Header menu={menu} />
                 <div className="flex min-h-0 flex-1 flex-col gap-2 py-2">
                     <Tabs defaultValue="layers" className="flex min-h-0 flex-1 flex-col px-3">
                         <TabsList className="grid h-auto grid-cols-2 rounded-2xl bg-slate-100 p-1 dark:bg-slate-900">

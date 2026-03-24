@@ -1,17 +1,84 @@
 import { BuilderIconButton } from '@/components/builder';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import type { Menu } from '@/index';
 import Drafts from '@/panels/left/components/drafts.tsx';
 import { getWorkspaceBootHeadline } from '@/workspace/boot.ts';
 import { useWorkspace } from '@timeax/digital-service-engine/workspace';
-import { BsChevronDown } from 'react-icons/bs';
+import { useState } from 'react';
+import { BsChevronDown, BsChevronRight } from 'react-icons/bs';
 import { MdMenuOpen, MdOutlineSpaceDashboard } from 'react-icons/md';
 
-const Header = () => {
+interface HeaderProps {
+    menu?: Menu[];
+}
+
+const MenuRenderer = ({ items, depth = 0 }: { items: Menu[]; depth?: number }) => {
+    const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
+
+    const toggleSubmenu = (name: string) => {
+        setOpenSubmenus((prev) => ({ ...prev, [name]: !prev[name] }));
+    };
+
+    return (
+        <ul className="flex flex-col gap-1">
+            {items.map((item, index) => {
+                const hasChildren = item.children && item.children.length > 0;
+                const isOpen = openSubmenus[item.name];
+
+                if (item.render) {
+                    return <li key={index}>{item.render()}</li>;
+                }
+
+                return (
+                    <li key={index} className="flex flex-col">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (hasChildren) {
+                                    toggleSubmenu(item.name);
+                                } else if (item.command) {
+                                    item.command();
+                                }
+                            }}
+                            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                        >
+                            {item.icon && <span className="flex h-4 w-4 items-center justify-center text-slate-500">{item.icon}</span>}
+                            <span className="flex-1 text-left">{item.name}</span>
+                            {hasChildren && (
+                                <span className={`transition-transform ${isOpen ? 'rotate-90' : ''}`}>
+                                    <BsChevronRight className="h-3 w-3" />
+                                </span>
+                            )}
+                        </button>
+                        {hasChildren && isOpen && (
+                            <div className="ml-4 mt-1 border-l border-slate-200 pl-2 dark:border-slate-800">
+                                <MenuRenderer items={item.children!} depth={depth + 1} />
+                            </div>
+                        )}
+                    </li>
+                );
+            })}
+        </ul>
+    );
+};
+
+const Header = ({ menu = [] }: HeaderProps) => {
     const ws = useWorkspace();
 
     const currentBranch = ws.branches.data?.find((branch) => branch.id === ws.branches.currentId);
     const workspaceStatus = getWorkspaceBootHeadline(ws.boot);
 
-    // console.log(currentBranch)
+    const fullMenu: Menu[] = [
+        {
+            name: 'Status',
+            render: () => (
+                <div className="px-2 py-1.5 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    {workspaceStatus}
+                </div>
+            ),
+        },
+        ...menu,
+    ];
 
     return (
         <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-800">
@@ -38,9 +105,16 @@ const Header = () => {
                     </div>
                 </div>
 
-                <BuilderIconButton title="Menu">
-                    <MdMenuOpen />
-                </BuilderIconButton>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <BuilderIconButton title="Menu">
+                            <MdMenuOpen />
+                        </BuilderIconButton>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56 p-2" align="end">
+                        <MenuRenderer items={fullMenu} />
+                    </PopoverContent>
+                </Popover>
             </div>
         </div>
     );

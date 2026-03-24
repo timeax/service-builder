@@ -24,12 +24,24 @@ export type ServiceBuilderPlayPayload = {
     branchId?: string;
 };
 
+export interface Menu {
+    name: string;
+    icon?: React.ReactNode;
+    children?: Menu[];
+    command?: () => void | Promise<void>;
+    render?: () => React.ReactNode;
+}
+
 export type ServiceBuilderCallbacks = {
     onShare?: (snapshotData: EditorSnapshot | undefined) => void | Promise<void>;
     onPlay?: (payload: ServiceBuilderPlayPayload) => void | Promise<void>;
 };
 
-function WorkspaceLayout({ onShare, onPlay }: ServiceBuilderCallbacks) {
+export type ServiceBuilderLayoutProps = ServiceBuilderCallbacks & {
+    menu?: Menu[];
+};
+
+function WorkspaceLayout({ onShare, onPlay, menu }: ServiceBuilderLayoutProps) {
     const canvas = useCanvas();
     const ws = useWorkspace();
     const errors = useErrors();
@@ -50,7 +62,7 @@ function WorkspaceLayout({ onShare, onPlay }: ServiceBuilderCallbacks) {
                         </div>
 
                         <div className={'flex grow overflow-hidden'}>
-                            <Left />
+                            <Left menu={menu} />
                             <CanvasPanel
                                 errors={errors}
                                 bottomPanel={bottomPanel}
@@ -76,20 +88,25 @@ function WorkspaceLayout({ onShare, onPlay }: ServiceBuilderCallbacks) {
     );
 }
 
-export type ServiceBuilderProps = Pick<WorkspaceProviderProps, 'backend' | 'actor' | 'initial'> & ServiceBuilderCallbacks;
+export type ServiceBuilderProps = Pick<WorkspaceProviderProps, 'backend' | 'actor' | 'initial'> &
+    ServiceBuilderCallbacks & {
+        menu?: Menu[];
+    };
 
-export function ServiceBuilder({ backend, actor, onShare, onPlay }: ServiceBuilderProps) {
+export function ServiceBuilder({ backend, actor, onShare, onPlay, menu }: ServiceBuilderProps) {
     return (
         <InputsProvider initialRegistry={inputRegistry}>
             <Workspace backend={backend} actor={actor}>
-                {() => <WorkspaceLayout onShare={onShare} onPlay={onPlay} />}
+                {() => <WorkspaceLayout onShare={onShare} onPlay={onPlay} menu={menu} />}
             </Workspace>
         </InputsProvider>
     );
 }
 
-export type ServiceBuilderWorkspaceProps = ServiceBuilderCallbacks;
+export type ServiceBuilderWorkspaceProps = ServiceBuilderCallbacks & {
+    menu?: Menu[];
+};
 
-export function ServiceBuilderWorkspace({ onShare, onPlay }: ServiceBuilderWorkspaceProps) {
-    return <ServiceBuilder backend={workspaceBackend} actor={workspaceActor} onShare={onShare} onPlay={onPlay} />;
+export function ServiceBuilderWorkspace({ onShare, onPlay, menu }: ServiceBuilderWorkspaceProps) {
+    return <ServiceBuilder backend={workspaceBackend} actor={workspaceActor} onShare={onShare} onPlay={onPlay} menu={menu} />;
 }
