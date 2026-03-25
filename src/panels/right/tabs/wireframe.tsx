@@ -8,6 +8,8 @@ import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspac
 import { useCallback, useMemo } from 'react';
 import { WorkspaceBootInlineNotice } from '@/workspace/boot-status.tsx';
 
+const CHECKBOX_SINGLE_EXTRA_PROPS = Object.freeze({ single: true });
+
 export function Wireframe() {
     const canvas = useCanvas();
     const ws = useWorkspace();
@@ -130,7 +132,7 @@ export function Wireframe() {
                             }}
                         />
 
-                        <div className="border-t border-slate-200 pt-3 dark:border-slate-800">
+                        <div className="border-t border-slate-200 pt-3 flex flex-col gap-2 dark:border-slate-800">
                             {visibleFields.length ? (
                                 visibleFields.map((field) => {
                                     return (
@@ -165,9 +167,8 @@ export function Wireframe() {
                                                 }}
                                             >
                                                 <Wrapper
-                                                    extraProps={{ ...(field.type == 'checkbox' && !field.options ? { single: true } : {}) }}
+                                                    extraProps={field.type === 'checkbox' && !field.options ? CHECKBOX_SINGLE_EXTRA_PROPS : undefined}
                                                     field={field}
-                                                    key={field.id}
                                                 />
                                             </div>
                                         </div>

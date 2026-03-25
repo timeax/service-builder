@@ -177,8 +177,10 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
     }, [catalogContextDraft, contextLinked, draftSnapshot]);
 
     useEffect(() => {
-        const editor = canvas.api.editor as any;
+        const editor = canvas.api.editor;
         const ensured = editor.getCatalog?.() ?? editor.ensureCatalog?.();
+
+        console.log(ensured)
         if (ensured) setCatalogState(ensured);
 
         const offCatalogChange = canvas.api.on('catalog:change' as any, ({ catalog }: { catalog?: ServiceCatalogState }) => {

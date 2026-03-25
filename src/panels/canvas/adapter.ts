@@ -38,6 +38,10 @@ export type AdapterOptions = {
 type CanvasAPI = UseCanvasReturn['api'];
 
 type RFModel = { nodes: Node[]; edges: Edge[] };
+type RFSnapshotSig = {
+    graph: string;
+    selection: string;
+};
 
 function rafThrottle<T extends (...args: any[]) => void>(fn: T, minMs = 80): T {
     let frame = 0;
@@ -79,6 +83,165 @@ function commentPosition(anchor: any, state: ReturnType<CanvasAPI['snapshot']>) 
         return { x: base.x + (anchor.offset?.dx ?? 32), y: base.y + (anchor.offset?.dy ?? -16) };
     }
     return { x: 0, y: 0 };
+}
+
+function stableDataString(value: unknown): string {
+    if (value === null || value === undefined) return String(value);
+    if (typeof value !== 'object') return String(value);
+    if (Array.isArray(value)) return `[${value.map(stableDataString).join(',')}]`;
+
+    const obj = value as Record<string, unknown>;
+    const keys = Object.keys(obj).sort();
+    return `{${keys.map((key) => `${key}:${stableDataString(obj[key])}`).join(',')}}`;
+}
+
+function shallowEqualObject(a: Record<string, unknown> | undefined, b: Record<string, unknown> | undefined): boolean {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    const aKeys = Object.keys(a);
+    const bKeys = Object.keys(b);
+    if (aKeys.length !== bKeys.length) return false;
+    for (const key of aKeys) {
+        if (!(key in b) || a[key] !== b[key]) return false;
+    }
+    return true;
+}
+
+function applyNodeDecorator(node: Node, decorator?: Partial<Node>): Node {
+    if (!decorator) return node;
+
+    const dataPatch = 'data' in decorator && decorator.data && typeof decorator.data === 'object' ? (decorator.data as Record<string, unknown>) : undefined;
+    const nextData = dataPatch ? ({ ...(node.data as object), ...dataPatch } as Node['data']) : node.data;
+    const nextStyle = 'style' in decorator ? decorator.style : node.style;
+    const nextHidden = 'hidden' in decorator ? decorator.hidden : node.hidden;
+    const nextSelected = 'selected' in decorator ? decorator.selected : node.selected;
+
+    const dataChanged = dataPatch ? !shallowEqualObject(node.data as Record<string, unknown>, nextData as Record<string, unknown>) : false;
+    const changed = dataChanged || nextStyle !== node.style || nextHidden !== node.hidden || nextSelected !== node.selected;
+    if (!changed) return node;
+
+    return {
+        ...node,
+        data: nextData,
+        style: nextStyle,
+        hidden: nextHidden,
+        selected: nextSelected,
+    };
+}
+
+function applyEdgeDecorator(edge: Edge, decorator?: Partial<Edge>): Edge {
+    if (!decorator) return edge;
+
+    const dataPatch = 'data' in decorator && decorator.data && typeof decorator.data === 'object' ? (decorator.data as Record<string, unknown>) : undefined;
+    const nextData = dataPatch ? ({ ...(edge.data as object), ...dataPatch } as Edge['data']) : edge.data;
+    const nextStyle = 'style' in decorator ? decorator.style : edge.style;
+    const nextHidden = 'hidden' in decorator ? decorator.hidden : edge.hidden;
+
+    const dataChanged = dataPatch ? !shallowEqualObject(edge.data as Record<string, unknown>, nextData as Record<string, unknown>) : false;
+    const changed = dataChanged || nextStyle !== edge.style || nextHidden !== edge.hidden;
+    if (!changed) return edge;
+
+    return {
+        ...edge,
+        data: nextData,
+        style: nextStyle,
+        hidden: nextHidden,
+    };
+}
+
+function mergeNodeRuntime(prev: Node, next: Node): Node {
+    if (prev.type !== next.type) return next;
+    return {
+        ...prev,
+        ...next,
+        data: next.data,
+        style: next.style,
+        hidden: next.hidden,
+        selected: next.selected,
+        position: next.position,
+    };
+}
+
+function mergeEdgeRuntime(prev: Edge, next: Edge): Edge {
+    return {
+        ...prev,
+        ...next,
+        data: next.data,
+        style: next.style,
+        hidden: next.hidden,
+    };
+}
+
+function mergeWithRuntime(prev: RFModel, next: RFModel): RFModel {
+    const prevNodesById = new Map(prev.nodes.map((node) => [node.id, node]));
+    const prevEdgesById = new Map(prev.edges.map((edge) => [edge.id, edge]));
+
+    return {
+        nodes: next.nodes.map((node) => {
+            const prevNode = prevNodesById.get(node.id);
+            return prevNode ? mergeNodeRuntime(prevNode, node) : node;
+        }),
+        edges: next.edges.map((edge) => {
+            const prevEdge = prevEdgesById.get(edge.id);
+            return prevEdge ? mergeEdgeRuntime(prevEdge, edge) : edge;
+        }),
+    };
+}
+
+function modelEquivalent(a: RFModel, b: RFModel): boolean {
+    if (a.nodes.length !== b.nodes.length || a.edges.length !== b.edges.length) return false;
+
+    for (let i = 0; i < a.nodes.length; i += 1) {
+        const left = a.nodes[i];
+        const right = b.nodes[i];
+        if (left.id !== right.id || left.type !== right.type) return false;
+        if (left.position.x !== right.position.x || left.position.y !== right.position.y) return false;
+        if (left.selected !== right.selected) return false;
+        if (left.hidden !== right.hidden) return false;
+        if (!shallowEqualObject(left.style as Record<string, unknown>, right.style as Record<string, unknown>)) return false;
+        if (!shallowEqualObject(left.data as Record<string, unknown>, right.data as Record<string, unknown>)) return false;
+    }
+
+    for (let i = 0; i < a.edges.length; i += 1) {
+        const left = a.edges[i];
+        const right = b.edges[i];
+        if (left.id !== right.id || left.source !== right.source || left.target !== right.target) return false;
+        if (left.hidden !== right.hidden) return false;
+        if (!shallowEqualObject(left.style as Record<string, unknown>, right.style as Record<string, unknown>)) return false;
+        if (!shallowEqualObject(left.data as Record<string, unknown>, right.data as Record<string, unknown>)) return false;
+    }
+
+    return true;
+}
+
+function buildSnapshotSig(state: ReturnType<CanvasAPI['snapshot']>, api: CanvasAPI): RFSnapshotSig {
+    const graphNodeSig = state.graph.nodes.map((node) => `${node.id}:${node.kind}:${stableDataString((node as any).label)}`).join('|');
+    const graphEdgeSig = state.graph.edges.map((edge) => `${edge.kind}:${edge.from}->${edge.to}`).join('|');
+    const positionSig = Object.keys(state.positions)
+        .sort()
+        .map((id) => {
+            const p = state.positions[id];
+            return `${id}:${p?.x ?? 0},${p?.y ?? 0}`;
+        })
+        .join('|');
+    const commentSig = api.comments
+        .list()
+        .filter((thread) => !!thread.anchor)
+        .map((thread) => {
+            const anchor = thread.anchor as any;
+            if (!anchor) return `${thread.id}:none`;
+            if (anchor.type === 'free') return `${thread.id}:free:${anchor.position?.x ?? 0},${anchor.position?.y ?? 0}`;
+            if (anchor.type === 'node') return `${thread.id}:node:${anchor.nodeId}:${anchor.offset?.dx ?? 0},${anchor.offset?.dy ?? 0}`;
+            return `${thread.id}:${anchor.type ?? 'unknown'}`;
+        })
+        .sort()
+        .join('|');
+    const selectionSig = Array.from(state.selection ?? []).map(String).sort().join('|');
+
+    return {
+        graph: `${graphNodeSig}__${graphEdgeSig}__${positionSig}__${commentSig}`,
+        selection: selectionSig,
+    };
 }
 
 function toRF(state: ReturnType<CanvasAPI['snapshot']>, api: CanvasAPI, opts?: Pick<AdapterOptions, 'nodeDecorators' | 'edgeDecorators'>): RFModel {
@@ -160,20 +323,113 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     const lastViewportRef = useRef<RFViewport | null>(null);
     const interactionInProgressRef = useRef(false);
     const pendingSyncRef = useRef(false);
+    const pendingDecoratorSyncRef = useRef(false);
     const pendingNodeHistoryRef = useRef<Record<string, { x: number; y: number }>>({});
     const dragStartPositionsRef = useRef<Record<string, { x: number; y: number } | undefined>>({});
+    const suppressSelectionSyncRef = useRef(false);
+    const suppressSelectionTokenRef = useRef(0);
+    const suppressSelectionRafRef = useRef<number | null>(null);
+    const suppressSelectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lastAppliedSigRef = useRef<RFSnapshotSig | null>(null);
+
+    const [rf, setRF] = useState<RFModel>(() =>
+        toRF(api.snapshot(), api, {
+            nodeDecorators: nodeDecoratorsRef.current,
+            edgeDecorators: edgeDecoratorsRef.current,
+        }),
+    );
+
+    const beginAdapterSelectionSync = useCallback(() => {
+        const token = ++suppressSelectionTokenRef.current;
+        suppressSelectionSyncRef.current = true;
+
+        if (suppressSelectionRafRef.current !== null && typeof cancelAnimationFrame === 'function') {
+            cancelAnimationFrame(suppressSelectionRafRef.current);
+            suppressSelectionRafRef.current = null;
+        }
+
+        if (suppressSelectionTimerRef.current !== null) {
+            clearTimeout(suppressSelectionTimerRef.current);
+            suppressSelectionTimerRef.current = null;
+        }
+
+        const release = () => {
+            if (suppressSelectionTokenRef.current !== token) return;
+            if (suppressSelectionRafRef.current !== null && typeof cancelAnimationFrame === 'function') {
+                cancelAnimationFrame(suppressSelectionRafRef.current);
+                suppressSelectionRafRef.current = null;
+            }
+            if (suppressSelectionTimerRef.current !== null) {
+                clearTimeout(suppressSelectionTimerRef.current);
+                suppressSelectionTimerRef.current = null;
+            }
+            suppressSelectionSyncRef.current = false;
+        };
+
+        if (typeof requestAnimationFrame === 'function') {
+            suppressSelectionRafRef.current = requestAnimationFrame(() => {
+                suppressSelectionRafRef.current = null;
+                release();
+            });
+        }
+
+        suppressSelectionTimerRef.current = setTimeout(() => {
+            suppressSelectionTimerRef.current = null;
+            release();
+        }, 34);
+    }, []);
 
     const syncFromSnapshot = useCallback(() => {
         const snap = api.snapshot();
-        setRF(
-            toRF(snap, api, {
-                nodeDecorators: nodeDecoratorsRef.current,
-                edgeDecorators: edgeDecoratorsRef.current,
-            }),
-        );
-    }, [api]);
+        const sig = buildSnapshotSig(snap, api);
+        const previousSig = lastAppliedSigRef.current;
+        const graphChanged = !previousSig || previousSig.graph !== sig.graph;
+        const selectionChanged = !previousSig || previousSig.selection !== sig.selection;
+        if (!graphChanged && !selectionChanged) return;
 
-    const requestSync = useCallback(() => {
+        const next = toRF(snap, api, {
+            nodeDecorators: nodeDecoratorsRef.current,
+            edgeDecorators: edgeDecoratorsRef.current,
+        });
+
+        beginAdapterSelectionSync();
+        setRF((prev) => {
+            const merged = mergeWithRuntime(prev, next);
+            if (modelEquivalent(prev, merged)) return prev;
+            return merged;
+        });
+
+        lastAppliedSigRef.current = sig;
+    }, [api, beginAdapterSelectionSync]);
+
+    const applyDecoratorSync = useCallback(() => {
+        beginAdapterSelectionSync();
+        setRF((prev) => {
+            let nodeChanged = false;
+            let edgeChanged = false;
+
+            const nextNodes = prev.nodes.map((node) => {
+                if (!nodeDecoratorsRef.current || isCommentId(String(node.id))) return node;
+                const decorator = nodeDecoratorsRef.current(String(node.id)) ?? undefined;
+                const decorated = applyNodeDecorator(node, decorator);
+                if (decorated !== node) nodeChanged = true;
+                return decorated;
+            });
+
+            const nextEdges = prev.edges.map((edge) => {
+                if (!edgeDecoratorsRef.current) return edge;
+                const decorator = edgeDecoratorsRef.current(String(edge.id)) ?? undefined;
+                const decorated = applyEdgeDecorator(edge, decorator);
+                if (decorated !== edge) edgeChanged = true;
+                return decorated;
+            });
+
+            if (!nodeChanged && !edgeChanged) return prev;
+            return { nodes: nextNodes, edges: nextEdges };
+        });
+    }, [beginAdapterSelectionSync]);
+
+    const requestStructuralSync = useCallback(() => {
         if (interactionInProgressRef.current) {
             pendingSyncRef.current = true;
             return;
@@ -182,11 +438,26 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
         syncFromSnapshot();
     }, [syncFromSnapshot]);
 
+    const requestDecoratorSync = useCallback(() => {
+        if (interactionInProgressRef.current) {
+            pendingDecoratorSyncRef.current = true;
+            return;
+        }
+        pendingDecoratorSyncRef.current = false;
+        applyDecoratorSync();
+    }, [applyDecoratorSync]);
+
     const flushDeferredSync = useCallback(() => {
-        if (interactionInProgressRef.current || !pendingSyncRef.current) return;
-        pendingSyncRef.current = false;
-        syncFromSnapshot();
-    }, [syncFromSnapshot]);
+        if (interactionInProgressRef.current) return;
+        if (pendingSyncRef.current) {
+            pendingSyncRef.current = false;
+            syncFromSnapshot();
+        }
+        if (pendingDecoratorSyncRef.current) {
+            pendingDecoratorSyncRef.current = false;
+            applyDecoratorSync();
+        }
+    }, [applyDecoratorSync, syncFromSnapshot]);
 
     const startInteraction = useCallback(() => {
         interactionInProgressRef.current = true;
@@ -238,22 +509,17 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
 
     useEffect(() => {
         nodeDecoratorsRef.current = nodeDecorators;
-    }, [nodeDecorators]);
+        requestDecoratorSync();
+    }, [nodeDecorators, requestDecoratorSync]);
 
     useEffect(() => {
         edgeDecoratorsRef.current = edgeDecorators;
-    }, [edgeDecorators]);
+        requestDecoratorSync();
+    }, [edgeDecorators, requestDecoratorSync]);
 
     useEffect(() => {
-        requestSync();
-    }, [api, nodeDecorators, edgeDecorators, requestSync]);
-
-    const [rf, setRF] = useState<RFModel>(() =>
-        toRF(api.snapshot(), api, {
-            nodeDecorators: nodeDecoratorsRef.current,
-            edgeDecorators: edgeDecoratorsRef.current,
-        }),
-    );
+        requestStructuralSync();
+    }, [api, requestStructuralSync]);
 
     const snapVector = useMemo<[number, number] | undefined>(() => {
         if (!options.snapToGrid) return undefined;
@@ -262,20 +528,31 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     }, [options.snapToGrid]);
 
     useEffect(() => {
-        const offGraph = api.on('graph:update', requestSync);
-        const offSelection = api.on('selection:change', requestSync);
-        const offState = api.on('state:change', requestSync);
-        const offCommentCreate = api.on('comment:thread:create', requestSync);
-        const offCommentUpdate = api.on('comment:thread:update', requestSync);
-        const offCommentDelete = api.on('comment:thread:delete', requestSync);
-        const offCommentMove = api.on('comment:move', requestSync);
-        const offCommentResolve = api.on('comment:resolve', requestSync);
+        const offGraph = api.on('graph:update', requestStructuralSync);
+        const offSelection = api.on('selection:change', requestStructuralSync);
+        const offState = api.on('state:change', requestStructuralSync);
+        const offCommentCreate = api.on('comment:thread:create', requestStructuralSync);
+        const offCommentUpdate = api.on('comment:thread:update', requestStructuralSync);
+        const offCommentDelete = api.on('comment:thread:delete', requestStructuralSync);
+        const offCommentMove = api.on('comment:move', requestStructuralSync);
+        const offCommentResolve = api.on('comment:resolve', requestStructuralSync);
 
         return () => {
             interactionInProgressRef.current = false;
             pendingSyncRef.current = false;
+            pendingDecoratorSyncRef.current = false;
             pendingNodeHistoryRef.current = {};
             dragStartPositionsRef.current = {};
+            if (suppressSelectionRafRef.current !== null && typeof cancelAnimationFrame === 'function') {
+                cancelAnimationFrame(suppressSelectionRafRef.current);
+                suppressSelectionRafRef.current = null;
+            }
+            if (suppressSelectionTimerRef.current !== null) {
+                clearTimeout(suppressSelectionTimerRef.current);
+                suppressSelectionTimerRef.current = null;
+            }
+            suppressSelectionTokenRef.current += 1;
+            suppressSelectionSyncRef.current = false;
             offGraph();
             offSelection();
             offState();
@@ -285,7 +562,7 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
             offCommentMove();
             offCommentResolve();
         };
-    }, [api, requestSync]);
+    }, [api, requestStructuralSync]);
 
     const applySnap = useCallback(
         (pos: { x: number; y: number }) => {
@@ -373,7 +650,7 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
             }
 
             if (Object.keys(posUpdates).length > 0) setPositionsThrottled(posUpdates);
-            if (selectionDirty) {
+            if (selectionDirty && !suppressSelectionSyncRef.current) {
                 const next = nextNodesSnapshot.filter((node) => !isCommentId(node.id) && node.selected).map((node) => String(node.id));
                 const current = api.getSelection().map(String);
                 if (!sameIdSet(next, current)) api.select(next);

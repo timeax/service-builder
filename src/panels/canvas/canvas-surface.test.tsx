@@ -5,6 +5,17 @@ import { useReactFlowAdapter } from './adapter.ts';
 
 const fitViewSpy = vi.fn();
 const reactFlowProps: any[] = [];
+const adapterHandlers = {
+    onNodesChange: vi.fn(),
+    onEdgesChange: vi.fn(),
+    onConnect: vi.fn(),
+    onConnectStart: vi.fn(),
+    onConnectEnd: vi.fn(),
+    onMoveStart: vi.fn(),
+    onMoveEnd: vi.fn(),
+    onSelectionChange: vi.fn(),
+    isValidConnection: vi.fn(),
+};
 
 vi.mock('@timeax/digital-service-engine/workspace', () => ({
     useWorkspace: () => ({
@@ -33,15 +44,7 @@ vi.mock('./adapter.ts', () => ({
     useReactFlowAdapter: vi.fn(() => ({
         nodes: [{ id: 'a', position: { x: 100, y: 140 }, data: {}, type: 'field' }],
         edges: [],
-        onNodesChange: vi.fn(),
-        onEdgesChange: vi.fn(),
-        onConnect: vi.fn(),
-        onConnectStart: vi.fn(),
-        onConnectEnd: vi.fn(),
-        onMoveStart: vi.fn(),
-        onMoveEnd: vi.fn(),
-        onSelectionChange: vi.fn(),
-        isValidConnection: vi.fn(),
+        ...adapterHandlers,
         snapVector: undefined,
     })),
 }));
@@ -79,6 +82,7 @@ describe('CanvasSurface viewport behavior', () => {
     beforeEach(() => {
         reactFlowProps.length = 0;
         fitViewSpy.mockReset();
+        Object.values(adapterHandlers).forEach((handler) => handler.mockReset());
         vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
             cb(0);
             return 1;
@@ -113,5 +117,21 @@ describe('CanvasSurface viewport behavior', () => {
         await waitFor(() => {
             expect(fitViewSpy).not.toHaveBeenCalled();
         });
+    });
+
+    it('keeps controlled onNodesChange sequences bounded without callback cascades', () => {
+        renderSurface(createApi({ x: 0, y: 0, zoom: 1 }));
+
+        const props = reactFlowProps.at(-1);
+        expect(props).toBeTruthy();
+
+        props.onNodesChange?.([
+            { id: 'a', type: 'select', selected: true },
+            { id: 'a', type: 'position', position: { x: 160, y: 190 }, dragging: true },
+        ]);
+        props.onNodesChange?.([{ id: 'a', type: 'position', position: { x: 160, y: 190 }, dragging: false }]);
+
+        expect(adapterHandlers.onNodesChange).toHaveBeenCalledTimes(2);
+        expect(reactFlowProps.length).toBe(1);
     });
 });

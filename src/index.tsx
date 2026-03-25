@@ -70,6 +70,7 @@ function WorkspaceLayout({ onShare, onPlay, menu }: ServiceBuilderLayoutProps) {
                                 draggingServiceId={draggingServiceId}
                                 onServiceDragStateChange={(serviceId) => setDraggingServiceId(serviceId)}
                             />
+
                             <RightPanel onShare={onShare} onPlay={onPlay} />
                         </div>
 

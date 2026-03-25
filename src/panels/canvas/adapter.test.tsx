@@ -455,4 +455,117 @@ describe('react flow adapter', () => {
         expect(api.snapshot.mock.calls.length).toBeGreaterThanOrEqual(initialSnapshotCalls + 2);
         expect(result.current.nodes.find((node) => node.id === 'c::thread-1')?.position).toEqual({ x: 180, y: 230 });
     });
+
+    it('avoids redundant selection sync calls during repeated equivalent updates', async () => {
+        const { api, state, emit } = createApiMock('bind');
+        const { result } = renderHook(() => useReactFlowAdapter(api));
+
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 40));
+        });
+
+        await act(async () => {
+            result.current.onNodesChange([
+                {
+                    id: 'a',
+                    type: 'select',
+                    selected: true,
+                } as any,
+            ]);
+        });
+
+        expect(api.select).toHaveBeenCalledTimes(1);
+        expect(api.select).toHaveBeenLastCalledWith(['a']);
+
+        act(() => {
+            state.selection = new Set<string>(['a']);
+            emit('selection:change');
+        });
+
+        act(() => {
+            result.current.onNodesChange([
+                {
+                    id: 'a',
+                    type: 'select',
+                    selected: true,
+                } as any,
+            ]);
+        });
+
+        act(() => {
+            emit('selection:change');
+            emit('state:change');
+            emit('selection:change');
+        });
+
+        expect(api.select).toHaveBeenCalledTimes(1);
+    });
+
+    it('suppresses immediate onNodesChange selection echoes right after adapter-driven structural sync', async () => {
+        const { api, state, emit } = createApiMock('bind');
+        const { result } = renderHook(() => useReactFlowAdapter(api));
+
+        act(() => {
+            state.positions.a = { x: 240, y: 180 };
+            emit('state:change');
+        });
+
+        act(() => {
+            result.current.onNodesChange([
+                {
+                    id: 'a',
+                    type: 'select',
+                    selected: true,
+                } as any,
+            ]);
+        });
+
+        expect(api.select).toHaveBeenCalledTimes(0);
+
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 60));
+        });
+
+        expect(api.select).toHaveBeenCalledTimes(0);
+    });
+
+    it('handles decorator identity churn without forcing structural snapshot rebuilds', () => {
+        const { api } = createApiMock('bind', {
+            state: {
+                graph: {
+                    nodes: [{ id: 'a', kind: 'field', label: 'A' }],
+                    edges: [],
+                },
+                positions: {},
+                selection: new Set<string>(),
+                viewport: { x: 0, y: 0, zoom: 1 },
+                highlighted: new Set<string>(),
+            },
+        });
+
+        const decoratorV1 = vi.fn(() => ({ data: { marker: 'v1' } }));
+        const decoratorV2 = vi.fn(() => ({ data: { marker: 'v2' } }));
+        const decoratorV3 = vi.fn(() => ({ data: { marker: 'v3' } }));
+
+        const { result, rerender } = renderHook(
+            ({ nodeDecorators }) =>
+                useReactFlowAdapter(api, {
+                    nodeDecorators,
+                }),
+            {
+                initialProps: { nodeDecorators: decoratorV1 },
+            },
+        );
+
+        const baselineSnapshotCalls = api.snapshot.mock.calls.length;
+        expect((result.current.nodes[0].data as any).marker).toBe('v1');
+
+        rerender({ nodeDecorators: decoratorV2 });
+        rerender({ nodeDecorators: decoratorV3 });
+        rerender({ nodeDecorators: decoratorV2 });
+
+        expect(api.snapshot.mock.calls.length).toBe(baselineSnapshotCalls);
+        expect((result.current.nodes[0].data as any).marker).toBe('v2');
+        expect(api.select).not.toHaveBeenCalled();
+    });
 });
