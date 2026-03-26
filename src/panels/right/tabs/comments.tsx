@@ -82,7 +82,7 @@ const Comments = () => {
                                     })
                                     .finally(() => setValue(''));
                             }}
-                            className="cursor-pointer rounded-xl bg-blue-600 px-3 py-2 text-white transition hover:bg-blue-700"
+                            className="cursor-pointer rounded-full bg-blue-600 px-2 py-2 text-white transition hover:bg-blue-700"
                             disabled={!ws.boot.isReady}
                         >
                             <MdOutlineSend />

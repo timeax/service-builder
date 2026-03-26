@@ -29,6 +29,9 @@ type BaseData = {
 };
 type CanvasNode = Node<BaseData, 'tag' | 'field' | 'option' | 'comment'>;
 
+const ACTIVE_NODE_RING_CLASS = 'ring-2 ring-sky-300 shadow-lg shadow-sky-300/20 dark:ring-sky-400';
+const HIGHLIGHT_NODE_OUTLINE_CLASS = 'outline-2 outline-solid outline-amber-300 dark:outline-amber-200';
+
 function NodeShell({
     label,
     icon,
@@ -87,12 +90,12 @@ function NodeShell({
                 .join(' ')}
             className={
                 'group relative min-w-44 rounded-lg bg-white p-3 ring-1 ring-slate-200 shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-200 dark:bg-slate-900 dark:ring-slate-700 ' +
-                (selected ? 'ring-2 ring-blue-500 shadow-lg shadow-blue-500/20 ' : 'hover:shadow-lg ') +
-                (isActiveNode ? 'ring-2 ring-blue-500 shadow-lg shadow-blue-500/25 ' : '') +
+                (selected ? `${ACTIVE_NODE_RING_CLASS} ` : 'hover:shadow-lg ') +
+                (isActiveNode ? `${ACTIVE_NODE_RING_CLASS} ` : '') +
                 (isCurrentTag ? 'ring-2 ring-emerald-500 bg-emerald-50/70 shadow-lg shadow-emerald-500/25 dark:bg-emerald-500/10 ' : '') +
                 (isVisibleGroupField ? 'ring-2 ring-emerald-300 bg-emerald-50/35 dark:bg-emerald-500/5 ' : '') +
                 (isRelatedTag ? 'ring-1 ring-teal-300 bg-teal-50/25 dark:bg-teal-500/8 ' : '') +
-                (isManualHighlighted ? 'outline-2 outline-amber-400 outline-solid ' : '') +
+                (isManualHighlighted ? `${HIGHLIGHT_NODE_OUTLINE_CLASS} ` : '') +
                 (draggingService && canAssignService ? 'border border-dashed border-emerald-400 ' : '') +
                 (!canAssignService && draggingService ? 'opacity-70 ' : '') +
                 dimClass
@@ -197,12 +200,12 @@ function OptionNode(props: NodeProps<CanvasNode>) {
                     .join(' ')}
                 className={
                     'relative rounded-full border px-4 py-1.5 text-sm bg-white text-slate-800 transition dark:bg-slate-900 dark:text-slate-200 ' +
-                    (props.selected ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/15 ' : 'border-slate-300 dark:border-slate-700 ') +
-                    (props.data.isActiveNode ? 'ring-2 ring-blue-500 shadow-lg shadow-blue-500/25 ' : '') +
+                    (props.selected ? 'border-sky-300 bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:border-sky-400 ' : 'border-slate-300 dark:border-slate-700 ') +
+                    (props.data.isActiveNode ? `${ACTIVE_NODE_RING_CLASS} ` : '') +
                     (props.data.isCurrentTag ? 'ring-2 ring-emerald-500 bg-emerald-50/70 dark:bg-emerald-500/10 ' : '') +
                     (props.data.isVisibleGroupField ? 'ring-2 ring-emerald-300 bg-emerald-50/35 dark:bg-emerald-500/5 ' : '') +
                     (props.data.isRelatedTag ? 'ring-1 ring-teal-300 bg-teal-50/25 dark:bg-teal-500/8 ' : '') +
-                    (props.data.isManualHighlighted ? 'outline-2 outline-solid outline-amber-400 ' : '') +
+                    (props.data.isManualHighlighted ? `${HIGHLIGHT_NODE_OUTLINE_CLASS} ` : '') +
                     (props.data.focusDimLevel === 'soft'
                         ? 'opacity-80 '
                         : props.data.focusDimLevel === 'medium'
@@ -238,7 +241,12 @@ function CommentNode(props: NodeProps<CanvasNode>) {
     const thread = props.data.thread;
     const main = thread?.messages?.find((message) => message.isMain) ?? thread?.messages?.[0];
     return (
-        <div className="h-48 w-64 rounded-lg border border-[#E0E0E0] bg-[#FEFBEA] shadow-md transition-all hover:shadow-lg dark:border-[#555] dark:bg-[#4a4a38]">
+        <div
+            className={
+                'h-48 w-64 rounded-lg border border-[#E0E0E0] bg-[#FEFBEA] shadow-md transition-all hover:shadow-lg dark:border-[#555] dark:bg-[#4a4a38] ' +
+                (props.selected ? `${ACTIVE_NODE_RING_CLASS} ` : '')
+            }
+        >
             <div className="flex items-center gap-2 border-b border-[#E0E0E0]/70 px-3 py-2 text-xs font-medium text-slate-600 dark:border-[#555] dark:text-slate-300">
                 <BsChatSquareQuote />
                 <span>{main?.authorName ?? 'Comment'}</span>

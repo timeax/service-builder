@@ -160,7 +160,6 @@ export default function CanvasPanel({
 
     function setSnapshot(event: any) {
         const nextSnapshot = event?.snapshot;
-        console.log("this is the changed...")
         if (!nextSnapshot) return;
 
         const nextHash = hashSnapshot(nextSnapshot);
@@ -177,7 +176,6 @@ export default function CanvasPanel({
         const catalogChange = canvas.api.on('catalog:change', setSnapshot);
 
         const offEditorChange = (canvas.api.on as any)('editor:change', (event: EditorChangeEvent) => {
-            console.log("this snapshot changed via the editor...")
             setSnapshot(event);
             if (event?.reason === 'mutation' || event?.reason === 'transaction') {
                 setHistoryState({ canUndo: true, canRedo: false });

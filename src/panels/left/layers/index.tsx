@@ -13,6 +13,7 @@ import { LuTags } from 'react-icons/lu';
 import { MdOutlineAdd } from 'react-icons/md';
 import { RxInput } from 'react-icons/rx';
 import { VscNewFolder } from 'react-icons/vsc';
+import { applyFieldTreeReorder, applyTagTreeReorder, canDropFieldsSameParentOnly, canDropSameParentOnly } from './reorder.ts';
 
 function filterTree<T>(nodes: Array<TreeNode<T>>, query: string): Array<TreeNode<T>> {
     if (!query.trim()) return nodes;
@@ -62,6 +63,8 @@ const Layers = () => {
     };
 
     const handleTagChange: SortTreeProps<Tag>['onChange'] = (_next, detail) => {
+        if (applyTagTreeReorder(detail as any, canvas.api.editor as any)) return;
+
         detail.preventDefault?.();
 
         if (detail.type === 'update') {
@@ -76,6 +79,18 @@ const Layers = () => {
     };
 
     const handleFieldChange: SortTreeProps<Field | FieldOption>['onChange'] = (_next, detail) => {
+        if (
+            applyFieldTreeReorder(detail as any, {
+                editor: canvas.api.editor as any,
+                currentTagId: canvas.api.selection.currentTag?.() ?? 't:root',
+                contextFieldOrder: canvas.layers.fields
+                    .map((node) => String(node.id))
+                    .filter((id) => !id.startsWith('o:')),
+            })
+        ) {
+            return;
+        }
+
         if (detail.type === 'update') {
             detail.preventDefault();
             canvas.api.editor.editLabel(detail.node.id as string, detail.node.title);
@@ -178,6 +193,7 @@ const Layers = () => {
                                     value={canvas.selectionInfo.tagIds as string[]}
                                     rowClassName="mb-1 rounded-xl border border-transparent px-1 hover:border-slate-200 hover:bg-slate-50 dark:hover:border-slate-800 dark:hover:bg-slate-900/70"
                                     data={tags}
+                                    canDrop={canDropSameParentOnly}
                                     activeClassName={(e) =>
                                         e.node.id === canvas.activeId
                                             ? 'border-blue-300! bg-blue-50/80 dark:border-blue-500/40! dark:bg-blue-500/10!'
@@ -310,6 +326,7 @@ const Layers = () => {
                                 value={[...canvas.selectionInfo.fieldIds, ...canvas.selectionInfo.optionIds] as string[]}
                                 rowClassName="mb-1 rounded-xl border border-transparent px-1 hover:border-slate-200 hover:bg-slate-50 dark:hover:border-slate-800 dark:hover:bg-slate-900/70"
                                 data={fields}
+                                canDrop={canDropFieldsSameParentOnly}
                                 onChange={handleFieldChange as any}
                                 onContextMenu={(detail) => {
                                     const nodeId = String(detail.node.id);
