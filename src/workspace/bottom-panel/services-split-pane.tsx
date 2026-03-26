@@ -121,7 +121,7 @@ export function ServicesSplitPane(props: ServicesSplitPaneProps) {
                             ) : null}
                         </div>
 
-                        <ScrollArea className="h-[calc(var(--bottom-panel-height)-15rem)] max-h-[calc(var(--bottom-panel-height)-15rem)] min-h-0 flex-1">
+                        <ScrollArea className="h-[calc(var(--bottom-panel-height)-14.5rem)] max-h-[calc(var(--bottom-panel-height)-14.5rem)] min-h-0 flex-1">
                             <div className="space-y-2 p-3 pl-0">
                                 {props.rows.length === 0 ? (
                                     <EmptyState title={emptyTitle} description={emptyDescription} />
@@ -202,7 +202,7 @@ export function ServicesSplitPane(props: ServicesSplitPaneProps) {
                             </p>
                         </div>
 
-                        <ScrollArea className="h-[calc(var(--bottom-panel-height)-15rem)] min-h-0 flex-1">
+                        <ScrollArea className="h-[calc(var(--bottom-panel-height)-14.5rem)] max-h-[calc(var(--bottom-panel-height)-14.5rem)] min-h-0 flex-1">
                             <div className="p-5">
                                 {props.detailRow ? (
                                     <ServiceDetailCard
