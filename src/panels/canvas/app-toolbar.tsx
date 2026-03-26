@@ -8,6 +8,7 @@ import { toolbarIconButtonClass, toolbarSplitSurfaceClass, toolbarSurfaceClass }
 export function AppToolbar({
     bootActionReason,
     editDisabledReason,
+    publishDisabledReason,
     commentDisabledReason,
     errors,
     bottomPanelOpen,
@@ -35,6 +36,7 @@ export function AppToolbar({
 }: {
     bootActionReason?: string;
     editDisabledReason?: string;
+    publishDisabledReason?: string;
     commentDisabledReason?: string;
     errors: UseErrorsReturn;
     bottomPanelOpen: boolean;
@@ -84,7 +86,7 @@ export function AppToolbar({
                     disabled={pendingAction === 'publish' || !canPublish}
                     title={
                         (bootActionReason && !canPublish ? bootActionReason : undefined) ??
-                        (!canPublish ? editDisabledReason : undefined) ??
+                        (!canPublish ? publishDisabledReason : undefined) ??
                         'Publish commit'
                     }
                 >

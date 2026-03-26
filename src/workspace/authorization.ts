@@ -1,14 +1,35 @@
 import type { Actor, Author, BranchParticipant, PermissionsMap } from '@timeax/digital-service-engine/workspace';
+import {
+    can,
+    canCreateBranch,
+    canDeleteBranch,
+    canEditBranch,
+    canManageBranches,
+    canManageTemplates,
+    canMergeBranch,
+    canPublishBranch,
+    canReadComments,
+    canReadWorkspace,
+    canWriteComments,
+    canWriteTemplates,
+    toBuilderPermissionsMap,
+    type BuilderPermission,
+    type BuilderPermissionsMap,
+} from '@/workspace/permissions.ts';
 
 export type WorkspaceAuthorization = {
     authorId: string;
     participant: BranchParticipant | null;
+    permissions: BuilderPermissionsMap;
     canReadWorkspace: boolean;
     canEditBranchContent: boolean;
     canCreateBranch: boolean;
     canMergeBranches: boolean;
+    canPublishBranches: boolean;
+    canDeleteBranches: boolean;
     canManageBranches: boolean;
     canWriteTemplates: boolean;
+    canManageTemplates: boolean;
     canCommentRead: boolean;
     canCommentWrite: boolean;
 };
@@ -19,6 +40,8 @@ export type AuthorizationAction =
     | 'template-write'
     | 'branch-create'
     | 'branch-merge'
+    | 'branch-publish'
+    | 'branch-delete'
     | 'branch-manage'
     | 'comment-read'
     | 'comment-write';
@@ -30,9 +53,9 @@ type DeriveWorkspaceAuthorizationArgs = {
     authors?: readonly Author[] | null;
 };
 
-export function hasPermission(permissions: PermissionsMap | null | undefined, key: string): boolean {
-    if (!permissions) return false;
-    return permissions[key] === true;
+export function hasPermission(permissions: PermissionsMap | null | undefined, key: BuilderPermission): boolean {
+    const map = toBuilderPermissionsMap(permissions);
+    return can(map, key);
 }
 
 export function resolveActorAuthorId(actor: Actor | null | undefined, authors?: readonly Author[] | null): string {
@@ -50,27 +73,35 @@ export function deriveWorkspaceAuthorization(args: DeriveWorkspaceAuthorizationA
     const { actor, permissions = null, participants = null, authors = null } = args;
     const authorId = resolveActorAuthorId(actor, authors);
     const participant = (participants ?? []).find((row) => row.authorId === authorId) ?? null;
+    const permissionMap = toBuilderPermissionsMap(permissions);
 
-    const canReadWorkspace = hasPermission(permissions, 'workspace.read');
-    const canEditBranchContent = hasPermission(permissions, 'workspace.write') && participant?.canWrite === true;
-    const canCreateBranch = canEditBranchContent && hasPermission(permissions, 'branches.create');
-    const canMergeBranches = canEditBranchContent && hasPermission(permissions, 'branches.merge');
-    const canManageBranches = canCreateBranch || canMergeBranches || canEditBranchContent;
-    const canWriteTemplates = canEditBranchContent && hasPermission(permissions, 'templates.write');
-    const canCommentRead = canReadWorkspace && hasPermission(permissions, 'comments.read');
-    const canCommentWrite = canReadWorkspace && hasPermission(permissions, 'comments.write');
+    const readWorkspace = canReadWorkspace(permissionMap);
+    const editBranch = canEditBranch(permissionMap);
+    const createBranch = canCreateBranch(permissionMap);
+    const mergeBranches = canMergeBranch(permissionMap);
+    const publishBranches = canPublishBranch(permissionMap);
+    const deleteBranches = canDeleteBranch(permissionMap);
+    const manageBranches = canManageBranches(permissionMap);
+    const writeTemplates = canWriteTemplates(permissionMap);
+    const manageTemplates = canManageTemplates(permissionMap);
+    const commentRead = canReadComments(permissionMap);
+    const commentWrite = canWriteComments(permissionMap);
 
     return {
         authorId,
         participant,
-        canReadWorkspace,
-        canEditBranchContent,
-        canCreateBranch,
-        canMergeBranches,
-        canManageBranches,
-        canWriteTemplates,
-        canCommentRead,
-        canCommentWrite,
+        permissions: permissionMap,
+        canReadWorkspace: readWorkspace,
+        canEditBranchContent: editBranch,
+        canCreateBranch: createBranch,
+        canMergeBranches: mergeBranches,
+        canPublishBranches: publishBranches,
+        canDeleteBranches: deleteBranches,
+        canManageBranches: manageBranches,
+        canWriteTemplates: writeTemplates,
+        canManageTemplates: manageTemplates,
+        canCommentRead: readWorkspace && commentRead,
+        canCommentWrite: readWorkspace && commentWrite,
     };
 }
 
@@ -78,17 +109,19 @@ export function getAuthorizationDecision(auth: WorkspaceAuthorization, action: A
     switch (action) {
         case 'branch-content-edit':
         case 'snapshot-write':
-            return auth.canEditBranchContent
-                ? { ok: true }
-                : { ok: false, reason: 'Editing is disabled. You need workspace write access and branch write access.' };
+            return auth.canEditBranchContent ? { ok: true } : { ok: false, reason: 'Editing is disabled. You need branches.write.' };
         case 'template-write':
-            return auth.canWriteTemplates ? { ok: true } : { ok: false, reason: 'Template editing requires templates.write and branch edit access.' };
+            return auth.canWriteTemplates ? { ok: true } : { ok: false, reason: 'Template editing requires templates.write.' };
         case 'branch-create':
-            return auth.canCreateBranch ? { ok: true } : { ok: false, reason: 'Branch creation requires branches.create and branch edit access.' };
+            return auth.canCreateBranch ? { ok: true } : { ok: false, reason: 'Branch creation requires branches.create.' };
         case 'branch-merge':
-            return auth.canMergeBranches ? { ok: true } : { ok: false, reason: 'Branch merge requires branches.merge and branch edit access.' };
+            return auth.canMergeBranches ? { ok: true } : { ok: false, reason: 'Branch merge requires branches.merge.' };
+        case 'branch-publish':
+            return auth.canPublishBranches ? { ok: true } : { ok: false, reason: 'Branch publish requires branches.publish.' };
+        case 'branch-delete':
+            return auth.canDeleteBranches ? { ok: true } : { ok: false, reason: 'Branch deletion requires branches.delete.' };
         case 'branch-manage':
-            return auth.canManageBranches ? { ok: true } : { ok: false, reason: 'Branch management requires branch edit access.' };
+            return auth.canManageBranches ? { ok: true } : { ok: false, reason: 'Branch management requires branches.manage.' };
         case 'comment-read':
             return auth.canCommentRead ? { ok: true } : { ok: false, reason: 'Comment read access is disabled for this actor.' };
         case 'comment-write':

@@ -51,6 +51,8 @@ async function authorize(
         | 'template-write'
         | 'branch-create'
         | 'branch-merge'
+        | 'branch-publish'
+        | 'branch-delete'
         | 'branch-manage'
         | 'comment-write',
     branchId: string | undefined,
@@ -86,7 +88,7 @@ export const workspaceBackend = {
             return baseBackend.branches.merge(workspaceId, sourceId, targetId);
         },
         delete: async (workspaceId: string, branchId: string) => {
-            const check = await authorize('branch-manage', branchId);
+            const check = await authorize('branch-delete', branchId);
             if (!check.ok) return check;
             return baseBackend.branches.delete(workspaceId, branchId);
         },
@@ -145,7 +147,7 @@ export const workspaceBackend = {
         },
         publish: async (params: { actorId: string } & Record<string, unknown>) => {
             if (params.actorId !== workspaceActor.id) return forbidden('Snapshot mutation denied for unknown actor.', { actorId: params.actorId });
-            const check = await authorize('snapshot-write', undefined);
+            const check = await authorize('branch-publish', undefined);
             if (!check.ok) return check;
             return baseBackend.snapshots.publish(params as any);
         },

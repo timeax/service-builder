@@ -5,7 +5,7 @@ const workspaceState: any = {
     info: { id: 'ws-1' },
     branches: { currentId: 'branch:main' },
     actor: { id: 'actor:davy', name: 'Davy', meta: { authorId: 'author:davy' } },
-    permissions: { data: { 'workspace.read': true, 'workspace.write': true, 'comments.read': true, 'comments.write': true } },
+    permissions: { data: { 'workspace.read': true, 'branches.write': true, 'branches.publish': true, 'comments.read': true, 'comments.write': true } },
     participants: {
         data: [{ authorId: 'author:davy', canRead: true, canWrite: true }],
     },

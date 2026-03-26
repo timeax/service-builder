@@ -25,12 +25,16 @@ function makeParticipant(canWrite: boolean): BranchParticipant {
 }
 
 describe('deriveWorkspaceAuthorization', () => {
-    it('allows full editing for an editor with matching permissions and participant write access', () => {
+    it('allows full editing for an editor with branch write permissions', () => {
         const permissions: PermissionsMap = {
             'workspace.read': true,
-            'workspace.write': true,
+            'branches.read': true,
             'branches.create': true,
+            'branches.write': true,
+            'branches.delete': true,
             'branches.merge': true,
+            'branches.publish': true,
+            'branches.manage': true,
             'templates.write': true,
             'comments.read': true,
             'comments.write': true,
@@ -47,14 +51,18 @@ describe('deriveWorkspaceAuthorization', () => {
         expect(auth.canWriteTemplates).toBe(true);
         expect(auth.canCreateBranch).toBe(true);
         expect(auth.canMergeBranches).toBe(true);
+        expect(auth.canPublishBranches).toBe(true);
+        expect(auth.canDeleteBranches).toBe(true);
         expect(auth.canCommentWrite).toBe(true);
         expect(getAuthorizationDecision(auth, 'branch-content-edit').ok).toBe(true);
+        expect(getAuthorizationDecision(auth, 'branch-publish').ok).toBe(true);
     });
 
     it('blocks branch edits for read-only users while still allowing comment writes when permitted', () => {
         const permissions: PermissionsMap = {
             'workspace.read': true,
-            'workspace.write': false,
+            'branches.read': true,
+            'branches.write': false,
             'templates.write': false,
             'comments.read': true,
             'comments.write': true,

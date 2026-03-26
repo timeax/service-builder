@@ -10,6 +10,7 @@ import { type MouseEventHandler, type ReactNode, useEffect, useMemo, useState } 
 import { MdCheck, MdOutlineFileCopy, MdOutlineRefresh } from 'react-icons/md';
 import { RiGitBranchLine, RiGitMergeLine, RiLoader4Line } from 'react-icons/ri';
 import { getBootActionReason } from '@/workspace/boot.ts';
+import { deriveWorkspaceAuthorization } from '@/workspace/authorization.ts';
 
 type PermissionReason = {
     allowed: boolean;
@@ -26,21 +27,6 @@ function normalizeKey(input: string) {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
-}
-
-function getActorAuthorId(ws: ReturnType<typeof useWorkspace>) {
-    const actorMetaAuthorId =
-        ws.actor?.meta && typeof (ws.actor.meta as Record<string, unknown>).authorId === 'string'
-            ? ((ws.actor.meta as Record<string, unknown>).authorId as string)
-            : undefined;
-
-    if (actorMetaAuthorId) return actorMetaAuthorId;
-    if ((ws.authors.data ?? []).some((author) => author.id === ws.actor.id)) return ws.actor.id;
-    return ws.actor.id;
-}
-
-function resolveBranchParticipant(authorId: string, participants: ReturnType<typeof useWorkspace>['participants']['data']) {
-    return (participants ?? []).find((participant) => participant.authorId === authorId);
 }
 
 function ActionIconButton({
@@ -95,28 +81,38 @@ const Drafts = ({ trigger }: DraftsProps) => {
     const [createFromId, setCreateFromId] = useState<string | undefined>(ws.branches.currentId);
     const [actionKey, setActionKey] = useState<string | null>(null);
 
-    const workspaceRead = ws.permissions.data?.['workspace.read'] ?? false;
-    const canCreateBranch = ws.permissions.data?.['branches.create'] ?? false;
-    const canMergeBranches = ws.permissions.data?.['branches.merge'] ?? false;
-    const canWriteWorkspace = ws.permissions.data?.['workspace.write'] ?? false;
+    const auth = useMemo(
+        () =>
+            deriveWorkspaceAuthorization({
+                actor: ws.actor,
+                permissions: ws.permissions?.data,
+                participants: ws.participants?.data,
+                authors: ws.authors?.data,
+            }),
+        [ws.actor, ws.authors?.data, ws.participants?.data, ws.permissions?.data],
+    );
+    const workspaceRead = auth.canReadWorkspace;
+    const branchesReadable = auth.permissions['branches.read'] === true;
+    const canCreateBranch = auth.canCreateBranch;
+    const canMergeBranches = auth.canMergeBranches;
+    const canManageBranches = auth.canManageBranches;
+    const canDeleteBranches = auth.canDeleteBranches;
+    const canWriteBranchContent = auth.canEditBranchContent;
 
     const currentBranch = ws.branches.data?.find((branch) => branch.id === ws.branches.currentId);
-    const actorAuthorId = getActorAuthorId(ws);
 
     const branchItems = useMemo(() => {
         return (ws.branches.data ?? []).map((branch) => {
-            const participant = branch.id === ws.branches.currentId ? resolveBranchParticipant(actorAuthorId, ws.participants.data) : null;
-            const canRead = branch.id === ws.branches.currentId ? true : workspaceRead;
-            const canWrite = branch.id === ws.branches.currentId ? (participant?.canWrite ?? false) : canWriteWorkspace;
+            const canRead = branchesReadable && workspaceRead;
+            const canWrite = canWriteBranchContent;
 
             return {
                 branch,
-                participant,
                 canRead,
                 canWrite,
             };
         });
-    }, [actorAuthorId, canWriteWorkspace, workspaceRead, ws.branches.currentId, ws.branches.data, ws.participants.data]);
+    }, [branchesReadable, canWriteBranchContent, workspaceRead, ws.branches.data]);
 
     const visibleBranches = useMemo(() => {
         const lower = query.trim().toLowerCase();
@@ -242,8 +238,8 @@ const Drafts = ({ trigger }: DraftsProps) => {
             ? { allowed: false, reason: bootActionReason ?? 'Workspace data is still loading.' }
             : item.branch.isMain
               ? { allowed: false, reason: 'This branch is already the main branch.' }
-              : !canWriteWorkspace
-                ? { allowed: false, reason: 'Setting the main branch requires workspace write access.' }
+              : !canManageBranches
+                ? { allowed: false, reason: 'Setting the main branch requires branches.manage.' }
                 : !item.canWrite
                   ? { allowed: false, reason: 'You need write access to this branch to make it main.' }
                   : { allowed: true };
@@ -252,8 +248,8 @@ const Drafts = ({ trigger }: DraftsProps) => {
             ? { allowed: false, reason: bootActionReason ?? 'Workspace data is still loading.' }
             : item.branch.isMain
               ? { allowed: false, reason: 'Set another branch as main before deleting this branch.' }
-              : !canWriteWorkspace
-                ? { allowed: false, reason: 'Deleting branches requires workspace write access.' }
+              : !canDeleteBranches
+                ? { allowed: false, reason: 'Deleting branches requires branches.delete.' }
                 : !item.canWrite
                   ? { allowed: false, reason: 'You need write access to delete this branch.' }
                   : { allowed: true };

@@ -13,6 +13,14 @@ export function Node<T = unknown>({ node, matched, isEditing, onCommit, onCancel
     const spanRef = React.useRef<HTMLSpanElement>(null);
 
     React.useEffect(() => {
+        const span = spanRef.current;
+        if (!span || isEditing) return;
+        if (span.textContent !== node.title) {
+            span.textContent = node.title;
+        }
+    }, [isEditing, node.title]);
+
+    React.useEffect(() => {
         if (isEditing && spanRef.current) {
             spanRef.current.focus();
             // Move cursor to end
@@ -25,13 +33,13 @@ export function Node<T = unknown>({ node, matched, isEditing, onCommit, onCancel
         }
     }, [isEditing]);
 
+    const commitFromDom = React.useCallback(() => {
+        if (!isEditing || !onCommit || !spanRef.current) return;
+        onCommit(spanRef.current.innerText || '');
+    }, [isEditing, onCommit]);
+
     const handleBlur = () => {
-        const edited = spanRef.current.innerText;
-        spanRef.current.innerText = node.title;
-        //---
-        if (isEditing && onCommit && spanRef.current) {
-            onCommit(edited);
-        }
+        commitFromDom();
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -39,7 +47,7 @@ export function Node<T = unknown>({ node, matched, isEditing, onCommit, onCancel
 
         if (e.key === 'Enter') {
             e.preventDefault();
-            onCommit?.(spanRef.current?.innerText || '');
+            spanRef.current?.blur();
         } else if (e.key === 'Escape') {
             e.preventDefault();
             onCancel?.();

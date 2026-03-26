@@ -131,7 +131,9 @@ export default function CanvasPanel({
 
     const canEditBranchContent = auth.canEditBranchContent;
     const canCommentWrite = auth.canCommentWrite;
+    const canPublishBranch = auth.canPublishBranches;
     const editDecision = getAuthorizationDecision(auth, 'branch-content-edit');
+    const publishDecision = getAuthorizationDecision(auth, 'branch-publish');
     const commentWriteDecision = getAuthorizationDecision(auth, 'comment-write');
 
     const emitPermissionDenied = useCallback(
@@ -322,7 +324,7 @@ export default function CanvasPanel({
     const hasChanges = currentSnapshotHash !== persistedBaselineHash;
 
     const canSave = hasChanges && canEditBranchContent;
-    const canPublish = !!ws.snapshot.draft && !hasChanges && canEditBranchContent;
+    const canPublish = !!ws.snapshot.draft && !hasChanges && canPublishBranch;
 
     const importProps = async (nextProps: ServiceProps) => {
         if (!canEditBranchContent) {
@@ -661,6 +663,7 @@ export default function CanvasPanel({
                     <AppToolbar
                         bootActionReason={bootActionReason}
                         editDisabledReason={!canEditBranchContent ? (editDecision.reason ?? 'Editing is disabled for this actor.') : undefined}
+                        publishDisabledReason={!canPublishBranch ? (publishDecision.reason ?? 'Publishing is disabled for this actor.') : undefined}
                         commentDisabledReason={!canCommentWrite ? (commentWriteDecision.reason ?? 'Comment write access is disabled for this actor.') : undefined}
                         errors={errors}
                         showErrorBadges={showErrorBadges}
@@ -711,8 +714,8 @@ export default function CanvasPanel({
                             }
                         }}
                         onPublish={async () => {
-                            if (!canEditBranchContent) {
-                                emitPermissionDenied(editDecision.reason ?? 'Editing is disabled for this actor.', 'snapshot-publish');
+                            if (!canPublishBranch) {
+                                emitPermissionDenied(publishDecision.reason ?? 'Publishing is disabled for this actor.', 'snapshot-publish');
                                 return;
                             }
                             if (!canPublish) return;
