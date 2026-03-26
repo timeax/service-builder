@@ -8,7 +8,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog.tsx';
-import { useCanvas } from '@timeax/digital-service-engine/workspace';
+import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ContextMenu } from './node-context/components/ContextMenu.tsx';
@@ -28,6 +28,7 @@ import type {
     OpenNoticeManagerInput,
 } from './node-context/types.ts';
 import { inferNodeKindFromId, toDraft } from './node-context/utils.ts';
+import { deriveWorkspaceAuthorization, getAuthorizationDecision } from '@/workspace/authorization.ts';
 
 type NodeContextMenuValue = {
     openNodeContextMenu: (input: OpenNodeContextMenuInput) => void;
@@ -44,6 +45,7 @@ const NodeContextMenuContext = createContext<NodeContextMenuValue | null>(null);
 
 export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
     const canvas = useCanvas();
+    const ws = useWorkspace();
 
     const [target, setTarget] = useState<NodeContextTarget | null>(null);
     const [dialogTarget, setDialogTarget] = useState<NodeContextTarget | null>(null);
@@ -79,6 +81,17 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
         },
         [canvas.api, canvas.setActive],
     );
+    const auth = useMemo(
+        () =>
+            deriveWorkspaceAuthorization({
+                actor: ws.actor,
+                permissions: ws.permissions?.data,
+                participants: ws.participants?.data,
+                authors: ws.authors?.data,
+            }),
+        [ws.actor, ws.authors?.data, ws.participants?.data, ws.permissions?.data],
+    );
+    const editDecision = getAuthorizationDecision(auth, 'branch-content-edit');
 
     const openNodeContextMenu = useCallback(
         (input: OpenNodeContextMenuInput) => {
@@ -254,6 +267,10 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
 
     const handleRenameCommit = useCallback(() => {
         if (!dialogTarget) return;
+        if (!auth.canEditBranchContent) {
+            emitNodeError(editDecision.reason ?? 'Editing is disabled for this actor.', { action: 'rename-node' });
+            return;
+        }
         const next = renameValue.trim();
         if (!next) return;
         try {
@@ -267,10 +284,14 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
         }
         setRenameOpen(false);
         setDialogTarget(null);
-    }, [canvas.api.editor, dialogTarget, emitNodeError, renameValue]);
+    }, [auth.canEditBranchContent, canvas.api.editor, dialogTarget, editDecision.reason, emitNodeError, renameValue]);
 
     const handleDelete = useCallback(() => {
         if (!dialogTarget) return;
+        if (!auth.canEditBranchContent) {
+            emitNodeError(editDecision.reason ?? 'Editing is disabled for this actor.', { action: 'delete-node' });
+            return;
+        }
         try {
             canvas.api.editor.remove(dialogTarget.nodeId);
         } catch (error) {
@@ -282,7 +303,7 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
         }
         setDeleteOpen(false);
         setDialogTarget(null);
-    }, [canvas.api.editor, dialogTarget, emitNodeError]);
+    }, [auth.canEditBranchContent, canvas.api.editor, dialogTarget, editDecision.reason, emitNodeError]);
 
     const anchorStyle = useMemo(() => {
         if (!target || typeof window === 'undefined') return null;

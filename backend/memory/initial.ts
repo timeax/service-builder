@@ -9,10 +9,11 @@ import { policies } from './seed/policies';
 import { services } from './seed/services';
 import { snapshotsByBranch } from './seed/snapshots';
 import { templates } from './seed/templates';
+import { workspaceActor } from './seed/meta';
 
 export const workspaceInitial: WorkspaceProviderProps['initial'] = {
     authors,
-    permissions,
+    permissions: permissions[workspaceActor.id] ?? {},
     branches,
     mainId,
 

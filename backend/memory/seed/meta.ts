@@ -4,7 +4,7 @@ export const workspaceActor: Actor = {
     id: 'actor:davy',
     name: 'Davy',
     roles: ['owner', 'editor', 'admin'],
-    meta: { env: 'memory-test' },
+    meta: { env: 'memory-test', authorId: 'author:davy' },
 };
 
 export const workspaceInfo = {

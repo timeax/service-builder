@@ -1,4 +1,5 @@
 import { getNodePropertyCapabilities } from '@/panels/right/partials/properties/components/node-capabilities.ts';
+import { deriveWorkspaceAuthorization, getAuthorizationDecision } from '@/workspace/authorization.ts';
 import { useFallbackQuickAdd } from '@/workspace/fallback-quick-add.tsx';
 import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { useCallback, useMemo } from 'react';
@@ -49,6 +50,34 @@ export function useNodeActions(
             canvas.api.select([nodeId]);
         },
         [canvas.api, canvas.setActive],
+    );
+    const auth = useMemo(
+        () =>
+            deriveWorkspaceAuthorization({
+                actor: ws.actor,
+                permissions: ws.permissions?.data,
+                participants: ws.participants?.data,
+                authors: ws.authors?.data,
+            }),
+        [ws.actor, ws.authors?.data, ws.participants?.data, ws.permissions?.data],
+    );
+    const editDecision = getAuthorizationDecision(auth, 'branch-content-edit');
+    const templateDecision = getAuthorizationDecision(auth, 'template-write');
+    const ensureBranchEdit = useCallback(
+        (action: string) => {
+            if (auth.canEditBranchContent) return true;
+            emitNodeError(editDecision.reason ?? 'Editing is disabled for this actor.', { action });
+            return false;
+        },
+        [auth.canEditBranchContent, editDecision.reason, emitNodeError],
+    );
+    const ensureTemplateWrite = useCallback(
+        (action: string) => {
+            if (auth.canWriteTemplates) return true;
+            emitNodeError(templateDecision.reason ?? 'Template editing is disabled for this actor.', { action });
+            return false;
+        },
+        [auth.canWriteTemplates, emitNodeError, templateDecision.reason],
     );
     const resolveCurrentTagId = useCallback(() => {
         return canvas.api.selection.currentTag?.() ?? 't:root';
@@ -161,6 +190,7 @@ export function useNodeActions(
 
     const handleDuplicate = useCallback(() => {
         if (!target) return;
+        if (!ensureBranchEdit('duplicate-node')) return;
         try {
             const node = canvas.selector.getNode(target.nodeId);
             let ref: { kind: 'tag'; id: string } | { kind: 'field'; id: string } | { kind: 'option'; id: string; fieldId: string };
@@ -177,7 +207,7 @@ export function useNodeActions(
             });
         }
         setTarget(null);
-    }, [canvas.api.editor, canvas.selector, emitNodeError, focusNode, target, setTarget]);
+    }, [canvas.api.editor, canvas.selector, emitNodeError, ensureBranchEdit, focusNode, target, setTarget]);
 
     const handleCopyId = useCallback(async () => {
         if (!target) return;
@@ -194,6 +224,7 @@ export function useNodeActions(
 
     const handleSaveAsTemplate = useCallback(async () => {
         if (!target || target.nodeKind !== 'field') return;
+        if (!ensureTemplateWrite('save-field-template')) return;
         try {
             const node = canvas.selector.getNode(target.nodeId);
             if (!node || node.kind !== 'field') return;
@@ -232,7 +263,7 @@ export function useNodeActions(
             });
         }
         setTarget(null);
-    }, [canvas.selector, emitNodeError, target, ws, setTarget]);
+    }, [canvas.selector, emitNodeError, ensureTemplateWrite, target, ws, setTarget]);
 
     const isFieldOptionsShown = useMemo(() => {
         if (!target || target.nodeKind !== 'field') return false;
@@ -245,6 +276,7 @@ export function useNodeActions(
 
     const handleToggleFieldOptions = useCallback(() => {
         if (!target || target.nodeKind !== 'field') return;
+        if (!ensureBranchEdit('toggle-field-option-nodes')) return;
         const api = canvas.api as any;
         try {
             if (typeof api.isFieldOptionsShown === 'function' && typeof api.setFieldOptionsShown === 'function') {
@@ -271,7 +303,7 @@ export function useNodeActions(
             });
         }
         setTarget(null);
-    }, [canvas.api, emitNodeError, setTarget, target]);
+    }, [canvas.api, emitNodeError, ensureBranchEdit, setTarget, target]);
 
     const fallbackTarget = useMemo(() => {
         if (!target) return null;
@@ -319,6 +351,7 @@ export function useNodeActions(
     const handleMove = useCallback(
         (direction: MoveDirection) => {
             if (!target) return;
+            if (!ensureBranchEdit('move-node-global')) return;
             try {
                 if (target.nodeKind === 'tag') {
                     if (direction === 'up' && !moveState.canMoveUp) return;
@@ -364,12 +397,13 @@ export function useNodeActions(
                 });
             }
         },
-        [canvas.api.builder, canvas.api.editor, emitNodeError, moveFieldInGlobalOrder, moveState.canMoveDown, moveState.canMoveUp, setTarget, target],
+        [canvas.api.builder, canvas.api.editor, emitNodeError, ensureBranchEdit, moveFieldInGlobalOrder, moveState.canMoveDown, moveState.canMoveUp, setTarget, target],
     );
 
     const handleMoveInContext = useCallback(
         (direction: MoveDirection) => {
             if (!target || target.nodeKind !== 'field') return;
+            if (!ensureBranchEdit('move-field-context')) return;
             if (direction === 'up' && !moveState.canMoveContextUp) return;
             if (direction === 'down' && !moveState.canMoveContextDown) return;
             const currentTagId = resolveCurrentTagId();
@@ -416,6 +450,7 @@ export function useNodeActions(
             resolveFieldContextOrder,
             setTarget,
             target,
+            ensureBranchEdit,
         ],
     );
 
@@ -445,6 +480,17 @@ export function useDropHandling(
 ) {
     const canvas = useCanvas();
     const ws = useWorkspace();
+    const auth = useMemo(
+        () =>
+            deriveWorkspaceAuthorization({
+                actor: ws.actor,
+                permissions: ws.permissions?.data,
+                participants: ws.participants?.data,
+                authors: ws.authors?.data,
+            }),
+        [ws.actor, ws.authors?.data, ws.participants?.data, ws.permissions?.data],
+    );
+    const editDecision = getAuthorizationDecision(auth, 'branch-content-edit');
 
     const parseDropSource = useCallback((dataTransfer: DataTransfer): DropSource | null => {
         const serviceId = dataTransfer.getData(DRAG_MIME_SERVICE);
@@ -473,6 +519,10 @@ export function useDropHandling(
 
     const createFieldFromAsset = useCallback(
         async (source: DropSource) => {
+            if (!auth.canEditBranchContent) {
+                emitNodeError(editDecision.reason ?? 'Editing is disabled for this actor.', { action: 'create-field-from-asset' });
+                return null;
+            }
             const currentTag = canvas.api.selection.currentTag() ?? 't:root';
             const id = buildFieldId();
 
@@ -520,7 +570,7 @@ export function useDropHandling(
 
             return null;
         },
-        [canvas.api.editor, canvas.api.selection, ws.templates.data],
+        [auth.canEditBranchContent, canvas.api.editor, canvas.api.selection, editDecision.reason, emitNodeError, ws.templates.data],
     );
 
     const actionsForIntent = useCallback(
@@ -535,6 +585,9 @@ export function useDropHandling(
                     id: 'set_service',
                     label: 'Set Service',
                     execute: () => {
+                        if (!auth.canEditBranchContent) {
+                            throw new Error(editDecision.reason ?? 'Editing is disabled for this actor.');
+                        }
                         const num = Number(serviceId);
                         if (Number.isNaN(num)) throw new Error('Invalid service id');
                         canvas.api.editor.setService(intent.receiver.nodeId, { service_id: num });
@@ -582,7 +635,7 @@ export function useDropHandling(
 
             return actions;
         },
-        [canvas.api.editor, canvas.selector, createFieldFromAsset, focusNode],
+        [auth.canEditBranchContent, canvas.api.editor, canvas.selector, createFieldFromAsset, editDecision.reason, focusNode],
     );
 
     const handleNodeDrop = useCallback(
@@ -638,6 +691,18 @@ export function useNoticeHandling(
     editingNoticeId: string | null,
 ) {
     const canvas = useCanvas();
+    const ws = useWorkspace();
+    const auth = useMemo(
+        () =>
+            deriveWorkspaceAuthorization({
+                actor: ws.actor,
+                permissions: ws.permissions?.data,
+                participants: ws.participants?.data,
+                authors: ws.authors?.data,
+            }),
+        [ws.actor, ws.authors?.data, ws.participants?.data, ws.permissions?.data],
+    );
+    const editDecision = getAuthorizationDecision(auth, 'branch-content-edit');
     const notices = useMemo<ServicePropsNotice[]>(() => {
         const raw = (canvas.api.builder.getProps() as { notices?: unknown[] } | undefined)?.notices ?? [];
         return raw.map((row, index) => normalizeNotice(row, index)).filter(Boolean) as ServicePropsNotice[];
@@ -656,6 +721,10 @@ export function useNoticeHandling(
 
     const runNoticeMutation = useCallback(
         (label: string, work: () => void) => {
+            if (!auth.canEditBranchContent) {
+                emitNodeError(editDecision.reason ?? 'Editing is disabled for this actor.', { action: 'notice-mutation' });
+                return false;
+            }
             const editorAny = canvas.api.editor as any;
             if (
                 typeof editorAny.addNotice !== 'function' ||
@@ -673,7 +742,7 @@ export function useNoticeHandling(
                 return false;
             }
         },
-        [canvas.api.editor, emitNodeError],
+        [auth.canEditBranchContent, canvas.api.editor, editDecision.reason, emitNodeError],
     );
 
     const handleNoticeSave = useCallback(() => {

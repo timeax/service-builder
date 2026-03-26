@@ -35,6 +35,7 @@ describe('AppToolbar', () => {
                 onRelayout={vi.fn()}
                 onImportProps={onImportProps}
                 onImportCatalog={onImportCatalog}
+                onToggleCommentPlacement={vi.fn()}
                 noticesOpen={false}
                 onNoticesToggle={vi.fn()}
                 showErrorBadges={true}

@@ -6,11 +6,23 @@ import { InputField } from '@timeax/form-palette';
 import { useMemo, useState } from 'react';
 import { MdOutlineSend } from 'react-icons/md';
 import { WorkspaceBootInlineNotice } from '@/workspace/boot-status.tsx';
+import { deriveWorkspaceAuthorization, getAuthorizationDecision } from '@/workspace/authorization.ts';
 
 const Comments = () => {
     const ws = useWorkspace();
     const [value, setValue] = useState('');
     const [query, setQuery] = useState('');
+    const auth = useMemo(
+        () =>
+            deriveWorkspaceAuthorization({
+                actor: ws.actor,
+                permissions: ws.permissions?.data,
+                participants: ws.participants?.data,
+                authors: ws.authors?.data,
+            }),
+        [ws.actor, ws.authors?.data, ws.participants?.data, ws.permissions?.data],
+    );
+    const commentWriteDecision = getAuthorizationDecision(auth, 'comment-write');
 
     const threads = useMemo(() => {
         const items = ws.comments.threads.data ?? [];
@@ -46,6 +58,9 @@ const Comments = () => {
                                 highlight={!thread.resolved}
                                 you={{ id: ws.actor.id, name: ws.actor.name ?? 'You' }}
                                 onReply={({ threadId, text }) =>
+                                    !auth.canCommentWrite
+                                        ? Promise.resolve()
+                                        :
                                     ws.comments.addMessage({
                                         threadId,
                                         body: text,
@@ -72,6 +87,7 @@ const Comments = () => {
                         <button
                             type="button"
                             onClick={() => {
+                                if (!auth.canCommentWrite) return;
                                 const body = value.trim();
                                 if (!body) return;
 
@@ -83,7 +99,8 @@ const Comments = () => {
                                     .finally(() => setValue(''));
                             }}
                             className="cursor-pointer rounded-full bg-blue-600 px-2 py-2 text-white transition hover:bg-blue-700"
-                            disabled={!ws.boot.isReady}
+                            title={!auth.canCommentWrite ? commentWriteDecision.reason : undefined}
+                            disabled={!ws.boot.isReady || !auth.canCommentWrite}
                         >
                             <MdOutlineSend />
                         </button>

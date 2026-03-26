@@ -33,6 +33,9 @@ export type AdapterOptions = {
     throttleMs?: number;
     nodeDecorators?: (nodeId: string) => Partial<Node>;
     edgeDecorators?: (edgeId: string) => Partial<Edge>;
+    canEditGraph?: boolean;
+    canWriteComments?: boolean;
+    onPermissionDenied?: (reason: string, meta?: Record<string, unknown>) => void;
 };
 
 type CanvasAPI = UseCanvasReturn['api'];
@@ -320,6 +323,7 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     const edgeDecoratorsRef = useRef(edgeDecorators);
     const beforeConnectRef = useRef(options.beforeConnect);
     const afterConnectRef = useRef(options.afterConnect);
+    const onPermissionDeniedRef = useRef(options.onPermissionDenied);
     const lastViewportRef = useRef<RFViewport | null>(null);
     const interactionInProgressRef = useRef(false);
     const pendingSyncRef = useRef(false);
@@ -508,6 +512,10 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     }, [options.afterConnect]);
 
     useEffect(() => {
+        onPermissionDeniedRef.current = options.onPermissionDenied;
+    }, [options.onPermissionDenied]);
+
+    useEffect(() => {
         nodeDecoratorsRef.current = nodeDecorators;
         requestDecoratorSync();
     }, [nodeDecorators, requestDecoratorSync]);
@@ -581,6 +589,29 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
 
     const onNodesChange: OnNodesChange = useCallback(
         async (changes) => {
+            const hasGraphMutation = changes.some((change) => {
+                if (change.type === 'position' && change.position) return !isCommentId(change.id);
+                if (change.type === 'remove') return !isCommentId(change.id);
+                return false;
+            });
+            const hasCommentMutation = changes.some((change) => change.type === 'position' && change.position && isCommentId(change.id));
+
+            if (hasGraphMutation && options.canEditGraph === false) {
+                onPermissionDeniedRef.current?.('Editing is disabled. You need workspace write access and branch write access.', {
+                    action: 'graph-mutation',
+                });
+                requestStructuralSync();
+                return;
+            }
+
+            if (hasCommentMutation && options.canWriteComments === false) {
+                onPermissionDeniedRef.current?.('Comment write access is disabled for this actor.', {
+                    action: 'comment-move',
+                });
+                requestStructuralSync();
+                return;
+            }
+
             let nextNodesSnapshot: Node[] = [];
             let dragEnded = false;
             setRF((prev) => {
@@ -661,11 +692,20 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
                 endInteraction();
             }
         },
-        [api, applySnap, commitNodePositionHistory, endInteraction, setPositionsThrottled, startInteraction],
+        [api, applySnap, commitNodePositionHistory, endInteraction, options.canEditGraph, options.canWriteComments, requestStructuralSync, setPositionsThrottled, startInteraction],
     );
 
     const onEdgesChange: OnEdgesChange = useCallback(
         (changes) => {
+            const hasEdgeDelete = changes.some((change) => change.type === 'remove');
+            if (hasEdgeDelete && options.canEditGraph === false) {
+                onPermissionDeniedRef.current?.('Editing is disabled. You need workspace write access and branch write access.', {
+                    action: 'edge-disconnect',
+                });
+                requestStructuralSync();
+                return;
+            }
+
             setRF((prev) => ({
                 nodes: prev.nodes,
                 edges: applyEdgeChanges(changes, prev.edges),
@@ -697,7 +737,7 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
 
             for (const edge of deletions) api.editor.disconnect(edge.kind, edge.from, edge.to);
         },
-        [api],
+        [api, options.canEditGraph, requestStructuralSync],
     );
 
     const currentRel = useCallback(() => api.getEdgeRel() as 'bind' | 'include' | 'exclude', [api]);
@@ -733,6 +773,13 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
 
     const onConnect: OnConnect = useCallback(
         (params) => {
+            if (options.canEditGraph === false) {
+                onPermissionDeniedRef.current?.('Editing is disabled. You need workspace write access and branch write access.', {
+                    action: 'edge-connect',
+                });
+                api.cancelWire();
+                return;
+            }
             const from = params.source;
             const to = params.target;
             if (!from || !to) return;
@@ -752,7 +799,7 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
             api.editor.connect(kind, from, to);
             afterConnectRef.current?.({ from, to, kind, created: true, api });
         },
-        [api, currentRel],
+        [api, currentRel, options.canEditGraph],
     );
 
     const onMoveEnd = useCallback(

@@ -17,6 +17,7 @@ export type FlowCanvasProps = {
     toolbarOrientation?: ToolbarOrientation;
     persistToolbarOrientation?: boolean;
     options?: AdapterOptions;
+    commentPlacement?: React.ComponentProps<typeof CanvasSurface>['commentPlacement'];
     onNodeContextMenu?: React.ComponentProps<typeof CanvasSurface>['onNodeContextMenu'];
     showBindEdges: boolean;
     setShowBindEdges: (value: boolean) => void;
@@ -42,6 +43,7 @@ export function FlowCanvas({
     toolbarOrientation = 'horizontal',
     persistToolbarOrientation = true,
     options,
+    commentPlacement,
     onNodeContextMenu,
     showBindEdges,
     setShowBindEdges,
@@ -69,6 +71,7 @@ export function FlowCanvas({
             toolbarOrientation={toolbarOrientation}
             persistToolbarOrientation={persistToolbarOrientation}
             options={options}
+            commentPlacement={commentPlacement}
             onNodeContextMenu={onNodeContextMenu}
             showBindEdges={showBindEdges}
             setShowBindEdges={setShowBindEdges}

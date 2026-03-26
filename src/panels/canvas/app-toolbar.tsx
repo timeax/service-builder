@@ -1,12 +1,14 @@
 import { Button } from '@/components/ui/button.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
 import type { UseErrorsReturn } from '@timeax/digital-service-engine/workspace';
-import { FiAlertCircle, FiEye, FiEyeOff, FiSave, FiTerminal } from 'react-icons/fi';
+import { FiAlertCircle, FiEye, FiEyeOff, FiMessageSquare, FiSave, FiTerminal } from 'react-icons/fi';
 import { LuGitCommitHorizontal, LuHistory, LuImport, LuRedo2, LuUndo2 } from 'react-icons/lu';
 import { toolbarIconButtonClass, toolbarSplitSurfaceClass, toolbarSurfaceClass } from './toolbar/styles.ts';
 
 export function AppToolbar({
     bootActionReason,
+    editDisabledReason,
+    commentDisabledReason,
     errors,
     bottomPanelOpen,
     onConsoleToggle,
@@ -14,6 +16,9 @@ export function AppToolbar({
     canRedo,
     canSave,
     canPublish,
+    canImport = true,
+    canPlaceComment = true,
+    commentPlacementActive = false,
     onUndo,
     onRedo,
     onSave,
@@ -21,6 +26,7 @@ export function AppToolbar({
     onRelayout,
     onImportProps,
     onImportCatalog,
+    onToggleCommentPlacement,
     noticesOpen,
     onNoticesToggle,
     showErrorBadges,
@@ -28,6 +34,8 @@ export function AppToolbar({
     pendingAction,
 }: {
     bootActionReason?: string;
+    editDisabledReason?: string;
+    commentDisabledReason?: string;
     errors: UseErrorsReturn;
     bottomPanelOpen: boolean;
     onConsoleToggle: () => void;
@@ -35,6 +43,9 @@ export function AppToolbar({
     canRedo: boolean;
     canSave: boolean;
     canPublish: boolean;
+    canImport?: boolean;
+    canPlaceComment?: boolean;
+    commentPlacementActive?: boolean;
     onUndo: () => void;
     onRedo: () => void;
     onSave: () => void | Promise<void>;
@@ -42,6 +53,7 @@ export function AppToolbar({
     onRelayout: () => void;
     onImportProps: () => void;
     onImportCatalog: () => void;
+    onToggleCommentPlacement: () => void;
     noticesOpen: boolean;
     onNoticesToggle: () => void;
     showErrorBadges: boolean;
@@ -58,7 +70,7 @@ export function AppToolbar({
                     aria-label="Save snapshot"
                     onClick={onSave}
                     disabled={pendingAction === 'save' || !canSave}
-                    title={bootActionReason && !canSave ? bootActionReason : 'Save snapshot'}
+                    title={(bootActionReason && !canSave ? bootActionReason : undefined) ?? (!canSave ? editDisabledReason : undefined) ?? 'Save snapshot'}
                 >
                     <FiSave />
                 </Button>
@@ -70,7 +82,11 @@ export function AppToolbar({
                     aria-label="Publish commit"
                     onClick={onPublish}
                     disabled={pendingAction === 'publish' || !canPublish}
-                    title={bootActionReason && !canPublish ? bootActionReason : 'Publish commit'}
+                    title={
+                        (bootActionReason && !canPublish ? bootActionReason : undefined) ??
+                        (!canPublish ? editDisabledReason : undefined) ??
+                        'Publish commit'
+                    }
                 >
                     <LuGitCommitHorizontal />
                 </Button>
@@ -84,8 +100,12 @@ export function AppToolbar({
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem onClick={onImportProps}>Import props</DropdownMenuItem>
-                        <DropdownMenuItem onClick={onImportCatalog}>Import catalog</DropdownMenuItem>
+                        <DropdownMenuItem onClick={onImportProps} disabled={!canImport} title={!canImport ? editDisabledReason : undefined}>
+                            Import props
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={onImportCatalog} disabled={!canImport} title={!canImport ? editDisabledReason : undefined}>
+                            Import catalog
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
                 <Button size="icon" variant="ghost" className={toolbarIconButtonClass()} title="Undo" onClick={onUndo} disabled={!canUndo}>
@@ -96,6 +116,16 @@ export function AppToolbar({
                 </Button>
                 <Button size="icon" variant="ghost" className={toolbarIconButtonClass()} title="Relayout (coming soon)" onClick={onRelayout}>
                     <LuHistory />
+                </Button>
+                <Button
+                    size="icon"
+                    variant="ghost"
+                    disabled={!canPlaceComment}
+                    className={toolbarIconButtonClass(commentPlacementActive)}
+                    title={!canPlaceComment ? commentDisabledReason : commentPlacementActive ? 'Cancel add comment' : 'Add comment on canvas'}
+                    onClick={onToggleCommentPlacement}
+                >
+                    <FiMessageSquare />
                 </Button>
                 <Button
                     size="icon"

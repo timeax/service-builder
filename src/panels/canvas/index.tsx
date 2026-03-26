@@ -8,11 +8,12 @@ import {
     parseEdgeId as parseRelationEdgeId,
 } from '@/panels/canvas/presentation.ts';
 import { BOOT_SECTION_LABELS, getBootActionReason, getFailedBlockingSections } from '@/workspace/boot.ts';
+import { deriveWorkspaceAuthorization, getAuthorizationDecision } from '@/workspace/authorization.ts';
 import type { EditorSnapshot } from '@timeax/digital-service-engine';
 import type { ServiceCatalogState, ServiceProps } from '@timeax/digital-service-engine/schema';
 import { useCanvas, type UseErrorsReturn, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import cloneDeep from 'lodash/cloneDeep';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FiAlertCircle } from 'react-icons/fi';
 import type { AdapterOptions } from './adapter.ts';
 import { AppToolbar } from './app-toolbar.tsx';
@@ -84,6 +85,7 @@ export default function CanvasPanel({
 
     const [showErrorBadges, setShowErrorBadges] = useState(true);
     const [actionPending, setActionPending] = useState<'save' | 'publish' | null>(null);
+    const [commentPlacementActive, setCommentPlacementActive] = useState(false);
     const [activeImportTarget, setActiveImportTarget] = useState<ImportTarget | null>(null);
     const [historyState, setHistoryState] = useState<HistoryState>({
         canUndo: false,
@@ -111,6 +113,33 @@ export default function CanvasPanel({
         fields: canvas.layers.fields.length,
         comments: (ws.comments.threads.data ?? []).length,
     };
+
+    const auth = useMemo(
+        () =>
+            deriveWorkspaceAuthorization({
+                actor: ws.actor,
+                permissions: ws.permissions?.data,
+                participants: ws.participants?.data,
+                authors: ws.authors?.data,
+            }),
+        [ws.actor, ws.permissions?.data, ws.participants?.data, ws.authors?.data],
+    );
+
+    const canEditBranchContent = auth.canEditBranchContent;
+    const canCommentWrite = auth.canCommentWrite;
+    const editDecision = getAuthorizationDecision(auth, 'branch-content-edit');
+    const commentWriteDecision = getAuthorizationDecision(auth, 'comment-write');
+
+    const emitPermissionDenied = useCallback(
+        (reason: string, action: string, meta?: Record<string, unknown>) => {
+            canvas.api.emit('error', {
+                code: 'forbidden',
+                message: reason,
+                meta: { action, ...(meta ?? {}) },
+            });
+        },
+        [canvas.api],
+    );
 
     useEffect(() => {
         setOverlayState(loadOverlayState(storageKey(ws), OVERLAY_DEFAULTS));
@@ -147,6 +176,55 @@ export default function CanvasPanel({
         lastSyncedSnapshotHashRef.current = resetHash;
         setHistoryState({ canUndo: false, canRedo: false });
     }, [canvas.api, ws.info.id, ws.branches.currentId]);
+
+    useEffect(() => {
+        if (canCommentWrite) return;
+        setCommentPlacementActive(false);
+    }, [canCommentWrite]);
+
+    useEffect(() => {
+        const editorAny = canvas.api.editor as Record<string, unknown>;
+        const mutatingMethods = [
+            'addTag',
+            'addField',
+            'setService',
+            'connect',
+            'disconnect',
+            'editLabel',
+            'remove',
+            'duplicate',
+            'placeNode',
+            'placeOption',
+            'patchProps',
+            'replaceProps',
+            'setCatalog',
+            'addNotice',
+            'updateNotice',
+            'removeNotice',
+            'transact',
+        ] as const;
+
+        const originals = new Map<string, unknown>();
+
+        for (const method of mutatingMethods) {
+            const original = editorAny[method];
+            if (typeof original !== 'function') continue;
+            originals.set(method, original);
+            editorAny[method] = (...args: unknown[]) => {
+                if (!canEditBranchContent) {
+                    emitPermissionDenied(editDecision.reason ?? 'Editing is disabled for this actor.', method);
+                    return undefined;
+                }
+                return (original as (...innerArgs: unknown[]) => unknown)(...args);
+            };
+        }
+
+        return () => {
+            for (const [method, original] of originals.entries()) {
+                editorAny[method] = original;
+            }
+        };
+    }, [canvas.api.editor, canEditBranchContent, editDecision.reason, emitPermissionDenied]);
 
     useEffect(() => {
         const bump = () => setPresentationVersion((current) => current + 1);
@@ -216,10 +294,14 @@ export default function CanvasPanel({
 
     const hasChanges = currentSnapshotHash !== persistedBaselineHash;
 
-    const canSave = hasChanges;
-    const canPublish = !!ws.snapshot.draft && !hasChanges;
+    const canSave = hasChanges && canEditBranchContent;
+    const canPublish = !!ws.snapshot.draft && !hasChanges && canEditBranchContent;
 
     const importProps = async (nextProps: ServiceProps) => {
+        if (!canEditBranchContent) {
+            emitPermissionDenied(editDecision.reason ?? 'Editing is disabled for this actor.', 'import-props');
+            return;
+        }
         const editorAny = canvas.api.editor as unknown as {
             transact?: (label: string, work: () => void) => void;
             replaceProps?: (next: ServiceProps) => void;
@@ -235,6 +317,10 @@ export default function CanvasPanel({
     };
 
     const importCatalog = async (nextCatalog: ServiceCatalogState) => {
+        if (!canEditBranchContent) {
+            emitPermissionDenied(editDecision.reason ?? 'Editing is disabled for this actor.', 'import-catalog');
+            return;
+        }
         const editorAny = canvas.api.editor as unknown as {
             transact?: (label: string, work: () => void) => void;
             setCatalog?: (next?: ServiceCatalogState) => void;
@@ -386,6 +472,21 @@ export default function CanvasPanel({
     const mergedOptions = useMemo<AdapterOptions>(
         () => ({
             ...options,
+            canEditGraph: canEditBranchContent,
+            canWriteComments: canCommentWrite,
+            onPermissionDenied: (reason, meta) => {
+                emitPermissionDenied(reason, 'canvas-mutation', meta);
+            },
+            beforeConnect: (ctx) => {
+                if (!canEditBranchContent) {
+                    return {
+                        ok: false,
+                        reason: editDecision.reason ?? 'Editing is disabled for this actor.',
+                    };
+                }
+
+                return options?.beforeConnect?.(ctx) ?? { ok: true };
+            },
             nodeDecorators: (nodeId) => {
                 const base = nodeDecorators(nodeId);
                 const extra = options?.nodeDecorators?.(nodeId) ?? {};
@@ -404,7 +505,40 @@ export default function CanvasPanel({
                 ...(options?.edgeDecorators?.(edgeId) ?? {}),
             }),
         }),
-        [edgeDecorators, nodeDecorators, options],
+        [canCommentWrite, canEditBranchContent, edgeDecorators, editDecision.reason, emitPermissionDenied, nodeDecorators, options],
+    );
+
+    const createAnchoredComment = useCallback(
+        async (
+            anchor:
+                | { type: 'node'; nodeId: string; offset?: { dx: number; dy: number } }
+                | { type: 'free'; position: { x: number; y: number } },
+        ) => {
+            if (!canCommentWrite) {
+                emitPermissionDenied(commentWriteDecision.reason ?? 'Comment write access is disabled for this actor.', 'comment-create');
+                return;
+            }
+
+            const res = await ws.comments.createThread({
+                branchId: ws.branches.currentId,
+                body: 'New canvas comment',
+                anchor,
+            });
+
+            if ((res as any)?.ok === false) {
+                const error = (res as any).error;
+                emitPermissionDenied(error?.message ?? 'Failed to create comment thread.', 'comment-create');
+                return;
+            }
+
+            const threadId = (res as any)?.value?.id;
+            if (threadId) {
+                canvas.api.selectComments?.(threadId);
+                canvas.setActive(`c::${threadId}`);
+            }
+            setCommentPlacementActive(false);
+        },
+        [canCommentWrite, canvas, commentWriteDecision.reason, emitPermissionDenied, ws],
     );
 
     if (!canvas.graph.nodes.length) {
@@ -433,6 +567,24 @@ export default function CanvasPanel({
                 toolbarOrientation={toolbarOrientation}
                 persistToolbarOrientation={persistToolbarOrientation}
                 options={mergedOptions}
+                commentPlacement={{
+                    active: commentPlacementActive,
+                    onPlaceOnNode: ({ nodeId, nodePosition, pointerPosition }) =>
+                        createAnchoredComment({
+                            type: 'node',
+                            nodeId,
+                            offset: {
+                                dx: pointerPosition.x - nodePosition.x,
+                                dy: pointerPosition.y - nodePosition.y,
+                            },
+                        }),
+                    onPlaceOnCanvas: ({ pointerPosition }) =>
+                        createAnchoredComment({
+                            type: 'free',
+                            position: pointerPosition,
+                        }),
+                    onCancel: () => setCommentPlacementActive(false),
+                }}
                 showBindEdges={viewPrefs.showBindEdges}
                 setShowBindEdges={(value) =>
                     setViewPrefs((current) => ({
@@ -481,6 +633,8 @@ export default function CanvasPanel({
                 {showAppTools ? (
                     <AppToolbar
                         bootActionReason={bootActionReason}
+                        editDisabledReason={!canEditBranchContent ? (editDecision.reason ?? 'Editing is disabled for this actor.') : undefined}
+                        commentDisabledReason={!canCommentWrite ? (commentWriteDecision.reason ?? 'Comment write access is disabled for this actor.') : undefined}
                         errors={errors}
                         showErrorBadges={showErrorBadges}
                         setShowErrorBadges={setShowErrorBadges}
@@ -490,6 +644,9 @@ export default function CanvasPanel({
                         canRedo={historyState.canRedo}
                         canSave={canSave && ws.boot.isReady}
                         canPublish={canPublish && ws.boot.isReady}
+                        canImport={canEditBranchContent}
+                        canPlaceComment={canCommentWrite}
+                        commentPlacementActive={commentPlacementActive}
                         onUndo={() => {
                             if (!historyState.canUndo) return;
                             canvas.api.editor.undo();
@@ -499,6 +656,10 @@ export default function CanvasPanel({
                             canvas.api.editor.redo();
                         }}
                         onSave={async () => {
+                            if (!canEditBranchContent) {
+                                emitPermissionDenied(editDecision.reason ?? 'Editing is disabled for this actor.', 'snapshot-save');
+                                return;
+                            }
                             if (!canSave) return;
 
                             const submittedHash = currentSnapshotHash;
@@ -523,6 +684,10 @@ export default function CanvasPanel({
                             }
                         }}
                         onPublish={async () => {
+                            if (!canEditBranchContent) {
+                                emitPermissionDenied(editDecision.reason ?? 'Editing is disabled for this actor.', 'snapshot-publish');
+                                return;
+                            }
                             if (!canPublish) return;
 
                             const submittedHash = currentSnapshotHash;
@@ -554,6 +719,13 @@ export default function CanvasPanel({
                         }}
                         onImportProps={() => setActiveImportTarget('props')}
                         onImportCatalog={() => setActiveImportTarget('catalog')}
+                        onToggleCommentPlacement={() => {
+                            if (!canCommentWrite) {
+                                emitPermissionDenied(commentWriteDecision.reason ?? 'Comment write access is disabled for this actor.', 'comment-placement-toggle');
+                                return;
+                            }
+                            setCommentPlacementActive((current) => !current);
+                        }}
                         noticesOpen={isNoticeManagerOpen}
                         onNoticesToggle={toggleNoticeManager}
                         pendingAction={actionPending}

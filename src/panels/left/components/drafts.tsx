@@ -95,7 +95,7 @@ const Drafts = ({ trigger }: DraftsProps) => {
     const [createFromId, setCreateFromId] = useState<string | undefined>(ws.branches.currentId);
     const [actionKey, setActionKey] = useState<string | null>(null);
 
-    const workspaceRead = ws.permissions.data?.['workspace.read'] ?? true;
+    const workspaceRead = ws.permissions.data?.['workspace.read'] ?? false;
     const canCreateBranch = ws.permissions.data?.['branches.create'] ?? false;
     const canMergeBranches = ws.permissions.data?.['branches.merge'] ?? false;
     const canWriteWorkspace = ws.permissions.data?.['workspace.write'] ?? false;
@@ -107,7 +107,7 @@ const Drafts = ({ trigger }: DraftsProps) => {
         return (ws.branches.data ?? []).map((branch) => {
             const participant = branch.id === ws.branches.currentId ? resolveBranchParticipant(actorAuthorId, ws.participants.data) : null;
             const canRead = branch.id === ws.branches.currentId ? true : workspaceRead;
-            const canWrite = branch.id === ws.branches.currentId ? (participant?.canWrite ?? true) : canWriteWorkspace;
+            const canWrite = branch.id === ws.branches.currentId ? (participant?.canWrite ?? false) : canWriteWorkspace;
 
             return {
                 branch,

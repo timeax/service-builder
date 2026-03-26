@@ -1,4 +1,5 @@
 import { render, waitFor } from '@testing-library/react';
+import type React from 'react';
 import type { Mock } from 'vitest';
 import { CanvasSurface } from './canvas-surface.tsx';
 import { useReactFlowAdapter } from './adapter.ts';
@@ -61,7 +62,7 @@ function createApi(viewport = { x: 0, y: 0, zoom: 1 }) {
     } as any;
 }
 
-function renderSurface(api = createApi()) {
+function renderSurface(api = createApi(), commentPlacement?: React.ComponentProps<typeof CanvasSurface>['commentPlacement']) {
     return render(
         <CanvasSurface
             api={api}
@@ -74,6 +75,7 @@ function renderSurface(api = createApi()) {
             setShowExcludeEdges={vi.fn()}
             focusCurrentContext={false}
             setFocusCurrentContext={vi.fn()}
+            commentPlacement={commentPlacement}
         />,
     );
 }
@@ -133,5 +135,44 @@ describe('CanvasSurface viewport behavior', () => {
 
         expect(adapterHandlers.onNodesChange).toHaveBeenCalledTimes(2);
         expect(reactFlowProps.length).toBe(1);
+    });
+
+    it('routes node and pane clicks into comment placement callbacks when comment placement is active', () => {
+        const onPlaceOnNode = vi.fn();
+        const onPlaceOnCanvas = vi.fn();
+        renderSurface(createApi({ x: 10, y: 20, zoom: 2 }), {
+            active: true,
+            onPlaceOnNode,
+            onPlaceOnCanvas,
+        });
+
+        const props = reactFlowProps.at(-1);
+        const preventDefault = vi.fn();
+        const stopPropagation = vi.fn();
+        const closest = vi.fn(() => ({ getBoundingClientRect: () => ({ left: 100, top: 200 }) }));
+
+        props.onNodeClick?.(
+            {
+                clientX: 140,
+                clientY: 260,
+                preventDefault,
+                stopPropagation,
+                currentTarget: { closest },
+            },
+            {
+                id: 'a',
+                position: { x: 100, y: 140 },
+            },
+        );
+
+        props.onPaneClick?.({
+            clientX: 180,
+            clientY: 300,
+            preventDefault,
+            currentTarget: { closest },
+        });
+
+        expect(onPlaceOnNode).toHaveBeenCalledTimes(1);
+        expect(onPlaceOnCanvas).toHaveBeenCalledTimes(1);
     });
 });
