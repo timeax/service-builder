@@ -303,6 +303,7 @@ const Layers = () => {
                                 nodeClassName="text-[13px]! font-medium"
                                 defaultNodeIcon={(node) => {
                                     const id = String(node.id);
+                                    //@ts-ignore
                                     if (id.startsWith('o:') || node.data?.meta?.button) return <BsXDiamondFill />;
                                     return <RxInput />;
                                 }}
