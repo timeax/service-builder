@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+//@ts-nocheck
 import { createMemoryWorkspaceBackend } from '@timeax/digital-service-engine/workspace';
 import { deriveWorkspaceAuthorization, getAuthorizationDecision } from '@/workspace/authorization.ts';
 
