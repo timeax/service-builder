@@ -43,6 +43,9 @@ type EditorChangeEvent = {
     snapshot?: EditorSnapshot;
 };
 
+const EDITOR_GUARD_ORIGINALS = Symbol('service-builder.editor-guard-originals');
+const EDITOR_GUARD_WRAPPED = Symbol('service-builder.editor-guard-wrapped');
+
 export type CanvasPanelProps = {
     errors: UseErrorsReturn;
     bottomPanel: BottomConsolePanelState;
@@ -97,6 +100,7 @@ export default function CanvasPanel({
     const [viewPrefs, setViewPrefs] = useState<CanvasViewPrefsState>(() => loadCanvasViewPrefs(viewPrefsStorageKey(ws), defaultCanvasViewPrefs));
     const [presentationVersion, setPresentationVersion] = useState(0);
     const lastSyncedSnapshotHashRef = useRef<string>(initialSnapshotHash);
+    const guardedEditorRef = useRef<object | null>(null);
 
     const freeThreads = useMemo(
         () => (ws.comments.threads.data ?? []).filter((thread) => thread.anchor?.type === 'free'),
@@ -204,25 +208,48 @@ export default function CanvasPanel({
             'transact',
         ] as const;
 
-        const originals = new Map<string, unknown>();
+        const editorObject = editorAny as Record<PropertyKey, unknown>;
+        const wrappedSet = (editorObject[EDITOR_GUARD_WRAPPED] as Set<string> | undefined) ?? new Set<string>();
+        const originalsByMethod =
+            (editorObject[EDITOR_GUARD_ORIGINALS] as Map<string, (...args: unknown[]) => unknown> | undefined) ??
+            new Map<string, (...args: unknown[]) => unknown>();
+
+        editorObject[EDITOR_GUARD_WRAPPED] = wrappedSet;
+        editorObject[EDITOR_GUARD_ORIGINALS] = originalsByMethod;
+
+        guardedEditorRef.current = editorObject;
 
         for (const method of mutatingMethods) {
-            const original = editorAny[method];
+            if (wrappedSet.has(method)) continue;
+
+            const original = editorObject[method];
             if (typeof original !== 'function') continue;
-            originals.set(method, original);
-            editorAny[method] = (...args: unknown[]) => {
+
+            const originalFn = original as (...args: unknown[]) => unknown;
+            originalsByMethod.set(method, originalFn);
+            wrappedSet.add(method);
+
+            editorObject[method] = (...args: unknown[]) => {
                 if (!canEditBranchContent) {
                     emitPermissionDenied(editDecision.reason ?? 'Editing is disabled for this actor.', method);
                     return undefined;
                 }
-                return (original as (...innerArgs: unknown[]) => unknown)(...args);
+
+                return Reflect.apply(originalFn, editorObject, args);
             };
         }
 
         return () => {
-            for (const [method, original] of originals.entries()) {
-                editorAny[method] = original;
+            if (guardedEditorRef.current !== editorObject) return;
+
+            for (const method of mutatingMethods) {
+                const original = originalsByMethod.get(method);
+                if (!original) continue;
+                editorObject[method] = original;
+                wrappedSet.delete(method);
             }
+
+            originalsByMethod.clear();
         };
     }, [canvas.api.editor, canEditBranchContent, editDecision.reason, emitPermissionDenied]);
 

@@ -4,6 +4,12 @@ import CanvasPanel from './index.tsx';
 const workspaceState: any = {
     info: { id: 'ws-1' },
     branches: { currentId: 'branch:main' },
+    actor: { id: 'actor:davy', name: 'Davy', meta: { authorId: 'author:davy' } },
+    permissions: { data: { 'workspace.read': true, 'workspace.write': true, 'comments.read': true, 'comments.write': true } },
+    participants: {
+        data: [{ authorId: 'author:davy', canRead: true, canWrite: true }],
+    },
+    authors: { data: [{ id: 'author:davy', name: 'Davy' }] },
     boot: {
         isBooting: true,
         isReady: false,
@@ -60,8 +66,12 @@ const canvasState: any = {
             highlighted: new Set<string>(),
         })),
         editor: {
+            moduleCtx: { scope: 'test-editor' },
             undo: vi.fn(),
             redo: vi.fn(),
+            editLabel: vi.fn(function (this: any) {
+                return this.moduleCtx?.scope;
+            }),
             getProps: vi.fn(() => ({ filters: [], fields: [] })),
         },
         emit: vi.fn(),
@@ -155,5 +165,22 @@ describe('CanvasPanel workspace boot integration', () => {
         );
 
         expect(screen.getAllByText('Comment refresh failed.').length).toBeGreaterThan(0);
+    });
+
+    it('preserves editor method context when wrapper invokes edit methods', () => {
+        const originalEditLabel = canvasState.api.editor.editLabel;
+        render(
+            <CanvasPanel
+                errors={{ merged: { counts: { total: 0 }, validation: [] } } as any}
+                bottomPanel={{ isOpen: false, toggle: vi.fn() } as any}
+                draggingServiceId={null}
+                onServiceDragStateChange={vi.fn()}
+            />,
+        );
+
+        expect(() => canvasState.api.editor.editLabel('n1', 'Next Label')).not.toThrow();
+        const result = canvasState.api.editor.editLabel('n1', 'Next Label');
+        expect(result).toBe('test-editor');
+        expect(originalEditLabel).toHaveBeenCalled();
     });
 });
