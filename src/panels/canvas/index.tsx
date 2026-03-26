@@ -187,7 +187,7 @@ export default function CanvasPanel({
     }, [canCommentWrite]);
 
     useEffect(() => {
-        const editorAny = canvas.api.editor as Record<string, unknown>;
+        const editorAny = canvas.api.editor as unknown as Record<string, unknown>;
         const mutatingMethods = [
             'addTag',
             'addField',

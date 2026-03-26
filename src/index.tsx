@@ -9,7 +9,15 @@ import { FallbackEditorModalProvider } from '@/workspace/fallback-editor-modal.t
 import { FallbackQuickAddProvider } from '@/workspace/fallback-quick-add.tsx';
 import { createInputRegistry, Provider as InputsProvider, registerEntries } from '@timeax/digital-service-engine/react';
 import type { DgpServiceMap, EditorSnapshot, ServiceProps } from '@timeax/digital-service-engine/schema';
-import { useCanvas, useErrors, useWorkspace, Workspace, type WorkspaceAPI, type WorkspaceProviderProps } from '@timeax/digital-service-engine/workspace';
+import {
+    useCanvas,
+    useErrors,
+    useWorkspace,
+    Workspace,
+    type WorkspaceAPI,
+    type WorkspaceProps,
+    type WorkspaceProviderProps,
+} from '@timeax/digital-service-engine/workspace';
 import { useMemo, useState } from 'react';
 import { workspaceActor, workspaceBackend } from '../backend';
 import './index.css';
@@ -167,16 +175,17 @@ const Styles = `
 `;
 
 export type ServiceBuilderProps = Pick<WorkspaceProviderProps, 'backend' | 'actor' | 'initial'> &
+    Pick<WorkspaceProps, 'ratePolicy' | 'fallbackSettings'> &
     ServiceBuilderCallbacks & {
         menu?: Menu[];
     };
 
-export function ServiceBuilder({ backend, actor, onShare, onPlay, menu }: ServiceBuilderProps) {
+export function ServiceBuilder({ backend, actor, ratePolicy, fallbackSettings, onShare, onPlay, menu }: ServiceBuilderProps) {
     return (
         <>
             <style>{Styles}</style>
             <InputsProvider initialRegistry={inputRegistry}>
-                <Workspace backend={backend} actor={actor}>
+                <Workspace backend={backend} actor={actor} ratePolicy={ratePolicy} fallbackSettings={fallbackSettings}>
                     {() => <WorkspaceLayout onShare={onShare} onPlay={onPlay} menu={menu} />}
                 </Workspace>
             </InputsProvider>
@@ -184,10 +193,21 @@ export function ServiceBuilder({ backend, actor, onShare, onPlay, menu }: Servic
     );
 }
 
-export type ServiceBuilderWorkspaceProps = ServiceBuilderCallbacks & {
-    menu?: Menu[];
-};
+export type ServiceBuilderWorkspaceProps = Pick<ServiceBuilderProps, 'ratePolicy' | 'fallbackSettings'> &
+    ServiceBuilderCallbacks & {
+        menu?: Menu[];
+    };
 
-export function ServiceBuilderWorkspace({ onShare, onPlay, menu }: ServiceBuilderWorkspaceProps) {
-    return <ServiceBuilder backend={workspaceBackend} actor={workspaceActor} onShare={onShare} onPlay={onPlay} menu={menu} />;
+export function ServiceBuilderWorkspace({ ratePolicy, fallbackSettings, onShare, onPlay, menu }: ServiceBuilderWorkspaceProps) {
+    return (
+        <ServiceBuilder
+            backend={workspaceBackend as any}
+            actor={workspaceActor}
+            ratePolicy={ratePolicy}
+            fallbackSettings={fallbackSettings}
+            onShare={onShare}
+            onPlay={onPlay}
+            menu={menu}
+        />
+    );
 }
