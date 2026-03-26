@@ -225,7 +225,7 @@ export function IncludesItem({ title, badge, actions, className }: IncludesItemP
     return (
         <div className={cn('flex items-center justify-between rounded-md p-2', 'bg-gray-50 dark:bg-gray-800/50', className)}>
             <div className="flex min-w-0 items-center gap-2">
-                <span className="truncate text-sm text-gray-800 dark:text-gray-200">{title}</span>
+                <span title={title} className="max-w-[calc(var(--panel-width)-11rem)] truncate text-sm text-gray-800 dark:text-gray-200">{title}</span>
                 {badge}
             </div>
 

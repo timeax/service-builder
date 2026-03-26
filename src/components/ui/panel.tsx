@@ -309,6 +309,16 @@ export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(function Panel
         height: size.height != null ? `${size.height}px` : undefined,
     };
 
+    // Expose the panel's current width as a CSS custom property so children can
+    // use it in CSS (e.g. var(--panel-width)). Prefer explicit controlled
+    // width from state; fall back to measured DOM width when available.
+    const panelWidth: string | undefined =
+        size.width != null
+            ? `${size.width}px`
+            : panelRef.current
+            ? `${Math.round(panelRef.current.getBoundingClientRect().width)}px`
+            : undefined;
+
     const offsetStyle: React.CSSProperties = maintainPosition
         ? {
               ...(offsets.left != null ? { left: `${offsets.left}px` } : null),
@@ -329,6 +339,8 @@ export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(function Panel
                 ...sizeStyle,
                 ...offsetStyle,
                 ...edgeStrokeStyle,
+                // expose custom property for children
+                ['--panel-width' as any]: panelWidth,
                 touchAction: resizable ? 'none' : undefined,
                 cursor: resizable ? cursor : undefined,
             }}

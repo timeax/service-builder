@@ -3,7 +3,7 @@ import type { DgpServiceMap } from '@timeax/digital-service-engine/schema';
 export const services: DgpServiceMap = {
     1001: {
         id: 1001,
-        name: 'Instagram Followers • Fast',
+        name: 'Instagram Followers this shidshjs dcsh sojf dso sodhs jhdv sdh vshfdv sohfdv sohfs fhso fhsof sihfi • Fast',
         rate: 1.25,
         min: 50,
         max: 50000,
