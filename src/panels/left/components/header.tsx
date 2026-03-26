@@ -3,6 +3,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import type { Menu } from '@/index';
 import Drafts from '@/panels/left/components/drafts.tsx';
 import { getWorkspaceBootHeadline } from '@/workspace/boot.ts';
+import type { WorkspaceAPI } from '@timeax/digital-service-engine/workspace';
 import { useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { useState } from 'react';
 import { BsChevronDown, BsChevronRight } from 'react-icons/bs';
@@ -12,7 +13,7 @@ interface HeaderProps {
     menu?: Menu[];
 }
 
-const MenuRenderer = ({ items, depth = 0 }: { items: Menu[]; depth?: number }) => {
+const MenuRenderer = ({ items, workspace, depth = 0 }: { items: Menu[]; workspace: WorkspaceAPI; depth?: number }) => {
     const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
 
     const toggleSubmenu = (name: string) => {
@@ -37,7 +38,7 @@ const MenuRenderer = ({ items, depth = 0 }: { items: Menu[]; depth?: number }) =
                                 if (hasChildren) {
                                     toggleSubmenu(item.name);
                                 } else if (item.command) {
-                                    item.command();
+                                    item.command(workspace);
                                 }
                             }}
                             className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
@@ -52,7 +53,7 @@ const MenuRenderer = ({ items, depth = 0 }: { items: Menu[]; depth?: number }) =
                         </button>
                         {hasChildren && isOpen && (
                             <div className="mt-1 ml-4 border-l border-slate-200 pl-2 dark:border-slate-800">
-                                <MenuRenderer items={item.children!} depth={depth + 1} />
+                                <MenuRenderer items={item.children!} workspace={workspace} depth={depth + 1} />
                             </div>
                         )}
                     </li>
@@ -110,7 +111,7 @@ const Header = ({ menu = [] }: HeaderProps) => {
                         </span>
                     </PopoverTrigger>
                     <PopoverContent className="w-56 p-2" align="end">
-                        <MenuRenderer items={fullMenu} />
+                        <MenuRenderer items={fullMenu} workspace={ws} />
                     </PopoverContent>
                 </Popover>
             </div>

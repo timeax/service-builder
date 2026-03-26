@@ -1,4 +1,5 @@
 import { buildServiceContextSnapshot } from '@/builder/service-context.ts';
+import { ServiceMetaPopover } from '@/components/service-meta-popover.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
@@ -88,6 +89,9 @@ function ServiceSummary({ service, nodeId, disabled }: { service: DgpServiceCapa
 
     return (
         <div className="mt-2 rounded-md bg-gray-50 p-3 text-sm dark:bg-gray-800/50">
+            <div className="mb-2 flex items-center justify-end">
+                <ServiceMetaPopover meta={service.meta} className="h-6 w-6" />
+            </div>
             <div className="space-y-1 text-xs text-gray-600 dark:text-gray-300">
                 <p>
                     <span className="font-medium text-gray-800 dark:text-gray-200">Category:</span> {service.category ?? 'Uncategorised'}

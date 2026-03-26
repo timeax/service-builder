@@ -196,6 +196,20 @@ export function FieldProperties({ className, node }: FieldPropertiesProps) {
                                 value={capabilities.isButton}
                                 onChange={(e) => canvas.api.editor.updateField(node.id, { button: Boolean(e.value) } as any)}
                             />
+                            {options.length ? (
+                                <InputField
+                                    variant="toggle"
+                                    label="Is multiple"
+                                    value={Boolean(node.raw.meta?.multi)}
+                                    onChange={(e) =>
+                                        canvas.api.editor.updateField(node.id, {
+                                            meta: mergeNodeMeta(node.raw.meta as Record<string, unknown> | undefined, {
+                                                multi: Boolean(e.value),
+                                            }),
+                                        } as any)
+                                    }
+                                />
+                            ) : null}
                             {capabilities.buttonModeMessage ? (
                                 <p className="text-xs text-slate-500 dark:text-slate-400">{capabilities.buttonModeMessage}</p>
                             ) : null}

@@ -97,7 +97,7 @@ describe('canvas toolbar view toggles', () => {
         fireEvent.click(excludeButton);
         fireEvent.click(focusButton);
 
-        expect(screen.getByRole('button', { name: /canvas view/i })).toHaveClass('border-blue-200');
+        expect(screen.getByRole('button', { name: /canvas view/i })).toHaveClass('text-blue-600');
         expect(screen.getByRole('menuitemcheckbox', { name: /exclude edges/i })).toHaveAttribute('aria-checked', 'true');
         expect(screen.getByRole('menuitemcheckbox', { name: /focus context/i })).toHaveAttribute('aria-checked', 'true');
     });
@@ -108,7 +108,7 @@ describe('canvas toolbar view toggles', () => {
         const viewMenu = screen.getByRole('button', { name: /canvas view/i });
         const orientationToggle = screen.getByRole('button', { name: /switch to vertical toolbar/i });
 
-        for (const className of ['h-11', 'w-11', 'rounded-2xl', '[&_svg]:h-5', '[&_svg]:w-5']) {
+        for (const className of ['h-8', 'w-8']) {
             expect(viewMenu).toHaveClass(className);
             expect(orientationToggle).toHaveClass(className);
         }
@@ -118,7 +118,7 @@ describe('canvas toolbar view toggles', () => {
         fireEvent.click(excludeButton);
 
         expect(viewMenu).toHaveAttribute('aria-expanded', 'true');
-        expect(viewMenu).not.toHaveClass('ring-1');
+        expect(viewMenu).toHaveClass('text-blue-600');
         expect(screen.getByText(/\d+ active view options/i)).toBeInTheDocument();
     });
 

@@ -2,8 +2,10 @@ import type { UseCanvasReturn } from '@timeax/digital-service-engine/workspace';
 import React, { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { LuPanelBottom, LuPanelRight } from 'react-icons/lu';
 import { useReactFlow } from '@xyflow/react';
+import { Button } from '@/components/ui/button.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { resolveTools } from './merge.ts';
+import { toolbarIconButtonClass, toolbarSurfaceClass } from './styles.ts';
 import { Icons } from './icons.tsx';
 import type { LabelPlacement, ResolvedTools, ToolContext, ToolDescriptor, ToolbarOrientation, ToolsConfig } from './types.ts';
 
@@ -191,17 +193,12 @@ export function Toolbar({
         <div className={className ?? 'pointer-events-none absolute top-4 left-4 z-20'}>
             <div className={orientation === 'horizontal' ? 'flex items-center gap-2' : 'grid gap-2'}>
                 {relationTools.length ? (
-                    <div
-                        className={
-                            'pointer-events-auto rounded-2xl border border-slate-200/90 bg-white/92 p-1 shadow-[0_10px_24px_rgba(15,23,42,0.12)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/92 ' +
-                            (orientation === 'vertical' ? 'flex flex-col items-stretch gap-1' : 'inline-flex items-center gap-1')
-                        }
-                    >
+                    <div className={toolbarSurfaceClass(orientation === 'vertical' ? 'flex flex-col items-stretch' : undefined)}>
                         {relationTools.map((button) =>
                             renderButton ? (
-                                renderButton(button, button.id)
+                            renderButton(button, button.id)
                             ) : (
-                                <DefaultTool key={button.id} {...button} labelPlacement={labelPlacement} orientation={orientation} segment="relation" />
+                                <DefaultTool key={button.id} {...button} labelPlacement={labelPlacement} orientation={orientation} />
                             ),
                         )}
                     </div>
@@ -213,15 +210,19 @@ export function Toolbar({
                         renderButton={renderButton}
                     />
                 ) : null}
-                <button
-                    type="button"
-                    onClick={onToggleOrientation}
-                    aria-label={orientation === 'horizontal' ? 'Switch to vertical toolbar' : 'Switch to horizontal toolbar'}
-                    className={toolbarStandaloneButtonClass()}
-                    title={orientation === 'horizontal' ? 'Switch to vertical toolbar' : 'Switch to horizontal toolbar'}
-                >
-                    {orientation === 'horizontal' ? <LuPanelRight /> : <LuPanelBottom />}
-                </button>
+                <div className={toolbarSurfaceClass()}>
+                    <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={onToggleOrientation}
+                        aria-label={orientation === 'horizontal' ? 'Switch to vertical toolbar' : 'Switch to horizontal toolbar'}
+                        className={toolbarIconButtonClass()}
+                        title={orientation === 'horizontal' ? 'Switch to vertical toolbar' : 'Switch to horizontal toolbar'}
+                    >
+                        {orientation === 'horizontal' ? <LuPanelRight /> : <LuPanelBottom />}
+                    </Button>
+                </div>
             </div>
         </div>
     );
@@ -361,20 +362,12 @@ function DefaultTool({
     children,
     labelPlacement,
     orientation,
-    segment = 'default',
-}: ToolRender & { labelPlacement: LabelPlacement; orientation: ToolbarOrientation; segment?: 'default' | 'relation' }) {
-    const base =
-        'inline-flex items-center justify-center border border-transparent bg-transparent px-2 py-1 text-xs text-slate-600 transition ' +
-        'hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 ' +
-        (segment === 'relation' ? 'rounded-xl ' : 'rounded-md ') +
-        (active
-            ? segment === 'relation'
-                ? 'border-blue-200 bg-blue-50 text-blue-700 shadow-[inset_0_0_0_1px_rgba(96,165,250,0.35)] dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-300 '
-                : 'ring-1 ring-blue-400 bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 '
-            : '') +
-        (disabled ? 'cursor-not-allowed opacity-50 ' : '');
-
+}: ToolRender & { labelPlacement: LabelPlacement; orientation: ToolbarOrientation }) {
     const title = labelPlacement === 'tooltip' ? (disabled ? disabledReason ?? label : label) : undefined;
+    const buttonClass =
+        toolbarIconButtonClass(active) +
+        (orientation === 'vertical' && labelPlacement !== 'tooltip' ? ' w-full justify-start px-2' : '') +
+        (labelPlacement === 'below' ? ' flex-col' : '');
 
     const content = (
         <>
@@ -387,39 +380,35 @@ function DefaultTool({
 
     if (!hasMenu) {
         return (
-            <button
+            <Button
                 type="button"
+                size="icon"
+                variant="ghost"
                 title={title}
                 aria-pressed={active}
                 disabled={disabled}
                 onClick={onClick}
-                className={
-                    base +
-                    (orientation === 'vertical' ? ' h-10 w-full' : segment === 'relation' ? ' h-10 w-10' : ' h-8 w-8') +
-                    (labelPlacement === 'below' ? ' flex-col' : '')
-                }
+                className={buttonClass}
             >
                 {content}
-            </button>
+            </Button>
         );
     }
 
     return (
         <div className="relative">
-            <button
+            <Button
                 type="button"
+                size="icon"
+                variant="ghost"
                 title={title}
                 aria-expanded={open ? 'true' : 'false'}
                 disabled={disabled}
                 onClick={onToggleMenu}
-                className={
-                    base +
-                    (orientation === 'vertical' ? ' h-10 w-full' : segment === 'relation' ? ' h-10 w-10' : ' h-8 w-8') +
-                    (labelPlacement === 'below' ? ' flex-col' : '')
-                }
+                className={buttonClass}
             >
                 {content}
-            </button>
+            </Button>
             {open ? (
                 <div className="absolute left-0 z-20 mt-1 min-w-[10rem] overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900" role="menu">
                     <ul className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -469,19 +458,21 @@ function ViewMenuTool({
     return (
         <Popover open={tool.open} onOpenChange={() => tool.onToggleMenu?.()}>
             <PopoverTrigger asChild>
-                <button
-                    type="button"
-                    title={labelPlacement === 'tooltip' ? tool.label : undefined}
-                    aria-expanded={tool.open ? 'true' : 'false'}
-                    aria-label={tool.label}
-                    className={toolbarStandaloneButtonClass(tool.active)}
-                >
-                    {tool.icon}
-                    {tool.active ? (
-                        <span className="absolute top-2.5 right-2.5 h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-white dark:ring-slate-950" />
-                    ) : null}
-                    {indicatorCount > 0 ? <span className="sr-only">{indicatorCount} active view options</span> : null}
-                </button>
+                <div className={toolbarSurfaceClass()}>
+                    <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        title={labelPlacement === 'tooltip' ? tool.label : undefined}
+                        aria-expanded={tool.open ? 'true' : 'false'}
+                        aria-label={tool.label}
+                        className={toolbarIconButtonClass(tool.active, 'relative')}
+                    >
+                        {tool.icon}
+                        {tool.active ? <span className="absolute top-1.5 right-1.5 inline-flex h-2.5 w-2.5 rounded-full bg-rose-500" /> : null}
+                        {indicatorCount > 0 ? <span className="sr-only">{indicatorCount} active view options</span> : null}
+                    </Button>
+                </div>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-64 rounded-2xl border-slate-200/90 bg-white/98 p-2 shadow-[0_18px_40px_rgba(15,23,42,0.18)] dark:border-slate-800 dark:bg-slate-950/98">
                 <ViewSection title="Edge Layers" items={tool.children?.filter((child) => child.id.startsWith('view:') && child.id.includes('edges')) ?? []} />
@@ -546,16 +537,6 @@ function compactLabel(label?: string) {
         default:
             return label;
     }
-}
-
-function toolbarStandaloneButtonClass(active = false) {
-    return (
-        'pointer-events-auto relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border bg-white/92 text-[18px] leading-none shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition ' +
-        '[&_svg]:h-5 [&_svg]:w-5 ' +
-        (active
-            ? 'border-blue-200 bg-blue-50 text-blue-700 shadow-[inset_0_0_0_1px_rgba(96,165,250,0.3),0_10px_24px_rgba(15,23,42,0.12)] hover:bg-blue-100 hover:text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-300 dark:hover:bg-blue-500/20 dark:hover:text-blue-200 '
-            : 'border-slate-200/90 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/92 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100 ')
-    );
 }
 
 function mapIcon(token: string, active: boolean): React.ReactNode {

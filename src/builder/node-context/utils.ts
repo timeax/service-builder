@@ -38,6 +38,11 @@ export function buildFieldId() {
     return `f:asset:${Date.now()}:${rand}`;
 }
 
+export function buildOptionId() {
+    const rand = Math.random().toString(36).slice(2, 8);
+    return `o:asset:${Date.now()}:${rand}`;
+}
+
 export function buildNoticeId() {
     const rand = Math.random().toString(36).slice(2, 8);
     return `notice:${Date.now()}:${rand}`;

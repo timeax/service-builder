@@ -77,7 +77,7 @@ const canvasMock = {
 const workspace = {
     services: {
         data: {
-            101: { id: 101, name: 'Alpha Service', category: 'Payments', rate: 10 },
+            101: { id: 101, name: 'Alpha Service', category: 'Payments', rate: 10, meta: { raw: { key: 'alpha' } } },
             202: { id: 202, name: 'Beta Service', category: 'Routing', rate: 20 },
             303: { id: 303, name: 'Gamma Service', category: 'Risk', rate: 30 },
         },
@@ -97,6 +97,27 @@ vi.mock('@/components/ui/scroll-area.tsx', () => ({
 vi.mock('@timeax/form-palette', () => ({
     InputField: ({ variant, label, value, onChange, options, placeholder, trailingControl, disabled }: any) => {
         const ariaLabel = label ?? placeholder ?? 'input-field';
+        if (variant === 'radio') {
+            return (
+                <div>
+                    {(options ?? []).map((option: any) => {
+                        const optionValue = String(option.key ?? option.value);
+                        return (
+                            <label key={optionValue}>
+                                <input
+                                    aria-label={option.label}
+                                    type="radio"
+                                    name="radio-group"
+                                    checked={String(value ?? '') === optionValue}
+                                    onChange={() => onChange?.({ value: optionValue })}
+                                />
+                                {option.label}
+                            </label>
+                        );
+                    })}
+                </div>
+            );
+        }
         if (variant === 'treeselect') {
             const flattenedOptions = flattenTreeOptions(options ?? []);
             return (
@@ -215,5 +236,14 @@ describe('AddService catalog/context filter', () => {
             expect(screen.queryByText('Beta Service')).not.toBeInTheDocument();
             expect(screen.queryByText('Gamma Service')).not.toBeInTheDocument();
         });
+    });
+
+    it('shows meta info popover in selected service summary', async () => {
+        render(<AddService data={{ id: 'f:route', kind: 'field', raw: { service_id: 101 } } as any} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'More service info' }));
+        expect(await screen.findByText('More info')).toBeInTheDocument();
+        expect(screen.getByText('raw.key')).toBeInTheDocument();
+        expect(screen.getByText('alpha')).toBeInTheDocument();
     });
 });

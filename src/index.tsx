@@ -9,7 +9,7 @@ import { FallbackEditorModalProvider } from '@/workspace/fallback-editor-modal.t
 import { FallbackQuickAddProvider } from '@/workspace/fallback-quick-add.tsx';
 import { createInputRegistry, Provider as InputsProvider, registerEntries } from '@timeax/digital-service-engine/react';
 import type { DgpServiceMap, EditorSnapshot, ServiceProps } from '@timeax/digital-service-engine/schema';
-import { useCanvas, useErrors, useWorkspace, Workspace, type WorkspaceProviderProps } from '@timeax/digital-service-engine/workspace';
+import { useCanvas, useErrors, useWorkspace, Workspace, type WorkspaceAPI, type WorkspaceProviderProps } from '@timeax/digital-service-engine/workspace';
 import { useMemo, useState } from 'react';
 import { workspaceActor, workspaceBackend } from '../backend';
 import './index.css';
@@ -29,7 +29,7 @@ export interface Menu {
     name: string;
     icon?: React.ReactNode;
     children?: Menu[];
-    command?: () => void | Promise<void>;
+    command?: (workspace?: WorkspaceAPI) => void | Promise<void>;
     render?: () => React.ReactNode;
 }
 

@@ -15,7 +15,7 @@ import {
     type ServicePropsNotice,
     type TemplateAssetPayload,
 } from './types.ts';
-import { buildFieldId, draftToNotice, inferNodeKindFromId, makeTemplateKey, normalizeNotice, parseJson, toDraft } from './utils.ts';
+import { buildFieldId, buildOptionId, draftToNotice, inferNodeKindFromId, makeTemplateKey, normalizeNotice, parseJson, toDraft } from './utils.ts';
 
 type MoveDirection = 'up' | 'down';
 
@@ -490,6 +490,15 @@ export function useDropHandling(
             if (source.kind === 'asset_template') {
                 const template = (ws.templates.data ?? []).find((item) => item.id === source.asset.id);
                 const definition = (template?.definition ?? {}) as Record<string, unknown>;
+                const nextOptions = Array.isArray(definition.options)
+                    ? definition.options.map((option) => {
+                          const raw = option && typeof option === 'object' ? (option as Record<string, unknown>) : {};
+                          return {
+                              ...raw,
+                              id: buildOptionId(),
+                          };
+                      })
+                    : undefined;
 
                 canvas.api.editor.addField({
                     id,
@@ -501,7 +510,7 @@ export function useDropHandling(
                     button: Boolean(definition.button),
                     description: typeof definition.description === 'string' ? definition.description : undefined,
                     component: typeof definition.component === 'string' ? definition.component : undefined,
-                    options: Array.isArray(definition.options) ? (definition.options as any) : undefined,
+                    options: nextOptions as any,
                     validation: Array.isArray(definition.validation) ? (definition.validation as any) : undefined,
                     meta: typeof definition.meta === 'object' && definition.meta ? (definition.meta as any) : undefined,
                     defaults: template?.defaults as any,

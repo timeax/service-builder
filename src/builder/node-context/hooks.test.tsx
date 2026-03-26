@@ -1,26 +1,43 @@
 import { act, renderHook } from '@testing-library/react';
-import { useNodeActions } from './hooks.ts';
+import { useDropHandling, useNodeActions } from './hooks.ts';
 
 const setFieldOptionsShown = vi.fn();
 const isFieldOptionsShown = vi.fn(() => false);
 const placeNode = vi.fn();
 const placeOption = vi.fn();
+const addField = vi.fn();
+const connect = vi.fn();
+const setService = vi.fn();
 const patchProps = vi.fn();
 const transact = vi.fn((_: string, work: () => void) => work());
 const currentTag = vi.fn(() => 't:root');
 const visibleGroup = vi.fn(() => ({ kind: 'single', group: { tagId: 't:root', fieldIds: ['f:first', 'f:second'] } }));
 const visibleFields = vi.fn(() => ['f:first', 'f:second']);
+const select = vi.fn();
+const setActive = vi.fn();
+const emit = vi.fn();
 
 let mutableProps: any;
 let nodeLookup: Record<string, any>;
+let templatesData: any[];
+
+vi.mock('@/panels/right/partials/properties/components/node-capabilities.ts', () => ({
+    getNodePropertyCapabilities: vi.fn(() => ({
+        service: { canEdit: true },
+        triggerMappings: { canEdit: true },
+    })),
+}));
 
 vi.mock('@timeax/digital-service-engine/workspace', () => ({
     useCanvas: () => ({
         api: {
             isFieldOptionsShown,
             setFieldOptionsShown,
-            emit: vi.fn(),
+            emit,
             editor: {
+                addField,
+                connect,
+                setService,
                 placeNode,
                 placeOption,
                 patchProps,
@@ -34,6 +51,7 @@ vi.mock('@timeax/digital-service-engine/workspace', () => ({
                 currentTag,
                 visibleGroup,
             },
+            select,
         },
         selector: {
             getNode: vi.fn((id: string) => nodeLookup[id] ?? ({
@@ -47,13 +65,13 @@ vi.mock('@timeax/digital-service-engine/workspace', () => ({
         },
         selectionInfo: { optionIds: [], ids: [] },
         props: {},
-        setActive: vi.fn(),
+        setActive,
     }),
     useWorkspace: () => ({
         createTemplate: vi.fn(),
         refresh: { templates: vi.fn() },
         branches: { currentId: null },
-        templates: { data: [] },
+        templates: { data: templatesData },
     }),
 }));
 
@@ -64,7 +82,13 @@ describe('useNodeActions option node visibility', () => {
         isFieldOptionsShown.mockReturnValue(false);
         placeNode.mockReset();
         placeOption.mockReset();
+        addField.mockReset();
+        connect.mockReset();
+        setService.mockReset();
         patchProps.mockReset();
+        select.mockReset();
+        setActive.mockReset();
+        emit.mockReset();
         transact.mockClear();
         patchProps.mockImplementation((mutator: (props: any) => void) => mutator(mutableProps));
         mutableProps = {
@@ -76,6 +100,7 @@ describe('useNodeActions option node visibility', () => {
             order_for_tags: {},
         };
         nodeLookup = {};
+        templatesData = [];
     });
 
     it('toggles field option node visibility through canvas api', () => {
@@ -195,5 +220,119 @@ describe('useNodeActions option node visibility', () => {
         );
 
         expect(result.current.canQuickAddFallbacks).toBe(false);
+    });
+});
+
+describe('useDropHandling template option id regeneration', () => {
+    beforeEach(() => {
+        addField.mockReset();
+        connect.mockReset();
+        templatesData = [];
+        nodeLookup = {
+            't:root': { id: 't:root', kind: 'tag', raw: { label: 'Root' } },
+            'f:receiver': { id: 'f:receiver', kind: 'field', raw: { label: 'Receiver', type: 'select', button: true } },
+        };
+    });
+
+    function buildTemplateIntent(receiver: { nodeId: string; nodeKind: 'tag' | 'field' | 'option' }) {
+        return {
+            source: { kind: 'asset_template', asset: { id: 'tpl:1', name: 'Template A', kind: 'select' } },
+            receiver: {
+                nodeId: receiver.nodeId,
+                nodeKind: receiver.nodeKind,
+                surface: 'canvas',
+                clientX: 100,
+                clientY: 200,
+            },
+            pointer: { x: 100, y: 200 },
+            surface: 'canvas',
+        } as any;
+    }
+
+    it('regenerates option ids for template options and preserves option data', async () => {
+        templatesData = [
+            {
+                id: 'tpl:1',
+                definition: {
+                    label: 'Billing plan',
+                    type: 'select',
+                    options: [
+                        { id: 'o:legacy:1', label: 'Monthly', value: 'monthly', rank: 1 },
+                        { id: 'o:legacy:2', label: 'Yearly', value: 'yearly', rank: 2 },
+                    ],
+                },
+            },
+        ];
+        const focusNode = vi.fn();
+        const { result } = renderHook(() => useDropHandling(vi.fn(), vi.fn(), focusNode));
+
+        const actions = result.current.actionsForIntent(buildTemplateIntent({ nodeId: 't:root', nodeKind: 'tag' }));
+        await actions.find((action) => action.id === 'bind')?.execute({} as any);
+
+        expect(addField).toHaveBeenCalledTimes(1);
+        const payload = addField.mock.calls[0][0];
+        expect(payload.id).toMatch(/^f:asset:/);
+        expect(payload.options).toHaveLength(2);
+        expect(payload.options[0]).toEqual(expect.objectContaining({ label: 'Monthly', value: 'monthly', rank: 1 }));
+        expect(payload.options[1]).toEqual(expect.objectContaining({ label: 'Yearly', value: 'yearly', rank: 2 }));
+        expect(payload.options[0].id).toMatch(/^o:/);
+        expect(payload.options[1].id).toMatch(/^o:/);
+        expect(payload.options[0].id).not.toBe('o:legacy:1');
+        expect(payload.options[1].id).not.toBe('o:legacy:2');
+        expect(new Set(payload.options.map((option: any) => option.id)).size).toBe(2);
+    });
+
+    it('adds generated option ids when template options were saved without ids', async () => {
+        templatesData = [
+            {
+                id: 'tpl:1',
+                definition: {
+                    label: 'Shipping',
+                    type: 'select',
+                    options: [
+                        { label: 'Standard', value: 'std' },
+                        { label: 'Express', value: 'exp' },
+                    ],
+                },
+            },
+        ];
+        const { result } = renderHook(() => useDropHandling(vi.fn(), vi.fn(), vi.fn()));
+
+        const actions = result.current.actionsForIntent(buildTemplateIntent({ nodeId: 't:root', nodeKind: 'tag' }));
+        await actions.find((action) => action.id === 'bind')?.execute({} as any);
+
+        const payload = addField.mock.calls[0][0];
+        expect(payload.options).toHaveLength(2);
+        expect(payload.options.every((option: any) => typeof option.id === 'string' && option.id.startsWith('o:'))).toBe(true);
+    });
+
+    it('leaves options undefined when template has no options array', async () => {
+        templatesData = [{ id: 'tpl:1', definition: { label: 'Plain text', type: 'text' } }];
+        const { result } = renderHook(() => useDropHandling(vi.fn(), vi.fn(), vi.fn()));
+
+        const actions = result.current.actionsForIntent(buildTemplateIntent({ nodeId: 't:root', nodeKind: 'tag' }));
+        await actions.find((action) => action.id === 'bind')?.execute({} as any);
+
+        const payload = addField.mock.calls[0][0];
+        expect(payload.options).toBeUndefined();
+    });
+
+    it('keeps include and exclude drop flows functional for template assets', async () => {
+        templatesData = [{ id: 'tpl:1', definition: { label: 'Choice', type: 'select', options: [{ label: 'A', value: 'a' }] } }];
+        const focusNode = vi.fn();
+        const { result } = renderHook(() => useDropHandling(vi.fn(), vi.fn(), focusNode));
+
+        const actions = result.current.actionsForIntent(buildTemplateIntent({ nodeId: 'f:receiver', nodeKind: 'field' }));
+        const includeAction = actions.find((action) => action.id === 'include');
+        const excludeAction = actions.find((action) => action.id === 'exclude');
+
+        await includeAction?.execute({} as any);
+        await excludeAction?.execute({} as any);
+
+        expect(addField).toHaveBeenCalledTimes(2);
+        expect(connect).toHaveBeenCalledTimes(2);
+        expect(connect).toHaveBeenNthCalledWith(1, 'include', 'f:receiver', expect.stringMatching(/^f:asset:/));
+        expect(connect).toHaveBeenNthCalledWith(2, 'exclude', 'f:receiver', expect.stringMatching(/^f:asset:/));
+        expect(focusNode).toHaveBeenCalledTimes(2);
     });
 });

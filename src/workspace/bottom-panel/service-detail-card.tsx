@@ -1,6 +1,7 @@
 import type { BuilderServiceSummary } from '@/builder/bottom-panel.ts';
 import { type ServiceContextSnapshot, type ServiceListRowVM } from '@/builder/service-context.ts';
 import { StatusDot } from '@/components/builder/index.tsx';
+import { ServiceMetaPopover } from '@/components/service-meta-popover.tsx';
 import { statusBadgeClassName, filterChipClassName } from './utils.tsx';
 import { cn } from '@/lib/utils.ts';
 
@@ -40,6 +41,7 @@ export function ServiceDetailCard({
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        <ServiceMetaPopover meta={service?.meta} />
                         {mode === 'active' && onOpenFallbackQuickAdd ? (
                             <button
                                 type="button"

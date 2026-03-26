@@ -9,13 +9,16 @@ import {
 } from '@/panels/canvas/presentation.ts';
 import { BOOT_SECTION_LABELS, getBootActionReason, getFailedBlockingSections } from '@/workspace/boot.ts';
 import type { EditorSnapshot } from '@timeax/digital-service-engine';
+import type { ServiceCatalogState, ServiceProps } from '@timeax/digital-service-engine/schema';
 import { useCanvas, type UseErrorsReturn, useWorkspace } from '@timeax/digital-service-engine/workspace';
+import cloneDeep from 'lodash/cloneDeep';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FiAlertCircle } from 'react-icons/fi';
 import type { AdapterOptions } from './adapter.ts';
 import { AppToolbar } from './app-toolbar.tsx';
 import { CanvasOverlays } from './canvas-overlays.tsx';
 import { FlowCanvas } from './flow-canvas.tsx';
+import { ImportJsonModal, type ImportTarget } from './import-json-modal.tsx';
 import type { LabelPlacement, ToolbarOrientation, ToolsConfig } from './toolbar/types.ts';
 import {
     canAssignService,
@@ -81,6 +84,7 @@ export default function CanvasPanel({
 
     const [showErrorBadges, setShowErrorBadges] = useState(true);
     const [actionPending, setActionPending] = useState<'save' | 'publish' | null>(null);
+    const [activeImportTarget, setActiveImportTarget] = useState<ImportTarget | null>(null);
     const [historyState, setHistoryState] = useState<HistoryState>({
         canUndo: false,
         canRedo: false,
@@ -214,6 +218,36 @@ export default function CanvasPanel({
 
     const canSave = hasChanges;
     const canPublish = !!ws.snapshot.draft && !hasChanges;
+
+    const importProps = async (nextProps: ServiceProps) => {
+        const editorAny = canvas.api.editor as unknown as {
+            transact?: (label: string, work: () => void) => void;
+            replaceProps?: (next: ServiceProps) => void;
+        };
+
+        if (typeof editorAny.transact !== 'function' || typeof editorAny.replaceProps !== 'function') {
+            throw new Error('Props import is unavailable on this editor instance.');
+        }
+
+        editorAny.transact('Import props', () => {
+            editorAny.replaceProps?.(cloneDeep(nextProps));
+        });
+    };
+
+    const importCatalog = async (nextCatalog: ServiceCatalogState) => {
+        const editorAny = canvas.api.editor as unknown as {
+            transact?: (label: string, work: () => void) => void;
+            setCatalog?: (next?: ServiceCatalogState) => void;
+        };
+
+        if (typeof editorAny.transact !== 'function' || typeof editorAny.setCatalog !== 'function') {
+            throw new Error('Catalog import is unavailable on this editor instance.');
+        }
+
+        editorAny.transact('Import catalog', () => {
+            editorAny.setCatalog?.(cloneDeep(nextCatalog));
+        });
+    };
 
     const bootActionReason = getBootActionReason(ws.boot);
     const failedBlockingSections = getFailedBlockingSections(ws.boot);
@@ -518,11 +552,21 @@ export default function CanvasPanel({
                                 meta: { action: 'relayout' },
                             });
                         }}
+                        onImportProps={() => setActiveImportTarget('props')}
+                        onImportCatalog={() => setActiveImportTarget('catalog')}
                         noticesOpen={isNoticeManagerOpen}
                         onNoticesToggle={toggleNoticeManager}
                         pendingAction={actionPending}
                     />
                 ) : null}
+
+                <ImportJsonModal
+                    open={activeImportTarget != null}
+                    target={activeImportTarget}
+                    onClose={() => setActiveImportTarget(null)}
+                    onImportProps={importProps}
+                    onImportCatalog={importCatalog}
+                />
 
                 {showOverlays ? (
                     <CanvasOverlays

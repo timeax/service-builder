@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button.tsx';
-import { cn } from '@/lib/utils.ts';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
 import type { UseErrorsReturn } from '@timeax/digital-service-engine/workspace';
 import { FiAlertCircle, FiEye, FiEyeOff, FiSave, FiTerminal } from 'react-icons/fi';
-import { LuGitCommitHorizontal, LuHistory, LuRedo2, LuUndo2 } from 'react-icons/lu';
+import { LuGitCommitHorizontal, LuHistory, LuImport, LuRedo2, LuUndo2 } from 'react-icons/lu';
+import { toolbarIconButtonClass, toolbarSplitSurfaceClass, toolbarSurfaceClass } from './toolbar/styles.ts';
 
 export function AppToolbar({
     bootActionReason,
@@ -18,6 +19,8 @@ export function AppToolbar({
     onSave,
     onPublish,
     onRelayout,
+    onImportProps,
+    onImportCatalog,
     noticesOpen,
     onNoticesToggle,
     showErrorBadges,
@@ -37,6 +40,8 @@ export function AppToolbar({
     onSave: () => void | Promise<void>;
     onPublish: () => void | Promise<void>;
     onRelayout: () => void;
+    onImportProps: () => void;
+    onImportCatalog: () => void;
     noticesOpen: boolean;
     onNoticesToggle: () => void;
     showErrorBadges: boolean;
@@ -45,7 +50,7 @@ export function AppToolbar({
 }) {
     return (
         <div className="pointer-events-none absolute top-4 right-4 z-20 flex items-center gap-2">
-            <div className="pointer-events-auto inline-flex items-center rounded-lg border border-slate-200 bg-white/95 shadow-md dark:border-slate-800 dark:bg-slate-950/95">
+            <div className={toolbarSplitSurfaceClass()}>
                 <Button
                     size="icon"
                     variant="ghost"
@@ -71,20 +76,31 @@ export function AppToolbar({
                 </Button>
             </div>
 
-            <div className="pointer-events-auto inline-flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white/95 p-0.5 shadow-md dark:border-slate-800 dark:bg-slate-950/95">
-                <Button size="icon" variant="ghost" className="h-8 w-8" title="Undo" onClick={onUndo} disabled={!canUndo}>
+            <div className={toolbarSurfaceClass()}>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button size="icon" variant="ghost" className={toolbarIconButtonClass()} title="Import JSON" aria-label="Import JSON">
+                            <LuImport />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
+                        <DropdownMenuItem onClick={onImportProps}>Import props</DropdownMenuItem>
+                        <DropdownMenuItem onClick={onImportCatalog}>Import catalog</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <Button size="icon" variant="ghost" className={toolbarIconButtonClass()} title="Undo" onClick={onUndo} disabled={!canUndo}>
                     <LuUndo2 />
                 </Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8" title="Redo" onClick={onRedo} disabled={!canRedo}>
+                <Button size="icon" variant="ghost" className={toolbarIconButtonClass()} title="Redo" onClick={onRedo} disabled={!canRedo}>
                     <LuRedo2 />
                 </Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8" title="Relayout (coming soon)" onClick={onRelayout}>
+                <Button size="icon" variant="ghost" className={toolbarIconButtonClass()} title="Relayout (coming soon)" onClick={onRelayout}>
                     <LuHistory />
                 </Button>
                 <Button
                     size="icon"
                     variant="ghost"
-                    className={cn('h-8 w-8', showErrorBadges && 'text-blue-600')}
+                    className={toolbarIconButtonClass(showErrorBadges)}
                     title="Toggle error markers"
                     onClick={() => setShowErrorBadges(!showErrorBadges)}
                 >
@@ -93,7 +109,7 @@ export function AppToolbar({
                 <Button
                     size="icon"
                     variant="ghost"
-                    className={cn('relative h-8 w-8', bottomPanelOpen && 'text-blue-600')}
+                    className={toolbarIconButtonClass(bottomPanelOpen, 'relative')}
                     title="Toggle console"
                     onClick={onConsoleToggle}
                 >
@@ -105,7 +121,7 @@ export function AppToolbar({
                 <Button
                     size="icon"
                     variant="ghost"
-                    className={cn('h-8 w-8', noticesOpen && 'text-blue-600')}
+                    className={toolbarIconButtonClass(noticesOpen)}
                     title="Toggle notices manager"
                     onClick={onNoticesToggle}
                 >

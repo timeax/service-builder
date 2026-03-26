@@ -1,4 +1,5 @@
 import type { BuilderServiceSummary } from '@/builder/bottom-panel.ts';
+import { ServiceMetaPopover } from '@/components/service-meta-popover.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { cn } from '@/lib/utils.ts';
@@ -294,11 +295,18 @@ export function ServicePickerDialog({
                                                                 {service.platformId ? <span>{service.platformId}</span> : null}
                                                             </div>
                                                         </div>
-                                                        {alreadyAssigned ? (
-                                                            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200">
-                                                                Already in group
-                                                            </span>
-                                                        ) : null}
+                                                        <div className="flex items-center gap-2">
+                                                            <ServiceMetaPopover
+                                                                meta={serviceMap[id]?.meta}
+                                                                className="h-6 w-6"
+                                                                stopEventPropagation
+                                                            />
+                                                            {alreadyAssigned ? (
+                                                                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200">
+                                                                    Already in group
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
                                                     </div>
                                                     <div className="mt-3 flex flex-wrap gap-2">
                                                         {service.rate != null ? (
