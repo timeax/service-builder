@@ -322,21 +322,25 @@ function AddServicePopover({
                                             value={catalogMode}
                                             options={
                                                 [
-                                                    { key: 'all', label: 'All services' },
-                                                    { key: 'catalog', label: 'Catalog group' },
+                                                    { value: 'all', label: 'All services', description: 'Show all services' },
+                                                    {
+                                                        value: 'catalog',
+                                                        label: 'Catalog group',
+                                                        description: 'Show all services in the current catalog group',
+                                                    },
                                                 ] as const
                                             }
+                                            optGroupClassName={'gap-1'}
                                             onChange={(event) => setCatalogMode(event.value as any)}
                                         />
 
                                         <InputField
                                             variant="treeselect"
-                                            mode="button"
-                                            label="Select group"
-                                            className="w-fit!"
+                                            placeholder={'Select group'}
                                             disabled={catalogMode !== 'catalog'}
                                             multiple={false}
                                             value={treeValue}
+                                            triggerClassName={'px-2'}
                                             options={[{ key: UNGROUPED_TREE_VALUE, label: 'Ungrouped' }, ...treeOptions] as any}
                                             searchable
                                             clearable
@@ -346,7 +350,7 @@ function AddServicePopover({
                                                     next === UNGROUPED_TREE_VALUE || next == null ? undefined : next,
                                                 );
                                             }}
-                                            button={<FaFolderOpen />}
+                                            trailingIcons={[<FaFolderOpen />]}
                                         />
                                         {catalogMode === 'catalog' ? (
                                             <div className="text-xs text-slate-500 dark:text-slate-400">
