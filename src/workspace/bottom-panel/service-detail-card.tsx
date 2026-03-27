@@ -2,8 +2,8 @@ import type { BuilderServiceSummary } from '@/builder/bottom-panel.ts';
 import { type ServiceContextSnapshot, type ServiceListRowVM } from '@/builder/service-context.ts';
 import { StatusDot } from '@/components/builder/index.tsx';
 import { ServiceMetaPopover } from '@/components/service-meta-popover.tsx';
-import { statusBadgeClassName, filterChipClassName } from './utils.tsx';
 import { cn } from '@/lib/utils.ts';
+import { filterChipClassName, statusBadgeClassName } from './utils.tsx';
 
 type ServiceDetailCardProps = {
     mode: 'active' | 'all' | 'catalog';
@@ -14,14 +14,7 @@ type ServiceDetailCardProps = {
     onOpenFallbackEditor?: (service: BuilderServiceSummary) => void;
 };
 
-export function ServiceDetailCard({
-    mode,
-    row,
-    snapshot,
-    onNodeClick,
-    onOpenFallbackQuickAdd,
-    onOpenFallbackEditor,
-}: ServiceDetailCardProps) {
+export function ServiceDetailCard({ mode, row, snapshot, onNodeClick, onOpenFallbackQuickAdd, onOpenFallbackEditor }: ServiceDetailCardProps) {
     const summary = row.summary;
     const service = row.service;
 
@@ -32,10 +25,9 @@ export function ServiceDetailCard({
                     <div className="min-w-0">
                         <div className="flex items-center gap-2">
                             <StatusDot tone={row.statusTone} className="mt-0.5" />
-                            <h5 className="truncate text-lg font-semibold text-slate-900 dark:text-slate-100">{summary.name}</h5>
+                            <span>#{summary.id}</span>
                         </div>
                         <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400">
-                            <span>#{summary.id}</span>
                             {summary.category ? <span>{summary.category}</span> : null}
                             {summary.platformId ? <span>{summary.platformId}</span> : null}
                         </div>
@@ -84,17 +76,32 @@ export function ServiceDetailCard({
                     />
                     <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/80">
                         <div className="flex flex-wrap gap-2">
-                            <FilterChip label={row.check?.fitsConstraints ? 'Constraints fit' : 'Constraint mismatch'} tone={row.check?.fitsConstraints ? 'success' : 'danger'} />
-                            <FilterChip label={row.check?.passesRate ? 'Rate ok' : 'Rate blocked'} tone={row.check?.passesRate ? 'success' : 'warning'} />
                             <FilterChip
-                                label={snapshot?.state.enforcePolicies === false ? 'Policies relaxed' : row.check?.passesPolicies ? 'Policies pass' : 'Policy blocked'}
+                                label={row.check?.fitsConstraints ? 'Constraints fit' : 'Constraint mismatch'}
+                                tone={row.check?.fitsConstraints ? 'success' : 'danger'}
+                            />
+                            <FilterChip
+                                label={row.check?.passesRate ? 'Rate ok' : 'Rate blocked'}
+                                tone={row.check?.passesRate ? 'success' : 'warning'}
+                            />
+                            <FilterChip
+                                label={
+                                    snapshot?.state.enforcePolicies === false
+                                        ? 'Policies relaxed'
+                                        : row.check?.passesPolicies
+                                          ? 'Policies pass'
+                                          : 'Policy blocked'
+                                }
                                 tone={snapshot?.state.enforcePolicies === false ? 'default' : row.check?.passesPolicies ? 'success' : 'danger'}
                             />
                         </div>
                         {row.reasonLabels.length ? (
                             <div className="mt-3 flex flex-wrap gap-2">
                                 {row.reasonLabels.map((reason) => (
-                                    <span key={`${row.id}:${reason}`} className="rounded-full bg-amber-50 px-2.5 py-1 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-200">
+                                    <span
+                                        key={`${row.id}:${reason}`}
+                                        className="rounded-full bg-amber-50 px-2.5 py-1 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-200"
+                                    >
                                         {reason}
                                     </span>
                                 ))}
@@ -114,14 +121,20 @@ export function ServiceDetailCard({
                     {summary.flags.length || service?.meta ? (
                         <div className="flex flex-wrap gap-2">
                             {summary.flags.map((flag) => (
-                                <span key={flag} className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200">
+                                <span
+                                    key={flag}
+                                    className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200"
+                                >
                                     {flag}
                                 </span>
                             ))}
                             {Object.keys(service?.meta ?? {})
                                 .slice(0, 3)
                                 .map((key) => (
-                                    <span key={key} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                                    <span
+                                        key={key}
+                                        className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-900 dark:text-slate-300"
+                                    >
                                         {key}
                                     </span>
                                 ))}
@@ -133,7 +146,10 @@ export function ServiceDetailCard({
             </section>
 
             <section className="space-y-3">
-                <SectionTitle title="Bindings" description="Nodes currently connected to this service. Click any node to jump back into the canvas." />
+                <SectionTitle
+                    title="Bindings"
+                    description="Nodes currently connected to this service. Click any node to jump back into the canvas."
+                />
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/80">
                     {summary.attachedNodeIds.length ? (
                         <div className="flex flex-wrap gap-2">
@@ -149,7 +165,9 @@ export function ServiceDetailCard({
                             ))}
                         </div>
                     ) : (
-                        <p className="text-sm text-slate-500 dark:text-slate-400">This service is not attached to any node yet. Drag it from the catalog onto a node to assign it.</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                            This service is not attached to any node yet. Drag it from the catalog onto a node to assign it.
+                        </p>
                     )}
                 </div>
             </section>
@@ -169,7 +187,7 @@ function SectionTitle({ title, description }: { title: string; description: stri
 function DetailMetric({ label, value }: { label: string; value: string }) {
     return (
         <div className="rounded-2xl bg-white px-4 py-3 dark:bg-slate-950">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{label}</p>
+            <p className="text-[11px] font-semibold tracking-[0.16em] text-slate-400 uppercase dark:text-slate-500">{label}</p>
             <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-100">{value}</p>
         </div>
     );
