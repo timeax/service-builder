@@ -5,14 +5,35 @@ const getEligibleFallbacks = vi.fn(({ exclude = [] }: { exclude?: Array<number |
     const blocked = new Set(exclude.map((id) => String(id)));
     return [201, 202, 202, 203, 301].filter((id) => !blocked.has(String(id)));
 });
+const getAssignedServiceIds = vi.fn(({ props }: { props?: any }) => {
+    const seen = new Set<string>();
+    const ids: Array<number | string> = [];
+    const append = (value: number | string | undefined | null) => {
+        if (value == null) return;
+        const key = String(value);
+        if (seen.has(key)) return;
+        seen.add(key);
+        ids.push(value);
+    };
+
+    for (const tag of props?.filters ?? []) append(tag.service_id);
+    for (const field of props?.fields ?? []) {
+        append(field.service_id);
+        for (const option of field.options ?? []) append(option.service_id);
+    }
+
+    return ids;
+});
 
 vi.mock('@timeax/digital-service-engine/core', () => ({
+    getAssignedServiceIds: (params: any) => getAssignedServiceIds(params),
     getEligibleFallbacks: (params: any) => getEligibleFallbacks(params),
 }));
 
 describe('fallback quick add helpers', () => {
     beforeEach(() => {
         getEligibleFallbacks.mockClear();
+        getAssignedServiceIds.mockClear();
     });
 
     it('reads bound ids for a global service scope', () => {
@@ -67,26 +88,30 @@ describe('fallback quick add helpers', () => {
                 primary: 101,
                 nodeId: 'f:amount',
                 tagId: 't:root',
-                exclude: [101, 201, 301],
+                source: 'all_services',
+                exclude: [201, 101, 301],
                 unique: true,
+            }),
+        );
+        expect(getAssignedServiceIds).toHaveBeenCalledWith(
+            expect.objectContaining({
+                props: expect.any(Object),
+                snapshot: undefined,
             }),
         );
         expect(candidates).toEqual([202, 203]);
     });
 
-    it('excludes active services for service-scoped quick add', () => {
+    it('discovers service-scoped candidates even when no globals are registered yet', () => {
         const candidates = buildEligibleFallbackCandidates({
             launch: { source: 'active-service', primaryServiceId: 101 },
             services: {
                 101: { id: 101, name: 'Primary' },
-                201: { id: 201, name: 'Bound' },
                 202: { id: 202, name: 'Candidate A' },
                 203: { id: 203, name: 'Candidate B' },
                 301: { id: 301, name: 'Attached elsewhere' },
             } as any,
-            fallbacks: {
-                global: { '101': [201] },
-            },
+            fallbacks: {},
             settings: { mode: 'strict' },
             props: {
                 filters: [{ id: 't:root', label: 'Root', service_id: 301 }],
@@ -98,10 +123,11 @@ describe('fallback quick add helpers', () => {
             expect.objectContaining({
                 primary: 101,
                 nodeId: undefined,
-                exclude: [101, 201, 301],
+                source: 'all_services',
+                exclude: [301, 101],
             }),
         );
-        expect(candidates).toEqual([202, 203]);
+        expect(candidates).toEqual([201, 202, 203]);
     });
 
     it('merges selected ids into the correct fallback scope without duplicates', () => {

@@ -3,10 +3,10 @@ import type { PermissionsMap } from '@timeax/digital-service-engine/workspace';
 export const permissions: Readonly<Record<string, PermissionsMap>> = {
     'actor:davy': {
         'workspace.read': true,
-        'workspace.write': false,
+        'workspace.write': true,
         'branches.read': true,
         'branches.create': true,
-        'branches.write': false,
+        'branches.write': true,
         'branches.delete': true,
         'branches.merge': true,
         'branches.publish': true,

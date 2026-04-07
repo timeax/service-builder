@@ -1,10 +1,11 @@
 import { Button } from '@/components/ui/button.tsx';
 import { cn } from '@/lib/utils.ts';
 import { buildEligibleFallbackCandidates, mergeFallbackSelections } from '@/workspace/fallback-quick-add-helpers.ts';
-import type { DgpServiceMap, FallbackSettings, ServiceIdRef, ServiceProps } from '@timeax/digital-service-engine/schema';
+import type { OrderSnapshot } from '@timeax/digital-service-engine/schema';
+import type { DgpServiceMap, ServiceIdRef, ServiceProps } from '@timeax/digital-service-engine/schema';
 import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import cloneDeep from 'lodash/cloneDeep';
-import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX } from 'react-icons/fi';
 
@@ -93,7 +94,8 @@ export function FallbackQuickAddProvider({ children }: { children: ReactNode }) 
     const servicesMap = useMemo(() => (ws.services.data ?? {}) as DgpServiceMap, [ws.services.data]);
     const serviceProps = (canvas.api.builder.getProps() ?? canvas.props) as ServiceProps;
     const fallbacks = serviceProps?.fallbacks;
-    const settings = ((serviceProps as ServiceProps & { fallbackSettings?: FallbackSettings })?.fallbackSettings ?? {}) as FallbackSettings;
+    const settings = canvas.api.builder.getOptions()?.fallbackSettings;
+    const snapshot = (ws as { snapshotBody?: { data?: OrderSnapshot } }).snapshotBody?.data;
 
     const candidates = useMemo(() => {
         if (!launch) return [] as Array<{ id: ServiceIdRef; name: string; rate?: number; category?: string }>;
@@ -104,6 +106,7 @@ export function FallbackQuickAddProvider({ children }: { children: ReactNode }) 
             fallbacks,
             settings,
             props: serviceProps,
+            snapshot,
         });
 
         return eligibleIds.map((id) => {
@@ -115,7 +118,7 @@ export function FallbackQuickAddProvider({ children }: { children: ReactNode }) 
                 category: typeof service.category === 'string' ? service.category : undefined,
             };
         });
-    }, [fallbacks, launch, serviceProps, servicesMap, settings]);
+    }, [fallbacks, launch, serviceProps, servicesMap, settings, snapshot]);
 
     useEffect(() => {
         setSelectedIds((current) => {
@@ -258,7 +261,9 @@ export function FallbackQuickAddProvider({ children }: { children: ReactNode }) 
                                                           className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 focus:ring-offset-0 dark:border-slate-700 dark:bg-slate-950"
                                                       />
                                                       <span className="min-w-0 flex-1">
-                                                          <span className="block text-sm font-medium text-slate-900 dark:text-slate-100">{candidate.name}</span>
+                                                          <span className="block text-sm font-medium text-slate-900 dark:text-slate-100">
+                                                              {candidate.name}
+                                                          </span>
                                                           <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
                                                               Service #{String(candidate.id)}
                                                               {candidate.category ? ` · ${candidate.category}` : ''}
@@ -278,13 +283,20 @@ export function FallbackQuickAddProvider({ children }: { children: ReactNode }) 
 
                               <div className="flex items-center justify-between gap-3 border-t border-slate-200 px-6 py-4 dark:border-slate-800">
                                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                                      {selectedIds.length ? `${selectedIds.length} fallback${selectedIds.length === 1 ? '' : 's'} selected` : 'Choose one or more fallback services to bind'}
+                                      {selectedIds.length
+                                          ? `${selectedIds.length} fallback${selectedIds.length === 1 ? '' : 's'} selected`
+                                          : 'Choose one or more fallback services to bind'}
                                   </p>
                                   <div className="flex items-center gap-2">
                                       <Button type="button" variant="ghost" onClick={close} disabled={saving} className="rounded-xl">
                                           Cancel
                                       </Button>
-                                      <Button type="button" onClick={() => void handleSave()} disabled={!selectedIds.length || saving} className="rounded-xl">
+                                      <Button
+                                          type="button"
+                                          onClick={() => void handleSave()}
+                                          disabled={!selectedIds.length || saving}
+                                          className="rounded-xl"
+                                      >
                                           {saving ? 'Adding...' : 'Add fallbacks'}
                                       </Button>
                                   </div>

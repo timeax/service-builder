@@ -1,5 +1,15 @@
-import { getEligibleFallbacks as coreGetEligibleFallbacks } from '@timeax/digital-service-engine/core';
-import type { DgpServiceMap, FallbackSettings, ServiceFallback, ServiceIdRef, ServiceProps } from '@timeax/digital-service-engine/schema';
+import {
+    getAssignedServiceIds as coreGetAssignedServiceIds,
+    getEligibleFallbacks as coreGetEligibleFallbacks,
+} from '@timeax/digital-service-engine/core';
+import type {
+    DgpServiceMap,
+    FallbackSettings,
+    ServiceFallback,
+    ServiceIdRef,
+    ServiceProps,
+} from '@timeax/digital-service-engine/schema';
+import type { OrderSnapshot } from '@timeax/digital-service-engine/schema';
 
 export type FallbackQuickAddLaunch =
     | {
@@ -17,6 +27,10 @@ export function getEligibleFallbacks(params: Parameters<typeof coreGetEligibleFa
     return coreGetEligibleFallbacks(params);
 }
 
+export function getAssignedServiceIds(params: Parameters<typeof coreGetAssignedServiceIds>[0]) {
+    return coreGetAssignedServiceIds(params);
+}
+
 export function getBoundFallbackIds(launch: FallbackQuickAddLaunch, fallbacks?: ServiceFallback) {
     if (launch.source === 'node') {
         return fallbacks?.nodes?.[launch.nodeId] ?? [];
@@ -31,11 +45,14 @@ export function buildEligibleFallbackCandidates(args: {
     fallbacks?: ServiceFallback;
     settings?: FallbackSettings;
     props: ServiceProps;
+    snapshot?: OrderSnapshot;
 }) {
     const excludeIds = dedupeServiceIds([
-        args.launch.primaryServiceId,
         ...getBoundFallbackIds(args.launch, args.fallbacks),
-        ...collectActiveServiceIds(args.props),
+        ...getAssignedServiceIds({
+            props: args.props,
+            snapshot: args.snapshot,
+        }),
     ]);
 
     const eligible = getEligibleFallbacks({
@@ -46,11 +63,12 @@ export function buildEligibleFallbackCandidates(args: {
         fallbacks: args.fallbacks,
         settings: args.settings,
         props: args.props,
+        source: 'all_services',
         exclude: excludeIds,
         unique: true,
     });
 
-    return dedupeServiceIds(eligible).filter((id) => !excludeIds.some((excluded) => String(excluded) === String(id)));
+    return dedupeServiceIds(eligible);
 }
 
 export function mergeFallbackSelections(args: {
@@ -72,29 +90,7 @@ export function mergeFallbackSelections(args: {
 }
 
 export function collectActiveServiceIds(props?: ServiceProps | null) {
-    const seen = new Set<string>();
-    const activeIds: ServiceIdRef[] = [];
-
-    const append = (value: ServiceIdRef | null | undefined) => {
-        if (value === undefined || value === null) return;
-        const key = String(value);
-        if (seen.has(key)) return;
-        seen.add(key);
-        activeIds.push(value);
-    };
-
-    for (const tag of props?.filters ?? []) {
-        append(tag.service_id);
-    }
-
-    for (const field of props?.fields ?? []) {
-        append(field.service_id);
-        for (const option of field.options ?? []) {
-            append(option.service_id);
-        }
-    }
-
-    return activeIds;
+    return getAssignedServiceIds({ props: props ?? undefined });
 }
 
 function cloneFallbacks(fallbacks?: ServiceFallback): ServiceFallback {

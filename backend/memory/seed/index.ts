@@ -5,9 +5,9 @@ import { workspaceInfo } from './meta';
 import { participantsByBranch } from './participants';
 import { permissions } from './permissions';
 import { policies, policiesByBranch } from './policies';
-import { services } from './services';
 import { snapshotsByBranch } from './snapshots';
 import { templates } from './templates';
+import { getServices } from './services-2.ts';
 
 export const seed = {
     info: workspaceInfo,
@@ -18,7 +18,7 @@ export const seed = {
     branches,
     participants: participantsByBranch,
 
-    services,
+    services: getServices(),
     templates,
 
     snapshots: snapshotsByBranch,

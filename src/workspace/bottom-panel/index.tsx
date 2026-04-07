@@ -180,7 +180,7 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
         const editor = canvas.api.editor;
         const ensured = editor.getCatalog?.() ?? editor.ensureCatalog?.();
 
-        console.log(ensured)
+        // console.log(ensured)
         if (ensured) setCatalogState(ensured);
 
         const offCatalogChange = canvas.api.on('catalog:change' as any, ({ catalog }: { catalog?: ServiceCatalogState }) => {
