@@ -1,16 +1,12 @@
 import { Button } from '@/components/ui/button.tsx';
 import { cn } from '@/lib/utils.ts';
+import { NativeFallbackEditor } from '@/workspace/fallback-editor/native-fallback-editor.tsx';
 import type { DgpServiceMap, FallbackSettings, ServiceIdRef, ServiceProps } from '@timeax/digital-service-engine/schema';
 import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import cloneDeep from 'lodash/cloneDeep';
-import { Suspense, lazy, type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX } from 'react-icons/fi';
-
-const LazyFallbackEditor = lazy(async () => {
-    const mod = await import('@timeax/digital-service-engine/react');
-    return { default: mod.FallbackEditor };
-});
 
 type FallbackEditorLaunchSource = 'node' | 'active-service';
 
@@ -198,7 +194,7 @@ export function FallbackEditorModalProvider({ children }: { children: ReactNode 
                       >
                           <div
                               className={cn(
-                                  'flex h-[min(90vh,56rem)] w-[min(96vw,88rem)] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950',
+                                  'flex h-[min(90vh,56rem)] w-[min(96vw,88rem)] flex-col overflow-hidden rounded-md border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950',
                               )}
                           >
                               <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-4 dark:border-slate-800">
@@ -206,7 +202,7 @@ export function FallbackEditorModalProvider({ children }: { children: ReactNode 
                                       <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{launchTitle}</h2>
                                       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{launchDescription}</p>
                                   </div>
-                                  <Button type="button" variant="ghost" size="sm" onClick={close} className="h-9 rounded-xl px-2">
+                                  <Button type="button" variant="ghost" size="sm" onClick={close} className="h-9 rounded-md px-2">
                                       <FiX />
                                   </Button>
                               </div>
@@ -217,27 +213,19 @@ export function FallbackEditorModalProvider({ children }: { children: ReactNode 
                                   </div>
                               ) : null}
 
-                              <div className="min-h-0 flex-1 overflow-auto">
-                                  <Suspense
-                                      fallback={
-                                          <div className="flex h-full min-h-96 items-center justify-center px-6 text-sm text-slate-500 dark:text-slate-400">
-                                              Loading fallback editor...
-                                          </div>
-                                      }
-                                  >
-                                      <LazyFallbackEditor
-                                          key={`${launch.source}:${String(launch.initialServiceId)}:${sessionId}`}
-                                          className="min-h-full bg-transparent p-5 dark:bg-transparent"
-                                          fallbacks={(canvas.props as ServiceProps).fallbacks}
-                                          props={canvas.props as ServiceProps}
-                                          primaryServices={servicesMap}
-                                          eligibleServices={servicesMap}
-                                          settings={fallbackSettings}
-                                          initialServiceId={launch.initialServiceId}
-                                          onSettingsChange={handleSettingsChange}
-                                          onSave={handleSave}
-                                      />
-                                  </Suspense>
+                              <div className="min-h-0 flex-1 overflow-hidden">
+                                  <NativeFallbackEditor
+                                      key={`${launch.source}:${String(launch.initialServiceId)}:${sessionId}`}
+                                      className="h-full p-5"
+                                      fallbacks={(canvas.props as ServiceProps).fallbacks}
+                                      props={canvas.props as ServiceProps}
+                                      primaryServices={servicesMap}
+                                      eligibleServices={servicesMap}
+                                      settings={fallbackSettings}
+                                      initialServiceId={launch.initialServiceId}
+                                      onSettingsChange={handleSettingsChange}
+                                      onSave={handleSave}
+                                  />
                               </div>
                           </div>
                       </div>,

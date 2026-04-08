@@ -63,11 +63,13 @@ export function ServicesSplitPane(props: ServicesSplitPaneProps) {
               ? 'Select a catalog group or create one to organize source services for faster assignment.'
               : 'Try changing the search or toggles to bring more services into view.';
 
+    const [size, setSize] = useState(44);
     return (
         <div className="min-h-90 p-4">
             <ResizablePanelGroup direction="horizontal" className="min-h-90">
-                <ResizablePanel defaultSize={44} minSize={30}>
-                    <section className="flex h-full min-h-0 flex-col overflow-hidden">
+                <ResizablePanel onResize={s => setSize(s.inPixels)} defaultSize={44} minSize={30}>
+                    {/*@ts-ignore*/}
+                    <section className="flex h-full min-h-0 flex-col overflow-hidden" style={{'--resizable-width': size + 'px'}}>
                         <div className="space-y-3 border-b border-slate-100 pr-4 dark:border-slate-800">
                             <div className="flex items-center justify-between gap-3">
                                 <div>
@@ -145,7 +147,7 @@ export function ServicesSplitPane(props: ServicesSplitPaneProps) {
                                                 <div className="min-w-0">
                                                     <div className="flex items-center gap-2">
                                                         <StatusDot tone={row.statusTone} />
-                                                        <span className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                                        <span title={row.summary.name} className="truncate max-w-[calc(var(--resizable-width)-12rem)] text-sm font-semibold text-slate-900 dark:text-slate-100">
                                                             {row.summary.name}
                                                         </span>
                                                     </div>

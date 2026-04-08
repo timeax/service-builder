@@ -1,17 +1,101 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FallbackEditorModalProvider, useFallbackEditorModal } from './fallback-editor-modal.tsx';
 
-const replaceProps = vi.fn();
-const transact = vi.fn((_: string, work: () => void) => work());
+vi.mock('@/components/ui/resizable.tsx', () => ({
+    ResizablePanelGroup: ({ children, className, ...props }: any) => (
+        <div className={className} {...props}>
+            {children}
+        </div>
+    ),
+    ResizablePanel: ({ children, className, defaultSize: _defaultSize, minSize: _minSize, maxSize: _maxSize, ...props }: any) => (
+        <div className={className} {...props}>
+            {children}
+        </div>
+    ),
+    ResizableHandle: ({ className, withHandle: _withHandle, ...props }: any) => <div className={className} data-testid="fallback-editor-resize-handle" {...props} />,
+}));
 
-const baseProps = {
-    filters: [],
-    fields: [],
-    fallbacks: { global: { '101': [201] } },
+vi.mock('@timeax/digital-service-engine/react', async () => {
+    const { createFallbackEditorReactMock } = await import('./fallback-editor/test-react-mock.tsx');
+    return createFallbackEditorReactMock();
+});
+
+const baseProps = vi.hoisted(() => ({
+    filters: [{ id: 't:root', label: 'Root', service_id: 101 }],
+    fields: [{ id: 'f:amount', label: 'Amount', type: 'text', service_id: 101 }],
+    fallbacks: { global: { '101': [201, 202] } },
     fallbackSettings: { mode: 'strict' },
-};
+}));
+
+const canvasState = vi.hoisted(() => ({
+    replaceProps: vi.fn(),
+    transact: vi.fn((_: string, work: () => void) => work()),
+}));
+
+vi.mock('@timeax/form-palette', () => ({
+    InputField: ({ variant, label, value, onChange, options = [], placeholder, onText = 'On', offText = 'Off' }: any) => {
+        if (variant === 'select') {
+            return (
+                <label>
+                    <span>{label}</span>
+                    <select aria-label={label ?? placeholder ?? 'select'} value={value ?? ''} onChange={(event) => onChange?.({ value: event.target.value })}>
+                        {placeholder ? <option value="">{placeholder}</option> : null}
+                        {options.map((option: any) => (
+                            <option key={String(option.value)} value={String(option.value)}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+            );
+        }
+
+        if (variant === 'radio') {
+            return (
+                <fieldset>
+                    <legend>{label}</legend>
+                    {options.map((option: any) => (
+                        <label key={String(option.value)}>
+                            <input
+                                type="radio"
+                                name={label ?? 'radio'}
+                                checked={String(value) === String(option.value)}
+                                onChange={() => onChange?.({ value: option.value })}
+                            />
+                            {option.label}
+                        </label>
+                    ))}
+                </fieldset>
+            );
+        }
+
+        if (variant === 'toggle') {
+            return (
+                <button type="button" aria-label={label ?? 'toggle'} aria-pressed={Boolean(value)} onClick={() => onChange?.({ value: !value })}>
+                    {label}: {value ? onText : offText}
+                </button>
+            );
+        }
+
+        return (
+            <label>
+                <span>{label}</span>
+                <input
+                    aria-label={label ?? placeholder ?? 'input'}
+                    value={value ?? ''}
+                    placeholder={placeholder}
+                    onChange={(event) =>
+                        onChange?.({
+                            value: variant === 'number' ? Number(event.target.value) : event.target.value,
+                        })
+                    }
+                />
+            </label>
+        );
+    },
+}));
 
 vi.mock('@timeax/digital-service-engine/workspace', () => ({
     useCanvas: () => ({
@@ -21,61 +105,29 @@ vi.mock('@timeax/digital-service-engine/workspace', () => ({
                 getProps: () => baseProps,
             },
             editor: {
-                transact,
-                replaceProps,
+                transact: canvasState.transact,
+                replaceProps: canvasState.replaceProps,
             },
         },
     }),
     useWorkspace: () => ({
         services: {
             data: {
-                101: { id: 101, name: 'Primary service' },
-                902: { id: 902, name: 'Fallback service' },
+                101: { id: 101, name: 'Primary service', rate: 10, platform: 'API' },
+                201: { id: 201, name: 'Fallback alpha', rate: 8, platform: 'API' },
+                202: { id: 202, name: 'Fallback beta', rate: 7, platform: 'API' },
             },
         },
     }),
-}));
-
-vi.mock('@timeax/digital-service-engine/react', () => ({
-    FallbackEditor: ({
-        initialServiceId,
-        onSave,
-        onSettingsChange,
-    }: {
-        initialServiceId?: number | string;
-        onSave?: (next: unknown) => Promise<unknown> | unknown;
-        onSettingsChange?: (next: unknown) => Promise<unknown> | unknown;
-    }) => (
-        <div>
-            <div>Fallback editor for {String(initialServiceId)}</div>
-            <button
-                type="button"
-                onClick={() =>
-                    void onSave?.({
-                        global: {
-                            [String(initialServiceId)]: [902],
-                        },
-                    })
-                }
-            >
-                Save fallbacks
-            </button>
-            <button type="button" onClick={() => void onSettingsChange?.({ mode: 'dev' })}>
-                Save settings
-            </button>
-        </div>
-    ),
 }));
 
 function Trigger() {
     const modal = useFallbackEditorModal();
 
     return (
-        <div>
-            <button type="button" onClick={() => modal.openForService({ serviceId: 101, serviceName: 'Primary service' })}>
-                Open service modal
-            </button>
-        </div>
+        <button type="button" onClick={() => modal.openForService({ serviceId: 101, serviceName: 'Primary service' })}>
+            Open service modal
+        </button>
     );
 }
 
@@ -85,8 +137,9 @@ function renderWithProvider(ui: ReactNode) {
 
 describe('FallbackEditorModalProvider', () => {
     beforeEach(() => {
-        replaceProps.mockReset();
-        transact.mockClear();
+        canvasState.replaceProps.mockReset();
+        canvasState.transact.mockReset();
+        canvasState.transact.mockImplementation((_: string, work: () => void) => work());
     });
 
     it('opens for a service and persists fallback edits through the canvas editor', async () => {
@@ -95,19 +148,20 @@ describe('FallbackEditorModalProvider', () => {
         fireEvent.click(screen.getByText('Open service modal'));
 
         expect(await screen.findByText('Fallback editor for Primary service')).toBeInTheDocument();
-        expect(await screen.findByText('Fallback editor for 101')).toBeInTheDocument();
+        expect(screen.getAllByText('Primary service (#101)').length).toBeGreaterThan(0);
 
-        fireEvent.click(screen.getByText('Save fallbacks'));
+        fireEvent.click(screen.getByLabelText('Remove candidate 201'));
+        fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
         await waitFor(() => {
-            expect(transact).toHaveBeenCalledWith('Update fallbacks', expect.any(Function));
-            expect(replaceProps).toHaveBeenCalledWith(
+            expect(canvasState.transact).toHaveBeenCalledWith('Update fallbacks', expect.any(Function));
+            expect(canvasState.replaceProps).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    fallbacks: {
+                    fallbacks: expect.objectContaining({
                         global: {
-                            '101': [902],
+                            '101': [202],
                         },
-                    },
+                    }),
                 }),
             );
         });
@@ -117,23 +171,19 @@ describe('FallbackEditorModalProvider', () => {
         });
     });
 
-    it('persists fallback settings through the canvas editor', async () => {
+    it('shows the surface error banner when persistence fails', async () => {
+        canvasState.transact.mockImplementationOnce(() => {
+            throw new Error('Persist failed');
+        });
+
         renderWithProvider(<Trigger />);
 
         fireEvent.click(screen.getByText('Open service modal'));
-        await screen.findByText('Fallback editor for 101');
+        await screen.findByText('Fallback editor for Primary service');
 
-        fireEvent.click(screen.getByText('Save settings'));
+        fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-        await waitFor(() => {
-            expect(transact).toHaveBeenCalledWith('Update fallback settings', expect.any(Function));
-            expect(replaceProps).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    fallbackSettings: {
-                        mode: 'dev',
-                    },
-                }),
-            );
-        });
+        expect(await screen.findByText('Persist failed')).toBeInTheDocument();
+        expect(canvasState.replaceProps).not.toHaveBeenCalled();
     });
 });
