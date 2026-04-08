@@ -11,7 +11,7 @@ vi.mock('@xyflow/react', async () => {
 });
 
 describe('canvas reactflow node styling', () => {
-    it('applies lighter active ring classes for tag nodes', () => {
+    it('applies active outline classes for tag nodes', () => {
         const TagNode = nodeTypes.tag;
         render(
             <TagNode
@@ -32,8 +32,8 @@ describe('canvas reactflow node styling', () => {
 
         const shell = screen.getByText('Tag 1').closest('div[data-node-state]');
         expect(shell).toBeTruthy();
-        expect(shell?.className).toContain('ring-sky-300');
-        expect(shell?.className).toContain('dark:ring-sky-400');
+        expect(shell?.className).toContain('outline-emerald-500');
+        expect(shell?.className).toContain('dark:outline-emerald-400');
     });
 
     it('applies lighter highlighted outline classes for tag nodes', () => {
@@ -61,7 +61,7 @@ describe('canvas reactflow node styling', () => {
         expect(shell?.className).toContain('dark:outline-amber-200');
     });
 
-    it('uses the same lighter active/highlight classes for option nodes', () => {
+    it('uses the same active/highlight classes for option nodes', () => {
         const OptionNode = nodeTypes.option;
         render(
             <OptionNode
@@ -83,10 +83,36 @@ describe('canvas reactflow node styling', () => {
 
         const shell = screen.getByText('Option 1').closest('div[data-node-state]');
         expect(shell).toBeTruthy();
-        expect(shell?.className).toContain('ring-sky-300');
-        expect(shell?.className).toContain('dark:ring-sky-400');
+        expect(shell?.className).toContain('outline-emerald-500');
+        expect(shell?.className).toContain('dark:outline-emerald-400');
         expect(shell?.className).toContain('outline-amber-300');
         expect(shell?.className).toContain('dark:outline-amber-200');
+    });
+
+    it('keeps selected-only nodes on blue ring styling', () => {
+        const TagNode = nodeTypes.tag;
+        render(
+            <TagNode
+                id="t:3"
+                type="tag"
+                selected
+                data={{
+                    node: { id: 't:3', label: 'Tag 3', kind: 'tag' },
+                    isActiveNode: false,
+                }}
+                dragging={false}
+                zIndex={0}
+                isConnectable
+                xPos={0}
+                yPos={0}
+            />,
+        );
+
+        const shell = screen.getByText('Tag 3').closest('div[data-node-state]');
+        expect(shell).toBeTruthy();
+        expect(shell?.className).toContain('ring-sky-300');
+        expect(shell?.className).toContain('dark:ring-sky-400');
+        expect(shell?.className).not.toContain('outline-emerald-500');
     });
 
     it('applies active-node ring styling to comment nodes when selected', () => {

@@ -22,6 +22,8 @@ import { useMemo, useState } from 'react';
 import { workspaceActor, workspaceBackend } from '../backend';
 import './index.css';
 import './node-row.css';
+export { NativeFallbackEditor } from '@/workspace/fallback-editor/index.tsx';
+export type { NativeFallbackEditorProps } from '@/workspace/fallback-editor/index.tsx';
 
 const inputRegistry = createInputRegistry();
 registerEntries(inputRegistry);

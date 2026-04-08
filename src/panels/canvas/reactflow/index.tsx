@@ -29,7 +29,8 @@ type BaseData = {
 };
 type CanvasNode = Node<BaseData, 'tag' | 'field' | 'option' | 'comment'>;
 
-const ACTIVE_NODE_RING_CLASS = 'ring-2 ring-sky-300 shadow-lg shadow-sky-300/20 dark:ring-sky-400';
+const SELECTED_NODE_RING_CLASS = 'ring-2 ring-sky-300 shadow-lg shadow-sky-300/20 dark:ring-sky-400';
+const ACTIVE_NODE_OUTLINE_CLASS = 'outline-2 outline-solid outline-emerald-500 dark:outline-emerald-400';
 const HIGHLIGHT_NODE_OUTLINE_CLASS = 'outline-2 outline-solid outline-amber-300 dark:outline-amber-200';
 
 function NodeShell({
@@ -90,8 +91,8 @@ function NodeShell({
                 .join(' ')}
             className={
                 'group relative min-w-44 rounded-lg bg-white p-3 ring-1 ring-slate-200 shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-200 dark:bg-slate-900 dark:ring-slate-700 ' +
-                (selected ? `${ACTIVE_NODE_RING_CLASS} ` : 'hover:shadow-lg ') +
-                (isActiveNode ? `${ACTIVE_NODE_RING_CLASS} ` : '') +
+                (selected ? `${SELECTED_NODE_RING_CLASS} ` : 'hover:shadow-lg ') +
+                (isActiveNode ? `${ACTIVE_NODE_OUTLINE_CLASS} ` : '') +
                 (isCurrentTag ? 'ring-2 ring-emerald-500 bg-emerald-50/70 shadow-lg shadow-emerald-500/25 dark:bg-emerald-500/10 ' : '') +
                 (isVisibleGroupField ? 'ring-2 ring-emerald-300 bg-emerald-50/35 dark:bg-emerald-500/5 ' : '') +
                 (isRelatedTag ? 'ring-1 ring-teal-300 bg-teal-50/25 dark:bg-teal-500/8 ' : '') +
@@ -197,11 +198,11 @@ function OptionNode(props: NodeProps<CanvasNode>) {
                     props.data.focusDimLevel && props.data.focusDimLevel !== 'none' ? `dim-${props.data.focusDimLevel}` : '',
                 ]
                     .filter(Boolean)
-                    .join(' ')}
+                .join(' ')}
                 className={
                     'relative rounded-full border px-4 py-1.5 text-sm bg-white text-slate-800 transition dark:bg-slate-900 dark:text-slate-200 ' +
-                    (props.selected ? 'border-sky-300 bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:border-sky-400 ' : 'border-slate-300 dark:border-slate-700 ') +
-                    (props.data.isActiveNode ? `${ACTIVE_NODE_RING_CLASS} ` : '') +
+                    (props.selected ? `border-sky-300 bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:border-sky-400 ${SELECTED_NODE_RING_CLASS} ` : 'border-slate-300 dark:border-slate-700 ') +
+                    (props.data.isActiveNode ? `${ACTIVE_NODE_OUTLINE_CLASS} ` : '') +
                     (props.data.isCurrentTag ? 'ring-2 ring-emerald-500 bg-emerald-50/70 dark:bg-emerald-500/10 ' : '') +
                     (props.data.isVisibleGroupField ? 'ring-2 ring-emerald-300 bg-emerald-50/35 dark:bg-emerald-500/5 ' : '') +
                     (props.data.isRelatedTag ? 'ring-1 ring-teal-300 bg-teal-50/25 dark:bg-teal-500/8 ' : '') +
@@ -244,7 +245,7 @@ function CommentNode(props: NodeProps<CanvasNode>) {
         <div
             className={
                 'h-48 w-64 rounded-lg border border-[#E0E0E0] bg-[#FEFBEA] shadow-md transition-all hover:shadow-lg dark:border-[#555] dark:bg-[#4a4a38] ' +
-                (props.selected ? `${ACTIVE_NODE_RING_CLASS} ` : '')
+                (props.selected ? `${SELECTED_NODE_RING_CLASS} ` : '')
             }
         >
             <div className="flex items-center gap-2 border-b border-[#E0E0E0]/70 px-3 py-2 text-xs font-medium text-slate-600 dark:border-[#555] dark:text-slate-300">
