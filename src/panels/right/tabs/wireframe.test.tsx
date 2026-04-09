@@ -81,17 +81,27 @@ function makeCanvas(optionIds: string[] = []) {
 }
 
 function makeFlow(overrides: Record<string, unknown> = {}) {
+    const snapshot = {
+        orderKind: 'contract',
+        orderKindSource: { nodeKind: 'field', nodeId: 'f:mode' },
+    };
+
     return {
+        ready: true,
         min: 100,
         max: 2000,
         quantityPreview: 1500,
         services: ['101', '202'],
+        activeTagId: 't:sample',
+        formValuesByFieldId: {},
+        optionSelectionsByFieldId: {},
         pricingPreview: {
             base: 12.5,
             utilities: 2,
             total: 14.5,
             utilityBreakdown: [{ nodeId: 'n:1', mode: 'flat', amount: 2 }],
         },
+        buildSnapshot: () => snapshot,
         visibleGroup: null,
         ...overrides,
     };
@@ -132,6 +142,10 @@ describe('Wireframe footer summary', () => {
         expect(screen.getByText('1,500')).toBeInTheDocument();
         expect(screen.getByText('Min/Max:')).toBeInTheDocument();
         expect(screen.getByText('100 - 2,000')).toBeInTheDocument();
+        expect(screen.getByText('Order kind:')).toBeInTheDocument();
+        expect(screen.getByText('contract')).toBeInTheDocument();
+        expect(screen.getByText('Order kind source:')).toBeInTheDocument();
+        expect(screen.getByText('field:f:mode')).toBeInTheDocument();
         expect(screen.getByText('Services:')).toBeInTheDocument();
         expect(screen.getByText('Base:')).toBeInTheDocument();
         expect(screen.getByText('12.5')).toBeInTheDocument();
@@ -174,6 +188,8 @@ describe('Wireframe footer summary', () => {
                 min: Number.NaN,
                 max: Number.POSITIVE_INFINITY,
                 quantityPreview: Number.NaN,
+                ready: false,
+                buildSnapshot: () => undefined,
                 pricingPreview: {
                     base: Number.NaN,
                     utilities: undefined,

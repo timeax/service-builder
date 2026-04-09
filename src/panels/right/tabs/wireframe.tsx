@@ -25,7 +25,17 @@ type FooterSummaryItem = {
     detailsKind?: FooterDetailKind;
 };
 
-export function Wireframe() {
+export type WireframeProps = {
+    kinds?: string[];
+    defaultKind?: string;
+};
+
+function formatOrderKindSource(source: { nodeKind: 'tag' | 'field' | 'option'; nodeId: string } | null | undefined): string {
+    if (!source) return '--';
+    return `${source.nodeKind}:${source.nodeId}`;
+}
+
+export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }: WireframeProps) {
     const canvas = useCanvas();
     const ws = useWorkspace();
     const { openNodeContextMenu, canAcceptDropPayload, handleNodeDrop } = useNodeContextMenu();
@@ -33,6 +43,14 @@ export function Wireframe() {
     const previewFields = useMemo(() => getVisiblePreviewFields(canvas, currentTag?.id), [canvas.props, canvas.selectionInfo, canvas.activeId]);
     const selectedOptionsCount = canvas.selectionInfo.optionIds.length;
     const flow = useOrderFlow();
+    const orderSnapshot = useMemo(() => {
+        if (!flow.ready) return undefined;
+        try {
+            return flow.buildSnapshot();
+        } catch {
+            return undefined;
+        }
+    }, [flow.ready, flow.activeTagId, flow.optionSelectionsByFieldId, flow.formValuesByFieldId]);
     const [isFooterOpen, setIsFooterOpen] = useState(true);
 
     const footerSummary = useMemo<FooterSummaryItem[]>(() => {
@@ -46,6 +64,8 @@ export function Wireframe() {
             { label: 'Selected options', value: String(selectedOptionsCount) },
             { label: 'Quantity', value: formatMetricNumber(flow.quantityPreview) },
             { label: 'Min/Max', value: rangeText },
+            { label: 'Order kind', value: orderSnapshot?.orderKind ?? '--' },
+            { label: 'Order kind source', value: formatOrderKindSource(orderSnapshot?.orderKindSource) },
             { label: 'Services', value: String(flow.services.length), detailsKind: 'services' },
             { label: 'Base', value: formatMetricNumber(flow.pricingPreview?.base), detailsKind: 'pricing' },
             { label: 'Utilities', value: formatMetricNumber(flow.pricingPreview?.utilities), detailsKind: 'pricing' },
@@ -62,6 +82,8 @@ export function Wireframe() {
         flow.pricingPreview?.utilityBreakdown?.length,
         flow.quantityPreview,
         flow.services.length,
+        orderSnapshot?.orderKind,
+        orderSnapshot?.orderKindSource,
         previewFields.length,
         selectedOptionsCount,
     ]);

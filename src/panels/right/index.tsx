@@ -12,9 +12,11 @@ import { useCanvas } from '@timeax/digital-service-engine/workspace';
 export type RightPanelProps = {
     onShare?: (snapshotData: EditorSnapshot | undefined) => void | Promise<void>;
     onPlay?: (payload: { serviceProps: ServiceProps; capabilitiesMap: DgpServiceMap; workspaceId: string; branchId?: string }) => void | Promise<void>;
+    kinds?: string[];
+    defaultKind?: string;
 };
 
-const RightPanel = ({ onShare, onPlay }: RightPanelProps) => {
+const RightPanel = ({ onShare, onPlay, kinds = [], defaultKind = '' }: RightPanelProps) => {
     const tabClassName = cn(
         'm-0! rounded-none! border-t-0! border-r-0! border-b-2! border-l-0! border-transparent! py-2.5! shadow-none!',
         'bg-transparent! text-slate-400 hover:bg-transparent hover:text-slate-700! data-[state=active]:text-slate-900!',
@@ -53,12 +55,12 @@ const RightPanel = ({ onShare, onPlay }: RightPanelProps) => {
                         <Comments />
                     </TabsContent>
                     <TabsContent className={'min-h-0 grow overflow-hidden'} value="properties">
-                        <Properties />
+                        <Properties kinds={kinds} defaultKind={defaultKind} />
                     </TabsContent>
                     <TabsContent className={'min-h-0 grow overflow-hidden'} value="wireframe" forceMount>
                         {/*@ts-ignore*/}
                         <OrderFlowProvider serviceProps={props} builder={api.builder} selection={api.selection!} registry={registry}>
-                            <Wireframe />
+                            <Wireframe kinds={kinds} defaultKind={defaultKind} />
                         </OrderFlowProvider>
                     </TabsContent>
                 </Tabs>

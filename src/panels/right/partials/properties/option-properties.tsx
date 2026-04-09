@@ -7,6 +7,7 @@ import type { OptionNode } from '@timeax/digital-service-engine/core';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
 import { getOptionPropertyCapabilities } from './components/node-capabilities.ts';
+import OrderKindSection from './components/order-kind-section.tsx';
 import QuantitySection from './components/quantity-section.tsx';
 import UtilitySection from './components/utility-section.tsx';
 import { IncExcludeSection } from './components/Union';
@@ -14,9 +15,11 @@ import { IncExcludeSection } from './components/Union';
 export interface OptionPropertiesProps {
     className?: string;
     node: OptionNode;
+    kinds?: string[];
+    defaultKind?: string;
 }
 
-export function OptionProperties({ className, node }: OptionPropertiesProps) {
+export function OptionProperties({ className, node, kinds, defaultKind }: OptionPropertiesProps) {
     const canvas = useCanvas();
     const capabilities = getOptionPropertyCapabilities(node);
     const field = node.field();
@@ -60,6 +63,9 @@ export function OptionProperties({ className, node }: OptionPropertiesProps) {
                         </div>
                     </Section.Content>
                 </Section>
+                <Separator />
+
+                <OrderKindSection nodeId={node.id} nodeKind="option" kinds={kinds} defaultKind={defaultKind} />
                 <Separator />
 
                 <QuantitySection node={node} />

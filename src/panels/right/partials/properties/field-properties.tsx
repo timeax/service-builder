@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { DescriptorSettings, getDescriptorUiKeys } from './components/descriptor-settings.tsx';
 import { mergeNodeMeta } from './components/meta.ts';
 import { getFieldPropertyCapabilities } from './components/node-capabilities.ts';
+import OrderKindSection from './components/order-kind-section.tsx';
 import QuantitySection from './components/quantity-section.tsx';
 import UtilitySection from './components/utility-section.tsx';
 import ValidationSection from './components/validation-section.tsx';
@@ -19,6 +20,8 @@ import { IncExcludeSection } from './components/Union';
 export interface FieldPropertiesProps {
     className?: string;
     node: FieldNode;
+    kinds?: string[];
+    defaultKind?: string;
 }
 
 const getVariant = (node: FieldNode) => {
@@ -45,7 +48,7 @@ const pruneDescriptorDefaults = (
     return Object.keys(nextDefaults).length ? nextDefaults : undefined;
 };
 
-export function FieldProperties({ className, node }: FieldPropertiesProps) {
+export function FieldProperties({ className, node, kinds, defaultKind }: FieldPropertiesProps) {
     const canvas = useCanvas();
     const { registry } = useInputs();
     const capabilities = getFieldPropertyCapabilities(node);
@@ -99,6 +102,7 @@ export function FieldProperties({ className, node }: FieldPropertiesProps) {
     }, [currentType, registry]);
 
     const canEditVariant = variantEntries.length > 0 || Boolean(currentVariant);
+    const canSetOrderKind = capabilities.isButton && !capabilities.hasOptions;
 
     const updateDefaults = (nextDefaults: Record<string, unknown> | undefined) => {
         canvas.api.editor.updateField(node.id, { defaults: nextDefaults } as any);
@@ -216,6 +220,18 @@ export function FieldProperties({ className, node }: FieldPropertiesProps) {
                         </div>
                     </Section.Content>
                 </Section>
+                <Separator />
+
+                <OrderKindSection
+                    nodeId={node.id}
+                    nodeKind="field"
+                    kinds={kinds}
+                    defaultKind={defaultKind}
+                    disabled={!canSetOrderKind}
+                    disabledMessage={
+                        !canSetOrderKind ? 'Order kind is supported only on button fields without options.' : undefined
+                    }
+                />
                 <Separator />
 
                 <Section>

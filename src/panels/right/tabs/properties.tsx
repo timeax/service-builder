@@ -16,13 +16,18 @@ import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { MdOutlineContentCopy } from 'react-icons/md';
 import { WorkspaceBootInlineNotice } from '@/workspace/boot-status.tsx';
 
-const kinds: Record<Exclude<NodeKind, 'comment'>, any> = {
+const propertyComponents: Record<Exclude<NodeKind, 'comment'>, any> = {
     tag: TagProperties,
     option: OptionProperties,
     field: FieldProperties,
 };
 
-export const Properties = () => {
+export type PropertiesProps = {
+    kinds?: string[];
+    defaultKind?: string;
+};
+
+export const Properties = ({ kinds = [], defaultKind = '' }: PropertiesProps) => {
     const canvas = useCanvas();
     const ws = useWorkspace();
     const node: TagNode | FieldNode | OptionNode = useMemo(() => {
@@ -32,7 +37,7 @@ export const Properties = () => {
 
     const [copying, setCopying] = useState(false);
 
-    const Kind = kinds[node.kind];
+    const Kind = propertyComponents[node.kind];
 
     if (!Kind) {
         return (
@@ -113,7 +118,7 @@ export const Properties = () => {
                     </Section>
 
                     <Separator />
-                    <Kind node={node} />
+                    <Kind node={node} kinds={kinds} defaultKind={defaultKind} />
                 </div>
             </ScrollArea>
         </div>
