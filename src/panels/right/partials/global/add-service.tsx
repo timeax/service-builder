@@ -41,6 +41,7 @@ export function AddService({ className, data, disabled, disabledMessage, readOnl
     const isReadOnly = Boolean(disabled || readOnly);
     const helperMessage = readOnlyMessage ?? disabledMessage;
 
+   // console.log(data, connectedService, servicesMap[data.raw.service_id as keyof typeof servicesMap], data.raw.service_id, servicesMap);
     return (
         <Section className={className}>
             <Section.Header>

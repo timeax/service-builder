@@ -1,23 +1,24 @@
 import type { BottomConsolePanelState } from '@/builder/bottom-panel.ts';
 import { useNodeContextMenu } from '@/builder/node-context-menu.tsx';
 import { EmptyState } from '@/components/builder/index.tsx';
+import { buildServiceContextSnapshot, buildServiceRowVM, type ServiceContextState } from '@/builder/service-context.ts';
 import {
     defaultCanvasViewPrefs,
     deriveCanvasPresentation,
     edgeStyleForState,
     parseEdgeId as parseRelationEdgeId,
 } from '@/panels/canvas/presentation.ts';
+import type { BuilderServiceSummary } from '@/builder/bottom-panel.ts';
 import { BOOT_SECTION_LABELS, getBootActionReason, getFailedBlockingSections } from '@/workspace/boot.ts';
 import { deriveWorkspaceAuthorization, getAuthorizationDecision } from '@/workspace/authorization.ts';
 import type { EditorSnapshot } from '@timeax/digital-service-engine';
-import type { ServiceCatalogState, ServiceProps } from '@timeax/digital-service-engine/schema';
+import type { DgpServiceCapability, ServiceCatalogState, ServiceProps } from '@timeax/digital-service-engine/schema';
 import { useCanvas, type UseErrorsReturn, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import cloneDeep from 'lodash/cloneDeep';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FiAlertCircle } from 'react-icons/fi';
 import type { AdapterOptions } from './adapter.ts';
 import { AppToolbar } from './app-toolbar.tsx';
-import { CanvasOverlays } from './canvas-overlays.tsx';
 import { FlowCanvas } from './flow-canvas.tsx';
 import { ImportJsonModal, type ImportTarget } from './import-json-modal.tsx';
 import type { LabelPlacement, ToolbarOrientation, ToolsConfig } from './toolbar/types.ts';
@@ -28,13 +29,7 @@ import {
     hashSnapshot,
     type HistoryState,
     loadCanvasViewPrefs,
-    loadOverlayState,
-    OVERLAY_DEFAULTS,
-    type OverlayState,
     persistCanvasViewPrefs,
-    persistOverlayState,
-    restoreAllOverlays,
-    storageKey,
     viewPrefsStorageKey,
 } from './utils.ts';
 
@@ -96,27 +91,17 @@ export default function CanvasPanel({
     });
     const [currentSnapshotHash, setCurrentSnapshotHash] = useState(initialSnapshotHash);
     const [persistedBaselineHash, setPersistedBaselineHash] = useState(initialSnapshotHash);
-    const [overlayState, setOverlayState] = useState<OverlayState>(() => loadOverlayState(storageKey(ws), OVERLAY_DEFAULTS));
     const [viewPrefs, setViewPrefs] = useState<CanvasViewPrefsState>(() => loadCanvasViewPrefs(viewPrefsStorageKey(ws), defaultCanvasViewPrefs));
     const [presentationVersion, setPresentationVersion] = useState(0);
     const lastSyncedSnapshotHashRef = useRef<string>(initialSnapshotHash);
     const guardedEditorRef = useRef<object | null>(null);
 
-    const freeThreads = useMemo(
-        () => (ws.comments.threads.data ?? []).filter((thread) => thread.anchor?.type === 'free'),
-        [ws.comments.threads.data],
-    );
+    const servicesMap = (ws.services?.data ?? {}) as Record<string, DgpServiceCapability>;
 
     const errorNodeIds = useMemo(
         () => new Set((errors.merged.validation ?? []).map((row) => row.nodeId).filter(Boolean) as string[]),
         [errors.merged.validation],
     );
-
-    const stats = {
-        tags: canvas.layers.tags.length,
-        fields: canvas.layers.fields.length,
-        comments: (ws.comments.threads.data ?? []).length,
-    };
 
     const auth = useMemo(
         () =>
@@ -149,31 +134,12 @@ export default function CanvasPanel({
 
 
     useEffect(() => {
-        setOverlayState(loadOverlayState(storageKey(ws), OVERLAY_DEFAULTS));
         setViewPrefs(loadCanvasViewPrefs(viewPrefsStorageKey(ws), defaultCanvasViewPrefs));
     }, [ws.info.id, ws.branches.currentId]);
 
     useEffect(() => {
-        persistOverlayState(storageKey(ws), overlayState);
-    }, [overlayState, ws]);
-
-    useEffect(() => {
         persistCanvasViewPrefs(viewPrefsStorageKey(ws), viewPrefs);
     }, [viewPrefs, ws]);
-
-    useEffect(() => {
-        const onKeyDown = (event: KeyboardEvent) => {
-            const shortcut = (event.metaKey || event.ctrlKey) && event.shiftKey && !event.altKey && event.key.toLowerCase() === 'o';
-
-            if (!shortcut) return;
-
-            event.preventDefault();
-            setOverlayState(restoreAllOverlays());
-        };
-
-        window.addEventListener('keydown', onKeyDown);
-        return () => window.removeEventListener('keydown', onKeyDown);
-    }, []);
 
     useEffect(() => {
         const resetHash = hashSnapshot((ws.snapshot.data as EditorSnapshot | undefined) ?? null);
@@ -368,19 +334,23 @@ export default function CanvasPanel({
     const bootActionReason = getBootActionReason(ws.boot);
     const failedBlockingSections = getFailedBlockingSections(ws.boot);
 
-    const resolvedCurrentTagId = useMemo(() => {
+    const resolvedCurrentTagId = useMemo<string | null>(() => {
         const activeId = canvas.activeId;
 
         if (activeId) {
             try {
                 const activeNode = canvas.selector.getNode(activeId);
-                if (activeNode?.kind === 'tag') return activeId;
+                if (activeNode?.kind === 'tag') return String(activeId);
             } catch {
                 /* fall through */
             }
         }
 
-        return canvas.api.selection.currentTag?.() ?? null;
+        const fromSelection = canvas.api.selection.currentTag?.();
+        if (fromSelection != null) return String(fromSelection);
+
+        const visibleTagFallback = canvas.layers.tags[0]?.id ?? null;
+        return visibleTagFallback != null ? String(visibleTagFallback) : null;
     }, [canvas.activeId, canvas.api, canvas.selector, presentationVersion]);
 
     const resolvedVisibleFieldIds = useMemo(() => {
@@ -423,6 +393,82 @@ export default function CanvasPanel({
             prefs: viewPrefs,
         });
     }, [canvas.activeId, canvas.api, resolvedCurrentTagId, resolvedVisibleFieldIds, viewPrefs, presentationVersion]);
+
+    const selectedButtons = useMemo(() => {
+        const fromButtons = ((canvas.api.selection.selectedButtons?.() ?? []) as Array<string | number>).map((value) => String(value));
+        const fromOptions = ((canvas.selectionInfo.optionIds ?? []) as Array<string | number>).map((value) => String(value));
+        return Array.from(new Set([...fromButtons, ...fromOptions]));
+    }, [canvas.api.selection, canvas.selectionInfo.optionIds]);
+    const liveContextState = useMemo<ServiceContextState>(
+        () => ({
+            selectedTagId: resolvedCurrentTagId != null ? String(resolvedCurrentTagId) : null,
+            selectedButtons,
+            strictSafety: true,
+            enforcePolicies: true,
+        }),
+        [resolvedCurrentTagId, selectedButtons],
+    );
+    const liveContextSnapshot = useMemo(
+        () => buildServiceContextSnapshot({ props: canvas.props, services: servicesMap, state: liveContextState }),
+        [canvas.props, liveContextState, servicesMap],
+    );
+    const checksById = useMemo(() => {
+        if (!liveContextSnapshot.selectedTag) return new Map<string, any>();
+        const candidateIds = Object.values(servicesMap).map((service: any) => service.id);
+        const checks = (canvas.api.editor as any).filterServicesForVisibleGroup(candidateIds, {
+            tagId: liveContextSnapshot.selectedTag.id,
+            selectedButtons: liveContextSnapshot.state.selectedButtons,
+            usedServiceIds: liveContextSnapshot.usedServiceIds,
+            effectiveConstraints: liveContextSnapshot.selectedTag.constraints,
+            policies: ws.policies?.policies?.data ?? [],
+        });
+        return new Map(checks.map((check: any) => [String(check.id), check]));
+    }, [canvas.api.editor, liveContextSnapshot, servicesMap, ws.policies?.policies?.data]);
+    const serviceContextRows = useMemo(() => {
+        return liveContextSnapshot.usedServiceIds
+            .map((id) => {
+                const service = servicesMap[id as keyof typeof servicesMap];
+                if (!service) return null;
+                const summary: BuilderServiceSummary = {
+                    id: service.id,
+                    name: service.name,
+                    category: service.category,
+                    rate: service.rate,
+                    min: service.min,
+                    max: service.max,
+                    platformId: typeof service.platform_id === 'string' ? service.platform_id : undefined,
+                    estimate: null,
+                    flags: [],
+                    attachmentCount: 0,
+                    attachedNodeIds: [],
+                    attachedNodeLabels: [],
+                    active: false,
+                };
+                return buildServiceRowVM({
+                    summary,
+                    services: servicesMap,
+                    check: checksById.get(String(service.id)),
+                    state: liveContextState,
+                });
+            })
+            .filter(Boolean);
+    }, [checksById, liveContextSnapshot.usedServiceIds, liveContextState, servicesMap]);
+    const serviceContextSystemData = useMemo(
+        () => ({
+            serviceContext: {
+                selectedTagLabel: liveContextSnapshot.selectedTag?.label ?? 'No tag selected',
+                selectedButtonsCount: selectedButtons.length,
+                services: serviceContextRows.slice(0, 6).map((row: any) => ({
+                    id: row.id,
+                    name: row.summary.name,
+                    rateLabel: row.summary.rate != null ? `Rate ${row.summary.rate}` : 'Rate n/a',
+                    statusLabel: row.statusLabel,
+                    reasonLabels: row.reasonLabels,
+                })),
+            },
+        }),
+        [liveContextSnapshot.selectedTag?.label, selectedButtons.length, serviceContextRows],
+    );
 
     const nodeDecorators = useMemo<NonNullable<AdapterOptions['nodeDecorators']>>(
         () => (nodeId) => {
@@ -534,8 +580,17 @@ export default function CanvasPanel({
                 ...(edgeDecorators(edgeId) ?? {}),
                 ...(options?.edgeDecorators?.(edgeId) ?? {}),
             }),
+            systemNode: showOverlays
+                ? {
+                      enabled: true,
+                      id: 'sys::service-context',
+                      storageKey: `service-builder.canvas.system-node.service-context.${ws.info.id}.${ws.branches.currentId ?? 'none'}`,
+                      defaultPosition: { x: 520, y: 64 },
+                      data: serviceContextSystemData,
+                  }
+                : { enabled: false, storageKey: `service-builder.canvas.system-node.service-context.${ws.info.id}.${ws.branches.currentId ?? 'none'}`, data: serviceContextSystemData },
         }),
-        [canCommentWrite, canEditBranchContent, edgeDecorators, editDecision.reason, emitPermissionDenied, nodeDecorators, options],
+        [canCommentWrite, canEditBranchContent, edgeDecorators, editDecision.reason, emitPermissionDenied, nodeDecorators, options, serviceContextSystemData, showOverlays, ws.branches.currentId, ws.info.id],
     );
 
     const createAnchoredComment = useCallback(
@@ -644,7 +699,7 @@ export default function CanvasPanel({
                     }))
                 }
                 onNodeContextMenu={({ nodeId, nodeKind, clientX, clientY, event }) => {
-                    if (nodeKind === 'comment' || nodeId.startsWith('c::')) {
+                    if (nodeKind === 'comment' || nodeKind === 'service-context-system' || nodeId.startsWith('c::') || nodeId.startsWith('sys::')) {
                         return;
                     }
 
@@ -784,17 +839,6 @@ export default function CanvasPanel({
                     onImportProps={importProps}
                     onImportCatalog={importCatalog}
                 />
-
-                {showOverlays ? (
-                    <CanvasOverlays
-                        state={overlayState}
-                        setState={setOverlayState}
-                        stats={stats}
-                        activeId={canvas.activeId}
-                        selectedCount={canvas.selectionInfo.ids.length}
-                        freeThreadCount={freeThreads.length}
-                    />
-                ) : null}
 
                 {failedBlockingSections.length ? (
                     <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-6">

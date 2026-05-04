@@ -30,7 +30,7 @@ export type CanvasSurfaceProps = {
     toolbarPositionClassName?: string;
     onNodeContextMenu?: (payload: {
         nodeId: string;
-        nodeKind: 'tag' | 'field' | 'option' | 'comment';
+        nodeKind: 'tag' | 'field' | 'option' | 'comment' | 'service-context-system';
         clientX: number;
         clientY: number;
         event: React.MouseEvent;
@@ -182,10 +182,14 @@ export function CanvasSurface({
                 onNodeContextMenu={(event, node) => {
                     const kind =
                         (node.data as { node: AnyNode })?.node?.kind ??
-                        (node.type === 'tag' || node.type === 'field' || node.type === 'option' || node.type === 'comment' ? node.type : 'comment');
+                        (node.type === 'tag' || node.type === 'field' || node.type === 'option' || node.type === 'comment'
+                            ? node.type
+                            : node.type === 'serviceContextSystem'
+                              ? 'service-context-system'
+                              : 'comment');
                     onNodeContextMenu?.({
                         nodeId: node.id,
-                        nodeKind: kind as 'tag' | 'field' | 'option' | 'comment',
+                        nodeKind: kind as 'tag' | 'field' | 'option' | 'comment' | 'service-context-system',
                         clientX: event.clientX,
                         clientY: event.clientY,
                         event,

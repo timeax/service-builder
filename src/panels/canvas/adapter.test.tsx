@@ -67,6 +67,33 @@ function createApiMock(relation: 'bind' | 'include' | 'exclude', overrides?: { s
 }
 
 describe('react flow adapter', () => {
+    it('refreshes system node content when only system-node data changes', () => {
+        const { api } = createApiMock('bind');
+        const { result, rerender } = renderHook(
+            ({ data }) =>
+                useReactFlowAdapter(api, {
+                    systemNode: {
+                        enabled: true,
+                        storageKey: 'test.system.node',
+                        data: {
+                            serviceContext: {
+                                selectedTagLabel: data,
+                                selectedButtonsCount: 0,
+                                services: [],
+                            },
+                        },
+                    },
+                }),
+            {
+                initialProps: { data: 'Tag A' },
+            },
+        );
+
+        expect((result.current.nodes.find((node) => node.id === 'sys::service-context')?.data as any)?.serviceContext?.selectedTagLabel).toBe('Tag A');
+        rerender({ data: 'Tag B' });
+        expect((result.current.nodes.find((node) => node.id === 'sys::service-context')?.data as any)?.serviceContext?.selectedTagLabel).toBe('Tag B');
+    });
+
     it('uses current toolbar relation mode for wire start and connect', () => {
         const { api } = createApiMock('exclude');
         const { result } = renderHook(() => useReactFlowAdapter(api));

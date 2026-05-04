@@ -300,6 +300,18 @@ function clickPopoverCheckbox(label: string) {
     fireEvent.click(input);
 }
 
+async function clickHideServicesCheckbox(label: string) {
+    if (!screen.queryByText(label)) {
+        fireEvent.click(screen.getByRole('button', { name: 'Hide services options' }));
+    }
+    const text = await screen.findByText(label);
+    const row = text.closest('label');
+    if (!row) throw new Error(`Unable to locate hide-services row for ${label}`);
+    const input = row.querySelector('input[type="checkbox"]');
+    if (!(input instanceof HTMLInputElement)) throw new Error(`Unable to locate hide-services checkbox for ${label}`);
+    fireEvent.click(input);
+}
+
 function flattenTreeOptions(options: Array<any>): Array<any> {
     return options.flatMap((option) => [option, ...flattenTreeOptions(option.children ?? [])]);
 }
@@ -371,7 +383,7 @@ describe('BottomConsolePanel service catalog', () => {
     it('keeps hide active separate from compatibility filtering', async () => {
         renderPanel();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Hide active services' }));
+        await clickHideServicesCheckbox('Hide active services');
 
         await waitFor(() => {
             expect(screen.queryByText('Compatible Active Service')).not.toBeInTheDocument();
@@ -385,6 +397,48 @@ describe('BottomConsolePanel service catalog', () => {
         await waitFor(() => {
             expect(screen.queryByText('Compatible Active Service')).not.toBeInTheDocument();
             expect(screen.queryByText('Incompatible Available Service')).not.toBeInTheDocument();
+        });
+    });
+
+    it('shows hide-services dropdown options with checkboxes', async () => {
+        renderPanel();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Hide services options' }));
+        expect(screen.getByText('Hide active services')).toBeInTheDocument();
+        expect(screen.getByText('Hide non-eligible for context')).toBeInTheDocument();
+    });
+
+    it('hides non-eligible services when requested', async () => {
+        renderPanel();
+        await clickHideServicesCheckbox('Hide non-eligible for context');
+
+        await waitFor(() => {
+            expect(screen.getAllByText('Compatible Active Service').length).toBeGreaterThan(0);
+            expect(screen.queryByText('Incompatible Available Service')).not.toBeInTheDocument();
+        });
+    });
+
+    it('combines both hide toggles', async () => {
+        renderPanel();
+        await clickHideServicesCheckbox('Hide active services');
+        await clickHideServicesCheckbox('Hide non-eligible for context');
+
+        await waitFor(() => {
+            expect(screen.queryByText('Compatible Active Service')).not.toBeInTheDocument();
+            expect(screen.queryByText('Incompatible Available Service')).not.toBeInTheDocument();
+        });
+    });
+
+    it('marks hide-services trigger as active when any hide option is enabled', async () => {
+        renderPanel();
+
+        const hideButton = screen.getByRole('button', { name: 'Hide services options' });
+        expect(hideButton.className).not.toContain('bg-blue-50');
+
+        await clickHideServicesCheckbox('Hide non-eligible for context');
+
+        await waitFor(() => {
+            expect(hideButton.className).toContain('bg-blue-50');
         });
     });
 

@@ -8,6 +8,7 @@ import {
 } from '@/builder/service-context.ts';
 import { Button } from '@/components/ui/button.tsx';
 import { Panel } from '@/components/ui/panel.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { cn } from '@/lib/utils.ts';
@@ -64,6 +65,7 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
     const [allSearch, setAllSearch] = useState('');
     const [compatibleOnly, setCompatibleOnly] = useState(false);
     const [hideActiveServices, setHideActiveServices] = useState(false);
+    const [hideNonEligibleServices, setHideNonEligibleServices] = useState(false);
     const [filterOpen, setFilterOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [contextLinked, setContextLinked] = useState(false);
@@ -151,8 +153,19 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
                 )
                 .filter((row) => row.matchesSearch)
                 .filter((row) => !compatibleOnly || row.isCompatible)
+                .filter((row) => !hideNonEligibleServices || row.isCompatible)
                 .filter((row) => !hideActiveServices || !hiddenServiceIds.has(row.id)),
-        [allChecksById, allSearch, allServices, compatibleOnly, effectiveCatalogContext, hiddenServiceIds, hideActiveServices, servicesMap],
+        [
+            allChecksById,
+            allSearch,
+            allServices,
+            compatibleOnly,
+            effectiveCatalogContext,
+            hiddenServiceIds,
+            hideActiveServices,
+            hideNonEligibleServices,
+            servicesMap,
+        ],
     );
 
     useEffect(() => {
@@ -568,13 +581,12 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
                                                 onDraftContextChange={setCatalogContextDraft}
                                             />
                                             <CatalogModeSwitch mode={catalogPanelMode} onChange={setCatalogMode} />
-                                            <HeaderIconButton
-                                                label="Hide active services"
-                                                active={hideActiveServices}
-                                                onClick={() => setHideActiveServices((current) => !current)}
-                                            >
-                                                {hideActiveServices ? <FiEyeOff /> : <FiEye />}
-                                            </HeaderIconButton>
+                                            <HideServicesMenu
+                                                hideActiveServices={hideActiveServices}
+                                                hideNonEligibleServices={hideNonEligibleServices}
+                                                onHideActiveServicesChange={setHideActiveServices}
+                                                onHideNonEligibleServicesChange={setHideNonEligibleServices}
+                                            />
                                         </>
                                     ) : null}
                                 </div>
@@ -683,6 +695,75 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
                 </div>
             </Panel>
         </div>
+    );
+}
+
+function HideServicesMenu({
+    hideActiveServices,
+    hideNonEligibleServices,
+    onHideActiveServicesChange,
+    onHideNonEligibleServicesChange,
+}: {
+    hideActiveServices: boolean;
+    hideNonEligibleServices: boolean;
+    onHideActiveServicesChange: (value: boolean) => void;
+    onHideNonEligibleServicesChange: (value: boolean) => void;
+}) {
+    const active = hideActiveServices || hideNonEligibleServices;
+    return (
+        <Popover>
+            <Tooltip>
+                <PopoverTrigger asChild>
+                    <TooltipTrigger asChild>
+                        <button
+                            type="button"
+                            aria-label="Hide services options"
+                            className={cn(
+                                'inline-flex h-9 w-9 items-center justify-center rounded-xl border text-sm transition',
+                                active
+                                    ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200'
+                                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-900',
+                            )}
+                        >
+                            {active ? <FiEyeOff /> : <FiEye />}
+                        </button>
+                    </TooltipTrigger>
+                </PopoverTrigger>
+                <TooltipContent side="top" sideOffset={8}>
+                    Hide services options
+                </TooltipContent>
+            </Tooltip>
+            <PopoverContent align="end" sideOffset={8} collisionPadding={16} className="w-80 rounded-2xl p-4">
+                <div className="space-y-3">
+                    <label className="flex items-start justify-between gap-3 text-sm text-slate-900 dark:text-slate-100">
+                        <span className="min-w-0">
+                            <span className="block font-medium">Hide active services</span>
+                            <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+                                Hide services already active in the current context.
+                            </span>
+                        </span>
+                        <input
+                            type="checkbox"
+                            checked={hideActiveServices}
+                            onChange={(event) => onHideActiveServicesChange(event.target.checked)}
+                        />
+                    </label>
+                    <label className="flex items-start justify-between gap-3 text-sm text-slate-900 dark:text-slate-100">
+                        <span className="min-w-0">
+                            <span className="block font-medium">Hide non-eligible for context</span>
+                            <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+                                Hide services currently marked as incompatible with this context.
+                            </span>
+                        </span>
+                        <input
+                            type="checkbox"
+                            checked={hideNonEligibleServices}
+                            onChange={(event) => onHideNonEligibleServicesChange(event.target.checked)}
+                        />
+                    </label>
+                </div>
+            </PopoverContent>
+        </Popover>
     );
 }
 

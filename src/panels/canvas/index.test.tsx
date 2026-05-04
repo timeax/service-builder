@@ -129,7 +129,6 @@ describe('CanvasPanel workspace boot integration', () => {
         );
 
         expect(screen.getByTestId('flow-canvas')).toBeInTheDocument();
-        expect(screen.getByText('Showing seeded data while live sync continues')).toBeInTheDocument();
         const disabledBootActions = screen.getAllByTitle('Live workspace data is still syncing.');
         expect(disabledBootActions.length).toBeGreaterThanOrEqual(2);
         for (const action of disabledBootActions) expect(action).toBeDisabled();
@@ -177,7 +176,8 @@ describe('CanvasPanel workspace boot integration', () => {
             />,
         );
 
-        expect(screen.getAllByText('Comment refresh failed.').length).toBeGreaterThan(0);
+        expect(screen.getByTestId('flow-canvas')).toBeInTheDocument();
+        expect(screen.queryByText('Comment refresh failed.')).toBeNull();
     });
 
     it('preserves editor method context when wrapper invokes edit methods', () => {

@@ -26,8 +26,19 @@ type BaseData = {
     isManualHighlighted?: boolean;
     showCurrentTagDot?: boolean;
     focusDimLevel?: 'none' | 'soft' | 'medium' | 'strong';
+    serviceContext?: {
+        selectedTagLabel: string;
+        selectedButtonsCount: number;
+        services: Array<{
+            id: string;
+            name: string;
+            rateLabel: string;
+            statusLabel: string;
+            reasonLabels: string[];
+        }>;
+    };
 };
-type CanvasNode = Node<BaseData, 'tag' | 'field' | 'option' | 'comment'>;
+type CanvasNode = Node<BaseData, 'tag' | 'field' | 'option' | 'comment' | 'serviceContextSystem'>;
 
 const SELECTED_NODE_RING_CLASS = 'ring-2 ring-sky-300 shadow-lg shadow-sky-300/20 dark:ring-sky-400';
 const ACTIVE_NODE_OUTLINE_CLASS = 'outline-2 outline-solid outline-emerald-500 dark:outline-emerald-400';
@@ -258,11 +269,48 @@ function CommentNode(props: NodeProps<CanvasNode>) {
     );
 }
 
+function ServiceContextSystemNode(props: NodeProps<CanvasNode>) {
+    const context = props.data.serviceContext;
+    const services = context?.services ?? [];
+    return (
+        <div
+            className={
+                'min-w-80 max-w-96 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/95 ' +
+                (props.selected ? `${SELECTED_NODE_RING_CLASS} ` : '')
+            }
+        >
+            <div className="text-base font-semibold text-slate-900 dark:text-slate-100">Service context</div>
+            <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">Active tag: {context?.selectedTagLabel ?? 'No tag selected'}</div>
+            <div className="text-sm text-slate-500 dark:text-slate-400">Selected buttons: {context?.selectedButtonsCount ?? 0}</div>
+
+            <div className="mt-3 space-y-2">
+                {services.length === 0 ? (
+                    <div className="rounded-lg bg-slate-50 px-2 py-2 text-sm text-slate-500 dark:bg-slate-900 dark:text-slate-400">No active services in current context</div>
+                ) : (
+                    services.slice(0, 4).map((service) => (
+                        <div key={service.id} className="rounded-lg bg-slate-50 px-2 py-2 dark:bg-slate-900">
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{service.name}</span>
+                                <span className="text-xs text-slate-500 dark:text-slate-400">{service.rateLabel}</span>
+                            </div>
+                            <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{service.statusLabel}</div>
+                            {service.reasonLabels.length ? (
+                                <div className="mt-1 truncate text-[11px] text-slate-400 dark:text-slate-500">{service.reasonLabels.join(', ')}</div>
+                            ) : null}
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
+    );
+}
+
 export const nodeTypes = {
     tag: TagNode,
     field: FieldNode,
     option: OptionNode,
     comment: CommentNode,
+    serviceContextSystem: ServiceContextSystemNode,
 };
 
 export const edgeTypes = {};

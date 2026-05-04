@@ -36,6 +36,25 @@ export type AdapterOptions = {
     canEditGraph?: boolean;
     canWriteComments?: boolean;
     onPermissionDenied?: (reason: string, meta?: Record<string, unknown>) => void;
+    systemNode?: {
+        enabled?: boolean;
+        id?: string;
+        storageKey: string;
+        defaultPosition?: { x: number; y: number };
+        data: {
+            serviceContext?: {
+                selectedTagLabel: string;
+                selectedButtonsCount: number;
+                services: Array<{
+                    id: string;
+                    name: string;
+                    rateLabel: string;
+                    statusLabel: string;
+                    reasonLabels: string[];
+                }>;
+            };
+        };
+    };
 };
 
 type CanvasAPI = UseCanvasReturn['api'];
@@ -44,6 +63,7 @@ type RFModel = { nodes: Node[]; edges: Edge[] };
 type RFSnapshotSig = {
     graph: string;
     selection: string;
+    system: string;
 };
 
 function rafThrottle<T extends (...args: any[]) => void>(fn: T, minMs = 80): T {
@@ -70,6 +90,8 @@ function rafThrottle<T extends (...args: any[]) => void>(fn: T, minMs = 80): T {
 }
 
 const isCommentId = (id: string) => id.startsWith('c::');
+const isSystemId = (id: string) => id.startsWith('sys::');
+const isRuntimeNodeId = (id: string) => isCommentId(id) || isSystemId(id);
 
 function sameIdSet(a: string[], b: string[]): boolean {
     if (a.length !== b.length) return false;
@@ -86,6 +108,28 @@ function commentPosition(anchor: any, state: ReturnType<CanvasAPI['snapshot']>) 
         return { x: base.x + (anchor.offset?.dx ?? 32), y: base.y + (anchor.offset?.dy ?? -16) };
     }
     return { x: 0, y: 0 };
+}
+
+function readSystemNodePosition(key: string, fallback: { x: number; y: number }) {
+    if (typeof window === 'undefined') return fallback;
+    try {
+        const raw = window.localStorage.getItem(key);
+        if (!raw) return fallback;
+        const parsed = JSON.parse(raw);
+        if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') return { x: parsed.x, y: parsed.y };
+    } catch {
+        // ignore
+    }
+    return fallback;
+}
+
+function writeSystemNodePosition(key: string, value: { x: number; y: number }) {
+    if (typeof window === 'undefined') return;
+    try {
+        window.localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+        // ignore
+    }
 }
 
 function stableDataString(value: unknown): string {
@@ -244,10 +288,15 @@ function buildSnapshotSig(state: ReturnType<CanvasAPI['snapshot']>, api: CanvasA
     return {
         graph: `${graphNodeSig}__${graphEdgeSig}__${positionSig}__${commentSig}`,
         selection: selectionSig,
+        system: '',
     };
 }
 
-function toRF(state: ReturnType<CanvasAPI['snapshot']>, api: CanvasAPI, opts?: Pick<AdapterOptions, 'nodeDecorators' | 'edgeDecorators'>): RFModel {
+function toRF(
+    state: ReturnType<CanvasAPI['snapshot']>,
+    api: CanvasAPI,
+    opts?: Pick<AdapterOptions, 'nodeDecorators' | 'edgeDecorators' | 'systemNode'>,
+): RFModel {
     // console.log(state)
     const nodes: Node[] = state.graph.nodes.map((n, index) => {
         const fallback = {
@@ -299,6 +348,19 @@ function toRF(state: ReturnType<CanvasAPI['snapshot']>, api: CanvasAPI, opts?: P
         }));
 
     nodes.push(...commentNodes);
+    if (opts?.systemNode && opts.systemNode.enabled !== false) {
+        const systemId = opts.systemNode.id ?? 'sys::service-context';
+        const fallback = opts.systemNode.defaultPosition ?? { x: 520, y: 64 };
+        const stored = readSystemNodePosition(opts.systemNode.storageKey, fallback);
+        nodes.push({
+            id: systemId,
+            type: 'serviceContextSystem',
+            data: opts.systemNode.data,
+            position: stored,
+            draggable: true,
+            selectable: true,
+        });
+    }
     return { nodes, edges };
 }
 
@@ -335,11 +397,20 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     const suppressSelectionRafRef = useRef<number | null>(null);
     const suppressSelectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastAppliedSigRef = useRef<RFSnapshotSig | null>(null);
+    const systemNodeSig = useMemo(() => {
+        if (!options.systemNode || options.systemNode.enabled === false) return 'disabled';
+        const payload = {
+            id: options.systemNode.id ?? 'sys::service-context',
+            data: options.systemNode.data ?? null,
+        };
+        return stableDataString(payload);
+    }, [options.systemNode]);
 
     const [rf, setRF] = useState<RFModel>(() =>
         toRF(api.snapshot(), api, {
             nodeDecorators: nodeDecoratorsRef.current,
             edgeDecorators: edgeDecoratorsRef.current,
+            systemNode: options.systemNode,
         }),
     );
 
@@ -386,14 +457,17 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     const syncFromSnapshot = useCallback(() => {
         const snap = api.snapshot();
         const sig = buildSnapshotSig(snap, api);
+        sig.system = systemNodeSig;
         const previousSig = lastAppliedSigRef.current;
         const graphChanged = !previousSig || previousSig.graph !== sig.graph;
         const selectionChanged = !previousSig || previousSig.selection !== sig.selection;
-        if (!graphChanged && !selectionChanged) return;
+        const systemChanged = !previousSig || previousSig.system !== sig.system;
+        if (!graphChanged && !selectionChanged && !systemChanged) return;
 
         const next = toRF(snap, api, {
             nodeDecorators: nodeDecoratorsRef.current,
             edgeDecorators: edgeDecoratorsRef.current,
+            systemNode: options.systemNode,
         });
 
         beginAdapterSelectionSync();
@@ -404,7 +478,7 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
         });
 
         lastAppliedSigRef.current = sig;
-    }, [api, beginAdapterSelectionSync]);
+    }, [api, beginAdapterSelectionSync, systemNodeSig]);
 
     const applyDecoratorSync = useCallback(() => {
         beginAdapterSelectionSync();
@@ -413,7 +487,7 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
             let edgeChanged = false;
 
             const nextNodes = prev.nodes.map((node) => {
-                if (!nodeDecoratorsRef.current || isCommentId(String(node.id))) return node;
+                if (!nodeDecoratorsRef.current || isRuntimeNodeId(String(node.id))) return node;
                 const decorator = nodeDecoratorsRef.current(String(node.id)) ?? undefined;
                 const decorated = applyNodeDecorator(node, decorator);
                 if (decorated !== node) nodeChanged = true;
@@ -527,7 +601,7 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
 
     useEffect(() => {
         requestStructuralSync();
-    }, [api, requestStructuralSync]);
+    }, [api, options.systemNode, requestStructuralSync]);
 
     const snapVector = useMemo<[number, number] | undefined>(() => {
         if (!options.snapToGrid) return undefined;
@@ -590,8 +664,8 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
     const onNodesChange: OnNodesChange = useCallback(
         async (changes) => {
             const hasGraphMutation = changes.some((change) => {
-                if (change.type === 'position' && change.position) return !isCommentId(change.id);
-                if (change.type === 'remove') return !isCommentId(change.id);
+                if (change.type === 'position' && change.position) return !isRuntimeNodeId(change.id);
+                if (change.type === 'remove') return !isRuntimeNodeId(change.id);
                 return false;
             });
             const hasCommentMutation = changes.some((change) => change.type === 'position' && change.position && isCommentId(change.id));
@@ -661,6 +735,11 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
                             continue;
                         }
                     }
+                    if (isSystemId(change.id)) {
+                        const snapped = applySnap(change.position);
+                        if (options.systemNode?.storageKey) writeSystemNodePosition(options.systemNode.storageKey, snapped);
+                        continue;
+                    }
 
                     const snapped = applySnap(change.position);
                     if (!(change.id in dragStartPositionsRef.current)) {
@@ -676,13 +755,14 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
                         api.selectComments(change.selected ? change.id.slice(3) : undefined);
                         continue;
                     }
+                    if (isSystemId(change.id)) continue;
                     selectionDirty = true;
                 }
             }
 
             if (Object.keys(posUpdates).length > 0) setPositionsThrottled(posUpdates);
             if (selectionDirty && !suppressSelectionSyncRef.current) {
-                const next = nextNodesSnapshot.filter((node) => !isCommentId(node.id) && node.selected).map((node) => String(node.id));
+                const next = nextNodesSnapshot.filter((node) => !isRuntimeNodeId(node.id) && node.selected).map((node) => String(node.id));
                 const current = api.getSelection().map(String);
                 if (!sameIdSet(next, current)) api.select(next);
             }

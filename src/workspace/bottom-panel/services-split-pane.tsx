@@ -507,6 +507,7 @@ function CatalogToolbar({
             <InputField
                 variant="treeselect"
                 mode="button"
+                label="Catalog group selector"
                 className={'w-fit!'}
                 multiple={false}
                 value={treeValue}
