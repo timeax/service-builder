@@ -553,6 +553,42 @@ describe('BottomConsolePanel service catalog', () => {
         });
     });
 
+    it('supports select-all for filtered services with tri-state behavior', async () => {
+        catalogState.activeNodeId = 'cg:1';
+        renderPanel();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Catalog' }));
+        await screen.findByRole('button', { name: 'Assign services to selected group' });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Assign services to selected group' }));
+        await screen.findByRole('dialog', { name: 'Service picker' });
+
+        const selectAll = screen.getByLabelText('Select all filtered services') as HTMLInputElement;
+        expect(selectAll.checked).toBe(false);
+        expect(selectAll.getAttribute('aria-checked')).toBe('false');
+
+        fireEvent.click(selectAll);
+        expect((screen.getByLabelText('Select Compatible Active Service') as HTMLInputElement).checked).toBe(true);
+        expect((screen.getByLabelText('Select Incompatible Available Service') as HTMLInputElement).checked).toBe(true);
+        expect(selectAll.checked).toBe(true);
+
+        fireEvent.click(screen.getByLabelText('Select Compatible Active Service'));
+        expect(selectAll.checked).toBe(false);
+        expect(selectAll.getAttribute('aria-checked')).toBe('mixed');
+
+        fireEvent.change(screen.getByLabelText('Picker search'), { target: { value: 'Incompatible' } });
+        await waitFor(() => {
+            expect(screen.queryByLabelText('Select Compatible Active Service')).not.toBeInTheDocument();
+        });
+
+        const filteredSelectAll = screen.getByLabelText('Select all filtered services') as HTMLInputElement;
+        expect(filteredSelectAll.checked).toBe(true);
+        expect(filteredSelectAll.getAttribute('aria-checked')).toBe('true');
+
+        fireEvent.click(filteredSelectAll);
+        expect((screen.getByLabelText('Select Incompatible Available Service') as HTMLInputElement).checked).toBe(false);
+    });
+
     it('shows the selected group chip beside the count and supports ungrouped via the toolbar treeselect', async () => {
         renderPanel();
 

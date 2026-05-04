@@ -35,6 +35,12 @@ export type CanvasSurfaceProps = {
         clientY: number;
         event: React.MouseEvent;
     }) => void;
+    onEdgeContextMenu?: (payload: {
+        edgeId: string;
+        clientX: number;
+        clientY: number;
+        event: React.MouseEvent;
+    }) => void;
     showBindEdges: boolean;
     setShowBindEdges: (value: boolean) => void;
     showIncludeEdges: boolean;
@@ -84,6 +90,7 @@ export function CanvasSurface({
     persistToolbarOrientation = true,
     toolbarPositionClassName = 'left-4 top-4',
     onNodeContextMenu,
+    onEdgeContextMenu,
     showBindEdges,
     setShowBindEdges,
     showIncludeEdges,
@@ -179,6 +186,14 @@ export function CanvasSurface({
                     onNodeContextMenu?.({
                         nodeId: node.id,
                         nodeKind: kind as 'tag' | 'field' | 'option' | 'comment',
+                        clientX: event.clientX,
+                        clientY: event.clientY,
+                        event,
+                    });
+                }}
+                onEdgeContextMenu={(event, edge) => {
+                    onEdgeContextMenu?.({
+                        edgeId: String(edge.id),
                         clientX: event.clientX,
                         clientY: event.clientY,
                         event,

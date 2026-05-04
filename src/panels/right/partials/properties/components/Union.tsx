@@ -28,19 +28,23 @@ export function IncExcludeSection({ node, mode, capability }: ExcludesSectionPro
             const fields = canvas.props.fields;
             const visible = keyBy(descendants, 'id');
 
+            // console.log("Descendants", descendants, "Fields", fields, "Visible", visible);
+
             return fields
                 .filter((field) => {
-                    let node = visible[field.id] as FieldNode;
-                    return node ? node?.isInherited : true;
+                    let fieldNode = visible[field.id] as FieldNode;
+                    return fieldNode ? fieldNode?.isInherited : true;
                 })
                 .map((item) => ({
                     label: item.label,
                     value: item.id,
                     description: item.description,
-                    tags: [{
-                        label: item.id,
-                        value: item.id
-                    }],
+                    tags: [
+                        {
+                            label: item.id,
+                            value: item.id,
+                        },
+                    ],
                 }));
         }
 
@@ -48,10 +52,12 @@ export function IncExcludeSection({ node, mode, capability }: ExcludesSectionPro
             label: item.label,
             value: item.id,
             description: item.description,
-            tags: [{
-                label: item.id,
-                value: item.id
-            }],
+            tags: [
+                {
+                    label: item.id,
+                    value: item.id,
+                },
+            ],
         }));
     }, [canvas.props.fields, node]);
 

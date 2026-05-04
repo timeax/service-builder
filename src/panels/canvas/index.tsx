@@ -80,7 +80,7 @@ export default function CanvasPanel({
     showAppTools = true,
 }: CanvasPanelProps) {
     const canvas = useCanvas();
-    const { openNodeContextMenu, canAcceptDropPayload, handleNodeDrop, toggleNoticeManager, isNoticeManagerOpen } = useNodeContextMenu();
+    const { openNodeContextMenu, openEdgeContextMenu, canAcceptDropPayload, handleNodeDrop, toggleNoticeManager, isNoticeManagerOpen } = useNodeContextMenu();
     const ws = useWorkspace();
 
     const activeWorkspaceSnapshot = ws.snapshot.data as EditorSnapshot | undefined;
@@ -146,6 +146,7 @@ export default function CanvasPanel({
         },
         [canvas.api],
     );
+
 
     useEffect(() => {
         setOverlayState(loadOverlayState(storageKey(ws), OVERLAY_DEFAULTS));
@@ -652,6 +653,20 @@ export default function CanvasPanel({
                     openNodeContextMenu({
                         nodeId,
                         nodeKind,
+                        surface: 'canvas',
+                        clientX,
+                        clientY,
+                    });
+                }}
+                onEdgeContextMenu={({ edgeId, clientX, clientY, event }) => {
+                    event.preventDefault();
+                    const parsed = parseRelationEdgeId(edgeId);
+                    if (!parsed) return;
+                    openEdgeContextMenu({
+                        edgeId,
+                        kind: parsed.kind,
+                        from: parsed.from,
+                        to: parsed.to,
                         surface: 'canvas',
                         clientX,
                         clientY,

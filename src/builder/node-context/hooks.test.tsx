@@ -28,6 +28,14 @@ vi.mock('@/panels/right/partials/properties/components/node-capabilities.ts', ()
     })),
 }));
 
+vi.mock('@/workspace/authorization.ts', () => ({
+    deriveWorkspaceAuthorization: vi.fn(() => ({
+        canEditBranchContent: true,
+        canWriteTemplates: true,
+    })),
+    getAuthorizationDecision: vi.fn(() => ({ ok: true })),
+}));
+
 vi.mock('@timeax/digital-service-engine/workspace', () => ({
     useCanvas: () => ({
         api: {
@@ -227,6 +235,13 @@ describe('useDropHandling template option id regeneration', () => {
     beforeEach(() => {
         addField.mockReset();
         connect.mockReset();
+        patchProps.mockReset();
+        mutableProps = {
+            fields: [],
+            includes_for_buttons: {},
+            excludes_for_buttons: {},
+        };
+        patchProps.mockImplementation((mutator: (props: any) => void) => mutator(mutableProps));
         templatesData = [];
         nodeLookup = {
             't:root': { id: 't:root', kind: 'tag', raw: { label: 'Root' } },
@@ -315,6 +330,72 @@ describe('useDropHandling template option id regeneration', () => {
 
         const payload = addField.mock.calls[0][0];
         expect(payload.options).toBeUndefined();
+    });
+
+    it('supports structured single templates when dropping', async () => {
+        templatesData = [
+            {
+                id: 'tpl:1',
+                definition: {
+                    templateType: 'field',
+                    mode: 'single',
+                    version: 1,
+                    field: {
+                        label: 'Structured field',
+                        type: 'select',
+                        options: [{ label: 'A', value: 'a' }],
+                    },
+                },
+            },
+        ];
+        const { result } = renderHook(() => useDropHandling(vi.fn(), vi.fn(), vi.fn()));
+        const actions = result.current.actionsForIntent(buildTemplateIntent({ nodeId: 't:root', nodeKind: 'tag' }));
+        await actions.find((action) => action.id === 'bind')?.execute({} as any);
+        expect(addField).toHaveBeenCalledTimes(1);
+        expect(addField.mock.calls[0][0].label).toBe('Structured field');
+        expect(addField.mock.calls[0][0].options[0].id).toMatch(/^o:/);
+    });
+
+    it('drops group templates with remapped ids and rewritten relations', async () => {
+        templatesData = [
+            {
+                id: 'tpl:1',
+                definition: {
+                    templateType: 'field',
+                    mode: 'group',
+                    version: 1,
+                    label: 'Dripfeed group',
+                    rootOriginalId: 'f:dripfeed',
+                    fields: [
+                        { originalId: 'f:dripfeed', field: { label: 'Dripfeed', type: 'button' } },
+                        { originalId: 'f:runs', field: { label: 'Runs', type: 'text' } },
+                        { originalId: 'f:interval', field: { label: 'Interval', type: 'text' } },
+                    ],
+                    relations: {
+                        includes_for_buttons: {
+                            'f:dripfeed': ['f:runs', 'f:interval'],
+                        },
+                    },
+                },
+            },
+        ];
+        const { result } = renderHook(() => useDropHandling(vi.fn(), vi.fn(), vi.fn()));
+        const actions = result.current.actionsForIntent(buildTemplateIntent({ nodeId: 't:root', nodeKind: 'tag' }));
+        await actions.find((action) => action.id === 'bind')?.execute({} as any);
+        expect(addField).toHaveBeenCalledTimes(3);
+        const createdIds = addField.mock.calls.map((call) => call[0].id);
+        expect(new Set(createdIds).size).toBe(3);
+        expect(addField.mock.calls[0][0].bind_id).toBe('t:root');
+        expect(addField.mock.calls[1][0].bind_id).toBeUndefined();
+        expect(addField.mock.calls[2][0].bind_id).toBeUndefined();
+        const relation = mutableProps.includes_for_buttons;
+        const keys = Object.keys(relation);
+        expect(keys).toHaveLength(1);
+        expect(createdIds).toContain(keys[0]);
+        const targets = relation[keys[0]];
+        expect(targets).toHaveLength(2);
+        expect(createdIds).toContain(targets[0]);
+        expect(createdIds).toContain(targets[1]);
     });
 
     it('keeps include and exclude drop flows functional for template assets', async () => {

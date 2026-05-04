@@ -9,7 +9,6 @@ type Path = PathSegment[];
 
 const RESERVED_DESCRIPTOR_KEYS = new Set([
     'options',
-    'label',
     'required',
     'value',
     'error',

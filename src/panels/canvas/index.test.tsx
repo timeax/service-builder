@@ -1,6 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import CanvasPanel from './index.tsx';
 
+let lastFlowCanvasProps: any = null;
+const openEdgeContextMenuSpy = vi.fn();
+
 const workspaceState: any = {
     info: { id: 'ws-1' },
     branches: { currentId: 'branch:main' },
@@ -82,6 +85,7 @@ const canvasState: any = {
 vi.mock('@/builder/node-context-menu.tsx', () => ({
     useNodeContextMenu: () => ({
         openNodeContextMenu: vi.fn(),
+        openEdgeContextMenu: openEdgeContextMenuSpy,
         canAcceptDropPayload: vi.fn(() => false),
         handleNodeDrop: vi.fn(),
         toggleNoticeManager: vi.fn(),
@@ -96,7 +100,10 @@ vi.mock('@/panels/right/partials/properties/components/node-capabilities.ts', ()
 }));
 
 vi.mock('./flow-canvas.tsx', () => ({
-    FlowCanvas: ({ children }: { children: React.ReactNode }) => <div data-testid="flow-canvas">{children}</div>,
+    FlowCanvas: (props: any) => {
+        lastFlowCanvasProps = props;
+        return <div data-testid="flow-canvas">{props.children}</div>;
+    },
 }));
 
 vi.mock('@timeax/digital-service-engine/workspace', () => ({
@@ -105,6 +112,12 @@ vi.mock('@timeax/digital-service-engine/workspace', () => ({
 }));
 
 describe('CanvasPanel workspace boot integration', () => {
+    beforeEach(() => {
+        lastFlowCanvasProps = null;
+        openEdgeContextMenuSpy.mockReset();
+        canvasState.api.emit.mockReset();
+    });
+
     it('shows seeded boot status while keeping the canvas visible', () => {
         render(
             <CanvasPanel
@@ -182,5 +195,34 @@ describe('CanvasPanel workspace boot integration', () => {
         const result = canvasState.api.editor.editLabel('n1', 'Next Label');
         expect(result).toBe('test-editor');
         expect(originalEditLabel).toHaveBeenCalled();
+    });
+
+    it('routes edge context menu requests into NodeContextMenuProvider API', () => {
+        render(
+            <CanvasPanel
+                errors={{ merged: { counts: { total: 0 }, validation: [] } } as any}
+                bottomPanel={{ isOpen: false, toggle: vi.fn() } as any}
+                draggingServiceId={null}
+                onServiceDragStateChange={vi.fn()}
+            />,
+        );
+
+        const preventDefault = vi.fn();
+        lastFlowCanvasProps.onEdgeContextMenu({
+            edgeId: 'bind:t:root->f:field',
+            clientX: 120,
+            clientY: 140,
+            event: { preventDefault } as any,
+        });
+        expect(preventDefault).toHaveBeenCalled();
+        expect(openEdgeContextMenuSpy).toHaveBeenCalledWith({
+            edgeId: 'bind:t:root->f:field',
+            kind: 'bind',
+            from: 't:root',
+            to: 'f:field',
+            surface: 'canvas',
+            clientX: 120,
+            clientY: 140,
+        });
     });
 });

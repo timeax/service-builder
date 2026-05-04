@@ -5,7 +5,7 @@ import type { QuantityRule } from '@timeax/digital-service-engine/schema';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
 import { useMemo } from 'react';
-import { BsPlus } from 'react-icons/bs';
+import { BsPatchPlus, BsPlus } from 'react-icons/bs';
 import { MdDeleteOutline } from 'react-icons/md';
 import { asInputValue, buildQuantityRule, mergeNodeMeta, parseFiniteNumber } from './meta.ts';
 import { getNodePropertyCapabilities } from './node-capabilities.ts';
@@ -109,7 +109,7 @@ export function QuantitySection({ node }: QuantitySectionProps) {
                         ) : null}
                         {canAddDefault ? (
                             <SectionActionButton
-                                icon={<BsPlus />}
+                                icon={<BsPatchPlus />}
                                 badge="1"
                                 iconOnly
                                 tooltip="Add quantity default"

@@ -1,5 +1,6 @@
 export type NodeContextSurface = 'canvas' | 'layers' | 'wireframe';
 export type DropTargetSurface = NodeContextSurface;
+export type EdgeContextSurface = 'canvas';
 export type DragPayloadKind = 'service' | 'asset_builtin' | 'asset_template';
 
 export const DRAG_MIME_SERVICE = 'application/x-service-builder-service';
@@ -82,6 +83,18 @@ export type NodeContextTarget = {
     clientY: number;
 };
 
+export type EdgeRelationKind = 'bind' | 'include' | 'exclude';
+
+export type EdgeContextTarget = {
+    edgeId: string;
+    kind: EdgeRelationKind;
+    from: string;
+    to: string;
+    surface: EdgeContextSurface;
+    clientX: number;
+    clientY: number;
+};
+
 export type DropIntent = {
     source: DropSource;
     receiver: NodeContextTarget;
@@ -96,6 +109,8 @@ export type OpenNodeContextMenuInput = {
     clientX: number;
     clientY: number;
 };
+
+export type OpenEdgeContextMenuInput = EdgeContextTarget;
 
 export type HandleNodeDropInput = {
     receiverId: string;

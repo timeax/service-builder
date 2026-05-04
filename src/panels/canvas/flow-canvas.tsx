@@ -19,6 +19,7 @@ export type FlowCanvasProps = {
     options?: AdapterOptions;
     commentPlacement?: React.ComponentProps<typeof CanvasSurface>['commentPlacement'];
     onNodeContextMenu?: React.ComponentProps<typeof CanvasSurface>['onNodeContextMenu'];
+    onEdgeContextMenu?: React.ComponentProps<typeof CanvasSurface>['onEdgeContextMenu'];
     showBindEdges: boolean;
     setShowBindEdges: (value: boolean) => void;
     showIncludeEdges: boolean;
@@ -45,6 +46,7 @@ export function FlowCanvas({
     options,
     commentPlacement,
     onNodeContextMenu,
+    onEdgeContextMenu,
     showBindEdges,
     setShowBindEdges,
     showIncludeEdges,
@@ -73,6 +75,7 @@ export function FlowCanvas({
             options={options}
             commentPlacement={commentPlacement}
             onNodeContextMenu={onNodeContextMenu}
+            onEdgeContextMenu={onEdgeContextMenu}
             showBindEdges={showBindEdges}
             setShowBindEdges={setShowBindEdges}
             showIncludeEdges={showIncludeEdges}

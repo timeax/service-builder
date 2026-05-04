@@ -140,7 +140,11 @@ export default function AssetsPanel() {
                                     className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-slate-700"
                                 >
                                     <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{item.name}</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">{item.kind}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        {item?.definition?.mode === 'group'
+                                            ? 'Group'
+                                            : String((item?.definition as Record<string, unknown>)?.type ?? item.kind ?? 'template')}
+                                    </p>
                                 </button>
                             ))
                         ) : (

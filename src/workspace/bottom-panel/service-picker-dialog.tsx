@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { cn } from '@/lib/utils.ts';
 import type { DgpServiceCapability } from '@timeax/digital-service-engine/schema';
 import { InputField } from '@timeax/form-palette';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createDefaultServicePickerFilters, discoverServiceMetaPaths, filterServicePickerServices, type ServicePickerFilters } from './service-picker.ts';
 
@@ -32,6 +32,7 @@ export function ServicePickerDialog({
 }: ServicePickerDialogProps) {
     const [filters, setFilters] = useState<ServicePickerFilters>(() => createDefaultServicePickerFilters());
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const selectAllRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
         if (!open) return;
@@ -66,10 +67,22 @@ export function ServicePickerDialog({
         [activeIds, filters, serviceMap, services],
     );
 
-    if (!open || typeof document === 'undefined') return null;
-
+    const filteredServiceIds = useMemo(() => filteredServices.map((service) => String(service.id)), [filteredServices]);
+    const filteredSelectedCount = useMemo(
+        () => filteredServiceIds.filter((id) => selectedIds.has(id)).length,
+        [filteredServiceIds, selectedIds],
+    );
+    const allFilteredSelected = filteredServiceIds.length > 0 && filteredSelectedCount === filteredServiceIds.length;
+    const partiallyFilteredSelected = filteredSelectedCount > 0 && filteredSelectedCount < filteredServiceIds.length;
     const selectedCount = selectedIds.size;
     const canConfirm = selectedCount > 0;
+
+    useEffect(() => {
+        if (!selectAllRef.current) return;
+        selectAllRef.current.indeterminate = partiallyFilteredSelected;
+    }, [partiallyFilteredSelected]);
+
+    if (!open || typeof document === 'undefined') return null;
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
@@ -252,8 +265,35 @@ export function ServicePickerDialog({
                     </div>
 
                     <div className="flex min-h-0 flex-col overflow-hidden">
-                        <div className="border-b border-slate-200 px-4 py-3 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                            {filteredServices.length} service{filteredServices.length === 1 ? '' : 's'} found
+                        <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="text-sm text-slate-500 dark:text-slate-400">
+                                    {filteredServices.length} service{filteredServices.length === 1 ? '' : 's'} found
+                                </div>
+                                <label className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                                    <input
+                                        ref={selectAllRef}
+                                        type="checkbox"
+                                        aria-label="Select all filtered services"
+                                        aria-checked={partiallyFilteredSelected ? 'mixed' : allFilteredSelected}
+                                        checked={allFilteredSelected}
+                                        disabled={!filteredServiceIds.length}
+                                        onChange={(event) => {
+                                            const shouldSelectAll = event.target.checked;
+                                            setSelectedIds((current) => {
+                                                const next = new Set(current);
+                                                if (shouldSelectAll) {
+                                                    for (const id of filteredServiceIds) next.add(id);
+                                                } else {
+                                                    for (const id of filteredServiceIds) next.delete(id);
+                                                }
+                                                return next;
+                                            });
+                                        }}
+                                    />
+                                    <span>Select all</span>
+                                </label>
+                            </div>
                         </div>
                         <ScrollArea className="h-full min-h-0 flex-1">
                             <div className="space-y-2 p-4">

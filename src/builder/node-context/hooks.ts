@@ -16,7 +16,13 @@ import {
     type ServicePropsNotice,
     type TemplateAssetPayload,
 } from './types.ts';
-import { buildFieldId, buildOptionId, draftToNotice, inferNodeKindFromId, makeTemplateKey, normalizeNotice, parseJson, toDraft } from './utils.ts';
+import { buildFieldId, draftToNotice, inferNodeKindFromId, normalizeNotice, parseJson, toDraft } from './utils.ts';
+import {
+    isGroupTemplateDefinition,
+    isSingleTemplateDefinition,
+    toSingleFieldDefinition,
+    withFreshOptionIds,
+} from './template-utils.ts';
 
 type MoveDirection = 'up' | 'down';
 
@@ -225,45 +231,15 @@ export function useNodeActions(
     const handleSaveAsTemplate = useCallback(async () => {
         if (!target || target.nodeKind !== 'field') return;
         if (!ensureTemplateWrite('save-field-template')) return;
-        try {
-            const node = canvas.selector.getNode(target.nodeId);
-            if (!node || node.kind !== 'field') return;
-            const cleanOptions = (node.raw.options ?? []).map(({ id, service_id, pricing_role, ...rest }: any) => ({ ...rest }));
-            const definition = {
-                label: node.raw.label,
-                type: node.raw.type,
-                name: node.raw.name,
-                required: node.raw.required,
-                button: node.raw.button,
-                description: node.raw.description,
-                component: node.raw.component,
-                options: cleanOptions,
-                meta: node.raw.meta,
-                validation: node.raw.validation,
-            };
-            const result = await ws.createTemplate({
-                name: `${node.raw.label} Template`,
-                key: makeTemplateKey(node.raw.label ?? 'field'),
-                kind: String(node.raw.type ?? 'text'),
-                branchId: ws.branches.currentId ?? undefined,
-                definition,
-                defaults: node.raw.defaults,
-                published: false,
-            });
-            if (!result.ok) {
-                const message = 'error' in result ? result.error.message : 'Failed to create template';
-                throw new Error(message ?? 'Failed to create template');
-            }
-            await ws.refresh.templates({ branchId: ws.branches.currentId ?? undefined });
-        } catch (error) {
-            emitNodeError((error as Error)?.message ?? 'Failed to save field as template', {
-                action: 'save-field-template',
-                nodeId: target.nodeId,
-                surface: target.surface,
-            });
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+                new CustomEvent('service-builder:open-template-save-dialog', {
+                    detail: { nodeId: target.nodeId, surface: target.surface },
+                }),
+            );
         }
         setTarget(null);
-    }, [canvas.selector, emitNodeError, ensureTemplateWrite, target, ws, setTarget]);
+    }, [ensureTemplateWrite, setTarget, target]);
 
     const isFieldOptionsShown = useMemo(() => {
         if (!target || target.nodeKind !== 'field') return false;
@@ -540,29 +516,74 @@ export function useDropHandling(
             if (source.kind === 'asset_template') {
                 const template = (ws.templates.data ?? []).find((item) => item.id === source.asset.id);
                 const definition = (template?.definition ?? {}) as Record<string, unknown>;
-                const nextOptions = Array.isArray(definition.options)
-                    ? definition.options.map((option) => {
-                          const raw = option && typeof option === 'object' ? (option as Record<string, unknown>) : {};
-                          return {
-                              ...raw,
-                              id: buildOptionId(),
-                          };
-                      })
-                    : undefined;
+                if (isGroupTemplateDefinition(definition)) {
+                    const fieldIdMap = new Map<string, string>();
+                    const normalizedRelations: Record<string, Record<string, string[]>> = {};
+                    const nextFields = definition.fields.map((entry) => {
+                        const nextId = buildFieldId();
+                        fieldIdMap.set(entry.originalId, nextId);
+                        const rawField = withFreshOptionIds((entry.field ?? {}) as Record<string, unknown>);
+                        delete (rawField as Record<string, unknown>).bind_id;
+                        return {
+                            ...rawField,
+                            id: nextId,
+                        };
+                    });
 
+                    for (const [relationName, relationMap] of Object.entries(definition.relations ?? {})) {
+                        const nextRelation: Record<string, string[]> = {};
+                        for (const [sourceId, targets] of Object.entries(relationMap ?? {})) {
+                            const mappedSource = fieldIdMap.get(sourceId);
+                            if (!mappedSource) continue;
+                            const mappedTargets = (targets ?? [])
+                                .map((targetId) => fieldIdMap.get(String(targetId)))
+                                .filter((value): value is string => !!value);
+                            if (mappedTargets.length) nextRelation[mappedSource] = Array.from(new Set(mappedTargets));
+                        }
+                        normalizedRelations[relationName] = nextRelation;
+                    }
+
+                    const rootNewId = fieldIdMap.get(definition.rootOriginalId) ?? nextFields[0]?.id;
+                    const rootField = nextFields.find((field) => field.id === rootNewId);
+                    if (!rootField || !rootNewId) return null;
+                    canvas.api.editor.addField({
+                        ...(rootField as any),
+                        bind_id: currentTag,
+                        defaults: template?.defaults as any,
+                    });
+                    for (const field of nextFields) {
+                        if (field.id === rootNewId) continue;
+                        canvas.api.editor.addField({
+                            ...(field as any),
+                            defaults: template?.defaults as any,
+                        });
+                    }
+
+                    const editorAny = canvas.api.editor as any;
+                    if (typeof editorAny.patchProps === 'function') {
+                        editorAny.patchProps((props: Record<string, unknown>) => {
+                            for (const [relationName, relationMap] of Object.entries(normalizedRelations)) {
+                                const current = (props[relationName] ?? {}) as Record<string, string[]>;
+                                const merged: Record<string, string[]> = { ...current };
+                                for (const [sourceId, targets] of Object.entries(relationMap)) {
+                                    const prev = Array.isArray(merged[sourceId]) ? merged[sourceId] : [];
+                                    merged[sourceId] = Array.from(new Set([...prev, ...targets]));
+                                }
+                                props[relationName] = merged;
+                            }
+                        });
+                    }
+                    return rootNewId;
+                }
+
+                const singleDefinition = isSingleTemplateDefinition(definition) ? definition.field : toSingleFieldDefinition(definition);
+                const nextField = withFreshOptionIds(singleDefinition);
                 canvas.api.editor.addField({
+                    ...(nextField as any),
                     id,
-                    label: String(definition.label ?? source.asset.name ?? 'Template Field'),
-                    type: String(definition.type ?? source.asset.kind ?? 'text') as any,
                     bind_id: currentTag,
-                    name: typeof definition.name === 'string' ? definition.name : undefined,
-                    required: Boolean(definition.required),
-                    button: Boolean(definition.button),
-                    description: typeof definition.description === 'string' ? definition.description : undefined,
-                    component: typeof definition.component === 'string' ? definition.component : undefined,
-                    options: nextOptions as any,
-                    validation: Array.isArray(definition.validation) ? (definition.validation as any) : undefined,
-                    meta: typeof definition.meta === 'object' && definition.meta ? (definition.meta as any) : undefined,
+                    label: String(nextField.label ?? source.asset.name ?? 'Template Field'),
+                    type: String(nextField.type ?? source.asset.kind ?? 'text') as any,
                     defaults: template?.defaults as any,
                 });
                 return id;
