@@ -38610,7 +38610,16 @@ const services = [
     }
 ] as const;
 
-export function getServices() {
-    const list = services.map((item) => ({...item.dgp_service, id: item.dgp_service.service}));
+type ServiceMapItem = Record<string, unknown> & {
+    id: string | number;
+    service: string | number;
+};
+
+export function getServices(): Record<string, ServiceMapItem> {
+    const list: ServiceMapItem[] = services.map((item) => ({
+        ...item.dgp_service,
+        id: item.dgp_service.service,
+    }));
+
     return keyBy(list, "service");
 }
