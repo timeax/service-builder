@@ -1,7 +1,7 @@
 import type { BottomConsolePanelState } from '@/builder/bottom-panel.ts';
 import { useNodeContextMenu } from '@/builder/node-context-menu.tsx';
 import { EmptyState } from '@/components/builder/index.tsx';
-import { buildServiceContextSnapshot, buildServiceRowVM, type ServiceContextState } from '@/builder/service-context.ts';
+import { buildServiceContextSnapshot, buildServiceRowVM, createEmptyServiceContextSnapshot, type ServiceContextState } from '@/builder/service-context.ts';
 import {
     defaultCanvasViewPrefs,
     deriveCanvasPresentation,
@@ -95,6 +95,8 @@ export default function CanvasPanel({
     const [presentationVersion, setPresentationVersion] = useState(0);
     const lastSyncedSnapshotHashRef = useRef<string>(initialSnapshotHash);
     const guardedEditorRef = useRef<object | null>(null);
+    const liveSnapshotRequestRef = useRef(0);
+    const checksByIdRequestRef = useRef(0);
 
     const servicesMap = (ws.services?.data ?? {}) as Record<string, DgpServiceCapability>;
 
@@ -408,21 +410,52 @@ export default function CanvasPanel({
         }),
         [resolvedCurrentTagId, selectedButtons],
     );
-    const liveContextSnapshot = useMemo(
-        () => buildServiceContextSnapshot({ props: canvas.props, services: servicesMap, state: liveContextState }),
-        [canvas.props, liveContextState, servicesMap],
-    );
-    const checksById = useMemo(() => {
-        if (!liveContextSnapshot.selectedTag) return new Map<string, any>();
+    const [liveContextSnapshot, setLiveContextSnapshot] = useState(() => createEmptyServiceContextSnapshot(liveContextState, canvas.props));
+    useEffect(() => {
+        const requestId = ++liveSnapshotRequestRef.current;
+        const fallback = createEmptyServiceContextSnapshot(liveContextState, canvas.props);
+        setLiveContextSnapshot(fallback);
+
+        buildServiceContextSnapshot({ props: canvas.props, services: servicesMap, state: liveContextState })
+            .then((snapshot) => {
+                if (liveSnapshotRequestRef.current !== requestId) return;
+                setLiveContextSnapshot(snapshot);
+            })
+            .catch(() => {
+                if (liveSnapshotRequestRef.current !== requestId) return;
+                setLiveContextSnapshot(fallback);
+            });
+    }, [canvas.props, liveContextState, servicesMap]);
+    const [checksById, setChecksById] = useState<Map<string, any>>(new Map());
+    useEffect(() => {
+        const requestId = ++checksByIdRequestRef.current;
+
+        if (!liveContextSnapshot.selectedTag) {
+            setChecksById(new Map());
+            return;
+        }
+
         const candidateIds = Object.values(servicesMap).map((service: any) => service.id);
-        const checks = (canvas.api.editor as any).filterServicesForVisibleGroup(candidateIds, {
-            tagId: liveContextSnapshot.selectedTag.id,
-            selectedButtons: liveContextSnapshot.state.selectedButtons,
-            usedServiceIds: liveContextSnapshot.usedServiceIds,
-            effectiveConstraints: liveContextSnapshot.selectedTag.constraints,
-            policies: ws.policies?.policies?.data ?? [],
-        });
-        return new Map(checks.map((check: any) => [String(check.id), check]));
+        new Promise<any[]>((resolve) => {
+            setTimeout(() => {
+                const checks = (canvas.api.editor as any).filterServicesForVisibleGroup(candidateIds, {
+                    tagId: liveContextSnapshot.selectedTag!.id,
+                    selectedButtons: liveContextSnapshot.state.selectedButtons,
+                    usedServiceIds: liveContextSnapshot.usedServiceIds,
+                    effectiveConstraints: liveContextSnapshot.selectedTag!.constraints,
+                    policies: ws.policies?.policies?.data ?? [],
+                });
+                resolve(Array.isArray(checks) ? checks : []);
+            }, 0);
+        })
+            .then((checks) => {
+                if (checksByIdRequestRef.current !== requestId) return;
+                setChecksById(new Map(checks.map((check: any) => [String(check.id), check])));
+            })
+            .catch(() => {
+                if (checksByIdRequestRef.current !== requestId) return;
+                setChecksById(new Map());
+            });
     }, [canvas.api.editor, liveContextSnapshot, servicesMap, ws.policies?.policies?.data]);
     const serviceContextRows = useMemo(() => {
         return liveContextSnapshot.usedServiceIds

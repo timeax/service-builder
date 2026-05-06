@@ -63,6 +63,25 @@ export type ServiceListRowVM = {
     searchText: string;
 };
 
+export function createEmptyServiceContextSnapshot(state: ServiceContextState, props?: ServiceProps | null): ServiceContextSnapshot {
+    const filters = props?.filters ?? [];
+    const tags = filters.map((tag) => ({
+        id: tag.id,
+        label: tag.label,
+        description: describeTag(tag),
+    }));
+    const selectedTag = filters.find((tag) => tag.id === state.selectedTagId) ?? null;
+
+    return {
+        state,
+        tags,
+        selectedTag,
+        buttonGroups: [],
+        visibleFieldIds: [],
+        usedServiceIds: [],
+    };
+}
+
 export function createDefaultServiceContext(props?: ServiceProps | null, preferredTagId?: string | null): ServiceContextState {
     const tagIds = (props?.filters ?? []).map((tag) => tag.id);
     return {
@@ -83,51 +102,45 @@ export function sanitizeServiceContext(
     return { ...state, selectedButtons };
 }
 
-export function buildServiceContextSnapshot(args: {
+export async function buildServiceContextSnapshot(args: {
     props?: ServiceProps | null;
     services?: Record<string, DgpServiceCapability> | null;
     state: ServiceContextState;
-}): ServiceContextSnapshot {
-    const props = args.props ?? undefined;
-    const serviceMap = (args.services ?? {}) as Record<string, DgpServiceCapability>;
-    const tags = (props?.filters ?? []).map((tag) => ({
-        id: tag.id,
-        label: tag.label,
-        description: describeTag(tag),
-    }));
+}): Promise<ServiceContextSnapshot> {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            const props = args.props ?? undefined;
+            const serviceMap = (args.services ?? {}) as Record<string, DgpServiceCapability>;
+            const emptySnapshot = createEmptyServiceContextSnapshot(args.state, props);
+            const { tags, selectedTag } = emptySnapshot;
 
-    const selectedTag = (props?.filters ?? []).find((tag) => tag.id === args.state.selectedTagId) ?? null;
-    if (!props || !selectedTag) {
-        return {
-            state: args.state,
-            tags,
-            selectedTag,
-            buttonGroups: [],
-            visibleFieldIds: [],
-            usedServiceIds: [],
-        };
-    }
+            if (!props || !selectedTag) {
+                resolve(emptySnapshot);
+                return;
+            }
 
-    const sandbox = createBuilder({ serviceMap });
-    sandbox.load(props);
+            const sandbox = createBuilder({ serviceMap });
+            sandbox.load(props);
 
-    const visibleFieldIds = sandbox.visibleFields(selectedTag.id, args.state.selectedButtons);
-    const buttonGroups = buildButtonGroups(props.fields ?? [], visibleFieldIds);
-    const usedServiceIds = collectUsedServiceIds({
-        props,
-        tagId: selectedTag.id,
-        visibleFieldIds,
-        selectedButtons: args.state.selectedButtons,
+            const visibleFieldIds = sandbox.visibleFields(selectedTag.id, args.state.selectedButtons);
+            const buttonGroups = buildButtonGroups(props.fields ?? [], visibleFieldIds);
+            const usedServiceIds = collectUsedServiceIds({
+                props,
+                tagId: selectedTag.id,
+                visibleFieldIds,
+                selectedButtons: args.state.selectedButtons,
+            });
+
+            resolve({
+                state: args.state,
+                tags,
+                selectedTag,
+                buttonGroups,
+                visibleFieldIds,
+                usedServiceIds,
+            });
+        }, 0);
     });
-
-    return {
-        state: args.state,
-        tags,
-        selectedTag,
-        buttonGroups,
-        visibleFieldIds,
-        usedServiceIds,
-    };
 }
 
 export function buildServiceRowVM(args: {

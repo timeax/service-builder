@@ -246,4 +246,28 @@ describe('AddService catalog/context filter', () => {
         expect(screen.getByText('raw.key')).toBeInTheDocument();
         expect(screen.getByText('alpha')).toBeInTheDocument();
     });
+
+    it('passes custom manual rate context to compatibility filtering', async () => {
+        openAddServicePopover();
+        fireEvent.click(screen.getByRole('button', { name: 'Service list filter' }));
+        await screen.findByText('Service filters');
+
+        fireEvent.click(screen.getByLabelText('Current context'));
+        fireEvent.click(screen.getByLabelText('Custom primary rate'));
+        fireEvent.click(screen.getByLabelText('Manual rate'));
+        fireEvent.change(screen.getByLabelText('Primary rate'), { target: { value: '12' } });
+
+        await waitFor(() => {
+            expect(filterServicesForVisibleGroup).toHaveBeenLastCalledWith(
+                [101, 202, 303],
+                expect.objectContaining({
+                    rateContext: expect.objectContaining({
+                        mode: 'custom_primary_rate',
+                        source: 'manual',
+                        primaryRate: 12,
+                    }),
+                }),
+            );
+        });
+    });
 });

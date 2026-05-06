@@ -241,6 +241,16 @@ export function CatalogContextPopover({
     onOpenChange,
     compatibleOnly,
     onCompatibleOnlyChange,
+    rateContextMode,
+    onRateContextModeChange,
+    rateContextSource,
+    onRateContextSourceChange,
+    manualPrimaryRate,
+    onManualPrimaryRateChange,
+    primaryServiceId,
+    onPrimaryServiceIdChange,
+    contextServiceOptions,
+    customRateError,
     contextLinked,
     onContextLinkedChange,
     draftContext,
@@ -251,6 +261,16 @@ export function CatalogContextPopover({
     onOpenChange: (open: boolean) => void;
     compatibleOnly: boolean;
     onCompatibleOnlyChange: (value: boolean) => void;
+    rateContextMode: 'context' | 'custom_primary_rate';
+    onRateContextModeChange: (value: 'context' | 'custom_primary_rate') => void;
+    rateContextSource: 'service' | 'manual';
+    onRateContextSourceChange: (value: 'service' | 'manual') => void;
+    manualPrimaryRate: string;
+    onManualPrimaryRateChange: (value: string) => void;
+    primaryServiceId: string | null;
+    onPrimaryServiceIdChange: (value: string | null) => void;
+    contextServiceOptions: Array<{ value: string; label: string }>;
+    customRateError?: string | null;
     contextLinked: boolean;
     onContextLinkedChange: (value: boolean) => void;
     draftContext?: ServiceContextState;
@@ -297,6 +317,62 @@ export function CatalogContextPopover({
                             </span>
                             <input type="checkbox" checked={compatibleOnly} onChange={(event) => onCompatibleOnlyChange(event.target.checked)} />
                         </label>
+                        <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                            <div className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">Rate compatibility mode</div>
+                            <InputField
+                                variant="radio"
+                                value={rateContextMode}
+                                options={[
+                                    {
+                                        value: 'context',
+                                        label: 'Context coherence',
+                                        description: 'Use current context services for rate coherence.',
+                                    },
+                                    {
+                                        value: 'custom_primary_rate',
+                                        label: 'Custom primary rate',
+                                        description: 'Use a chosen service or manual rate as primary.',
+                                    },
+                                ]}
+                                optGroupClassName={'gap-1'}
+                                onChange={(event) => onRateContextModeChange(event.value as any)}
+                            />
+                                    {rateContextMode === 'custom_primary_rate' ? (
+                                        <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-950/40">
+                                    <InputField
+                                        variant="radio"
+                                        value={rateContextSource}
+                                        options={[
+                                            { value: 'service', label: 'From context service', description: 'Use an active context service rate.' },
+                                            { value: 'manual', label: 'Manual rate', description: 'Provide a numeric primary rate.' },
+                                        ]}
+                                        optGroupClassName={'gap-1'}
+                                        onChange={(event) => onRateContextSourceChange(event.value as any)}
+                                    />
+                                            {rateContextSource === 'service' ? (
+                                        <InputField
+                                            variant="select"
+                                            label="Primary context service"
+                                            options={contextServiceOptions}
+                                            value={primaryServiceId ?? undefined}
+                                            onChange={(event) => onPrimaryServiceIdChange(event.value ? String(event.value) : null)}
+                                            placeholder="Select service"
+                                        />
+                                            ) : (
+                                        <InputField
+                                            variant="number"
+                                            label="Primary rate"
+                                            value={manualPrimaryRate === '' ? undefined : Number(manualPrimaryRate)}
+                                            onChange={(event) => onManualPrimaryRateChange(String(event.value ?? ''))}
+                                            placeholder="Enter rate"
+                                        />
+                                            )}
+                                            {customRateError ? (
+                                                <p className="text-xs text-amber-700 dark:text-amber-300">{customRateError}</p>
+                                            ) : null}
+                                        </div>
+                                    ) : null}
+                                </div>
                         <label className="flex items-start justify-between gap-3 text-sm text-slate-900 dark:text-slate-100">
                             <span className="min-w-0">
                                 <span className="block font-medium">Link to current context</span>

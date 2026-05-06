@@ -3,6 +3,7 @@ import {
     buildServiceContextSnapshot,
     buildServiceRowVM,
     createDefaultServiceContext,
+    createEmptyServiceContextSnapshot,
     sanitizeServiceContext,
     type ServiceContextState,
 } from '@/builder/service-context.ts';
@@ -12,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { cn } from '@/lib/utils.ts';
+import { useServiceCatalogState } from '@/hooks/use-service-catalog-state.ts';
 import { useFallbackEditorModal } from '@/workspace/fallback-editor-modal.tsx';
 import { useFallbackQuickAdd } from '@/workspace/fallback-quick-add.tsx';
 import type { ServiceCatalogState } from '@timeax/digital-service-engine/schema';
@@ -50,6 +52,8 @@ type BottomConsolePanelProps = {
 
 const DRAG_MIME = 'application/x-service-builder-service';
 type CatalogPanelMode = 'all' | 'catalog';
+type RateContextMode = 'context' | 'custom_primary_rate';
+type RateContextSource = 'service' | 'manual';
 
 export function BottomConsolePanel({ controller, errors, activeServices, allServices, onServiceDragStateChange }: BottomConsolePanelProps) {
     const canvas = useCanvas();
@@ -64,6 +68,10 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
     const [activeSearch, setActiveSearch] = useState('');
     const [allSearch, setAllSearch] = useState('');
     const [compatibleOnly, setCompatibleOnly] = useState(false);
+    const [rateContextMode, setRateContextMode] = useState<RateContextMode>('context');
+    const [rateContextSource, setRateContextSource] = useState<RateContextSource>('service');
+    const [manualPrimaryRate, setManualPrimaryRate] = useState('');
+    const [primaryServiceId, setPrimaryServiceId] = useState<string | null>(null);
     const [hideActiveServices, setHideActiveServices] = useState(false);
     const [hideNonEligibleServices, setHideNonEligibleServices] = useState(false);
     const [filterOpen, setFilterOpen] = useState(false);
@@ -75,7 +83,7 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
     const [catalogContextDraft, setCatalogContextDraft] = useState<ServiceContextState>(() =>
         createDefaultServiceContext(canvas.props, preferredTagId),
     );
-    const [catalogState, setCatalogState] = useState<ServiceCatalogState | null>(null);
+    const catalogState = useServiceCatalogState(canvas.api as any, canvas.api.editor as any);
     const [panelPosition, setPanelPosition] = useState<PanelPosition>(() => readStoredPanelPosition());
     const [draggingPanel, setDraggingPanel] = useState(false);
     const [consoleSubTab, setConsoleSubTab] = useState<ConsoleSubTab>('validation');
@@ -91,6 +99,9 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
     const panelRef = useRef<HTMLDivElement | null>(null);
     const searchInputRef = useRef<HTMLInputElement | null>(null);
     const dragStartRef = useRef<{ x: number; y: number; position: { left: number; bottom: number } } | null>(null);
+    const appliedSnapshotRequestRef = useRef(0);
+    const draftSnapshotRequestRef = useRef(0);
+    const allChecksByIdRequestRef = useRef(0);
 
     const selectedButtons = useMemo(
         () => ((canvas.api.selection.selectedButtons?.() ?? []) as Array<string | number>).map((value) => String(value)),
@@ -106,26 +117,110 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
         [preferredTagId, selectedButtons],
     );
     const effectiveCatalogContext = contextLinked ? liveSelectionContext : catalogContextDraft;
-    const appliedSnapshot = useMemo(
-        () => buildServiceContextSnapshot({ props: canvas.props, services: servicesMap, state: effectiveCatalogContext }),
-        [canvas.props, effectiveCatalogContext, servicesMap],
+    const [appliedSnapshot, setAppliedSnapshot] = useState(() => createEmptyServiceContextSnapshot(effectiveCatalogContext, canvas.props));
+    const [draftSnapshot, setDraftSnapshot] = useState(() => createEmptyServiceContextSnapshot(catalogContextDraft, canvas.props));
+    useEffect(() => {
+        const requestId = ++appliedSnapshotRequestRef.current;
+        const fallback = createEmptyServiceContextSnapshot(effectiveCatalogContext, canvas.props);
+        setAppliedSnapshot(fallback);
+
+        buildServiceContextSnapshot({ props: canvas.props, services: servicesMap, state: effectiveCatalogContext })
+            .then((snapshot) => {
+                if (appliedSnapshotRequestRef.current !== requestId) return;
+                setAppliedSnapshot(snapshot);
+            })
+            .catch(() => {
+                if (appliedSnapshotRequestRef.current !== requestId) return;
+                setAppliedSnapshot(fallback);
+            });
+    }, [canvas.props, effectiveCatalogContext, servicesMap]);
+    useEffect(() => {
+        const requestId = ++draftSnapshotRequestRef.current;
+        const fallback = createEmptyServiceContextSnapshot(catalogContextDraft, canvas.props);
+        setDraftSnapshot(fallback);
+
+        buildServiceContextSnapshot({ props: canvas.props, services: servicesMap, state: catalogContextDraft })
+            .then((snapshot) => {
+                if (draftSnapshotRequestRef.current !== requestId) return;
+                setDraftSnapshot(snapshot);
+            })
+            .catch(() => {
+                if (draftSnapshotRequestRef.current !== requestId) return;
+                setDraftSnapshot(fallback);
+            });
+    }, [canvas.props, catalogContextDraft, servicesMap]);
+    const [allChecksById, setAllChecksById] = useState<Map<string, any>>(new Map());
+    const contextServiceOptions = useMemo(
+        () =>
+            appliedSnapshot.usedServiceIds
+                .map((id) => {
+                    const service = servicesMap[id];
+                    if (!service) return null;
+                    return {
+                        value: String(service.id),
+                        label: `${service.name ?? `Service ${service.id}`}${service.rate != null ? ` (Rate ${service.rate})` : ''}`,
+                    };
+                })
+                .filter(Boolean) as Array<{ value: string; label: string }>,
+        [appliedSnapshot.usedServiceIds, servicesMap],
     );
-    const draftSnapshot = useMemo(
-        () => buildServiceContextSnapshot({ props: canvas.props, services: servicesMap, state: catalogContextDraft }),
-        [canvas.props, catalogContextDraft, servicesMap],
-    );
-    const allChecksById = useMemo(() => {
-        if (!appliedSnapshot.selectedTag) return new Map<string, any>();
+    const parsedManualPrimaryRate = useMemo(() => {
+        const value = Number(manualPrimaryRate.trim());
+        return Number.isFinite(value) ? value : null;
+    }, [manualPrimaryRate]);
+    const hasValidCustomPrimary = useMemo(() => {
+        if (rateContextMode !== 'custom_primary_rate') return true;
+        if (rateContextSource === 'manual') return parsedManualPrimaryRate != null;
+        return Boolean(primaryServiceId);
+    }, [parsedManualPrimaryRate, primaryServiceId, rateContextMode, rateContextSource]);
+
+    useEffect(() => {
+        if (primaryServiceId && contextServiceOptions.some((option) => option.value === primaryServiceId)) return;
+        setPrimaryServiceId(contextServiceOptions[0]?.value ?? null);
+    }, [contextServiceOptions, primaryServiceId]);
+    useEffect(() => {
+        const requestId = ++allChecksByIdRequestRef.current;
+
+        if (!appliedSnapshot.selectedTag) {
+            setAllChecksById(new Map());
+            return;
+        }
+        if (!hasValidCustomPrimary) {
+            setAllChecksById(new Map());
+            return;
+        }
+
         const candidateIds = Object.values(servicesMap).map((service: any) => service.id);
-        const checks = (canvas.api.editor as any).filterServicesForVisibleGroup(candidateIds, {
-            tagId: appliedSnapshot.selectedTag.id,
-            selectedButtons: appliedSnapshot.state.selectedButtons,
-            usedServiceIds: appliedSnapshot.usedServiceIds,
-            effectiveConstraints: appliedSnapshot.selectedTag.constraints,
-            policies,
-        });
-        return new Map(checks.map((check: any) => [String(check.id), check]));
-    }, [appliedSnapshot, canvas.api.editor, policies, servicesMap]);
+        new Promise<any[]>((resolve) => {
+            setTimeout(() => {
+                const checks = (canvas.api.editor as any).filterServicesForVisibleGroup(candidateIds, {
+                    tagId: appliedSnapshot.selectedTag!.id,
+                    selectedButtons: appliedSnapshot.state.selectedButtons,
+                    usedServiceIds: appliedSnapshot.usedServiceIds,
+                    effectiveConstraints: appliedSnapshot.selectedTag!.constraints,
+                    policies,
+                    rateContext:
+                        rateContextMode === 'custom_primary_rate'
+                            ? {
+                                  mode: 'custom_primary_rate',
+                                  source: rateContextSource,
+                                  primaryRate: rateContextSource === 'manual' ? parsedManualPrimaryRate ?? undefined : undefined,
+                                  primaryServiceId: rateContextSource === 'service' ? primaryServiceId ?? undefined : undefined,
+                              }
+                            : { mode: 'context' },
+                });
+                resolve(Array.isArray(checks) ? checks : []);
+            }, 0);
+        })
+            .then((checks) => {
+                if (allChecksByIdRequestRef.current !== requestId) return;
+                setAllChecksById(new Map(checks.map((check: any) => [String(check.id), check])));
+            })
+            .catch(() => {
+                if (allChecksByIdRequestRef.current !== requestId) return;
+                setAllChecksById(new Map());
+            });
+    }, [appliedSnapshot, canvas.api.editor, hasValidCustomPrimary, manualPrimaryRate, parsedManualPrimaryRate, policies, primaryServiceId, rateContextMode, rateContextSource, servicesMap]);
     const hiddenServiceIds = useMemo(() => {
         const ids = new Set(activeServices.map((service) => String(service.id)));
         for (const id of appliedSnapshot.usedServiceIds) ids.add(String(id));
@@ -188,28 +283,6 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
             setCatalogContextDraft(next);
         }
     }, [catalogContextDraft, contextLinked, draftSnapshot]);
-
-    useEffect(() => {
-        const editor = canvas.api.editor;
-        const ensured = editor.getCatalog?.() ?? editor.ensureCatalog?.();
-
-        // console.log(ensured)
-        if (ensured) setCatalogState(ensured);
-
-        const offCatalogChange = canvas.api.on('catalog:change' as any, ({ catalog }: { catalog?: ServiceCatalogState }) => {
-            const next = catalog ?? editor.getCatalog?.() ?? editor.ensureCatalog?.();
-            setCatalogState(next ?? null);
-        });
-        const offCatalogActiveChange = canvas.api.on('catalog:active-change' as any, () => {
-            const next = editor.getCatalog?.() ?? editor.ensureCatalog?.();
-            setCatalogState(next ?? null);
-        });
-
-        return () => {
-            offCatalogChange?.();
-            offCatalogActiveChange?.();
-        };
-    }, [canvas.api]);
 
     const catalogPanelMode: CatalogPanelMode = catalogState?.viewMode === 'grouped' ? 'catalog' : 'all';
     const catalogGroups = useMemo(
@@ -574,6 +647,18 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
                                                 onOpenChange={setFilterOpen}
                                                 compatibleOnly={compatibleOnly}
                                                 onCompatibleOnlyChange={setCompatibleOnly}
+                                                rateContextMode={rateContextMode}
+                                                onRateContextModeChange={setRateContextMode}
+                                                rateContextSource={rateContextSource}
+                                                onRateContextSourceChange={setRateContextSource}
+                                                manualPrimaryRate={manualPrimaryRate}
+                                                onManualPrimaryRateChange={setManualPrimaryRate}
+                                                primaryServiceId={primaryServiceId}
+                                                onPrimaryServiceIdChange={setPrimaryServiceId}
+                                                contextServiceOptions={contextServiceOptions}
+                                                customRateError={
+                                                    hasValidCustomPrimary ? null : 'Provide a primary service or valid primary rate to apply compatibility filtering.'
+                                                }
                                                 contextLinked={contextLinked}
                                                 onContextLinkedChange={setContextLinked}
                                                 draftContext={catalogContextDraft}

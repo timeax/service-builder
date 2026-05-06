@@ -181,6 +181,27 @@ vi.mock('@/components/ui/resizable.tsx', () => ({
 vi.mock('@timeax/form-palette', () => ({
     InputField: ({ variant, label, value, onChange, options, placeholder, disabled, autoComplete }: any) => {
         const ariaLabel = label ?? placeholder ?? 'input-field';
+        if (variant === 'radio') {
+            return (
+                <div>
+                    {(options ?? []).map((option: any) => {
+                        const optionValue = String(option.key ?? option.value);
+                        return (
+                            <label key={optionValue}>
+                                <input
+                                    aria-label={option.label}
+                                    type="radio"
+                                    name="radio-group"
+                                    checked={String(value ?? '') === optionValue}
+                                    onChange={() => onChange?.({ value: optionValue })}
+                                />
+                                {option.label}
+                            </label>
+                        );
+                    })}
+                </div>
+            );
+        }
         if (variant === 'treeselect') {
             const flattenedOptions = flattenTreeOptions(options ?? []);
             return (
@@ -358,14 +379,16 @@ describe('BottomConsolePanel service catalog', () => {
     it('uses manual popover context by default and applies compatibility independently from used services', async () => {
         renderPanel();
 
-        expect(filterServicesForVisibleGroup).toHaveBeenCalledWith(
-            [101, 202],
-            expect.objectContaining({
-                tagId: 't:root',
-                selectedButtons: [],
-                usedServiceIds: ['101'],
-            }),
-        );
+        await waitFor(() => {
+            expect(filterServicesForVisibleGroup).toHaveBeenCalledWith(
+                [101, 202],
+                expect.objectContaining({
+                    tagId: 't:root',
+                    selectedButtons: [],
+                    usedServiceIds: ['101'],
+                }),
+            );
+        });
 
         expect(screen.getAllByText('Compatible Active Service').length).toBeGreaterThan(0);
         expect(screen.getAllByText('Incompatible Available Service').length).toBeGreaterThan(0);
@@ -445,10 +468,12 @@ describe('BottomConsolePanel service catalog', () => {
     it('links to the current context only when explicitly enabled and preserves linked values after unlinking', async () => {
         renderPanel();
 
-        expect(filterServicesForVisibleGroup).toHaveBeenLastCalledWith(
-            [101, 202],
-            expect.objectContaining({ selectedButtons: [] }),
-        );
+        await waitFor(() => {
+            expect(filterServicesForVisibleGroup).toHaveBeenLastCalledWith(
+                [101, 202],
+                expect.objectContaining({ selectedButtons: [] }),
+            );
+        });
 
         fireEvent.click(screen.getByRole('button', { name: 'Catalog context filter' }));
         await screen.findByText('Link to current context');
@@ -494,6 +519,29 @@ describe('BottomConsolePanel service catalog', () => {
 
         await waitFor(() => {
             expect(filterButton.className).toContain('bg-blue-50');
+        });
+    });
+
+    it('passes custom primary rate context in all-services compatibility checks', async () => {
+        renderPanel();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Catalog context filter' }));
+        await screen.findByText('Catalog context');
+        fireEvent.click(screen.getByLabelText('Custom primary rate'));
+        fireEvent.click(screen.getByLabelText('Manual rate'));
+        fireEvent.change(screen.getByLabelText('Primary rate'), { target: { value: '12' } });
+
+        await waitFor(() => {
+            expect(filterServicesForVisibleGroup).toHaveBeenLastCalledWith(
+                [101, 202],
+                expect.objectContaining({
+                    rateContext: expect.objectContaining({
+                        mode: 'custom_primary_rate',
+                        source: 'manual',
+                        primaryRate: 12,
+                    }),
+                }),
+            );
         });
     });
 

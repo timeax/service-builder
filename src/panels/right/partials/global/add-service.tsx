@@ -1,12 +1,13 @@
-import { buildServiceContextSnapshot } from '@/builder/service-context.ts';
+import { buildServiceContextSnapshot, createEmptyServiceContextSnapshot } from '@/builder/service-context.ts';
 import { ServiceMetaPopover } from '@/components/service-meta-popover.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
+import { useServiceCatalogState } from '@/hooks/use-service-catalog-state.ts';
 import { RenderIf } from '@/panels/right/components/renderif.tsx';
 import { IncludesItem, Section, SectionActionTriggerButton } from '@/panels/right/components/sections.tsx';
 import type { FieldNode, OptionNode, TagNode } from '@timeax/digital-service-engine/core';
-import type { CatalogGroupNode, DgpServiceCapability, ServiceCatalogState } from '@timeax/digital-service-engine/schema';
+import type { CatalogGroupNode, DgpServiceCapability } from '@timeax/digital-service-engine/schema';
 import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -31,6 +32,8 @@ type ServiceOption = {
     service: DgpServiceCapability;
 };
 const UNGROUPED_TREE_VALUE = '__catalog_ungrouped__';
+type RateContextMode = 'context' | 'custom_primary_rate';
+type RateContextSource = 'service' | 'manual';
 
 export function AddService({ className, data, disabled, disabledMessage, readOnly, readOnlyMessage, emptyMessage }: AddServiceProps) {
     const ws = useWorkspace();
@@ -135,7 +138,12 @@ function AddServicePopover({
     const [query, setQuery] = useState('');
     const [selected, setSelected] = useState<string>('');
     const [contextFilterEnabled, setContextFilterEnabled] = useState(false);
-    const [catalogState, setCatalogState] = useState<ServiceCatalogState | null>(null);
+    const [rateContextMode, setRateContextMode] = useState<RateContextMode>('context');
+    const [rateContextSource, setRateContextSource] = useState<RateContextSource>('service');
+    const [manualPrimaryRate, setManualPrimaryRate] = useState('');
+    const [primaryServiceId, setPrimaryServiceId] = useState<string | null>(null);
+    const [compatibleIds, setCompatibleIds] = useState<Set<string> | null>(null);
+    const catalogState = useServiceCatalogState(canvas.api as any, canvas.api.editor as any);
     const policies = ws.policies.policies.data ?? [];
     const currentTagId = canvas.api.selection.currentTag?.();
     const preferredTagId = currentTagId != null ? String(currentTagId) : canvas.layers.tags[0]?.id != null ? String(canvas.layers.tags[0]?.id) : null;
@@ -153,30 +161,26 @@ function AddServicePopover({
         }),
         [preferredTagId, selectedButtons],
     );
-    const liveSnapshot = useMemo(
-        () => buildServiceContextSnapshot({ props: canvas.props, services: servicesMap, state: liveSelectionContext }),
-        [canvas.props, liveSelectionContext, servicesMap],
-    );
-
+    const [liveSnapshot, setLiveSnapshot] = useState(() => createEmptyServiceContextSnapshot(liveSelectionContext, canvas.props));
     useEffect(() => {
-        const editor = canvas.api.editor as any;
-        const ensured = editor.getCatalog?.() ?? editor.ensureCatalog?.();
-        if (ensured) setCatalogState(ensured);
+        let active = true;
+        const fallback = createEmptyServiceContextSnapshot(liveSelectionContext, canvas.props);
+        setLiveSnapshot(fallback);
 
-        const offCatalogChange = canvas.api.on('catalog:change' as any, ({ catalog }: { catalog?: ServiceCatalogState }) => {
-            const next = catalog ?? editor.getCatalog?.() ?? editor.ensureCatalog?.();
-            setCatalogState(next ?? null);
-        });
-        const offCatalogActiveChange = canvas.api.on('catalog:active-change' as any, () => {
-            const next = editor.getCatalog?.() ?? editor.ensureCatalog?.();
-            setCatalogState(next ?? null);
-        });
+        buildServiceContextSnapshot({ props: canvas.props, services: servicesMap, state: liveSelectionContext })
+            .then((snapshot) => {
+                if (!active) return;
+                setLiveSnapshot(snapshot);
+            })
+            .catch(() => {
+                if (!active) return;
+                setLiveSnapshot(fallback);
+            });
 
         return () => {
-            offCatalogChange?.();
-            offCatalogActiveChange?.();
+            active = false;
         };
-    }, [canvas.api]);
+    }, [canvas.props, liveSelectionContext, servicesMap]);
 
     const catalogMode = catalogState?.viewMode === 'grouped' ? 'catalog' : 'all';
     const catalogGroups = useMemo(
@@ -187,6 +191,34 @@ function AddServicePopover({
         [catalogState],
     );
     const selectedCatalogGroupId = catalogGroups.some((node) => node.id === catalogState?.activeNodeId) ? String(catalogState?.activeNodeId) : null;
+    const contextServiceOptions = useMemo(
+        () =>
+            liveSnapshot.usedServiceIds
+                .map((id) => {
+                    const service = servicesMap[id];
+                    if (!service) return null;
+                    return {
+                        value: String(service.id),
+                        label: `${service.name ?? `Service ${service.id}`}${service.rate != null ? ` (Rate ${service.rate})` : ''}`,
+                    };
+                })
+                .filter(Boolean) as Array<{ value: string; label: string }>,
+        [liveSnapshot.usedServiceIds, servicesMap],
+    );
+    const parsedManualPrimaryRate = useMemo(() => {
+        const value = Number(manualPrimaryRate.trim());
+        return Number.isFinite(value) ? value : null;
+    }, [manualPrimaryRate]);
+    const hasValidCustomPrimary = useMemo(() => {
+        if (rateContextMode !== 'custom_primary_rate') return true;
+        if (rateContextSource === 'manual') return parsedManualPrimaryRate != null;
+        return Boolean(primaryServiceId);
+    }, [parsedManualPrimaryRate, primaryServiceId, rateContextMode, rateContextSource]);
+
+    useEffect(() => {
+        if (primaryServiceId && contextServiceOptions.some((option) => option.value === primaryServiceId)) return;
+        setPrimaryServiceId(contextServiceOptions[0]?.value ?? null);
+    }, [contextServiceOptions, primaryServiceId]);
     const groupedServiceIds = useMemo(() => {
         const ids = new Set<string>();
         for (const group of catalogGroups) {
@@ -217,29 +249,65 @@ function AddServicePopover({
 
         return new Set(selectedGroup.serviceIds.map((id) => String(id)));
     }, [catalogGroups, catalogMode, groupedServiceIds, selectedCatalogGroupId, services]);
-    const compatibleIds = useMemo(() => {
-        if (!contextFilterEnabled) return null;
-        if (!liveSnapshot.selectedTag) return null;
-        const checks = (canvas.api.editor as any).filterServicesForVisibleGroup?.(
-            services.map((service) => service.id),
-            {
-                tagId: liveSnapshot.selectedTag.id,
-                selectedButtons: liveSnapshot.state.selectedButtons,
-                usedServiceIds: liveSnapshot.usedServiceIds,
-                effectiveConstraints: liveSnapshot.selectedTag.constraints,
-                policies,
-            },
-        );
-        if (!Array.isArray(checks)) return null;
+    useEffect(() => {
+        let active = true;
 
-        const ids = new Set<string>();
-        for (const check of checks) {
-            if (check?.fitsConstraints && check?.passesRate && check?.passesPolicies) {
-                ids.add(String(check.id));
-            }
+        if (!contextFilterEnabled || !liveSnapshot.selectedTag) {
+            setCompatibleIds(null);
+            return () => {
+                active = false;
+            };
         }
-        return ids;
-    }, [canvas.api.editor, contextFilterEnabled, liveSnapshot, policies, services]);
+        if (!hasValidCustomPrimary) {
+            setCompatibleIds(null);
+            return () => {
+                active = false;
+            };
+        }
+
+        new Promise<any[]>((resolve) => {
+            setTimeout(() => {
+                const checks = (canvas.api.editor as any).filterServicesForVisibleGroup?.(
+                    services.map((service) => service.id),
+                    {
+                        tagId: liveSnapshot.selectedTag!.id,
+                        selectedButtons: liveSnapshot.state.selectedButtons,
+                        usedServiceIds: liveSnapshot.usedServiceIds,
+                        effectiveConstraints: liveSnapshot.selectedTag!.constraints,
+                        policies,
+                        rateContext:
+                            rateContextMode === 'custom_primary_rate'
+                                ? {
+                                      mode: 'custom_primary_rate',
+                                      source: rateContextSource,
+                                      primaryRate: rateContextSource === 'manual' ? parsedManualPrimaryRate ?? undefined : undefined,
+                                      primaryServiceId: rateContextSource === 'service' ? primaryServiceId ?? undefined : undefined,
+                                  }
+                                : { mode: 'context' },
+                    },
+                );
+                resolve(Array.isArray(checks) ? checks : []);
+            }, 0);
+        })
+            .then((checks) => {
+                if (!active) return;
+                const ids = new Set<string>();
+                for (const check of checks) {
+                    if (check?.fitsConstraints && check?.passesRate && check?.passesPolicies) {
+                        ids.add(String(check.id));
+                    }
+                }
+                setCompatibleIds(ids);
+            })
+            .catch(() => {
+                if (!active) return;
+                setCompatibleIds(null);
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [canvas.api.editor, contextFilterEnabled, hasValidCustomPrimary, liveSnapshot, parsedManualPrimaryRate, policies, primaryServiceId, rateContextMode, rateContextSource, services]);
     const setCatalogMode = useCallback(
         (mode: 'all' | 'catalog') => {
             const editor = canvas.api.editor as any;
@@ -306,73 +374,145 @@ function AddServicePopover({
                                         <FiFilter />
                                     </button>
                                 </PopoverTrigger>
-                                <PopoverContent align="end" sideOffset={8} collisionPadding={12} className="w-80 space-y-3 rounded-xl">
-                                    <div>
-                                        <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Service filters</div>
-                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                            Combine catalog grouping with current context compatibility.
-                                        </p>
-                                    </div>
-                                    <div className="space-y-2 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
-                                        <div className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">
-                                            Catalog scope
-                                        </div>
-
-                                        <InputField
-                                            variant={'radio'}
-                                            value={catalogMode}
-                                            options={
-                                                [
-                                                    { value: 'all', label: 'All services', description: 'Show all services' },
-                                                    {
-                                                        value: 'catalog',
-                                                        label: 'Catalog group',
-                                                        description: 'Show all services in the current catalog group',
-                                                    },
-                                                ] as const
-                                            }
-                                            optGroupClassName={'gap-1'}
-                                            onChange={(event) => setCatalogMode(event.value as any)}
-                                        />
-
-                                        <InputField
-                                            variant="treeselect"
-                                            placeholder={'Select group'}
-                                            disabled={catalogMode !== 'catalog'}
-                                            multiple={false}
-                                            value={treeValue}
-                                            triggerClassName={'px-2'}
-                                            options={[{ key: UNGROUPED_TREE_VALUE, label: 'Ungrouped' }, ...treeOptions] as any}
-                                            searchable
-                                            clearable
-                                            onChange={(event) => {
-                                                const next = event.value == null ? null : String(event.value);
-                                                (canvas.api.editor as any).setActiveCatalogNode?.(
-                                                    next === UNGROUPED_TREE_VALUE || next == null ? undefined : next,
-                                                );
-                                            }}
-                                            trailingIcons={[<FaFolderOpen />]}
-                                        />
-                                        {catalogMode === 'catalog' ? (
-                                            <div className="text-xs text-slate-500 dark:text-slate-400">
-                                                Showing {selectedCatalogGroup?.label ?? 'Ungrouped'} services.
+                                <PopoverContent align="end" sideOffset={8} collisionPadding={12} className="overflow-hidden w-80 rounded-xl p-0 flex flex-col max-h-(--radix-popover-content-available-height) h-(--radix-popover-content-available-height)">
+                                    <ScrollArea className="flex-1 h-full grow ">
+                                        <div className="space-y-3 p-4">
+                                            <div>
+                                                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Service filters</div>
+                                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                                    Combine catalog grouping with current context compatibility.
+                                                </p>
                                             </div>
-                                        ) : null}
-                                    </div>
-                                    <label className="flex items-start justify-between gap-3 rounded-lg border border-slate-200 p-3 text-sm text-slate-900 dark:border-slate-800 dark:text-slate-100">
-                                        <span className="min-w-0">
-                                            <span className="block font-medium">Current context</span>
-                                            <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                                                Filter services based on the current visible-group context.
-                                            </span>
-                                        </span>
-                                        <input
-                                            aria-label="Current context"
-                                            type="checkbox"
-                                            checked={contextFilterEnabled}
-                                            onChange={(event) => setContextFilterEnabled(event.target.checked)}
-                                        />
-                                    </label>
+                                            <div className="space-y-2 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                                                <div className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">
+                                                    Catalog scope
+                                                </div>
+
+                                                <InputField
+                                                    variant={'radio'}
+                                                    value={catalogMode}
+                                                    options={
+                                                        [
+                                                            { value: 'all', label: 'All services', description: 'Show all services' },
+                                                            {
+                                                                value: 'catalog',
+                                                                label: 'Catalog group',
+                                                                description: 'Show all services in the current catalog group',
+                                                            },
+                                                        ] as const
+                                                    }
+                                                    optGroupClassName={'gap-1'}
+                                                    onChange={(event) => setCatalogMode(event.value as any)}
+                                                />
+
+                                                <InputField
+                                                    variant="treeselect"
+                                                    placeholder={'Select group'}
+                                                    disabled={catalogMode !== 'catalog'}
+                                                    multiple={false}
+                                                    value={treeValue}
+                                                    triggerClassName={'px-2'}
+                                                    options={[{ key: UNGROUPED_TREE_VALUE, label: 'Ungrouped' }, ...treeOptions] as any}
+                                                    searchable
+                                                    clearable
+                                                    onChange={(event) => {
+                                                        const next = event.value == null ? null : String(event.value);
+                                                        (canvas.api.editor as any).setActiveCatalogNode?.(
+                                                            next === UNGROUPED_TREE_VALUE || next == null ? undefined : next,
+                                                        );
+                                                    }}
+                                                    trailingIcons={[<FaFolderOpen />]}
+                                                />
+                                                {catalogMode === 'catalog' ? (
+                                                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                                                        Showing {selectedCatalogGroup?.label ?? 'Ungrouped'} services.
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                            <label className="flex items-start justify-between gap-3 rounded-lg border border-slate-200 p-3 text-sm text-slate-900 dark:border-slate-800 dark:text-slate-100">
+                                                <span className="min-w-0">
+                                                    <span className="block font-medium">Current context</span>
+                                                    <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+                                                        Filter services based on the current visible-group context.
+                                                    </span>
+                                                </span>
+                                                <input
+                                                    aria-label="Current context"
+                                                    type="checkbox"
+                                                    checked={contextFilterEnabled}
+                                                    onChange={(event) => setContextFilterEnabled(event.target.checked)}
+                                                />
+                                            </label>
+                                            <div className="space-y-2 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                                                <div className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">
+                                                    Rate compatibility
+                                                </div>
+                                                <InputField
+                                                    variant="radio"
+                                                    value={rateContextMode}
+                                                    options={[
+                                                        {
+                                                            value: 'context',
+                                                            label: 'Context coherence',
+                                                            description: 'Use active context services for rate coherence.',
+                                                        },
+                                                        {
+                                                            value: 'custom_primary_rate',
+                                                            label: 'Custom primary rate',
+                                                            description: 'Use selected service rate or manual rate.',
+                                                        },
+                                                    ]}
+                                                    optGroupClassName={'gap-1'}
+                                                    onChange={(event) => setRateContextMode(event.value as any)}
+                                                />
+                                                {rateContextMode === 'custom_primary_rate' ? (
+                                                    <div className="space-y-2">
+                                                        <InputField
+                                                            variant="radio"
+                                                            value={rateContextSource}
+                                                            options={[
+                                                                {
+                                                                    value: 'service',
+                                                                    label: 'From context service',
+                                                                    description: 'Use one active context service as primary.',
+                                                                },
+                                                                {
+                                                                    value: 'manual',
+                                                                    label: 'Manual rate',
+                                                                    description: 'Enter a custom numeric primary rate.',
+                                                                },
+                                                            ]}
+                                                            optGroupClassName={'gap-1'}
+                                                            onChange={(event) => setRateContextSource(event.value as any)}
+                                                        />
+                                                        {rateContextSource === 'service' ? (
+                                                            <InputField
+                                                                variant="select"
+                                                                label="Primary context service"
+                                                                options={contextServiceOptions}
+                                                                value={primaryServiceId ?? undefined}
+                                                                onChange={(event) => setPrimaryServiceId(event.value ? String(event.value) : null)}
+                                                                placeholder="Select service"
+                                                            />
+                                                        ) : (
+                                                            <InputField
+                                                                variant="number"
+                                                                label="Primary rate"
+                                                                value={manualPrimaryRate === '' ? undefined : Number(manualPrimaryRate)}
+                                                                onChange={(event) => setManualPrimaryRate(String(event.value ?? ''))}
+                                                                placeholder="Enter rate"
+                                                            />
+                                                        )}
+                                                        {!hasValidCustomPrimary ? (
+                                                            <p className="text-xs text-amber-700 dark:text-amber-300">
+                                                                Provide a primary service or valid primary rate to apply compatibility filtering.
+                                                            </p>
+                                                        ) : null}
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                    </ScrollArea>
                                 </PopoverContent>
                             </Popover>
                         }
