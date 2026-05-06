@@ -1,3 +1,4 @@
+import { createCompatibilityCacheKey, runCompatibilityChecksIncremental } from '@/builder/compatibility-runner.ts';
 import { buildServiceContextSnapshot, createEmptyServiceContextSnapshot } from '@/builder/service-context.ts';
 import { ServiceMetaPopover } from '@/components/service-meta-popover.tsx';
 import { Button } from '@/components/ui/button.tsx';
@@ -10,7 +11,7 @@ import type { FieldNode, OptionNode, TagNode } from '@timeax/digital-service-eng
 import type { CatalogGroupNode, DgpServiceCapability } from '@timeax/digital-service-engine/schema';
 import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BsPlus } from 'react-icons/bs';
 import { FaFolderOpen } from 'react-icons/fa';
 import { FiFilter } from 'react-icons/fi';
@@ -143,8 +144,12 @@ function AddServicePopover({
     const [manualPrimaryRate, setManualPrimaryRate] = useState('');
     const [primaryServiceId, setPrimaryServiceId] = useState<string | null>(null);
     const [compatibleIds, setCompatibleIds] = useState<Set<string> | null>(null);
+    const compatibleRequestRef = useRef(0);
+    const compatibleCacheRef = useRef<Map<string, any>>(new Map());
     const catalogState = useServiceCatalogState(canvas.api as any, canvas.api.editor as any);
     const policies = ws.policies.policies.data ?? [];
+    const policiesKey = useMemo(() => JSON.stringify(policies ?? []), [policies]);
+    const candidateIds = useMemo(() => services.map((service) => service.id), [services]);
     const currentTagId = canvas.api.selection.currentTag?.();
     const preferredTagId = currentTagId != null ? String(currentTagId) : canvas.layers.tags[0]?.id != null ? String(canvas.layers.tags[0]?.id) : null;
     const selectedButtons = useMemo(
@@ -250,47 +255,53 @@ function AddServicePopover({
         return new Set(selectedGroup.serviceIds.map((id) => String(id)));
     }, [catalogGroups, catalogMode, groupedServiceIds, selectedCatalogGroupId, services]);
     useEffect(() => {
-        let active = true;
+        const requestId = ++compatibleRequestRef.current;
 
         if (!contextFilterEnabled || !liveSnapshot.selectedTag) {
             setCompatibleIds(null);
-            return () => {
-                active = false;
-            };
+            return;
         }
         if (!hasValidCustomPrimary) {
             setCompatibleIds(null);
-            return () => {
-                active = false;
-            };
+            return;
         }
 
-        new Promise<any[]>((resolve) => {
-            setTimeout(() => {
-                const checks = (canvas.api.editor as any).filterServicesForVisibleGroup?.(
-                    services.map((service) => service.id),
-                    {
-                        tagId: liveSnapshot.selectedTag!.id,
-                        selectedButtons: liveSnapshot.state.selectedButtons,
-                        usedServiceIds: liveSnapshot.usedServiceIds,
-                        effectiveConstraints: liveSnapshot.selectedTag!.constraints,
-                        policies,
-                        rateContext:
-                            rateContextMode === 'custom_primary_rate'
-                                ? {
-                                      mode: 'custom_primary_rate',
-                                      source: rateContextSource,
-                                      primaryRate: rateContextSource === 'manual' ? parsedManualPrimaryRate ?? undefined : undefined,
-                                      primaryServiceId: rateContextSource === 'service' ? primaryServiceId ?? undefined : undefined,
-                                  }
-                                : { mode: 'context' },
-                    },
-                );
-                resolve(Array.isArray(checks) ? checks : []);
-            }, 0);
+        const cacheKey = createCompatibilityCacheKey({
+            tagId: liveSnapshot.selectedTag.id,
+            selectedButtons: liveSnapshot.state.selectedButtons,
+            usedServiceIds: liveSnapshot.usedServiceIds,
+            policiesKey,
+            rateContextMode,
+            rateContextSource,
+            primaryRate: rateContextSource === 'manual' ? parsedManualPrimaryRate : null,
+            primaryServiceId: rateContextSource === 'service' ? primaryServiceId : null,
+        });
+
+        runCompatibilityChecksIncremental<any>({
+            editor: canvas.api.editor as any,
+            candidateIds,
+            args: {
+                tagId: liveSnapshot.selectedTag.id,
+                selectedButtons: liveSnapshot.state.selectedButtons,
+                usedServiceIds: liveSnapshot.usedServiceIds,
+                effectiveConstraints: liveSnapshot.selectedTag.constraints,
+                policies,
+                rateContext:
+                    rateContextMode === 'custom_primary_rate'
+                        ? {
+                              mode: 'custom_primary_rate',
+                              source: rateContextSource,
+                              primaryRate: rateContextSource === 'manual' ? parsedManualPrimaryRate ?? undefined : undefined,
+                              primaryServiceId: rateContextSource === 'service' ? primaryServiceId ?? undefined : undefined,
+                          }
+                        : { mode: 'context' },
+            },
+            cache: compatibleCacheRef.current,
+            cacheKey,
+            shouldAbort: () => compatibleRequestRef.current !== requestId,
         })
             .then((checks) => {
-                if (!active) return;
+                if (compatibleRequestRef.current !== requestId) return;
                 const ids = new Set<string>();
                 for (const check of checks) {
                     if (check?.fitsConstraints && check?.passesRate && check?.passesPolicies) {
@@ -300,14 +311,24 @@ function AddServicePopover({
                 setCompatibleIds(ids);
             })
             .catch(() => {
-                if (!active) return;
+                if (compatibleRequestRef.current !== requestId) return;
                 setCompatibleIds(null);
             });
-
-        return () => {
-            active = false;
-        };
-    }, [canvas.api.editor, contextFilterEnabled, hasValidCustomPrimary, liveSnapshot, parsedManualPrimaryRate, policies, primaryServiceId, rateContextMode, rateContextSource, services]);
+    }, [
+        candidateIds,
+        canvas.api.editor,
+        contextFilterEnabled,
+        hasValidCustomPrimary,
+        liveSnapshot.selectedTag,
+        liveSnapshot.state.selectedButtons,
+        liveSnapshot.usedServiceIds,
+        parsedManualPrimaryRate,
+        policies,
+        policiesKey,
+        primaryServiceId,
+        rateContextMode,
+        rateContextSource,
+    ]);
     const setCatalogMode = useCallback(
         (mode: 'all' | 'catalog') => {
             const editor = canvas.api.editor as any;
@@ -374,7 +395,12 @@ function AddServicePopover({
                                         <FiFilter />
                                     </button>
                                 </PopoverTrigger>
-                                <PopoverContent align="end" sideOffset={8} collisionPadding={12} className="overflow-hidden w-80 rounded-xl p-0 flex flex-col max-h-(--radix-popover-content-available-height) h-(--radix-popover-content-available-height)">
+                                <PopoverContent
+                                    align="end"
+                                    sideOffset={8}
+                                    collisionPadding={12}
+                                    className="flex h-[var(--radix-popover-content-available-height)] max-h-[var(--radix-popover-content-available-height)] w-80 flex-col overflow-hidden rounded-xl p-0"
+                                >
                                     <ScrollArea className="flex-1 h-full grow ">
                                         <div className="space-y-3 p-4">
                                             <div>

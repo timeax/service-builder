@@ -22,6 +22,7 @@ import { useMemo, useState } from 'react';
 import { workspaceActor, workspaceBackend } from '../backend';
 import './index.css';
 import './node-row.css';
+
 export { NativeFallbackEditor } from '@/workspace/fallback-editor/index.tsx';
 export type { NativeFallbackEditorProps } from '@/workspace/fallback-editor/index.tsx';
 
@@ -60,17 +61,7 @@ function WorkspaceLayout({ onShare, onPlay, menu, kinds, defaultKind }: ServiceB
     const errors = useErrors();
     const bottomPanel = useBottomConsolePanel();
     const [draggingServiceId, setDraggingServiceId] = useState<string | null>(null);
-    const resolvedKinds = useMemo(
-        () =>
-            Array.from(
-                new Set(
-                    (kinds ?? [])
-                        .map((kind) => String(kind).trim())
-                        .filter(Boolean),
-                ),
-            ),
-        [kinds],
-    );
+    const resolvedKinds = useMemo(() => Array.from(new Set((kinds ?? []).map((kind) => String(kind).trim()).filter(Boolean))), [kinds]);
     const resolvedDefaultKind = useMemo(() => {
         const next = defaultKind?.trim();
         if (next) return next;

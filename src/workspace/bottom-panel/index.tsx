@@ -1,5 +1,10 @@
 import type { BottomConsolePanelState, BottomPanelTab, BuilderServiceSummary } from '@/builder/bottom-panel.ts';
 import {
+    areServiceContextStatesEqual,
+    createCompatibilityCacheKey,
+    runCompatibilityChecksIncremental,
+} from '@/builder/compatibility-runner.ts';
+import {
     buildServiceContextSnapshot,
     buildServiceRowVM,
     createDefaultServiceContext,
@@ -102,6 +107,7 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
     const appliedSnapshotRequestRef = useRef(0);
     const draftSnapshotRequestRef = useRef(0);
     const allChecksByIdRequestRef = useRef(0);
+    const allChecksCacheRef = useRef<Map<string, any>>(new Map());
 
     const selectedButtons = useMemo(
         () => ((canvas.api.selection.selectedButtons?.() ?? []) as Array<string | number>).map((value) => String(value)),
@@ -150,6 +156,8 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
             });
     }, [canvas.props, catalogContextDraft, servicesMap]);
     const [allChecksById, setAllChecksById] = useState<Map<string, any>>(new Map());
+    const allCandidateIds = useMemo(() => Object.values(servicesMap).map((service: any) => service.id), [servicesMap]);
+    const policiesKey = useMemo(() => JSON.stringify(policies ?? []), [policies]);
     const contextServiceOptions = useMemo(
         () =>
             appliedSnapshot.usedServiceIds
@@ -190,27 +198,39 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
             return;
         }
 
-        const candidateIds = Object.values(servicesMap).map((service: any) => service.id);
-        new Promise<any[]>((resolve) => {
-            setTimeout(() => {
-                const checks = (canvas.api.editor as any).filterServicesForVisibleGroup(candidateIds, {
-                    tagId: appliedSnapshot.selectedTag!.id,
-                    selectedButtons: appliedSnapshot.state.selectedButtons,
-                    usedServiceIds: appliedSnapshot.usedServiceIds,
-                    effectiveConstraints: appliedSnapshot.selectedTag!.constraints,
-                    policies,
-                    rateContext:
-                        rateContextMode === 'custom_primary_rate'
-                            ? {
-                                  mode: 'custom_primary_rate',
-                                  source: rateContextSource,
-                                  primaryRate: rateContextSource === 'manual' ? parsedManualPrimaryRate ?? undefined : undefined,
-                                  primaryServiceId: rateContextSource === 'service' ? primaryServiceId ?? undefined : undefined,
-                              }
-                            : { mode: 'context' },
-                });
-                resolve(Array.isArray(checks) ? checks : []);
-            }, 0);
+        const cacheKey = createCompatibilityCacheKey({
+            tagId: appliedSnapshot.selectedTag.id,
+            selectedButtons: appliedSnapshot.state.selectedButtons,
+            usedServiceIds: appliedSnapshot.usedServiceIds,
+            policiesKey,
+            rateContextMode,
+            rateContextSource,
+            primaryRate: rateContextSource === 'manual' ? parsedManualPrimaryRate : null,
+            primaryServiceId: rateContextSource === 'service' ? primaryServiceId : null,
+        });
+
+        runCompatibilityChecksIncremental<any>({
+            editor: canvas.api.editor as any,
+            candidateIds: allCandidateIds,
+            args: {
+                tagId: appliedSnapshot.selectedTag.id,
+                selectedButtons: appliedSnapshot.state.selectedButtons,
+                usedServiceIds: appliedSnapshot.usedServiceIds,
+                effectiveConstraints: appliedSnapshot.selectedTag.constraints,
+                policies,
+                rateContext:
+                    rateContextMode === 'custom_primary_rate'
+                        ? {
+                              mode: 'custom_primary_rate',
+                              source: rateContextSource,
+                              primaryRate: rateContextSource === 'manual' ? parsedManualPrimaryRate ?? undefined : undefined,
+                              primaryServiceId: rateContextSource === 'service' ? primaryServiceId ?? undefined : undefined,
+                          }
+                        : { mode: 'context' },
+            },
+            cache: allChecksCacheRef.current,
+            cacheKey,
+            shouldAbort: () => allChecksByIdRequestRef.current !== requestId,
         })
             .then((checks) => {
                 if (allChecksByIdRequestRef.current !== requestId) return;
@@ -220,7 +240,20 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
                 if (allChecksByIdRequestRef.current !== requestId) return;
                 setAllChecksById(new Map());
             });
-    }, [appliedSnapshot, canvas.api.editor, hasValidCustomPrimary, manualPrimaryRate, parsedManualPrimaryRate, policies, primaryServiceId, rateContextMode, rateContextSource, servicesMap]);
+    }, [
+        allCandidateIds,
+        appliedSnapshot.selectedTag,
+        appliedSnapshot.state.selectedButtons,
+        appliedSnapshot.usedServiceIds,
+        canvas.api.editor,
+        hasValidCustomPrimary,
+        parsedManualPrimaryRate,
+        policies,
+        policiesKey,
+        primaryServiceId,
+        rateContextMode,
+        rateContextSource,
+    ]);
     const hiddenServiceIds = useMemo(() => {
         const ids = new Set(activeServices.map((service) => String(service.id)));
         for (const id of appliedSnapshot.usedServiceIds) ids.add(String(id));
@@ -279,7 +312,7 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
     useEffect(() => {
         if (contextLinked) return;
         const next = sanitizeServiceContext(draftSnapshot, catalogContextDraft);
-        if (JSON.stringify(next) !== JSON.stringify(catalogContextDraft)) {
+        if (!areServiceContextStatesEqual(next, catalogContextDraft)) {
             setCatalogContextDraft(next);
         }
     }, [catalogContextDraft, contextLinked, draftSnapshot]);
