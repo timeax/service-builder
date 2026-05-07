@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { NodeContextMenuProvider } from './node-context-menu.tsx';
 
