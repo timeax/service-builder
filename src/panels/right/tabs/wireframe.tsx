@@ -229,7 +229,7 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
     );
 
     return (
-        <div className="flex h-full min-h-0 flex-col">
+        <div className="flex h-full min-h-0 flex-col flex-1 w-full">
             <div className="min-h-0 flex-1 overflow-auto p-4">
                 <div className="mx-auto max-w-md">
                     <div className="flex flex-col gap-4">

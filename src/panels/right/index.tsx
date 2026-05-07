@@ -57,7 +57,11 @@ const RightPanel = ({ onShare, onPlay, kinds = [], defaultKind = '' }: RightPane
                     <TabsContent className={'min-h-0 grow overflow-hidden'} value="properties">
                         <Properties kinds={kinds} defaultKind={defaultKind} />
                     </TabsContent>
-                    <TabsContent className={'min-h-0 grow overflow-hidden'} value="wireframe" forceMount>
+                    <TabsContent
+                        className={'[&_form]:grow-col flex min-h-0 grow flex-col overflow-hidden [&_form]:flex [&_form]:h-full [&_form]:overflow-hidden'}
+                        value="wireframe"
+                        forceMount
+                    >
                         {/*@ts-ignore*/}
                         <OrderFlowProvider serviceProps={props} builder={api.builder} selection={api.selection!} registry={registry}>
                             <Wireframe kinds={kinds} defaultKind={defaultKind} />

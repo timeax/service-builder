@@ -44,6 +44,8 @@ const baseBackendMock = {
         delete: vi.fn(async () => ({ ok: true, value: undefined })),
     },
     templates: {
+        list: vi.fn(async () => ({ ok: true, value: [] })),
+        refresh: vi.fn(async () => ({ ok: true, value: [] })),
         create: vi.fn(async () => ({ ok: true, value: {} })),
         update: vi.fn(async () => ({ ok: true, value: {} })),
         clone: vi.fn(async () => ({ ok: true, value: {} })),
@@ -76,6 +78,9 @@ const { workspaceBackend } = await import('./create-backend');
 
 describe('workspaceBackend permission wrapper', () => {
     beforeEach(() => {
+        baseBackendMock.permissions.get.mockClear();
+        baseBackendMock.access.listParticipants.mockClear();
+        Object.values(baseBackendMock.templates).forEach((fn) => fn.mockClear());
         Object.values(baseBackendMock.snapshots).forEach((fn) => fn.mockClear());
         Object.values(baseBackendMock.comments).forEach((fn) => fn.mockClear());
     });
@@ -111,5 +116,98 @@ describe('workspaceBackend permission wrapper', () => {
 
         expect(result.ok).toBe(true);
         expect(baseBackendMock.comments.createThread).toHaveBeenCalledTimes(1);
+    });
+
+    it('normalizes template create branchId null to undefined for authorization/backend', async () => {
+        const result = await workspaceBackend.templates.create('ws:local', {
+            name: 'Template A',
+            kind: 'text',
+            branchId: null,
+            definition: { type: 'text' },
+        } as any);
+
+        expect(result.ok).toBe(true);
+        expect(baseBackendMock.access.listParticipants).not.toHaveBeenCalled();
+        expect(baseBackendMock.templates.create).toHaveBeenCalledWith(
+            'ws:local',
+            expect.objectContaining({
+                branchId: undefined,
+            }),
+        );
+    });
+
+    it('normalizes template clone branchId null to undefined for authorization/backend', async () => {
+        const result = await workspaceBackend.templates.clone(
+            { id: 'tpl:1' },
+            {
+                name: 'Clone',
+                branchId: null,
+            } as any,
+        );
+
+        expect(result.ok).toBe(true);
+        expect(baseBackendMock.access.listParticipants).not.toHaveBeenCalled();
+        expect(baseBackendMock.templates.clone).toHaveBeenCalledWith(
+            { id: 'tpl:1' },
+            expect.objectContaining({
+                branchId: undefined,
+            }),
+        );
+    });
+
+    it('returns branch + global templates on refresh when branchId is provided', async () => {
+        baseBackendMock.templates.refresh.mockResolvedValueOnce({
+            ok: true,
+            value: [
+                { id: 'tpl:global', name: 'Global', branchId: undefined },
+                { id: 'tpl:main', name: 'Main', branchId: 'branch:main' },
+                { id: 'tpl:exp', name: 'Exp', branchId: 'branch:experiment' },
+            ],
+        });
+
+        const result = await workspaceBackend.templates.refresh({
+            workspaceId: 'ws:local',
+            branchId: 'branch:main',
+        } as any);
+
+        expect(result.ok).toBe(true);
+        expect(baseBackendMock.templates.refresh).toHaveBeenCalledWith(
+            expect.objectContaining({
+                workspaceId: 'ws:local',
+                branchId: 'branch:main',
+            }),
+        );
+        expect((result as any).value).toEqual([
+            { id: 'tpl:global', name: 'Global', branchId: undefined },
+            { id: 'tpl:main', name: 'Main', branchId: 'branch:main' },
+        ]);
+    });
+
+    it('returns branch + global templates on list when branchId is provided', async () => {
+        baseBackendMock.templates.list.mockResolvedValueOnce({
+            ok: true,
+            value: [
+                { id: 'tpl:global', name: 'Global', branchId: undefined },
+                { id: 'tpl:main', name: 'Main', branchId: 'branch:main' },
+                { id: 'tpl:exp', name: 'Exp', branchId: 'branch:experiment' },
+            ],
+        });
+
+        const result = await workspaceBackend.templates.list({
+            workspaceId: 'ws:local',
+            branchId: 'branch:main',
+        } as any);
+
+        expect(result.ok).toBe(true);
+        expect(baseBackendMock.templates.list).toHaveBeenCalledWith(
+            expect.objectContaining({
+                workspaceId: 'ws:local',
+                branchId: 'branch:main',
+            }),
+        );
+        expect((result as any).value).toEqual([
+            { id: 'tpl:global', name: 'Global', branchId: undefined },
+            { id: 'tpl:main', name: 'Main', branchId: 'branch:main' },
+        ]);
     });
 });

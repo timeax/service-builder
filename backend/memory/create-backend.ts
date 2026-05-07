@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 //@ts-nocheck
 import { createMemoryWorkspaceBackend } from '@timeax/digital-service-engine/workspace';
@@ -95,25 +96,53 @@ export const workspaceBackend = {
     },
     templates: {
         ...baseBackend.templates,
+        list: async (params: { workspaceId: string; branchId?: string } & Record<string, unknown>) => {
+            const listResult = await baseBackend.templates.list(params as any);
+
+            console.log(listResult, 'this is the list result from the base backend');
+            if (!listResult.ok) return listResult;
+
+            const branchId = params.branchId;
+            if (!branchId) return listResult;
+
+            const merged = listResult.value.filter((template: { branchId?: string | null }) => template.branchId == null || template.branchId === branchId);
+            return { ok: true as const, value: merged };
+        },
+        refresh: async (params: { workspaceId: string; branchId?: string } & Record<string, unknown>) => {
+            console.log('this is being refreshed...', params, await baseBackend.templates.list(params as any));
+            const refreshResult = await baseBackend.templates.refresh(params as any);
+            if (!refreshResult.ok) return refreshResult;
+
+            const branchId = params.branchId;
+            if (!branchId) return refreshResult;
+
+            const merged = refreshResult.value.filter((template: { branchId?: string | null }) => template.branchId == null || template.branchId === branchId);
+            return { ok: true as const, value: merged };
+        },
         create: async (
             workspaceId: string,
             input: {
-                branchId?: string;
+                branchId?: string | null;
             } & Record<string, unknown>,
         ) => {
-            const check = await authorize('template-write', input.branchId);
+            const branchId = input.branchId ?? undefined;
+            const check = await authorize('template-write', branchId);
             if (!check.ok) return check;
-            return baseBackend.templates.create(workspaceId, input as any);
+            return baseBackend.templates.create(workspaceId, { ...input, branchId } as never);
         },
         update: async (id: string, patch: { branchId?: string | null } & Record<string, unknown>) => {
             const check = await authorize('template-write', patch.branchId ?? undefined);
             if (!check.ok) return check;
             return baseBackend.templates.update(id, patch as any);
         },
-        clone: async (source: { id?: string; key?: string }, options?: { branchId?: string; asDraft?: boolean; name?: string; newKey?: string }) => {
-            const check = await authorize('template-write', options?.branchId);
+        clone: async (
+            source: { id?: string; key?: string },
+            options?: { branchId?: string | null; asDraft?: boolean; name?: string; newKey?: string },
+        ) => {
+            const branchId = options?.branchId ?? undefined;
+            const check = await authorize('template-write', branchId);
             if (!check.ok) return check;
-            return baseBackend.templates.clone(source as any, options as any);
+            return baseBackend.templates.clone(source as any, { ...options, branchId } as any);
         },
         publish: async (id: string) => {
             const check = await authorize('template-write', undefined);
@@ -127,6 +156,8 @@ export const workspaceBackend = {
         },
         delete: async (id: string) => {
             const check = await authorize('template-write', undefined);
+
+            console.log("This is a delete action...")
             if (!check.ok) return check;
             return baseBackend.templates.delete(id);
         },

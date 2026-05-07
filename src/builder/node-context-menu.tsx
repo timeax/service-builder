@@ -8,7 +8,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog.tsx';
+import { deriveWorkspaceAuthorization, getAuthorizationDecision } from '@/workspace/authorization.ts';
 import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
+import { InputField } from '@timeax/form-palette';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ContextMenu } from './node-context/components/ContextMenu.tsx';
@@ -16,6 +18,13 @@ import { Dial } from './node-context/components/Dial.tsx';
 import { NoticeManager } from './node-context/components/NoticeManager.tsx';
 import { RenameNodeField } from './node-context/components/RenameNodeField.tsx';
 import { useDropHandling, useNoticeHandling } from './node-context/hooks.ts';
+import {
+    detectRelationMaps,
+    discoverGroupFieldIds,
+    filterRelationsForSelection,
+    pickCheckedProperties,
+    sanitizeField,
+} from './node-context/template-utils.ts';
 import { OVERLAY_STALE_TIMEOUT_MS } from './node-context/types';
 import type {
     DropIntent,
@@ -31,14 +40,7 @@ import type {
     OpenNoticeManagerInput,
 } from './node-context/types.ts';
 import { inferNodeKindFromId, makeTemplateKey, toDraft } from './node-context/utils.ts';
-import { deriveWorkspaceAuthorization, getAuthorizationDecision } from '@/workspace/authorization.ts';
-import {
-    detectRelationMaps,
-    discoverGroupFieldIds,
-    filterRelationsForSelection,
-    pickCheckedProperties,
-    sanitizeField,
-} from './node-context/template-utils.ts';
+import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 
 type NodeContextMenuValue = {
     openNodeContextMenu: (input: OpenNodeContextMenuInput) => void;
@@ -75,6 +77,8 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
     const [templateSaveFieldId, setTemplateSaveFieldId] = useState<string | null>(null);
     const [templateSaveMode, setTemplateSaveMode] = useState<'single' | 'group'>('single');
     const [templateLabel, setTemplateLabel] = useState('');
+    const [templateName, setTemplateName] = useState('');
+    const [templateSaveToCurrentBranch, setTemplateSaveToCurrentBranch] = useState(true);
     const [templateGroupSelection, setTemplateGroupSelection] = useState<Record<string, boolean>>({});
     const [templateFieldChecks, setTemplateFieldChecks] = useState<Record<string, Record<string, boolean>>>({});
     const [edgeTypeSubmenuOpen, setEdgeTypeSubmenuOpen] = useState(false);
@@ -396,6 +400,8 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
             setTemplateSaveFieldId(fieldId);
             setTemplateSaveMode('single');
             setTemplateLabel('');
+            setTemplateName('');
+            setTemplateSaveToCurrentBranch(true);
             setTemplateGroupSelection({});
             setTemplateFieldChecks({});
             setTemplateSaveOpen(true);
@@ -417,6 +423,7 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
         setTemplateGroupSelection((current) => (Object.keys(current).length ? current : initialGroupSelection));
         setTemplateFieldChecks((current) => (Object.keys(current).length ? current : initialChecks));
         setTemplateLabel((current) => current || `${templateSaveDraft.rootLabel} group`);
+        setTemplateName((current) => current || `${templateSaveDraft.rootLabel} Template`);
     }, [templateSaveDraft, templateSaveFieldId]);
 
     const handleTemplateSave = useCallback(async () => {
@@ -430,6 +437,7 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
             if (!rootEntry) throw new Error('Selected field no longer exists.');
             if (templateSaveMode === 'single') {
                 const field = pickCheckedProperties(rootEntry.field, templateFieldChecks[templateSaveFieldId] ?? {});
+                const resolvedName = templateName.trim() || `${templateSaveDraft.rootLabel} Template`;
                 const definition = {
                     templateType: 'field',
                     mode: 'single',
@@ -437,15 +445,16 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
                     field,
                 };
                 const result = await ws.createTemplate({
-                    name: `${templateSaveDraft.rootLabel} Template`,
-                    key: makeTemplateKey(templateSaveDraft.rootLabel ?? 'field'),
+                    name: resolvedName,
+                    key: makeTemplateKey(resolvedName || templateSaveDraft.rootLabel || 'field'),
                     kind: templateSaveDraft.rootType,
-                    branchId: ws.branches.currentId ?? undefined,
+                    branchId: templateSaveToCurrentBranch ? (ws.branches.currentId ?? undefined) : (null as string | null),
                     definition,
                     defaults: (canvas.selector.getNode(templateSaveFieldId) as any)?.raw?.defaults,
                     published: false,
                 });
-                if (!result.ok) throw new Error(('error' in result ? result.error.message : 'Failed to create template') ?? 'Failed to create template');
+                if (!result.ok)
+                    throw new Error(('error' in result ? result.error.message : 'Failed to create template') ?? 'Failed to create template');
             } else {
                 const selected = new Set(
                     Object.entries(templateGroupSelection)
@@ -470,16 +479,19 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
                     fields,
                     relations: filteredRelations,
                 };
+                const resolvedName = templateName.trim() || definition.label;
+
                 const result = await ws.createTemplate({
-                    name: definition.label,
-                    key: makeTemplateKey(definition.label || 'field-group'),
+                    name: resolvedName,
+                    key: makeTemplateKey(resolvedName || 'field-group'),
                     kind: templateSaveDraft.rootType,
-                    branchId: ws.branches.currentId ?? undefined,
+                    branchId: templateSaveToCurrentBranch ? (ws.branches.currentId ?? undefined) : (null as string | null),
                     definition,
                     defaults: (canvas.selector.getNode(templateSaveFieldId) as any)?.raw?.defaults,
                     published: false,
                 });
-                if (!result.ok) throw new Error(('error' in result ? result.error.message : 'Failed to create template') ?? 'Failed to create template');
+                if (!result.ok)
+                    throw new Error(('error' in result ? result.error.message : 'Failed to create template') ?? 'Failed to create template');
             }
             await ws.refresh.templates({ branchId: ws.branches.currentId ?? undefined });
             setTemplateSaveOpen(false);
@@ -497,6 +509,8 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
         templateFieldChecks,
         templateGroupSelection,
         templateLabel,
+        templateName,
+        templateSaveToCurrentBranch,
         templateSaveDraft,
         templateSaveFieldId,
         templateSaveMode,
@@ -611,10 +625,7 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
                                   >
                                       Disconnect
                                   </button>
-                                  <div
-                                      className="relative"
-                                      onMouseLeave={() => setEdgeTypeSubmenuOpen(false)}
-                                  >
+                                  <div className="relative" onMouseLeave={() => setEdgeTypeSubmenuOpen(false)}>
                                       <button
                                           type="button"
                                           className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
@@ -698,11 +709,7 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
                                       }}
                                       className="space-y-4"
                                   >
-                                      <RenameNodeField
-                                          value={renameValue}
-                                          onChange={setRenameValue}
-                                          onEscape={() => setRenameOpen(false)}
-                                      />
+                                      <RenameNodeField value={renameValue} onChange={setRenameValue} onEscape={() => setRenameOpen(false)} />
                                       <AlertDialogFooter>
                                           <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
                                           <AlertDialogAction type="submit">Save</AlertDialogAction>
@@ -747,29 +754,24 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
                                   {templateSaveDraft ? (
                                       <div className="space-y-4">
                                           <div className="flex gap-2">
-                                              <button
-                                                  type="button"
-                                                  className={`rounded-lg border px-3 py-1 text-sm ${templateSaveMode === 'single' ? 'border-blue-500 bg-blue-50' : 'border-slate-300'}`}
-                                                  onClick={() => setTemplateSaveMode('single')}
-                                              >
-                                                  Single field
-                                              </button>
-                                              <button
-                                                  type="button"
-                                                  className={`rounded-lg border px-3 py-1 text-sm ${templateSaveMode === 'group' ? 'border-blue-500 bg-blue-50' : 'border-slate-300'}`}
-                                                  onClick={() => setTemplateSaveMode('group')}
-                                              >
-                                                  Field group/tree
-                                              </button>
+                                              <InputField
+                                                  variant={'toggle-group'}
+                                                  options={[
+                                                      { label: 'Single Field', value: 'single' },
+                                                      { label: 'Field Group/Tree', value: 'group' },
+                                                  ]}
+                                                  value={templateSaveMode}
+                                                  onChange={(e) => setTemplateSaveMode(e.value)}
+                                              />
                                           </div>
 
                                           {templateSaveMode === 'group' ? (
                                               <div className="space-y-2">
                                                   <label className="block text-sm font-medium">Template label</label>
-                                                  <input
+                                                  <InputField
+                                                      variant={'text'}
                                                       value={templateLabel}
-                                                      onChange={(event) => setTemplateLabel(event.target.value)}
-                                                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                                                      onChange={(event) => setTemplateLabel(event.value)}
                                                   />
                                                   <div className="space-y-1">
                                                       <p className="text-sm font-medium">Fields in group</p>
@@ -791,13 +793,31 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
                                                   </div>
                                               </div>
                                           ) : null}
+                                          <div className="space-y-2">
+                                              <label className="block text-sm font-medium">Template name</label>
+                                              <InputField
+                                                  variant={'text'}
+                                                  value={templateName}
+                                                  onChange={(event) => setTemplateName(String(event.value ?? ''))}
+                                              />
+                                              <label className="flex items-center gap-2 text-sm">
+                                                  <input
+                                                      type="checkbox"
+                                                      checked={templateSaveToCurrentBranch}
+                                                      onChange={(event) => setTemplateSaveToCurrentBranch(event.target.checked)}
+                                                  />
+                                                  <span>Save to current branch</span>
+                                              </label>
+                                          </div>
 
-                                          <div className="max-h-72 space-y-2 overflow-auto rounded-lg border border-slate-200 p-2">
+                                          <ScrollArea className="max-h-72 space-y-2 h-full">
                                               {(templateSaveMode === 'single'
                                                   ? templateSaveDraft.discoveredFields.filter((entry) => entry.originalId === templateSaveFieldId)
-                                                  : templateSaveDraft.discoveredFields.filter((entry) => templateGroupSelection[entry.originalId] !== false)
+                                                  : templateSaveDraft.discoveredFields.filter(
+                                                        (entry) => templateGroupSelection[entry.originalId] !== false,
+                                                    )
                                               ).map((entry) => (
-                                                  <details key={entry.originalId} open className="rounded border border-slate-200 p-2">
+                                                  <details key={entry.originalId} open className="rounded border border-slate-200 dark:border-slate-700 p-2">
                                                       <summary className="cursor-pointer text-sm font-medium">
                                                           {String((entry.field.label as string) ?? entry.originalId)} ({entry.originalId})
                                                       </summary>
@@ -823,11 +843,11 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
                                                       </div>
                                                   </details>
                                               ))}
-                                          </div>
+                                          </ScrollArea>
 
                                           <AlertDialogFooter>
                                               <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
-                                              <AlertDialogAction type="button" onClick={() => void handleTemplateSave()}>
+                                              <AlertDialogAction type="button" disabled={!templateName.trim()} onClick={() => void handleTemplateSave()}>
                                                   Save template
                                               </AlertDialogAction>
                                           </AlertDialogFooter>
