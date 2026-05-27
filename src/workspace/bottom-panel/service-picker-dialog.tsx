@@ -9,9 +9,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createDefaultServicePickerFilters, discoverServiceMetaPaths, filterServicePickerServices, type ServicePickerFilters } from './service-picker.ts';
 
+const EMPTY_SERVICE_IDS = new Set<string>();
+
 type ServicePickerDialogProps = {
     open: boolean;
     groupLabel?: string | null;
+    selectedGroupId?: string | null;
+    parentGroupId?: string | null;
+    parentServiceIds?: Set<string>;
     services: BuilderServiceSummary[];
     serviceMap: Record<string, DgpServiceCapability>;
     activeIds?: Set<string>;
@@ -23,6 +28,9 @@ type ServicePickerDialogProps = {
 export function ServicePickerDialog({
     open,
     groupLabel,
+    selectedGroupId = null,
+    parentGroupId = null,
+    parentServiceIds = EMPTY_SERVICE_IDS,
     services,
     serviceMap,
     activeIds = new Set<string>(),
@@ -30,15 +38,25 @@ export function ServicePickerDialog({
     onOpenChange,
     onConfirm,
 }: ServicePickerDialogProps) {
-    const [filters, setFilters] = useState<ServicePickerFilters>(() => createDefaultServicePickerFilters());
+    const parentServiceIdsKey = useMemo(() => Array.from(parentServiceIds).sort((a, b) => a.localeCompare(b)).join('|'), [parentServiceIds]);
+    const defaultFilters = useMemo(
+        () =>
+            createDefaultServicePickerFilters({
+                selectedGroupId,
+                parentGroupId,
+                parentServiceIds,
+            }),
+        [parentGroupId, parentServiceIdsKey, selectedGroupId],
+    );
+    const [filters, setFilters] = useState<ServicePickerFilters>(() => defaultFilters);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const selectAllRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
         if (!open) return;
-        setFilters(createDefaultServicePickerFilters());
+        setFilters(defaultFilters);
         setSelectedIds(new Set());
-    }, [open]);
+    }, [defaultFilters, open]);
 
     useEffect(() => {
         if (!open) return;
@@ -63,8 +81,9 @@ export function ServicePickerDialog({
                 serviceMap,
                 filters,
                 activeIds,
+                parentServiceIds,
             }),
-        [activeIds, filters, serviceMap, services],
+        [activeIds, filters, parentServiceIds, serviceMap, services],
     );
 
     const filteredServiceIds = useMemo(() => filteredServices.map((service) => String(service.id)), [filteredServices]);
@@ -118,6 +137,26 @@ export function ServicePickerDialog({
                                     onChange={(event) => setFilters((current) => ({ ...current, query: String(event.value ?? '') }))}
                                     placeholder="Name, id, category..."
                                     autoComplete="off"
+                                />
+                            </FilterField>
+
+                            <FilterField label="Source">
+                                <InputField
+                                    variant="select"
+                                    label="Source filter"
+                                    value={filters.source}
+                                    options={
+                                        [
+                                            { label: 'Parent group services', value: 'parent' },
+                                            { label: 'All services', value: 'all' },
+                                        ] as any
+                                    }
+                                    onChange={(event) =>
+                                        setFilters((current) => ({
+                                            ...current,
+                                            source: (event.value as ServicePickerFilters['source']) ?? 'all',
+                                        }))
+                                    }
                                 />
                             </FilterField>
 
@@ -252,7 +291,7 @@ export function ServicePickerDialog({
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => {
-                                        setFilters(createDefaultServicePickerFilters());
+                                        setFilters(defaultFilters);
                                         setSelectedIds(new Set());
                                     }}
                                     className="rounded-xl"

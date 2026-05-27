@@ -613,6 +613,10 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
         const offGraph = api.on('graph:update', requestStructuralSync);
         const offSelection = api.on('selection:change', requestStructuralSync);
         const offState = api.on('state:change', requestStructuralSync);
+        const offEditorChange = api.on('editor:change', requestStructuralSync);
+        const offEditorUndo = api.on('editor:undo', requestStructuralSync);
+        const offEditorRedo = api.on('editor:redo', requestStructuralSync);
+        const offCatalogChange = api.on('catalog:change', requestStructuralSync);
         const offCommentCreate = api.on('comment:thread:create', requestStructuralSync);
         const offCommentUpdate = api.on('comment:thread:update', requestStructuralSync);
         const offCommentDelete = api.on('comment:thread:delete', requestStructuralSync);
@@ -638,6 +642,10 @@ export function useReactFlowAdapter(api: CanvasAPI, options: AdapterOptions = {}
             offGraph();
             offSelection();
             offState();
+            offEditorChange();
+            offEditorUndo();
+            offEditorRedo();
+            offCatalogChange();
             offCommentCreate();
             offCommentUpdate();
             offCommentDelete();

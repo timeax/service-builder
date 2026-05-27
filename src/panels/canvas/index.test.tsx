@@ -3,6 +3,8 @@ import CanvasPanel from './index.tsx';
 
 let lastFlowCanvasProps: any = null;
 const openEdgeContextMenuSpy = vi.fn();
+let edgeRows = [{ kind: 'bind', from: 't:root', to: 'f:field' }];
+const eventHandlers = new Map<string, Array<(event?: any) => void>>();
 
 const workspaceState: any = {
     info: { id: 'ws-1' },
@@ -59,11 +61,18 @@ const canvasState: any = {
     selector: { getNode: vi.fn(() => ({ id: 'n1', kind: 'field', raw: { label: 'Field' } })) },
     setActive: vi.fn(),
     api: {
-        on: vi.fn(() => vi.fn()),
+        on: vi.fn((name: string, handler: (event?: any) => void) => {
+            const existing = eventHandlers.get(name) ?? [];
+            eventHandlers.set(name, [...existing, handler]);
+            return vi.fn(() => {
+                const next = (eventHandlers.get(name) ?? []).filter((entry) => entry !== handler);
+                eventHandlers.set(name, next);
+            });
+        }),
         selection: { currentTag: vi.fn(() => undefined) },
         builder: { visibleFields: vi.fn(() => []), getProps: vi.fn(() => ({ notices: [] })) },
         snapshot: vi.fn(() => ({
-            graph: { nodes: [{ id: 'n1', kind: 'field', label: 'Field' }], edges: [] },
+            graph: { nodes: [{ id: 'n1', kind: 'field', label: 'Field' }], edges: edgeRows },
             positions: {},
             viewport: { x: 0, y: 0, zoom: 1 },
             highlighted: new Set<string>(),
@@ -114,8 +123,12 @@ vi.mock('@timeax/digital-service-engine/workspace', () => ({
 describe('CanvasPanel workspace boot integration', () => {
     beforeEach(() => {
         lastFlowCanvasProps = null;
+        edgeRows = [{ kind: 'bind', from: 't:root', to: 'f:field' }];
+        eventHandlers.clear();
+        canvasState.api.on.mockClear();
         openEdgeContextMenuSpy.mockReset();
         canvasState.api.emit.mockReset();
+        workspaceState.snapshot.set.mockReset();
     });
 
     it('shows seeded boot status while keeping the canvas visible', () => {
@@ -224,5 +237,50 @@ describe('CanvasPanel workspace boot integration', () => {
             clientX: 120,
             clientY: 140,
         });
+    });
+
+    it('recomputes canvas presentation and history flags on undo/redo events', () => {
+        render(
+            <CanvasPanel
+                errors={{ merged: { counts: { total: 0 }, validation: [] } } as any}
+                bottomPanel={{ isOpen: false, toggle: vi.fn() } as any}
+                draggingServiceId={null}
+                onServiceDragStateChange={vi.fn()}
+            />,
+        );
+
+        expect(lastFlowCanvasProps.canUndo).toBe(false);
+        expect(lastFlowCanvasProps.canRedo).toBe(false);
+        expect(lastFlowCanvasProps.options.edgeDecorators('bind:t:root->f:field').hidden).toBe(false);
+
+        edgeRows = [{ kind: 'exclude', from: 't:root', to: 'f:field' }];
+        const undoSnapshot = {
+            graph: { nodes: [{ id: 'n1', kind: 'field', label: 'Field' }], edges: edgeRows },
+            positions: {},
+            viewport: { x: 0, y: 0, zoom: 1 },
+            highlighted: new Set<string>(),
+        };
+
+        const undoHandlers = eventHandlers.get('editor:undo') ?? [];
+        for (const handler of undoHandlers) handler({ index: 2, stackSize: 5, snapshot: undoSnapshot });
+
+        expect(lastFlowCanvasProps.canUndo).toBe(true);
+        expect(lastFlowCanvasProps.canRedo).toBe(true);
+        expect(lastFlowCanvasProps.options.edgeDecorators('exclude:t:root->f:field').hidden).toBe(true);
+        expect(workspaceState.snapshot.set).toHaveBeenCalled();
+
+        edgeRows = [{ kind: 'include', from: 't:root', to: 'f:field' }];
+        const redoSnapshot = {
+            graph: { nodes: [{ id: 'n1', kind: 'field', label: 'Field' }], edges: edgeRows },
+            positions: {},
+            viewport: { x: 0, y: 0, zoom: 1 },
+            highlighted: new Set<string>(),
+        };
+        const redoHandlers = eventHandlers.get('editor:redo') ?? [];
+        for (const handler of redoHandlers) handler({ index: 4, stackSize: 5, snapshot: redoSnapshot });
+
+        expect(lastFlowCanvasProps.canUndo).toBe(true);
+        expect(lastFlowCanvasProps.canRedo).toBe(false);
+        expect(lastFlowCanvasProps.options.edgeDecorators('include:t:root->f:field').hidden).toBe(false);
     });
 });

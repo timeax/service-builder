@@ -192,6 +192,7 @@ export const workspaceBackend = {
     comments: {
         ...baseBackend.comments,
         createThread: async (ctx: { branchId: string } & Record<string, unknown>, input: Record<string, unknown>) => {
+            console.log('create thread')
             const check = await authorize('comment-write', ctx.branchId);
             if (!check.ok) return check;
             return baseBackend.comments.createThread(ctx as any, input as any);

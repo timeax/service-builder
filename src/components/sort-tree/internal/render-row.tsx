@@ -186,7 +186,10 @@ export function useRenderRow<T>(args: {
                             paddingInlineStart: indentPx,
                             paddingLeft: indentPx, // fallback
                         }}
-                        onMouseDown={(e) => onRowPointerDown(e, rIndex, r.node)}
+                        onMouseDown={(e) => {
+                            if (e.button !== 0) return;
+                            onRowPointerDown(e, rIndex, r.node);
+                        }}
                     >
                         {/* SKIN owns visual selection (bg, radius). Inherit radius from wrapper. */}
                         <div className={cn(skinClass, activeClassString)} style={{ borderRadius: 'inherit' }}>

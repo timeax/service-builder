@@ -59,8 +59,8 @@
         "tailwindcss": "^4.1.17"
     },
     "peerDependencies": {
-        "@timeax/digital-service-engine": "^0.3.0",
-        "@timeax/form-palette": "^0.1.35",
+        "@timeax/digital-service-engine": "^0.3.3",
+        "@timeax/form-palette": "^0.2.1",
         "react": "^19.2.4",
         "react-dom": "^19.2.4"
     },

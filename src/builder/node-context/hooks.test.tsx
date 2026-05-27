@@ -36,6 +36,19 @@ vi.mock('@/workspace/authorization.ts', () => ({
     getAuthorizationDecision: vi.fn(() => ({ ok: true })),
 }));
 
+vi.mock('@timeax/digital-service-engine/react', () => ({
+    resolveInputDescriptor: () => undefined,
+    useInputs: () => ({
+        registry: {
+            _store: new Map(),
+            get: () => undefined,
+            register: vi.fn(),
+            unregister: vi.fn(),
+            registerMany: vi.fn(),
+        },
+    }),
+}));
+
 vi.mock('@timeax/digital-service-engine/workspace', () => ({
     useCanvas: () => ({
         api: {

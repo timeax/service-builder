@@ -1,9 +1,15 @@
 import { useNodeContextMenu } from '@/builder/node-context-menu.tsx';
+import { buildFieldId } from '@/builder/node-context/utils.ts';
 import { EmptyState, PanelSearch } from '@/components/builder/index.tsx';
 import { SortTree, type SortTreeProps, type TreeNode } from '@/components/sort-tree';
 import type { SortTreeRef } from '@/components/sort-tree/types.ts';
 import { Panel } from '@/components/ui/panel.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
+import {
+    resolveFieldOptionCapability,
+    shouldBlockOptionCreation
+} from '@/panels/right/partials/properties/components/descriptor-options.ts';
+import { useInputs } from '@timeax/digital-service-engine/react';
 import type { Field, FieldOption, Tag } from '@timeax/digital-service-engine/schema';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { type FocusEventHandler, useMemo, useRef, useState } from 'react';
@@ -13,7 +19,12 @@ import { LuTags } from 'react-icons/lu';
 import { MdOutlineAdd } from 'react-icons/md';
 import { RxInput } from 'react-icons/rx';
 import { VscNewFolder } from 'react-icons/vsc';
-import { applyFieldTreeReorder, applyTagTreeReorder, canDropFieldsSameParentOnly, canDropSameParentOnly } from './reorder.ts';
+import {
+    applyFieldTreeReorder,
+    applyTagTreeReorder,
+    canDropFieldsSameParentOnly,
+    canDropSameParentOnly
+} from './reorder.ts';
 
 function filterTree<T>(nodes: Array<TreeNode<T>>, query: string): Array<TreeNode<T>> {
     if (!query.trim()) return nodes;
@@ -37,6 +48,7 @@ function filterTree<T>(nodes: Array<TreeNode<T>>, query: string): Array<TreeNode
 
 const Layers = () => {
     const canvas = useCanvas();
+    const { registry } = useInputs();
     const { openNodeContextMenu, canAcceptDropPayload, handleNodeDrop } = useNodeContextMenu();
     const tagsRef = useRef<SortTreeRef<Tag>>(null);
     const fieldsRef = useRef<SortTreeRef<Field>>(null);
@@ -54,12 +66,31 @@ const Layers = () => {
         if (!primary) return;
 
         canvas.setActive(primary);
-        if (meta?.selection?.cause === 'single' || meta?.selection?.cause === 'toggle') {
+        const cause = meta?.selection?.cause;
+        if (cause === 'single' || cause === 'set') {
             canvas.api.select([primary]);
             return;
         }
 
-        canvas.api.addToSelection(ids);
+        canvas.api.select(ids);
+    };
+
+    const resolveLayersContextTargets = (nodeId: string) => {
+        const selected = Array.from(
+            new Set(
+                [
+                    ...canvas.selection,
+                    ...((canvas.selectionInfo.tagIds ?? []) as string[]),
+                    ...((canvas.selectionInfo.fieldIds ?? []) as string[]),
+                    ...((canvas.selectionInfo.optionIds ?? []) as string[]),
+                    ...((canvas.selectionInfo.ids ?? []) as string[]),
+                ]
+                    .filter(Boolean)
+                    .map(String),
+            ),
+        );
+        if (selected.length > 1 && selected.includes(nodeId)) return selected;
+        return [nodeId];
     };
 
     const handleTagChange: SortTreeProps<Tag>['onChange'] = (_next, detail) => {
@@ -83,9 +114,7 @@ const Layers = () => {
             applyFieldTreeReorder(detail as any, {
                 editor: canvas.api.editor as any,
                 currentTagId: canvas.api.selection.currentTag?.() ?? 't:root',
-                contextFieldOrder: canvas.layers.fields
-                    .map((node) => String(node.id))
-                    .filter((id) => !id.startsWith('o:')),
+                contextFieldOrder: canvas.layers.fields.map((node) => String(node.id)).filter((id) => !id.startsWith('o:')),
             })
         ) {
             return;
@@ -98,6 +127,14 @@ const Layers = () => {
 
         if (detail.type === 'insert' && detail.context.via == 'ui.create') {
             const parent = detail.to.parent.id as string;
+            const field = canvas.api.editor.getNode(parent)?.data;
+            if (field && shouldBlockOptionCreation(registry, field as any)) {
+                canvas.api.emit('error', {
+                    message: 'This field type does not support options.',
+                    meta: { action: 'add-option', fieldId: parent },
+                });
+                return;
+            }
             canvas.api.editor.addOption(parent, { label: detail.node.title });
         }
     };
@@ -201,9 +238,12 @@ const Layers = () => {
                                     }
                                     onChange={handleTagChange as any}
                                     onContextMenu={(detail) => {
+                                        detail.event.preventDefault();
+                                        const nodeId = String(detail.node.id);
                                         openNodeContextMenu({
-                                            nodeId: String(detail.node.id),
+                                            nodeId,
                                             nodeKind: 'tag',
+                                            effectiveTargetIds: resolveLayersContextTargets(nodeId),
                                             surface: 'layers',
                                             clientX: detail.event.clientX,
                                             clientY: detail.event.clientY,
@@ -251,11 +291,20 @@ const Layers = () => {
                             type="button"
                             onClick={() => {
                                 if (!fieldsRef.current) {
+                                    const fieldId = buildFieldId();
                                     canvas.api.editor.addField({
+                                        id: fieldId,
                                         label: 'New Field',
                                         type: 'text',
                                         bind_id: canvas.api.selection.currentTag() ?? 't:root',
                                     });
+                                    const capability = resolveFieldOptionCapability(registry, { type: 'text' });
+                                    if (capability.shouldAutoCreate) {
+                                        canvas.api.editor.autoCreateOptionsMany([fieldId], () => ({
+                                            label: capability.defaultLabel,
+                                            value: capability.defaultValue,
+                                        }));
+                                    }
                                     return;
                                 }
                                 const selection = fieldsRef.current.getSelectionLocated?.() ?? [];
@@ -268,11 +317,20 @@ const Layers = () => {
                                     return;
                                 }
 
+                                const fieldId = buildFieldId();
                                 canvas.api.editor.addField({
+                                    id: fieldId,
                                     label: 'New Field',
                                     type: 'text',
                                     bind_id: canvas.api.selection.currentTag() ?? 't:root',
                                 });
+                                const capability = resolveFieldOptionCapability(registry, { type: 'text' });
+                                if (capability.shouldAutoCreate) {
+                                    canvas.api.editor.autoCreateOptionsMany([fieldId], () => ({
+                                        label: capability.defaultLabel,
+                                        value: capability.defaultValue,
+                                    }));
+                                }
                             }}
                             className="cursor-pointer rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-900 dark:hover:text-slate-100"
                         >
@@ -317,12 +375,13 @@ const Layers = () => {
                                     if (!primary) return;
 
                                     canvas.setActive(primary);
-                                    if (meta.selection.cause === 'single' || meta.selection.cause === 'toggle') {
-                                        canvas.api.select([primary], canvas.api.selection.currentTag());
+                                    const cause = meta.selection.cause;
+                                    if (cause === 'single' || cause === 'set') {
+                                        canvas.api.select([primary], primary);
                                         return;
                                     }
 
-                                    canvas.api.addToSelection(ids);
+                                    canvas.api.select(ids, primary);
                                 }}
                                 value={[...canvas.selectionInfo.fieldIds, ...canvas.selectionInfo.optionIds] as string[]}
                                 rowClassName="mb-1 rounded-xl border border-transparent px-1 hover:border-slate-200 hover:bg-slate-50 dark:hover:border-slate-800 dark:hover:bg-slate-900/70"
@@ -330,11 +389,13 @@ const Layers = () => {
                                 canDrop={canDropFieldsSameParentOnly}
                                 onChange={handleFieldChange as any}
                                 onContextMenu={(detail) => {
+                                    detail.event.preventDefault();
                                     const nodeId = String(detail.node.id);
                                     const resolvedKind = nodeId.startsWith('o:') ? 'option' : 'field';
                                     openNodeContextMenu({
                                         nodeId,
                                         nodeKind: resolvedKind,
+                                        effectiveTargetIds: resolveLayersContextTargets(nodeId),
                                         surface: 'layers',
                                         clientX: detail.event.clientX,
                                         clientY: detail.event.clientY,

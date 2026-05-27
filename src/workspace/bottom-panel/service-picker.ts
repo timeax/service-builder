@@ -2,6 +2,7 @@ import type { BuilderServiceSummary } from '@/builder/bottom-panel.ts';
 import type { DgpServiceCapability } from '@timeax/digital-service-engine/schema';
 
 export type ServicePickerFilters = {
+    source: 'parent' | 'all';
     query: string;
     category: string;
     flag: string;
@@ -20,6 +21,7 @@ export type ServiceMetaPath = {
 };
 
 const DEFAULT_FILTERS: ServicePickerFilters = {
+    source: 'all',
     query: '',
     category: '',
     flag: '',
@@ -32,8 +34,19 @@ const DEFAULT_FILTERS: ServicePickerFilters = {
     metaValue: '',
 };
 
-export function createDefaultServicePickerFilters(): ServicePickerFilters {
-    return { ...DEFAULT_FILTERS };
+type ServicePickerDefaultSourceArgs = {
+    selectedGroupId?: string | null;
+    parentGroupId?: string | null;
+    parentServiceIds?: Set<string>;
+};
+
+export function resolveServicePickerSourceDefault(args: ServicePickerDefaultSourceArgs = {}): ServicePickerFilters['source'] {
+    if (!args.selectedGroupId || !args.parentGroupId) return 'all';
+    return (args.parentServiceIds?.size ?? 0) > 0 ? 'parent' : 'all';
+}
+
+export function createDefaultServicePickerFilters(args: ServicePickerDefaultSourceArgs = {}): ServicePickerFilters {
+    return { ...DEFAULT_FILTERS, source: resolveServicePickerSourceDefault(args) };
 }
 
 export function discoverServiceMetaPaths(services: DgpServiceCapability[]): ServiceMetaPath[] {
@@ -56,13 +69,19 @@ export function filterServicePickerServices(args: {
     serviceMap: Record<string, DgpServiceCapability>;
     filters: ServicePickerFilters;
     activeIds?: Set<string>;
+    parentServiceIds?: Set<string>;
 }) {
     const query = args.filters.query.trim().toLowerCase();
     const keyword = args.filters.keyword.trim().toLowerCase();
     const rateMin = parseNullableNumber(args.filters.rateMin);
     const rateMax = parseNullableNumber(args.filters.rateMax);
 
-    const filtered = args.services.filter((summary) => {
+    const sourceServices =
+        args.filters.source === 'parent'
+            ? args.services.filter((summary) => args.parentServiceIds?.has(String(summary.id)) ?? false)
+            : args.services;
+
+    const filtered = sourceServices.filter((summary) => {
         const id = String(summary.id);
         const service = args.serviceMap[id];
         const searchText = [summary.name, summary.category, summary.platformId, id].filter(Boolean).join(' ').toLowerCase();

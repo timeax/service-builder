@@ -519,6 +519,12 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
     const selectedActiveRow = activeRows.find((row) => row.id === selectedActiveServiceId) ?? null;
     const selectedAllRow = visibleAllRows.find((row) => row.id === selectedAllServiceId) ?? null;
     const selectedCatalogGroup = catalogGroups.find((group) => group.id === selectedCatalogGroupId) ?? null;
+    const parentCatalogGroup =
+        selectedCatalogGroup?.parentId != null ? catalogGroups.find((group) => group.id === selectedCatalogGroup.parentId) ?? null : null;
+    const parentCatalogServiceIds = useMemo(
+        () => new Set((parentCatalogGroup?.serviceIds ?? []).map((id) => String(id))),
+        [parentCatalogGroup],
+    );
 
     const Search = useMemo(() => {
         if (!['allServices', 'activeServices'].includes(controller.activeTab)) return;
@@ -553,6 +559,9 @@ export function BottomConsolePanel({ controller, errors, activeServices, allServ
                 open={servicePickerOpen}
                 onOpenChange={setServicePickerOpen}
                 groupLabel={selectedCatalogGroup?.label ?? null}
+                selectedGroupId={selectedCatalogGroupId}
+                parentGroupId={selectedCatalogGroup?.parentId ?? null}
+                parentServiceIds={parentCatalogServiceIds}
                 services={allServices}
                 serviceMap={servicesMap}
                 activeIds={hiddenServiceIds}

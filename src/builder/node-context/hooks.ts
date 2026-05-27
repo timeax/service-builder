@@ -1,6 +1,8 @@
 import { getNodePropertyCapabilities } from '@/panels/right/partials/properties/components/node-capabilities.ts';
+import { resolveFieldOptionCapability } from '@/panels/right/partials/properties/components/descriptor-options.ts';
 import { deriveWorkspaceAuthorization, getAuthorizationDecision } from '@/workspace/authorization.ts';
 import { useFallbackQuickAdd } from '@/workspace/fallback-quick-add.tsx';
+import { useInputs } from '@timeax/digital-service-engine/react';
 import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { useCallback, useMemo } from 'react';
 import {
@@ -25,6 +27,12 @@ import {
 } from './template-utils.ts';
 
 type MoveDirection = 'up' | 'down';
+type TemplateFieldCandidate = {
+    id: string;
+    type?: unknown;
+    meta?: Record<string, unknown>;
+    options?: Array<unknown>;
+} & Record<string, unknown>;
 
 function moveIndex(index: number, direction: MoveDirection) {
     return direction === 'up' ? index - 1 : index + 1;
@@ -39,6 +47,7 @@ export function useNodeActions(
     openNoticeManager: (input?: any) => void,
 ) {
     const canvas = useCanvas();
+    const { registry } = useInputs();
     const ws = useWorkspace();
     const fallbackQuickAdd = useFallbackQuickAdd();
     const emitNodeError = useCallback(
@@ -194,10 +203,43 @@ export function useNodeActions(
         resolveFieldContextOrder,
     ]);
 
+    const batchSelectionIds = useMemo(() => {
+        if (!target) return [] as string[];
+        if (Array.isArray((target as any).effectiveTargetIds) && (target as any).effectiveTargetIds.length) {
+            const ids = Array.from(new Set(((target as any).effectiveTargetIds as string[]).map(String).filter(Boolean)));
+            if (ids.length > 1 && ids.includes(target.nodeId)) return ids;
+            return [];
+        }
+        const combinedSelection = Array.from(
+            new Set(
+                [
+                    canvas.activeId,
+                    ...((canvas.selectionInfo.ids ?? []) as string[]),
+                    ...((canvas.selectionInfo.tagIds ?? []) as string[]),
+                    ...((canvas.selectionInfo.fieldIds ?? []) as string[]),
+                    ...((canvas.selectionInfo.optionIds ?? []) as string[]),
+                ]
+                    .filter(Boolean)
+                    .map(String),
+            ),
+        );
+        if (combinedSelection.length < 2) return [];
+        if (!combinedSelection.includes(target.nodeId)) return [];
+        return combinedSelection;
+    }, [canvas.activeId, canvas.selectionInfo.fieldIds, canvas.selectionInfo.ids, canvas.selectionInfo.optionIds, canvas.selectionInfo.tagIds, target]);
     const handleDuplicate = useCallback(() => {
         if (!target) return;
         if (!ensureBranchEdit('duplicate-node')) return;
         try {
+            if (batchSelectionIds.length > 1 && typeof (canvas.api.editor as any).duplicateMany === 'function') {
+                const duplicatedIds = (canvas.api.editor as any).duplicateMany(batchSelectionIds);
+                if (Array.isArray(duplicatedIds) && duplicatedIds.length) {
+                    canvas.setActive(duplicatedIds[0]);
+                    canvas.api.select(duplicatedIds);
+                }
+                setTarget(null);
+                return;
+            }
             const node = canvas.selector.getNode(target.nodeId);
             let ref: { kind: 'tag'; id: string } | { kind: 'field'; id: string } | { kind: 'option'; id: string; fieldId: string };
             if (node.kind === 'option') ref = { kind: 'option', id: node.id, fieldId: node.field().id };
@@ -213,7 +255,7 @@ export function useNodeActions(
             });
         }
         setTarget(null);
-    }, [canvas.api.editor, canvas.selector, emitNodeError, ensureBranchEdit, focusNode, target, setTarget]);
+    }, [batchSelectionIds, canvas.api, canvas.selector, emitNodeError, ensureBranchEdit, focusNode, target, setTarget]);
 
     const handleCopyId = useCallback(async () => {
         if (!target) return;
@@ -430,8 +472,130 @@ export function useNodeActions(
         ],
     );
 
+    const hasServiceSelection = useMemo(() => {
+        try {
+            return batchSelectionIds.some((id) => {
+                const node = canvas.selector.getNode(id) as any;
+                return node?.raw?.service_id !== undefined && node?.raw?.service_id !== null;
+            });
+        } catch {
+            return false;
+        }
+    }, [batchSelectionIds, canvas.selector]);
+
+    const handleDeleteMany = useCallback(() => {
+        if (!ensureBranchEdit('delete-many')) return;
+        if (batchSelectionIds.length < 2) return;
+        const editorAny = canvas.api.editor as any;
+        if (typeof editorAny.removeMany !== 'function') {
+            emitNodeError('Batch delete is unavailable on this editor instance', { action: 'delete-many' });
+            return;
+        }
+        editorAny.removeMany(batchSelectionIds);
+        setTarget(null);
+    }, [batchSelectionIds, canvas.api.editor, emitNodeError, ensureBranchEdit, setTarget]);
+
+    const handleClearServiceMany = useCallback(() => {
+        if (!ensureBranchEdit('clear-service-many')) return;
+        if (!batchSelectionIds.length) return;
+        const editorAny = canvas.api.editor as any;
+        if (typeof editorAny.clearServiceMany !== 'function') {
+            emitNodeError('Batch unlink service is unavailable on this editor instance', { action: 'clear-service-many' });
+            return;
+        }
+        editorAny.clearServiceMany(batchSelectionIds);
+        setTarget(null);
+    }, [batchSelectionIds, canvas.api.editor, emitNodeError, ensureBranchEdit, setTarget]);
+
+    const handleAutoCreateMissingOptions = useCallback(() => {
+        if (!ensureBranchEdit('auto-create-options-many')) return;
+        if (!batchSelectionIds.length) return;
+        const fields = batchSelectionIds
+            .map((id) => {
+                try {
+                    const node = canvas.selector.getNode(id) as any;
+                    if (node?.kind !== 'field') return null;
+                    return { id, raw: node.raw };
+                } catch {
+                    return null;
+                }
+            })
+            .filter(Boolean) as Array<{ id: string; raw: Record<string, unknown> }>;
+        if (!fields.length) return;
+        const allowed = fields
+            .map((field) => ({ field, capability: resolveFieldOptionCapability(registry, field.raw as any) }))
+            .filter((entry) => entry.capability.supportsOptions)
+            .map((entry) => entry.field.id);
+        if (!allowed.length) return;
+        (canvas.api.editor as any).autoCreateOptionsMany(allowed);
+        setTarget(null);
+    }, [batchSelectionIds, canvas.api.editor, canvas.selector, ensureBranchEdit, registry, setTarget]);
+
+    const callBatch = useCallback(
+        (method: string, action: string, ...args: unknown[]) => {
+            if (!ensureBranchEdit(action)) return false;
+            const editorAny = canvas.api.editor as any;
+            const fn = editorAny?.[method];
+            if (typeof fn !== 'function') {
+                emitNodeError(`Batch action "${method}" is unavailable on this editor instance`, { action });
+                return false;
+            }
+            fn(...args);
+            setTarget(null);
+            return true;
+        },
+        [canvas.api.editor, emitNodeError, ensureBranchEdit, setTarget],
+    );
+
+    const callBatchForSelection = useCallback(
+        (method: string, action: string, selectionIds: string[], mode: 'selection-first' | 'selection-last', ...args: unknown[]) => {
+            if (!ensureBranchEdit(action)) return false;
+            const normalized = Array.from(new Set((selectionIds ?? []).map(String).filter(Boolean)));
+            if (!normalized.length) {
+                emitNodeError('No selected nodes available for this batch action.', { action });
+                return false;
+            }
+            const editorAny = canvas.api.editor as any;
+            const fn = editorAny?.[method];
+            if (typeof fn !== 'function') {
+                emitNodeError(`Batch action "${method}" is unavailable on this editor instance`, { action });
+                return false;
+            }
+            if (mode === 'selection-first') fn(normalized, ...args);
+            else fn(...args, normalized);
+            setTarget(null);
+            return true;
+        },
+        [canvas.api.editor, emitNodeError, ensureBranchEdit, setTarget],
+    );
+
     return {
+        batchSelectionIds,
         handleDuplicate,
+        handleDeleteMany,
+        hasServiceSelection,
+        handleClearServiceMany,
+        handleAutoCreateMissingOptions,
+        submitRebindMany: (tagId: string, selectionIds: string[]) =>
+            callBatchForSelection('rebindMany', 'rebind-many', selectionIds, 'selection-first', tagId),
+        submitIncludeMany: (receiverId: string, selectionIds: string[]) =>
+            callBatchForSelection('includeMany', 'include-many', selectionIds, 'selection-last', receiverId),
+        submitExcludeMany: (receiverId: string, selectionIds: string[]) =>
+            callBatchForSelection('excludeMany', 'exclude-many', selectionIds, 'selection-last', receiverId),
+        handleRebindMany: (tagId: string) => callBatchForSelection('rebindMany', 'rebind-many', batchSelectionIds, 'selection-first', tagId),
+        handleIncludeMany: (receiverId: string) =>
+            callBatchForSelection('includeMany', 'include-many', batchSelectionIds, 'selection-last', receiverId),
+        handleExcludeMany: (receiverId: string) =>
+            callBatchForSelection('excludeMany', 'exclude-many', batchSelectionIds, 'selection-last', receiverId),
+        handleClearRelationsMany: () => callBatch('clearRelationsMany', 'clear-relations-many', batchSelectionIds, 'both'),
+        handleRenameLabelsMany: (prefix: string, suffix: string) => callBatch('renameLabelsMany', 'rename-labels-many', batchSelectionIds, { prefix, suffix }),
+        handleSetPricingRoleMany: (role: 'base' | 'utility') => callBatch('setPricingRoleMany', 'set-pricing-role-many', batchSelectionIds, role),
+        handleClearFieldValidationMany: () => callBatch('clearFieldValidationMany', 'clear-validation-many', batchSelectionIds),
+        handleClearFieldDefaultsMany: () => callBatch('clearFieldDefaultsMany', 'clear-defaults-many', batchSelectionIds),
+        handleClearAllOptionsMany: () => callBatch('clearAllOptionsMany', 'clear-options-many', batchSelectionIds),
+        handleRemoveNoticesForNodes: () => callBatch('removeNoticesForNodes', 'remove-notices-for-nodes', batchSelectionIds),
+        handleSetNoticesVisibilityForNodes: (type: 'public' | 'private') =>
+            callBatch('setNoticesVisibilityForNodes', 'set-notices-visibility-for-nodes', batchSelectionIds, type),
         handleCopyId,
         handleSaveAsTemplate,
         canQuickAddFallbacks: fallbackTarget != null,
@@ -455,6 +619,7 @@ export function useDropHandling(
     focusNode: (nodeId: string) => void,
 ) {
     const canvas = useCanvas();
+    const { registry } = useInputs();
     const ws = useWorkspace();
     const auth = useMemo(
         () =>
@@ -510,6 +675,16 @@ export function useDropHandling(
                     bind_id: currentTag,
                     meta: source.asset.variant ? { variant: source.asset.variant } : undefined,
                 });
+                const capability = resolveFieldOptionCapability(registry, {
+                    type: source.asset.kind,
+                    meta: source.asset.variant ? { variant: source.asset.variant } : undefined,
+                });
+                if (capability.shouldAutoCreate) {
+                    (canvas.api.editor as any).autoCreateOptionsMany([id], () => ({
+                        label: capability.defaultLabel,
+                        value: capability.defaultValue,
+                    }));
+                }
                 return id;
             }
 
@@ -519,7 +694,7 @@ export function useDropHandling(
                 if (isGroupTemplateDefinition(definition)) {
                     const fieldIdMap = new Map<string, string>();
                     const normalizedRelations: Record<string, Record<string, string[]>> = {};
-                    const nextFields = definition.fields.map((entry) => {
+                    const nextFields: TemplateFieldCandidate[] = definition.fields.map((entry) => {
                         const nextId = buildFieldId();
                         fieldIdMap.set(entry.originalId, nextId);
                         const rawField = withFreshOptionIds((entry.field ?? {}) as Record<string, unknown>);
@@ -558,6 +733,19 @@ export function useDropHandling(
                             defaults: template?.defaults as any,
                         });
                     }
+                    const allCreatedIds = [rootNewId, ...nextFields.filter((field) => field.id !== rootNewId).map((field) => field.id)];
+                    const autoCreateTargets = allCreatedIds.filter((fieldId) => {
+                        const entry = nextFields.find((field) => field.id === fieldId);
+                        const capability = resolveFieldOptionCapability(registry, {
+                            type: entry?.type,
+                            meta: entry?.meta as Record<string, unknown> | undefined,
+                            options: entry?.options as Array<unknown> | undefined,
+                        });
+                        return capability.shouldAutoCreate;
+                    });
+                    if (autoCreateTargets.length) {
+                        (canvas.api.editor as any).autoCreateOptionsMany(autoCreateTargets);
+                    }
 
                     const editorAny = canvas.api.editor as any;
                     if (typeof editorAny.patchProps === 'function') {
@@ -586,12 +774,23 @@ export function useDropHandling(
                     type: String(nextField.type ?? source.asset.kind ?? 'text') as any,
                     defaults: template?.defaults as any,
                 });
+                const capability = resolveFieldOptionCapability(registry, {
+                    type: String(nextField.type ?? source.asset.kind ?? 'text'),
+                    meta: nextField.meta as Record<string, unknown> | undefined,
+                    options: nextField.options as Array<unknown> | undefined,
+                });
+                if (capability.shouldAutoCreate) {
+                    (canvas.api.editor as any).autoCreateOptionsMany([id], () => ({
+                        label: capability.defaultLabel,
+                        value: capability.defaultValue,
+                    }));
+                }
                 return id;
             }
 
             return null;
         },
-        [auth.canEditBranchContent, canvas.api.editor, canvas.api.selection, editDecision.reason, emitNodeError, ws.templates.data],
+        [auth.canEditBranchContent, canvas.api.editor, canvas.api.selection, editDecision.reason, emitNodeError, registry, ws.templates.data],
     );
 
     const actionsForIntent = useCallback(

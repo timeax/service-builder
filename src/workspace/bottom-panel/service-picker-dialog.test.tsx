@@ -71,4 +71,100 @@ describe('ServicePickerDialog meta popover', () => {
         expect(screen.getAllByText('raw.key').length).toBeGreaterThan(0);
         expect(screen.getByText('alpha')).toBeInTheDocument();
     });
+
+    it('defaults source to parent when parent has assigned services and resets on clear filters', async () => {
+        render(
+            <ServicePickerDialog
+                open
+                selectedGroupId="child"
+                parentGroupId="parent"
+                parentServiceIds={new Set(['101'])}
+                services={[
+                    {
+                        id: 101,
+                        name: 'Alpha Service',
+                        category: 'Payments',
+                        flags: [],
+                        attachmentCount: 0,
+                        attachedNodeIds: [],
+                        attachedNodeLabels: [],
+                        active: false,
+                    },
+                    {
+                        id: 202,
+                        name: 'Beta Service',
+                        category: 'Routing',
+                        flags: [],
+                        attachmentCount: 0,
+                        attachedNodeIds: [],
+                        attachedNodeLabels: [],
+                        active: false,
+                    },
+                ]}
+                serviceMap={
+                    {
+                        101: { id: 101, name: 'Alpha Service', meta: {} },
+                        202: { id: 202, name: 'Beta Service', meta: {} },
+                    } as any
+                }
+                onOpenChange={() => {}}
+                onConfirm={() => {}}
+            />,
+        );
+
+        const sourceSelect = screen.getByLabelText('Source filter') as HTMLSelectElement;
+        expect(sourceSelect.value).toBe('parent');
+        expect(screen.getByText('1 service found')).toBeInTheDocument();
+
+        fireEvent.change(sourceSelect, { target: { value: 'all' } });
+        expect(screen.getByText('2 services found')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+        expect((screen.getByLabelText('Source filter') as HTMLSelectElement).value).toBe('parent');
+        expect(screen.getByText('1 service found')).toBeInTheDocument();
+    });
+
+    it('defaults source to all for root groups', async () => {
+        render(
+            <ServicePickerDialog
+                open
+                selectedGroupId="root"
+                parentGroupId={null}
+                parentServiceIds={new Set(['101'])}
+                services={[
+                    {
+                        id: 101,
+                        name: 'Alpha Service',
+                        category: 'Payments',
+                        flags: [],
+                        attachmentCount: 0,
+                        attachedNodeIds: [],
+                        attachedNodeLabels: [],
+                        active: false,
+                    },
+                    {
+                        id: 202,
+                        name: 'Beta Service',
+                        category: 'Routing',
+                        flags: [],
+                        attachmentCount: 0,
+                        attachedNodeIds: [],
+                        attachedNodeLabels: [],
+                        active: false,
+                    },
+                ]}
+                serviceMap={
+                    {
+                        101: { id: 101, name: 'Alpha Service', meta: {} },
+                        202: { id: 202, name: 'Beta Service', meta: {} },
+                    } as any
+                }
+                onOpenChange={() => {}}
+                onConfirm={() => {}}
+            />,
+        );
+
+        expect((screen.getByLabelText('Source filter') as HTMLSelectElement).value).toBe('all');
+        expect(screen.getByText('2 services found')).toBeInTheDocument();
+    });
 });

@@ -78,6 +78,7 @@ export type DropSource =
 export type NodeContextTarget = {
     nodeId: string;
     nodeKind: NodeKind;
+    effectiveTargetIds?: string[];
     surface: NodeContextSurface;
     clientX: number;
     clientY: number;
@@ -105,6 +106,7 @@ export type DropIntent = {
 export type OpenNodeContextMenuInput = {
     nodeId: string;
     nodeKind?: NodeKind;
+    effectiveTargetIds?: string[];
     surface: NodeContextSurface;
     clientX: number;
     clientY: number;

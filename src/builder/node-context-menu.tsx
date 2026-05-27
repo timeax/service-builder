@@ -60,6 +60,12 @@ const NodeContextMenuContext = createContext<NodeContextMenuValue | null>(null);
 export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
     const canvas = useCanvas();
     const ws = useWorkspace();
+    const selectionInfo = (canvas.selectionInfo ?? {}) as {
+        ids?: string[];
+        tagIds?: string[];
+        fieldIds?: string[];
+        optionIds?: string[];
+    };
 
     const [target, setTarget] = useState<NodeContextTarget | null>(null);
     const [edgeTarget, setEdgeTarget] = useState<EdgeContextTarget | null>(null);
@@ -82,9 +88,17 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
     const [templateGroupSelection, setTemplateGroupSelection] = useState<Record<string, boolean>>({});
     const [templateFieldChecks, setTemplateFieldChecks] = useState<Record<string, Record<string, boolean>>>({});
     const [edgeTypeSubmenuOpen, setEdgeTypeSubmenuOpen] = useState(false);
+    const [batchTargetDialog, setBatchTargetDialog] = useState<{
+        open: boolean;
+        mode: 'rebind' | 'include' | 'exclude';
+        selectionIds: string[];
+        submit: (targetId: string, selectionIds: string[]) => boolean;
+    } | null>(null);
+    const [batchTargetId, setBatchTargetId] = useState('');
 
     const menuRef = useRef<HTMLDivElement | null>(null);
     const dialRef = useRef<HTMLDivElement | null>(null);
+    const [anchorStyle, setAnchorStyle] = useState<{ left: number; top: number } | null>(null);
 
     const closeNodeContextMenu = useCallback(() => setTarget(null), []);
     const closeEdgeContextMenu = useCallback(() => {
@@ -122,21 +136,59 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
     const editDecision = getAuthorizationDecision(auth, 'branch-content-edit');
     const templateDecision = getAuthorizationDecision(auth, 'template-write');
 
+    const openBatchTargetDialog = useCallback(
+        (
+            mode: 'rebind' | 'include' | 'exclude',
+            selectionIds: string[],
+            input: { submit: (targetId: string, selectionIds: string[]) => boolean },
+        ) => {
+            setBatchTargetDialog({
+                open: true,
+                mode,
+                selectionIds: Array.from(new Set((selectionIds ?? []).map(String).filter(Boolean))),
+                submit: input.submit,
+            });
+            setBatchTargetId('');
+            setTarget(null);
+        },
+        [],
+    );
+
     const openNodeContextMenu = useCallback(
         (input: OpenNodeContextMenuInput) => {
             const node = canvas.selector.getNode(input.nodeId);
             const inferred = input.nodeKind ?? (node?.kind as NodeKind | undefined) ?? inferNodeKindFromId(input.nodeId) ?? undefined;
             if (!inferred || (inferred !== 'tag' && inferred !== 'field' && inferred !== 'option')) return;
+            const selectionIds = Array.from(
+                new Set(
+                    [
+                        ...canvas.selection,
+                        ...((selectionInfo.ids ?? []) as string[]),
+                        ...((selectionInfo.tagIds ?? []) as string[]),
+                        ...((selectionInfo.fieldIds ?? []) as string[]),
+                        ...((selectionInfo.optionIds ?? []) as string[]),
+                    ]
+                        .filter(Boolean)
+                        .map(String),
+                ),
+            );
+            const effectiveTargetIds =
+                input.effectiveTargetIds && input.effectiveTargetIds.length
+                    ? Array.from(new Set(input.effectiveTargetIds.map(String)))
+                    : selectionIds.length > 1 && selectionIds.includes(input.nodeId)
+                      ? selectionIds
+                      : [input.nodeId];
 
             setTarget({
                 nodeId: input.nodeId,
                 nodeKind: inferred,
+                effectiveTargetIds,
                 surface: input.surface,
                 clientX: input.clientX,
                 clientY: input.clientY,
             });
         },
-        [canvas.selector],
+        [canvas.selection, canvas.selector, selectionInfo.fieldIds, selectionInfo.ids, selectionInfo.optionIds, selectionInfo.tagIds],
     );
     const openEdgeContextMenu = useCallback((input: OpenEdgeContextMenuInput) => {
         setEdgeTarget(input);
@@ -353,7 +405,20 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
             return;
         }
         try {
-            canvas.api.editor.remove(dialogTarget.nodeId);
+            const selectionIds = Array.from(
+                new Set(
+                    (dialogTarget.effectiveTargetIds?.length ? dialogTarget.effectiveTargetIds : [dialogTarget.nodeId]).filter(Boolean).map(String),
+                ),
+            );
+            if (
+                selectionIds.length > 1 &&
+                selectionIds.includes(dialogTarget.nodeId) &&
+                typeof (canvas.api.editor as any).removeMany === 'function'
+            ) {
+                (canvas.api.editor as any).removeMany(selectionIds);
+            } else {
+                canvas.api.editor.remove(dialogTarget.nodeId);
+            }
         } catch (error) {
             emitNodeError((error as Error)?.message ?? 'Failed to delete node', {
                 action: 'delete-node',
@@ -364,6 +429,52 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
         setDeleteOpen(false);
         setDialogTarget(null);
     }, [auth.canEditBranchContent, canvas.api.editor, dialogTarget, editDecision.reason, emitNodeError]);
+
+    const batchTargetOptions = useMemo(() => {
+        const selected = new Set(batchTargetDialog?.selectionIds ?? []);
+        const nodes = (canvas.api.snapshot()?.graph?.nodes ?? []) as Array<{ id: string; label?: string; kind?: string }>;
+        if (!batchTargetDialog) return [] as Array<{ label: string; value: string }>;
+        if (batchTargetDialog.mode === 'rebind') {
+            return nodes
+                .filter((node) => node.kind === 'tag')
+                .filter((node) => !selected.has(String(node.id)))
+                .map((node) => ({
+                    value: String(node.id),
+                    label: `tag: ${String(node.label ?? node.id)}`,
+                }));
+        }
+        return nodes
+            .filter((node) => ['tag', 'field', 'option'].includes(String(node.kind)))
+            .filter((node) => !selected.has(String(node.id)))
+            .map((node) => ({
+                value: String(node.id),
+                label: `${String(node.kind)}: ${String(node.label ?? node.id)}`,
+            }));
+    }, [batchTargetDialog, canvas.api, canvas.props, canvas.selectionInfo]);
+
+    const handleBatchTargetConfirm = useCallback(() => {
+        if (!batchTargetDialog) return;
+        const targetId = batchTargetId.trim();
+        if (!targetId) {
+            emitNodeError('Please select a target node first.', { action: `${batchTargetDialog.mode}-many` });
+            return;
+        }
+        if (batchTargetDialog.selectionIds.includes(targetId)) {
+            emitNodeError('Target cannot be one of the selected nodes.', { action: `${batchTargetDialog.mode}-many`, targetId });
+            return;
+        }
+        if (batchTargetDialog.mode === 'rebind') {
+            const matched = batchTargetOptions.find((item) => item.value === targetId);
+            if (!matched) {
+                emitNodeError('Rebind target must be a valid tag.', { action: 'rebind-many', targetId });
+                return;
+            }
+        }
+        const ok = batchTargetDialog.submit(targetId, batchTargetDialog.selectionIds);
+        if (!ok) return;
+        setBatchTargetDialog(null);
+        setBatchTargetId('');
+    }, [batchTargetDialog, batchTargetId, batchTargetOptions, emitNodeError]);
 
     const templateSaveDraft = useMemo(() => {
         if (!templateSaveFieldId) return null;
@@ -517,14 +628,35 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
         ws,
     ]);
 
-    const anchorStyle = useMemo(() => {
-        if (!target || typeof window === 'undefined') return null;
-        const width = 220;
-        const height = target.nodeKind === 'field' ? 260 : 220;
+    useEffect(() => {
+        if (!target || typeof window === 'undefined') {
+            setAnchorStyle(null);
+            return;
+        }
         const padding = 12;
-        const left = Math.max(padding, Math.min(target.clientX, window.innerWidth - width - padding));
-        const top = Math.max(padding, Math.min(target.clientY, window.innerHeight - height - padding));
-        return { left, top };
+        const clamp = () => {
+            const fallbackWidth = 260;
+            const fallbackHeight = 340;
+            const rect = menuRef.current?.getBoundingClientRect();
+            const width = rect?.width ?? fallbackWidth;
+            const height = rect?.height ?? fallbackHeight;
+            const left = Math.max(padding, Math.min(target.clientX, window.innerWidth - width - padding));
+            const top = Math.max(padding, Math.min(target.clientY, window.innerHeight - height - padding));
+            setAnchorStyle({ left, top });
+        };
+
+        const raf = window.requestAnimationFrame(clamp);
+        window.addEventListener('resize', clamp);
+        window.addEventListener('scroll', clamp, true);
+        const observer = new MutationObserver(() => clamp());
+        if (menuRef.current) observer.observe(menuRef.current, { childList: true, subtree: true, attributes: true });
+
+        return () => {
+            window.cancelAnimationFrame(raf);
+            window.removeEventListener('resize', clamp);
+            window.removeEventListener('scroll', clamp, true);
+            observer.disconnect();
+        };
     }, [target]);
 
     const edgeAnchorStyle = useMemo(() => {
@@ -589,7 +721,7 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
             toggleNoticeManager,
         ],
     );
-    const hasPortalContent = Boolean(target || edgeTarget || dropIntent || renameOpen || deleteOpen || noticeManagerOpen || templateSaveOpen);
+    const hasPortalContent = Boolean(target || edgeTarget || dropIntent || renameOpen || deleteOpen || noticeManagerOpen || templateSaveOpen || batchTargetDialog?.open);
 
     return (
         <NodeContextMenuContext.Provider value={value}>
@@ -605,6 +737,7 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
                                   setRenameOpen={setRenameOpen}
                                   setDeleteOpen={setDeleteOpen}
                                   openNoticeManager={openNoticeManager}
+                                  openBatchTargetDialog={openBatchTargetDialog}
                                   activeNode={activeNode}
                                   anchorStyle={anchorStyle}
                                   menuRef={menuRef}
@@ -740,6 +873,48 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
                           </AlertDialog>
 
                           <AlertDialog
+                              open={!!batchTargetDialog?.open}
+                              onOpenChange={(open) => {
+                                  if (!open) {
+                                      setBatchTargetDialog(null);
+                                      setBatchTargetId('');
+                                  }
+                              }}
+                          >
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>
+                                          {batchTargetDialog?.mode === 'rebind'
+                                              ? 'Move / Rebind to tag'
+                                              : batchTargetDialog?.mode === 'include'
+                                                ? 'Include in...'
+                                                : 'Exclude from...'}
+                                      </AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                          Select the target node for this batch action.
+                                      </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <div className="space-y-4">
+                                      <InputField
+                                          variant={'select'}
+                                          options={batchTargetOptions}
+                                          value={batchTargetId}
+                                          onChange={(input: any) => {
+                                              const next = typeof input === 'string' ? input : String(input?.value ?? '');
+                                              setBatchTargetId(next);
+                                          }}
+                                      />
+                                      <AlertDialogFooter>
+                                          <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+                                          <AlertDialogAction type="button" onClick={handleBatchTargetConfirm}>
+                                              Apply
+                                          </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                  </div>
+                              </AlertDialogContent>
+                          </AlertDialog>
+
+                          <AlertDialog
                               open={templateSaveOpen}
                               onOpenChange={(open) => {
                                   setTemplateSaveOpen(open);
@@ -810,14 +985,18 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
                                               </label>
                                           </div>
 
-                                          <ScrollArea className="max-h-72 space-y-2 h-full">
+                                          <ScrollArea className="h-fit max-h-72 space-y-2">
                                               {(templateSaveMode === 'single'
                                                   ? templateSaveDraft.discoveredFields.filter((entry) => entry.originalId === templateSaveFieldId)
                                                   : templateSaveDraft.discoveredFields.filter(
                                                         (entry) => templateGroupSelection[entry.originalId] !== false,
                                                     )
                                               ).map((entry) => (
-                                                  <details key={entry.originalId} open className="rounded border border-slate-200 dark:border-slate-700 p-2">
+                                                  <details
+                                                      key={entry.originalId}
+                                                      open
+                                                      className="rounded border border-slate-200 p-2 dark:border-slate-700"
+                                                  >
                                                       <summary className="cursor-pointer text-sm font-medium">
                                                           {String((entry.field.label as string) ?? entry.originalId)} ({entry.originalId})
                                                       </summary>
@@ -847,7 +1026,11 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
 
                                           <AlertDialogFooter>
                                               <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
-                                              <AlertDialogAction type="button" disabled={!templateName.trim()} onClick={() => void handleTemplateSave()}>
+                                              <AlertDialogAction
+                                                  type="button"
+                                                  disabled={!templateName.trim()}
+                                                  onClick={() => void handleTemplateSave()}
+                                              >
                                                   Save template
                                               </AlertDialogAction>
                                           </AlertDialogFooter>

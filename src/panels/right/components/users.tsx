@@ -18,7 +18,6 @@ export interface User extends BranchParticipant {
 
 interface UsersProps {
     users: User[];
-    onViewUser?: (user: User) => void;
     onSetMain?: (user: User) => void;
     onToggleAdmin?: (user: User) => void;
     onRemoveUser?: (user: User) => void;
@@ -44,18 +43,13 @@ function roleClass(role: string) {
 }
 
 function buildUserMenu(user: User, handlers: Omit<UsersProps, 'users'>): MenuData {
-    const { onViewUser, onSetMain, onToggleAdmin, onRemoveUser } = handlers;
+    const { onSetMain, onToggleAdmin, onRemoveUser } = handlers;
 
     return [
         {
             type: 'group',
             label: user.name,
             items: [
-                {
-                    type: 'action',
-                    label: 'View profile',
-                    command: () => onViewUser?.(user),
-                },
                 {
                     type: 'checkbox',
                     label: 'Main owner',
@@ -81,7 +75,7 @@ function buildUserMenu(user: User, handlers: Omit<UsersProps, 'users'>): MenuDat
     ];
 }
 
-const Users: FC<UsersProps> = ({ users, onViewUser, onSetMain, onToggleAdmin, onRemoveUser, onInviteUser }) => {
+const Users: FC<UsersProps> = ({ users, onSetMain, onToggleAdmin, onRemoveUser, onInviteUser }) => {
     const visibleUsers = users.slice(0, 3);
     const extra = Math.max(users.length - visibleUsers.length, 0);
 
@@ -178,7 +172,6 @@ const Users: FC<UsersProps> = ({ users, onViewUser, onSetMain, onToggleAdmin, on
 
                                             <Dropdown
                                                 menu={buildUserMenu(user, {
-                                                    onViewUser,
                                                     onSetMain,
                                                     onToggleAdmin,
                                                     onRemoveUser,

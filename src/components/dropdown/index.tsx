@@ -161,6 +161,15 @@ const rowClass = (size: DropdownSize, node: { danger?: boolean; className?: stri
         node.className,
     );
 
+const rowClassIndicatorAware = (size: DropdownSize, node: { danger?: boolean; className?: string }) =>
+    cn(
+        'cursor-default',
+        // Keep only y/text sizing so ui/dropdown-menu.tsx remains source of truth for left indicator gutter (`pl-8`).
+        size === 'sm' ? 'py-1 text-sm' : 'py-2 text-md',
+        node.danger ? ' text-destructive focus:bg-destructive/10 focus:text-destructive' : undefined,
+        node.className,
+    );
+
 const isLink = (i: MenuNode): i is LinkItem => (i as LinkItem).type === 'link';
 const isGroup = (i: MenuNode): i is GroupItem => (i as GroupItem).type === 'group';
 const isSubmenu = (i: MenuNode): i is SubmenuItem => (i as SubmenuItem).type === 'submenu';
@@ -705,7 +714,7 @@ const RenderNode: React.FC<{
                         }
                     }}
                     disabled={node.disabled}
-                    className={rowClass(size, node)}
+                    className={rowClassIndicatorAware(size, node)}
                     onPointerMove={() => onItemHover?.(node)}
                     data-testid={node.testId}
                 >
@@ -739,7 +748,7 @@ const RenderNode: React.FC<{
                                 aria-label={opt.ariaLabel}
                                 value={opt.value}
                                 disabled={opt.disabled}
-                                className={rowClass(size, opt)}
+                                className={rowClassIndicatorAware(size, opt)}
                                 onSelect={(ev) => onItemSelect?.({ node: opt as unknown as MenuNode, event: ev as unknown as Event })}
                                 onPointerMove={() => onItemHover?.(opt as unknown as MenuNode)}
                                 data-testid={opt.testId}

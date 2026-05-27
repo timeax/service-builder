@@ -111,6 +111,42 @@ describe('react flow adapter', () => {
         expect(api.commitWire).toHaveBeenCalledWith('b');
     });
 
+    it('resyncs edge graph on editor undo/redo events even when graph:update is not emitted', () => {
+        const { api, state, emit } = createApiMock('bind', {
+            state: {
+                graph: {
+                    nodes: [
+                        { id: 'a', kind: 'field', label: 'A' },
+                        { id: 'b', kind: 'field', label: 'B' },
+                    ],
+                    edges: [{ kind: 'exclude', from: 'a', to: 'b' }],
+                },
+                positions: {},
+                selection: new Set<string>(),
+                viewport: { x: 0, y: 0, zoom: 1 },
+                highlighted: new Set<string>(),
+            },
+        });
+
+        const { result } = renderHook(() => useReactFlowAdapter(api));
+
+        expect(result.current.edges.map((edge) => edge.id)).toEqual(['exclude:a->b']);
+
+        act(() => {
+            state.graph.edges = [{ kind: 'bind', from: 'a', to: 'b' }];
+            emit('editor:undo');
+        });
+
+        expect(result.current.edges.map((edge) => edge.id)).toEqual(['bind:a->b']);
+
+        act(() => {
+            state.graph.edges = [{ kind: 'include', from: 'a', to: 'b' }];
+            emit('editor:redo');
+        });
+
+        expect(result.current.edges.map((edge) => edge.id)).toEqual(['include:a->b']);
+    });
+
     it('applies latest decorator refs on selection sync without stale closure lag', () => {
         const { api, emit } = createApiMock('bind', {
             state: {

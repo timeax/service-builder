@@ -6,6 +6,9 @@ import Header from './header.tsx';
 const { mockUseWorkspace } = vi.hoisted(() => ({
     mockUseWorkspace: vi.fn(),
 }));
+const { mockUseCanvas } = vi.hoisted(() => ({
+    mockUseCanvas: vi.fn(),
+}));
 
 vi.mock('@/components/builder/index.tsx', () => ({
     BuilderIconButton: ({ children, ...props }: PropsWithChildren<Record<string, unknown>>) => <button {...props}>{children}</button>,
@@ -23,6 +26,7 @@ vi.mock('@/panels/left/components/drafts.tsx', () => ({
 
 vi.mock('@timeax/digital-service-engine/workspace', () => ({
     useWorkspace: () => mockUseWorkspace(),
+    useCanvas: () => mockUseCanvas(),
 }));
 
 describe('Left header menu commands', () => {
@@ -30,6 +34,12 @@ describe('Left header menu commands', () => {
         branches: {
             data: [{ id: 'branch:main', name: 'Main' }],
             currentId: 'branch:main',
+        },
+        services: {
+            data: { 101: { id: 101, name: 'Sample service' } },
+        },
+        policies: {
+            policies: { data: [{ id: 'p:1', kind: 'test' }] },
         },
         boot: {
             isReady: true,
@@ -43,6 +53,16 @@ describe('Left header menu commands', () => {
     beforeEach(() => {
         mockUseWorkspace.mockReset();
         mockUseWorkspace.mockReturnValue(workspaceApi);
+        mockUseCanvas.mockReset();
+        mockUseCanvas.mockReturnValue({
+            props: {},
+            api: {
+                builder: {
+                    getProps: vi.fn(() => ({})),
+                    getOptions: vi.fn(() => ({})),
+                },
+            },
+        });
     });
 
     it('calls a leaf menu command with workspace', () => {
@@ -108,5 +128,19 @@ describe('Left header menu commands', () => {
         fireEvent.click(screen.getByText('Legacy action'));
 
         expect(legacyCommand).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows default prompts menu item and opens prompts dialog', () => {
+        render(<Header menu={[]} />);
+
+        fireEvent.click(screen.getByText('prompts'));
+        expect(screen.getByText('Catalog prompt')).toBeInTheDocument();
+        expect(screen.getByText('Service props generator prompt')).toBeInTheDocument();
+        expect(screen.getByText('Prompts')).toBeInTheDocument();
+        expect(screen.getByText('Copy services props')).toBeInTheDocument();
+        expect(screen.getByText('Copy policies')).toBeInTheDocument();
+        expect(screen.getByText('Copy rate policy')).toBeInTheDocument();
+        expect(screen.getByText('Copy fallback settings')).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: 'Service props generator prompt' })).toBeInTheDocument();
     });
 });

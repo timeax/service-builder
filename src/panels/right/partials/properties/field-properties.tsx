@@ -9,6 +9,7 @@ import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
 import { useEffect, useMemo, useState } from 'react';
 import { DescriptorSettings, getDescriptorUiKeys } from './components/descriptor-settings.tsx';
+import { fieldHasOptions, resolveFieldOptionCapability } from './components/descriptor-options.ts';
 import { mergeNodeMeta } from './components/meta.ts';
 import { getFieldPropertyCapabilities } from './components/node-capabilities.ts';
 import OrderKindSection from './components/order-kind-section.tsx';
@@ -137,6 +138,18 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
                 meta: nextMeta,
             } as any,
         );
+
+        const capability = resolveFieldOptionCapability(registry, {
+            ...node.raw,
+            type: nextType,
+            meta: nextMeta as Record<string, unknown>,
+        });
+        if (capability.shouldAutoCreate && !fieldHasOptions(node.raw)) {
+            canvas.api.editor.autoCreateOptionsMany([node.id], () => ({
+                label: capability.defaultLabel,
+                value: capability.defaultValue,
+            }));
+        }
     };
 
     const handleTypeChange = (rawType: unknown) => {

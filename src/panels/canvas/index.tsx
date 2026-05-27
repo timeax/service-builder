@@ -37,6 +37,11 @@ type EditorChangeEvent = {
     reason?: string;
     snapshot?: EditorSnapshot;
 };
+type EditorHistoryEvent = {
+    index?: number;
+    stackSize?: number;
+    snapshot?: EditorSnapshot;
+};
 
 const EDITOR_GUARD_ORIGINALS = Symbol('service-builder.editor-guard-originals');
 const EDITOR_GUARD_WRAPPED = Symbol('service-builder.editor-guard-wrapped');
@@ -254,6 +259,7 @@ export default function CanvasPanel({
 
     useEffect(() => {
         const catalogChange = canvas.api.on('catalog:change', setSnapshot);
+        const bumpPresentationVersion = () => setPresentationVersion((current) => current + 1);
 
         const offEditorChange = (canvas.api.on as any)('editor:change', (event: EditorChangeEvent) => {
             setSnapshot(event);
@@ -262,7 +268,8 @@ export default function CanvasPanel({
             }
         });
 
-        const offUndo = (canvas.api.on as any)('editor:undo', (event: { index: number; stackSize: number }) => {
+        const offUndo = (canvas.api.on as any)('editor:undo', (event: EditorHistoryEvent) => {
+            setSnapshot(event);
             const index = Number(event?.index ?? 0);
             const stackSize = Number(event?.stackSize ?? 0);
 
@@ -270,9 +277,11 @@ export default function CanvasPanel({
                 canUndo: index > 0,
                 canRedo: index < stackSize - 1,
             });
+            bumpPresentationVersion();
         });
 
-        const offRedo = (canvas.api.on as any)('editor:redo', (event: { index: number; stackSize: number }) => {
+        const offRedo = (canvas.api.on as any)('editor:redo', (event: EditorHistoryEvent) => {
+            setSnapshot(event);
             const index = Number(event?.index ?? 0);
             const stackSize = Number(event?.stackSize ?? 0);
 
@@ -280,6 +289,7 @@ export default function CanvasPanel({
                 canUndo: index > 0,
                 canRedo: index < stackSize - 1,
             });
+            bumpPresentationVersion();
         });
 
         return () => {

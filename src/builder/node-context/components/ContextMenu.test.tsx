@@ -8,6 +8,7 @@ const mockHandleMoveUp = vi.fn();
 const mockHandleMoveDown = vi.fn();
 const mockHandleMoveUpInContext = vi.fn();
 const mockHandleMoveDownInContext = vi.fn();
+const mockOpenBatchTargetDialog = vi.fn();
 const actionState = {
     canMoveUp: true,
     canMoveDown: true,
@@ -17,7 +18,26 @@ const actionState = {
 
 vi.mock('../hooks.ts', () => ({
     useNodeActions: () => ({
+        batchSelectionIds: [],
         handleDuplicate: vi.fn(),
+        handleDeleteMany: vi.fn(),
+        hasServiceSelection: true,
+        handleClearServiceMany: vi.fn(),
+        submitRebindMany: vi.fn(() => true),
+        submitIncludeMany: vi.fn(() => true),
+        submitExcludeMany: vi.fn(() => true),
+        handleRebindMany: vi.fn(() => true),
+        handleIncludeMany: vi.fn(() => true),
+        handleExcludeMany: vi.fn(() => true),
+        handleClearRelationsMany: vi.fn(),
+        handleRenameLabelsMany: vi.fn(),
+        handleSetPricingRoleMany: vi.fn(),
+        handleClearFieldValidationMany: vi.fn(),
+        handleClearFieldDefaultsMany: vi.fn(),
+        handleAutoCreateMissingOptions: vi.fn(),
+        handleClearAllOptionsMany: vi.fn(),
+        handleRemoveNoticesForNodes: vi.fn(),
+        handleSetNoticesVisibilityForNodes: vi.fn(),
         handleCopyId: vi.fn(),
         handleSaveAsTemplate: mockHandleSaveAsTemplate,
         canQuickAddFallbacks: true,
@@ -35,15 +55,21 @@ vi.mock('../hooks.ts', () => ({
     }),
 }));
 
-function renderMenu(nodeKind: 'field' | 'tag', surface: 'canvas' | 'wireframe' = 'canvas') {
+function renderMenu(nodeKind: 'field' | 'tag', surface: 'canvas' | 'wireframe' = 'canvas', batch = false) {
     render(
         <ContextMenu
-            target={{ nodeId: nodeKind === 'field' ? 'f:amount' : 't:root', nodeKind, surface }}
+            target={{
+                nodeId: nodeKind === 'field' ? 'f:amount' : 't:root',
+                nodeKind,
+                surface,
+                effectiveTargetIds: batch ? ['f:amount', 'f:qty'] : ['f:amount'],
+            }}
             setTarget={vi.fn()}
             setDialogTarget={vi.fn()}
             setRenameOpen={vi.fn()}
             setDeleteOpen={vi.fn()}
             openNoticeManager={vi.fn()}
+            openBatchTargetDialog={mockOpenBatchTargetDialog}
             activeNode={null}
             anchorStyle={{ left: 8, top: 8 }}
             menuRef={{ current: null }}
@@ -61,6 +87,7 @@ describe('node context menu option node visibility action', () => {
         mockHandleMoveDown.mockReset();
         mockHandleMoveUpInContext.mockReset();
         mockHandleMoveDownInContext.mockReset();
+        mockOpenBatchTargetDialog.mockReset();
         actionState.canMoveUp = true;
         actionState.canMoveDown = true;
         actionState.canMoveContextUp = true;
@@ -156,5 +183,23 @@ describe('node context menu option node visibility action', () => {
 
         expect(mockHandleMoveUp).not.toHaveBeenCalled();
         expect(mockHandleMoveDownInContext).not.toHaveBeenCalled();
+    });
+
+    it('opens rebind target dialog from batch menu', () => {
+        renderMenu('field', 'canvas', true);
+        fireEvent.click(screen.getByText('Move / Rebind to tag'));
+        expect(mockOpenBatchTargetDialog).toHaveBeenCalledWith('rebind', ['f:amount', 'f:qty'], expect.any(Object));
+    });
+
+    it('opens include target dialog from batch menu', () => {
+        renderMenu('field', 'canvas', true);
+        fireEvent.click(screen.getByText('Include in...'));
+        expect(mockOpenBatchTargetDialog).toHaveBeenCalledWith('include', ['f:amount', 'f:qty'], expect.any(Object));
+    });
+
+    it('opens exclude target dialog from batch menu', () => {
+        renderMenu('field', 'canvas', true);
+        fireEvent.click(screen.getByText('Exclude from...'));
+        expect(mockOpenBatchTargetDialog).toHaveBeenCalledWith('exclude', ['f:amount', 'f:qty'], expect.any(Object));
     });
 });

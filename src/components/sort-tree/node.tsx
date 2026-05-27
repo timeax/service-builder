@@ -59,7 +59,7 @@ export function Node<T = unknown>({ node, matched, isEditing, onCommit, onCancel
             {node.icon ? <span className="inline-flex items-center">{node.icon}</span> : null}
             <span
                 ref={spanRef}
-                className="truncate outline-none"
+                className="truncate outline-none select-none"
                 contentEditable={isEditing}
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
