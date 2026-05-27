@@ -471,7 +471,7 @@ const Header = ({ menu = [] }: HeaderProps) => {
             render: () => <div className="px-2 py-1.5 text-xs font-medium tracking-wider text-slate-500 uppercase">{workspaceStatus}</div>,
         },
         {
-            name: 'prompts',
+            name: 'Prompts',
             command: () => setIsPromptsDialogOpen(true),
         },
         ...menu,

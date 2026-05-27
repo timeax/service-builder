@@ -133,10 +133,10 @@ describe('Left header menu commands', () => {
     it('shows default prompts menu item and opens prompts dialog', () => {
         render(<Header menu={[]} />);
 
-        fireEvent.click(screen.getByText('prompts'));
+        fireEvent.click(screen.getByText('Prompts'));
         expect(screen.getByText('Catalog prompt')).toBeInTheDocument();
         expect(screen.getByText('Service props generator prompt')).toBeInTheDocument();
-        expect(screen.getByText('Prompts')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Prompts' })).toBeInTheDocument();
         expect(screen.getByText('Copy services props')).toBeInTheDocument();
         expect(screen.getByText('Copy policies')).toBeInTheDocument();
         expect(screen.getByText('Copy rate policy')).toBeInTheDocument();
