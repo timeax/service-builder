@@ -668,23 +668,13 @@ export function useDropHandling(
             const id = buildFieldId();
 
             if (source.kind === 'asset_builtin') {
-                canvas.api.editor.addField({
+                (canvas.api.editor as any).addFieldFromDescriptor(registry, {
                     id,
                     label: source.asset.label || source.asset.kind,
                     type: source.asset.kind as any,
                     bind_id: currentTag,
                     meta: source.asset.variant ? { variant: source.asset.variant } : undefined,
                 });
-                const capability = resolveFieldOptionCapability(registry, {
-                    type: source.asset.kind,
-                    meta: source.asset.variant ? { variant: source.asset.variant } : undefined,
-                });
-                if (capability.shouldAutoCreate) {
-                    (canvas.api.editor as any).autoCreateOptionsMany([id], () => ({
-                        label: capability.defaultLabel,
-                        value: capability.defaultValue,
-                    }));
-                }
                 return id;
             }
 
@@ -721,30 +711,17 @@ export function useDropHandling(
                     const rootNewId = fieldIdMap.get(definition.rootOriginalId) ?? nextFields[0]?.id;
                     const rootField = nextFields.find((field) => field.id === rootNewId);
                     if (!rootField || !rootNewId) return null;
-                    canvas.api.editor.addField({
+                    (canvas.api.editor as any).addFieldFromDescriptor(registry, {
                         ...(rootField as any),
                         bind_id: currentTag,
                         defaults: template?.defaults as any,
                     });
                     for (const field of nextFields) {
                         if (field.id === rootNewId) continue;
-                        canvas.api.editor.addField({
+                        (canvas.api.editor as any).addFieldFromDescriptor(registry, {
                             ...(field as any),
                             defaults: template?.defaults as any,
                         });
-                    }
-                    const allCreatedIds = [rootNewId, ...nextFields.filter((field) => field.id !== rootNewId).map((field) => field.id)];
-                    const autoCreateTargets = allCreatedIds.filter((fieldId) => {
-                        const entry = nextFields.find((field) => field.id === fieldId);
-                        const capability = resolveFieldOptionCapability(registry, {
-                            type: entry?.type,
-                            meta: entry?.meta as Record<string, unknown> | undefined,
-                            options: entry?.options as Array<unknown> | undefined,
-                        });
-                        return capability.shouldAutoCreate;
-                    });
-                    if (autoCreateTargets.length) {
-                        (canvas.api.editor as any).autoCreateOptionsMany(autoCreateTargets);
                     }
 
                     const editorAny = canvas.api.editor as any;
@@ -766,7 +743,7 @@ export function useDropHandling(
 
                 const singleDefinition = isSingleTemplateDefinition(definition) ? definition.field : toSingleFieldDefinition(definition);
                 const nextField = withFreshOptionIds(singleDefinition);
-                canvas.api.editor.addField({
+                (canvas.api.editor as any).addFieldFromDescriptor(registry, {
                     ...(nextField as any),
                     id,
                     bind_id: currentTag,
@@ -774,17 +751,6 @@ export function useDropHandling(
                     type: String(nextField.type ?? source.asset.kind ?? 'text') as any,
                     defaults: template?.defaults as any,
                 });
-                const capability = resolveFieldOptionCapability(registry, {
-                    type: String(nextField.type ?? source.asset.kind ?? 'text'),
-                    meta: nextField.meta as Record<string, unknown> | undefined,
-                    options: nextField.options as Array<unknown> | undefined,
-                });
-                if (capability.shouldAutoCreate) {
-                    (canvas.api.editor as any).autoCreateOptionsMany([id], () => ({
-                        label: capability.defaultLabel,
-                        value: capability.defaultValue,
-                    }));
-                }
                 return id;
             }
 

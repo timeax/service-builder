@@ -68,7 +68,7 @@ describe('WorkspaceBootStatusCard', () => {
     it('renders fully ready state', () => {
         render(<WorkspaceBootStatusCard boot={makeBoot()} />);
 
-        expect(screen.getByText('Workspace ready')).toBeInTheDocument();
+        expect(screen.getByText('Ready')).toBeInTheDocument();
         expect(screen.getByText(/All required workspace sections finished loading/i)).toBeInTheDocument();
     });
 

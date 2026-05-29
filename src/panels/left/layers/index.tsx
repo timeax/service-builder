@@ -6,7 +6,6 @@ import type { SortTreeRef } from '@/components/sort-tree/types.ts';
 import { Panel } from '@/components/ui/panel.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import {
-    resolveFieldOptionCapability,
     shouldBlockOptionCreation
 } from '@/panels/right/partials/properties/components/descriptor-options.ts';
 import { useInputs } from '@timeax/digital-service-engine/react';
@@ -292,19 +291,12 @@ const Layers = () => {
                             onClick={() => {
                                 if (!fieldsRef.current) {
                                     const fieldId = buildFieldId();
-                                    canvas.api.editor.addField({
+                                    canvas.api.editor.addFieldFromDescriptor(registry, {
                                         id: fieldId,
                                         label: 'New Field',
                                         type: 'text',
                                         bind_id: canvas.api.selection.currentTag() ?? 't:root',
                                     });
-                                    const capability = resolveFieldOptionCapability(registry, { type: 'text' });
-                                    if (capability.shouldAutoCreate) {
-                                        canvas.api.editor.autoCreateOptionsMany([fieldId], () => ({
-                                            label: capability.defaultLabel,
-                                            value: capability.defaultValue,
-                                        }));
-                                    }
                                     return;
                                 }
                                 const selection = fieldsRef.current.getSelectionLocated?.() ?? [];
@@ -318,19 +310,12 @@ const Layers = () => {
                                 }
 
                                 const fieldId = buildFieldId();
-                                canvas.api.editor.addField({
+                                canvas.api.editor.addFieldFromDescriptor(registry, {
                                     id: fieldId,
                                     label: 'New Field',
                                     type: 'text',
                                     bind_id: canvas.api.selection.currentTag() ?? 't:root',
                                 });
-                                const capability = resolveFieldOptionCapability(registry, { type: 'text' });
-                                if (capability.shouldAutoCreate) {
-                                    canvas.api.editor.autoCreateOptionsMany([fieldId], () => ({
-                                        label: capability.defaultLabel,
-                                        value: capability.defaultValue,
-                                    }));
-                                }
                             }}
                             className="cursor-pointer rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-900 dark:hover:text-slate-100"
                         >

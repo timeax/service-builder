@@ -1,9 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FieldProperties } from './field-properties.tsx';
 
 const updateField = vi.fn();
 const editName = vi.fn();
+const resolveInputDescriptorMock = vi.fn(() => null);
 
 vi.mock('@/builder/view-models.tsx', () => ({
     describeBinding: () => 'Tag: Root',
@@ -42,7 +43,7 @@ vi.mock('@timeax/digital-service-engine/react', () => ({
     useInputs: () => ({
         registry: { _store: new Map([['text', new Map()]]) },
     }),
-    resolveInputDescriptor: () => null,
+    resolveInputDescriptor: (...args: any[]) => resolveInputDescriptorMock(...args),
 }));
 
 vi.mock('@timeax/digital-service-engine/workspace', () => ({
@@ -118,6 +119,7 @@ vi.mock('@timeax/form-palette', () => ({
                         aria-label={ariaLabel}
                         type="checkbox"
                         checked={Boolean(value)}
+                        disabled={disabled}
                         onChange={(event) => onChange?.({ value: event.target.checked })}
                     />
                 </label>
@@ -152,6 +154,39 @@ function createNode({ options = [], meta = {} as Record<string, unknown> }: { op
 }
 
 describe('FieldProperties multiple toggle', () => {
+    beforeEach(() => {
+        resolveInputDescriptorMock.mockReset();
+        resolveInputDescriptorMock.mockReturnValue(null);
+    });
+
+    it('disables Is multiple and reflects descriptor autoEnable=true', () => {
+        resolveInputDescriptorMock.mockReturnValueOnce({
+            multi: { supported: true, autoEnable: true },
+        });
+        const node = createNode({
+            options: [{ id: 'o:1', label: 'One' }],
+            meta: { multi: false },
+        });
+        render(<FieldProperties node={node} />);
+        const toggle = screen.getByLabelText('Is multiple') as HTMLInputElement;
+        expect(toggle.checked).toBe(true);
+        expect(toggle.disabled).toBe(true);
+    });
+
+    it('disables Is multiple and reflects descriptor autoEnable=false', () => {
+        resolveInputDescriptorMock.mockReturnValueOnce({
+            multi: { supported: true },
+        });
+        const node = createNode({
+            options: [{ id: 'o:1', label: 'One' }],
+            meta: { multi: true },
+        });
+        render(<FieldProperties node={node} />);
+        const toggle = screen.getByLabelText('Is multiple') as HTMLInputElement;
+        expect(toggle.checked).toBe(false);
+        expect(toggle.disabled).toBe(true);
+    });
+
     it('shows Is multiple toggle only when field has options', () => {
         const withOptionsNode = createNode({ options: [{ id: 'o:1', label: 'One' }] });
         const { rerender } = render(<FieldProperties node={withOptionsNode} />);
@@ -163,6 +198,7 @@ describe('FieldProperties multiple toggle', () => {
     });
 
     it('sets multi=true and preserves existing meta keys', () => {
+        resolveInputDescriptorMock.mockReturnValueOnce(null);
         updateField.mockReset();
         const node = createNode({
             options: [{ id: 'o:1', label: 'One' }],
@@ -184,6 +220,7 @@ describe('FieldProperties multiple toggle', () => {
     });
 
     it('sets multi=false when toggled off', () => {
+        resolveInputDescriptorMock.mockReturnValueOnce(null);
         updateField.mockReset();
         const node = createNode({
             options: [{ id: 'o:1', label: 'One' }],
@@ -203,4 +240,3 @@ describe('FieldProperties multiple toggle', () => {
         );
     });
 });
-

@@ -2,6 +2,7 @@ import { useNodeContextMenu } from '@/builder/node-context-menu.tsx';
 import { getCurrentTag, getVisiblePreviewFields } from '@/builder/view-models.tsx';
 import { EmptyState } from '@/components/builder';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
+import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import WireframeTagsWidget, { type TagNotice } from '@/panels/right/components/wireframe-tags-widget.tsx';
 import type { Field, Tag } from '@timeax/digital-service-engine';
 import { useOrderFlow, Wrapper } from '@timeax/digital-service-engine/react';
@@ -230,98 +231,100 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
 
     return (
         <div className="flex h-full min-h-0 flex-col flex-1 w-full">
-            <div className="min-h-0 flex-1 overflow-auto p-4">
-                <div className="mx-auto max-w-md">
-                    <div className="flex flex-col gap-4">
-                        <WorkspaceBootInlineNotice boot={ws.boot} sections={['snapshotBody', 'policies']} />
-                        <WireframeTagsWidget
-                            visibleTag={visibleTag}
-                            parents={parents}
-                            children={children}
-                            noticesByTagId={noticesByTagId}
-                            onSelect={select}
-                            onTagContextMenu={({ id, event }) => {
-                                event.preventDefault();
-                                openNodeContextMenu({
-                                    nodeId: id,
-                                    nodeKind: 'tag',
-                                    surface: 'wireframe',
-                                    clientX: event.clientX,
-                                    clientY: event.clientY,
-                                });
-                            }}
-                            onTagDragOver={({ event }) => {
-                                if (!canAcceptDropPayload(event.dataTransfer)) return;
-                                event.preventDefault();
-                                event.dataTransfer.dropEffect = 'copy';
-                            }}
-                            onTagDrop={({ id, event }) => {
-                                if (!canAcceptDropPayload(event.dataTransfer)) return;
-                                event.preventDefault();
-                                handleNodeDrop({
-                                    receiverId: id,
-                                    receiverKind: 'tag',
-                                    surface: 'wireframe',
-                                    clientX: event.clientX,
-                                    clientY: event.clientY,
-                                    dataTransfer: event.dataTransfer,
-                                });
-                            }}
-                        />
+            <ScrollArea className="min-h-0 flex-1" viewportClassName="[&>div]:!block [&>div]:w-full">
+                <div className="min-w-0 w-full p-4">
+                    <div className="mx-auto max-w-md">
+                        <div className="flex flex-col gap-4">
+                            <WorkspaceBootInlineNotice boot={ws.boot} sections={['snapshotBody', 'policies']} />
+                            <WireframeTagsWidget
+                                visibleTag={visibleTag}
+                                parents={parents}
+                                children={children}
+                                noticesByTagId={noticesByTagId}
+                                onSelect={select}
+                                onTagContextMenu={({ id, event }) => {
+                                    event.preventDefault();
+                                    openNodeContextMenu({
+                                        nodeId: id,
+                                        nodeKind: 'tag',
+                                        surface: 'wireframe',
+                                        clientX: event.clientX,
+                                        clientY: event.clientY,
+                                    });
+                                }}
+                                onTagDragOver={({ event }) => {
+                                    if (!canAcceptDropPayload(event.dataTransfer)) return;
+                                    event.preventDefault();
+                                    event.dataTransfer.dropEffect = 'copy';
+                                }}
+                                onTagDrop={({ id, event }) => {
+                                    if (!canAcceptDropPayload(event.dataTransfer)) return;
+                                    event.preventDefault();
+                                    handleNodeDrop({
+                                        receiverId: id,
+                                        receiverKind: 'tag',
+                                        surface: 'wireframe',
+                                        clientX: event.clientX,
+                                        clientY: event.clientY,
+                                        dataTransfer: event.dataTransfer,
+                                    });
+                                }}
+                            />
 
-                        <div className="border-t border-slate-200 pt-3 flex flex-col gap-2 dark:border-slate-800">
-                            {visibleFields.length ? (
-                                visibleFields.map((field) => {
-                                    return (
-                                        <div onClick={() => select(field.id)} className="cursor-pointer pb-2" key={field.id}>
-                                            <div
-                                                onContextMenu={(event) => {
-                                                    event.preventDefault();
-                                                    openNodeContextMenu({
-                                                        nodeId: field.id,
-                                                        nodeKind: 'field',
-                                                        surface: 'wireframe',
-                                                        clientX: event.clientX,
-                                                        clientY: event.clientY,
-                                                    });
-                                                }}
-                                                onDragOver={(event) => {
-                                                    if (!canAcceptDropPayload(event.dataTransfer)) return;
-                                                    event.preventDefault();
-                                                    event.dataTransfer.dropEffect = 'copy';
-                                                }}
-                                                onDrop={(event) => {
-                                                    if (!canAcceptDropPayload(event.dataTransfer)) return;
-                                                    event.preventDefault();
-                                                    handleNodeDrop({
-                                                        receiverId: field.id,
-                                                        receiverKind: 'field',
-                                                        surface: 'wireframe',
-                                                        clientX: event.clientX,
-                                                        clientY: event.clientY,
-                                                        dataTransfer: event.dataTransfer,
-                                                    });
-                                                }}
-                                            >
-                                                <Wrapper
-                                                    extraProps={field.type === 'checkbox' && !field.options ? CHECKBOX_SINGLE_EXTRA_PROPS : undefined}
-                                                    field={field}
-                                                />
+                            <div className="border-t border-slate-200 pt-3 flex flex-col gap-2 dark:border-slate-800">
+                                {visibleFields.length ? (
+                                    visibleFields.map((field) => {
+                                        return (
+                                            <div onClick={() => select(field.id)} className="cursor-pointer pb-2" key={field.id}>
+                                                <div
+                                                    onContextMenu={(event) => {
+                                                        event.preventDefault();
+                                                        openNodeContextMenu({
+                                                            nodeId: field.id,
+                                                            nodeKind: 'field',
+                                                            surface: 'wireframe',
+                                                            clientX: event.clientX,
+                                                            clientY: event.clientY,
+                                                        });
+                                                    }}
+                                                    onDragOver={(event) => {
+                                                        if (!canAcceptDropPayload(event.dataTransfer)) return;
+                                                        event.preventDefault();
+                                                        event.dataTransfer.dropEffect = 'copy';
+                                                    }}
+                                                    onDrop={(event) => {
+                                                        if (!canAcceptDropPayload(event.dataTransfer)) return;
+                                                        event.preventDefault();
+                                                        handleNodeDrop({
+                                                            receiverId: field.id,
+                                                            receiverKind: 'field',
+                                                            surface: 'wireframe',
+                                                            clientX: event.clientX,
+                                                            clientY: event.clientY,
+                                                            dataTransfer: event.dataTransfer,
+                                                        });
+                                                    }}
+                                                >
+                                                    <Wrapper
+                                                        extraProps={field.type === 'checkbox' && !field.options ? CHECKBOX_SINGLE_EXTRA_PROPS : undefined}
+                                                        field={field}
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                <EmptyState
-                                    title="Wireframe stub"
-                                    description="Wireframe visible fields body is empty. Implement your custom preview content here."
-                                    className="min-h-55"
-                                />
-                            )}
+                                        );
+                                    })
+                                ) : (
+                                    <EmptyState
+                                        title="Wireframe stub"
+                                        description="Wireframe visible fields body is empty. Implement your custom preview content here."
+                                        className="min-h-55"
+                                    />
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </ScrollArea>
 
             <div className="mt-auto border-t border-slate-200 px-4 py-2 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-300">
                 <button
@@ -371,4 +374,3 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
 }
 
 export default Wireframe;
-

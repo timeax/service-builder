@@ -9,7 +9,7 @@ import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
 import { useEffect, useMemo, useState } from 'react';
 import { DescriptorSettings, getDescriptorUiKeys } from './components/descriptor-settings.tsx';
-import { fieldHasOptions, resolveFieldOptionCapability } from './components/descriptor-options.ts';
+import { fieldHasOptions } from './components/descriptor-options.ts';
 import { mergeNodeMeta } from './components/meta.ts';
 import { getFieldPropertyCapabilities } from './components/node-capabilities.ts';
 import OrderKindSection from './components/order-kind-section.tsx';
@@ -65,6 +65,10 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
     const [helpTextDraft, setHelpTextDraft] = useState(helpTextValue);
 
     const descriptor = useMemo(() => resolveInputDescriptor(registry, currentType as any, currentVariant as any), [currentType, currentVariant, registry]);
+    const descriptorForMulti = useMemo(() => {
+        if (!descriptor) return null;
+        return descriptor.multi?.autoEnable === true;
+    }, [descriptor]);
     const descriptorUi = descriptor?.ui ?? {};
     const descriptorKeySet = useMemo(() => new Set(getDescriptorUiKeys(descriptorUi)), [descriptorUi]);
 
@@ -126,8 +130,10 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
         const nextDescriptor = resolveInputDescriptor(registry, nextType as any, nextVariant as any);
         const nextDescriptorKeys = new Set(getDescriptorUiKeys(nextDescriptor?.ui));
         const nextDefaults = pruneDescriptorDefaults(defaults, descriptorKeySet, nextDescriptorKeys);
+        const nextMulti = nextDescriptor?.multi?.autoEnable === true;
         const nextMeta = mergeNodeMeta(node.raw.meta as Record<string, unknown> | undefined, {
             variant: nextVariant,
+            multi: nextMulti,
         });
 
         canvas.api.editor.updateField(
@@ -139,16 +145,8 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
             } as any,
         );
 
-        const capability = resolveFieldOptionCapability(registry, {
-            ...node.raw,
-            type: nextType,
-            meta: nextMeta as Record<string, unknown>,
-        });
-        if (capability.shouldAutoCreate && !fieldHasOptions(node.raw)) {
-            canvas.api.editor.autoCreateOptionsMany([node.id], () => ({
-                label: capability.defaultLabel,
-                value: capability.defaultValue,
-            }));
+        if (nextDescriptor?.options?.supported === true && nextDescriptor?.options?.autoCreate === true && !fieldHasOptions(node.raw)) {
+            (canvas.api.editor as any).autoCreateOptionsMany([node.id]);
         }
     };
 
@@ -217,7 +215,8 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
                                 <InputField
                                     variant="toggle"
                                     label="Is multiple"
-                                    value={Boolean(node.raw.meta?.multi)}
+                                    disabled={Boolean(descriptor)}
+                                    value={descriptorForMulti ?? Boolean(node.raw.meta?.multi)}
                                     onChange={(e) =>
                                         canvas.api.editor.updateField(node.id, {
                                             meta: mergeNodeMeta(node.raw.meta as Record<string, unknown> | undefined, {

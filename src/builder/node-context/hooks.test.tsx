@@ -5,7 +5,7 @@ const setFieldOptionsShown = vi.fn();
 const isFieldOptionsShown = vi.fn(() => false);
 const placeNode = vi.fn();
 const placeOption = vi.fn();
-const addField = vi.fn();
+const addFieldFromDescriptor = vi.fn((_: any, payload: any) => payload.id);
 const connect = vi.fn();
 const setService = vi.fn();
 const patchProps = vi.fn();
@@ -56,7 +56,7 @@ vi.mock('@timeax/digital-service-engine/workspace', () => ({
             setFieldOptionsShown,
             emit,
             editor: {
-                addField,
+                addFieldFromDescriptor,
                 connect,
                 setService,
                 placeNode,
@@ -103,7 +103,7 @@ describe('useNodeActions option node visibility', () => {
         isFieldOptionsShown.mockReturnValue(false);
         placeNode.mockReset();
         placeOption.mockReset();
-        addField.mockReset();
+        addFieldFromDescriptor.mockReset();
         connect.mockReset();
         setService.mockReset();
         patchProps.mockReset();
@@ -246,7 +246,7 @@ describe('useNodeActions option node visibility', () => {
 
 describe('useDropHandling template option id regeneration', () => {
     beforeEach(() => {
-        addField.mockReset();
+        addFieldFromDescriptor.mockReset();
         connect.mockReset();
         patchProps.mockReset();
         mutableProps = {
@@ -297,8 +297,8 @@ describe('useDropHandling template option id regeneration', () => {
         const actions = result.current.actionsForIntent(buildTemplateIntent({ nodeId: 't:root', nodeKind: 'tag' }));
         await actions.find((action) => action.id === 'bind')?.execute({} as any);
 
-        expect(addField).toHaveBeenCalledTimes(1);
-        const payload = addField.mock.calls[0][0];
+        expect(addFieldFromDescriptor).toHaveBeenCalledTimes(1);
+        const payload = addFieldFromDescriptor.mock.calls[0][1];
         expect(payload.id).toMatch(/^f:asset:/);
         expect(payload.options).toHaveLength(2);
         expect(payload.options[0]).toEqual(expect.objectContaining({ label: 'Monthly', value: 'monthly', rank: 1 }));
@@ -329,7 +329,7 @@ describe('useDropHandling template option id regeneration', () => {
         const actions = result.current.actionsForIntent(buildTemplateIntent({ nodeId: 't:root', nodeKind: 'tag' }));
         await actions.find((action) => action.id === 'bind')?.execute({} as any);
 
-        const payload = addField.mock.calls[0][0];
+        const payload = addFieldFromDescriptor.mock.calls[0][1];
         expect(payload.options).toHaveLength(2);
         expect(payload.options.every((option: any) => typeof option.id === 'string' && option.id.startsWith('o:'))).toBe(true);
     });
@@ -341,7 +341,7 @@ describe('useDropHandling template option id regeneration', () => {
         const actions = result.current.actionsForIntent(buildTemplateIntent({ nodeId: 't:root', nodeKind: 'tag' }));
         await actions.find((action) => action.id === 'bind')?.execute({} as any);
 
-        const payload = addField.mock.calls[0][0];
+        const payload = addFieldFromDescriptor.mock.calls[0][1];
         expect(payload.options).toBeUndefined();
     });
 
@@ -364,9 +364,9 @@ describe('useDropHandling template option id regeneration', () => {
         const { result } = renderHook(() => useDropHandling(vi.fn(), vi.fn(), vi.fn()));
         const actions = result.current.actionsForIntent(buildTemplateIntent({ nodeId: 't:root', nodeKind: 'tag' }));
         await actions.find((action) => action.id === 'bind')?.execute({} as any);
-        expect(addField).toHaveBeenCalledTimes(1);
-        expect(addField.mock.calls[0][0].label).toBe('Structured field');
-        expect(addField.mock.calls[0][0].options[0].id).toMatch(/^o:/);
+        expect(addFieldFromDescriptor).toHaveBeenCalledTimes(1);
+        expect(addFieldFromDescriptor.mock.calls[0][1].label).toBe('Structured field');
+        expect(addFieldFromDescriptor.mock.calls[0][1].options[0].id).toMatch(/^o:/);
     });
 
     it('drops group templates with remapped ids and rewritten relations', async () => {
@@ -395,12 +395,12 @@ describe('useDropHandling template option id regeneration', () => {
         const { result } = renderHook(() => useDropHandling(vi.fn(), vi.fn(), vi.fn()));
         const actions = result.current.actionsForIntent(buildTemplateIntent({ nodeId: 't:root', nodeKind: 'tag' }));
         await actions.find((action) => action.id === 'bind')?.execute({} as any);
-        expect(addField).toHaveBeenCalledTimes(3);
-        const createdIds = addField.mock.calls.map((call) => call[0].id);
+        expect(addFieldFromDescriptor).toHaveBeenCalledTimes(3);
+        const createdIds = addFieldFromDescriptor.mock.calls.map((call) => call[1].id);
         expect(new Set(createdIds).size).toBe(3);
-        expect(addField.mock.calls[0][0].bind_id).toBe('t:root');
-        expect(addField.mock.calls[1][0].bind_id).toBeUndefined();
-        expect(addField.mock.calls[2][0].bind_id).toBeUndefined();
+        expect(addFieldFromDescriptor.mock.calls[0][1].bind_id).toBe('t:root');
+        expect(addFieldFromDescriptor.mock.calls[1][1].bind_id).toBeUndefined();
+        expect(addFieldFromDescriptor.mock.calls[2][1].bind_id).toBeUndefined();
         const relation = mutableProps.includes_for_buttons;
         const keys = Object.keys(relation);
         expect(keys).toHaveLength(1);
@@ -423,7 +423,7 @@ describe('useDropHandling template option id regeneration', () => {
         await includeAction?.execute({} as any);
         await excludeAction?.execute({} as any);
 
-        expect(addField).toHaveBeenCalledTimes(2);
+        expect(addFieldFromDescriptor).toHaveBeenCalledTimes(2);
         expect(connect).toHaveBeenCalledTimes(2);
         expect(connect).toHaveBeenNthCalledWith(1, 'include', 'f:receiver', expect.stringMatching(/^f:asset:/));
         expect(connect).toHaveBeenNthCalledWith(2, 'exclude', 'f:receiver', expect.stringMatching(/^f:asset:/));
