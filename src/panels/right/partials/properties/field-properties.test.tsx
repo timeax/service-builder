@@ -43,7 +43,8 @@ vi.mock('@timeax/digital-service-engine/react', () => ({
     useInputs: () => ({
         registry: { _store: new Map([['text', new Map()]]) },
     }),
-    resolveInputDescriptor: (...args: any[]) => resolveInputDescriptorMock(...args),
+    // @ts-ignore
+    resolveInputDescriptor: (...args: any[]) => resolveInputDescriptorMock(...(args as any[])),
 }));
 
 vi.mock('@timeax/digital-service-engine/workspace', () => ({
@@ -125,14 +126,7 @@ vi.mock('@timeax/form-palette', () => ({
                 </label>
             );
         }
-        return (
-            <input
-                aria-label={ariaLabel}
-                value={value ?? ''}
-                onChange={(event) => onChange?.({ value: event.target.value })}
-                onBlur={() => {}}
-            />
-        );
+        return <input aria-label={ariaLabel} value={value ?? ''} onChange={(event) => onChange?.({ value: event.target.value })} onBlur={() => {}} />;
     },
 }));
 
