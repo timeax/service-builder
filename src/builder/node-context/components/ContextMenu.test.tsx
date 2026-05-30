@@ -17,8 +17,8 @@ const actionState = {
 };
 
 vi.mock('../hooks.ts', () => ({
-    useNodeActions: () => ({
-        batchSelectionIds: [],
+    useNodeActions: (target: any) => ({
+        batchSelectionIds: Array.isArray(target?.effectiveTargetIds) && target.effectiveTargetIds.length > 1 ? target.effectiveTargetIds : [],
         handleDuplicate: vi.fn(),
         handleDeleteMany: vi.fn(),
         hasServiceSelection: true,
@@ -139,10 +139,10 @@ describe('node context menu option node visibility action', () => {
         actionState.canMoveContextDown = false;
         renderMenu('field', 'wireframe');
 
-        expect(screen.getByText('Move up')).toBeDisabled();
-        expect(screen.getByText('Move down')).toBeDisabled();
-        expect(screen.getByText('Move up (in context)')).toBeDisabled();
-        expect(screen.getByText('Move down (in context)')).toBeDisabled();
+        expect(screen.getByText('Move up')).toHaveAttribute('aria-disabled', 'true');
+        expect(screen.getByText('Move down')).toHaveAttribute('aria-disabled', 'true');
+        expect(screen.getByText('Move up (in context)')).toHaveAttribute('aria-disabled', 'true');
+        expect(screen.getByText('Move down (in context)')).toHaveAttribute('aria-disabled', 'true');
     });
 
     it('routes wireframe move button clicks to handlers', () => {
@@ -187,18 +187,21 @@ describe('node context menu option node visibility action', () => {
 
     it('opens rebind target dialog from batch menu', () => {
         renderMenu('field', 'canvas', true);
+        fireEvent.click(screen.getByText('Structure / Visibility'));
         fireEvent.click(screen.getByText('Move / Rebind to tag'));
         expect(mockOpenBatchTargetDialog).toHaveBeenCalledWith('rebind', ['f:amount', 'f:qty'], expect.any(Object));
     });
 
     it('opens include target dialog from batch menu', () => {
         renderMenu('field', 'canvas', true);
+        fireEvent.click(screen.getByText('Structure / Visibility'));
         fireEvent.click(screen.getByText('Include in...'));
         expect(mockOpenBatchTargetDialog).toHaveBeenCalledWith('include', ['f:amount', 'f:qty'], expect.any(Object));
     });
 
     it('opens exclude target dialog from batch menu', () => {
         renderMenu('field', 'canvas', true);
+        fireEvent.click(screen.getByText('Structure / Visibility'));
         fireEvent.click(screen.getByText('Exclude from...'));
         expect(mockOpenBatchTargetDialog).toHaveBeenCalledWith('exclude', ['f:amount', 'f:qty'], expect.any(Object));
     });

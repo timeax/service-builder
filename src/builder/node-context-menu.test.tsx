@@ -7,6 +7,7 @@ const refreshTemplates = vi.fn(async () => ({ ok: true, value: [] }));
 const includeMany = vi.fn();
 const excludeMany = vi.fn();
 const rebindMany = vi.fn();
+const submitIncludeManyMock = vi.fn(() => true);
 
 vi.mock('@/workspace/authorization.ts', () => ({
     deriveWorkspaceAuthorization: vi.fn(() => ({
@@ -17,6 +18,38 @@ vi.mock('@/workspace/authorization.ts', () => ({
 }));
 
 vi.mock('./node-context/hooks.ts', () => ({
+    useNodeActions: (target: any) => ({
+        batchSelectionIds: Array.isArray(target?.effectiveTargetIds) && target.effectiveTargetIds.length > 1 ? target.effectiveTargetIds : [],
+        handleDuplicate: vi.fn(),
+        hasServiceSelection: false,
+        handleClearServiceMany: vi.fn(),
+        submitRebindMany: vi.fn(() => true),
+        submitIncludeMany: submitIncludeManyMock,
+        submitExcludeMany: vi.fn(() => true),
+        handleClearRelationsMany: vi.fn(),
+        handleRenameLabelsMany: vi.fn(),
+        handleSetPricingRoleMany: vi.fn(),
+        handleClearFieldValidationMany: vi.fn(),
+        handleClearFieldDefaultsMany: vi.fn(),
+        handleAutoCreateMissingOptions: vi.fn(),
+        handleClearAllOptionsMany: vi.fn(),
+        handleRemoveNoticesForNodes: vi.fn(),
+        handleSetNoticesVisibilityForNodes: vi.fn(),
+        handleCopyId: vi.fn(),
+        handleSaveAsTemplate: vi.fn(),
+        canQuickAddFallbacks: false,
+        handleOpenFallbackQuickAdd: vi.fn(),
+        isFieldOptionsShown: false,
+        handleToggleFieldOptions: vi.fn(),
+        canMoveUp: false,
+        canMoveDown: false,
+        canMoveContextUp: false,
+        canMoveContextDown: false,
+        handleMoveUp: vi.fn(),
+        handleMoveDown: vi.fn(),
+        handleMoveUpInContext: vi.fn(),
+        handleMoveDownInContext: vi.fn(),
+    }),
     useDropHandling: () => ({
         canAcceptDropPayload: () => false,
         handleNodeDrop: () => false,
@@ -108,6 +141,7 @@ describe('NodeContextMenuProvider template save scope', () => {
         includeMany.mockClear();
         excludeMany.mockClear();
         rebindMany.mockClear();
+        submitIncludeManyMock.mockClear();
     });
 
     function Opener() {
@@ -171,12 +205,13 @@ describe('NodeContextMenuProvider template save scope', () => {
         );
 
         fireEvent.click(screen.getByText('Open Menu'));
+        fireEvent.click(await screen.findByText('Structure / Visibility'));
         fireEvent.click(await screen.findByText('Include in...'));
 
         const targetInput = await screen.findByRole('textbox');
         fireEvent.change(targetInput, { target: { value: 'f:target' } });
         fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
-        await waitFor(() => expect(includeMany).toHaveBeenCalledWith('f:target', ['f:amount', 'f:qty']));
+        await waitFor(() => expect(submitIncludeManyMock).toHaveBeenCalledWith('f:target', ['f:amount', 'f:qty']));
     });
 });

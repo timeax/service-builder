@@ -95,6 +95,9 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
         submit: (targetId: string, selectionIds: string[]) => boolean;
     } | null>(null);
     const [batchTargetId, setBatchTargetId] = useState('');
+    const [renameLabelsDialog, setRenameLabelsDialog] = useState<{ open: boolean; selectionIds: string[] } | null>(null);
+    const [renameLabelPrefix, setRenameLabelPrefix] = useState('');
+    const [renameLabelSuffix, setRenameLabelSuffix] = useState('');
 
     const menuRef = useRef<HTMLDivElement | null>(null);
     const dialRef = useRef<HTMLDivElement | null>(null);
@@ -159,14 +162,16 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
             const node = canvas.selector.getNode(input.nodeId);
             const inferred = input.nodeKind ?? (node?.kind as NodeKind | undefined) ?? inferNodeKindFromId(input.nodeId) ?? undefined;
             if (!inferred || (inferred !== 'tag' && inferred !== 'field' && inferred !== 'option')) return;
+            const normalizeIds = (value: unknown) => (Array.isArray(value) ? value : []).map(String).filter(Boolean);
+            const selection = normalizeIds((canvas as any).selection);
             const selectionIds = Array.from(
                 new Set(
                     [
-                        ...canvas.selection,
-                        ...((selectionInfo.ids ?? []) as string[]),
-                        ...((selectionInfo.tagIds ?? []) as string[]),
-                        ...((selectionInfo.fieldIds ?? []) as string[]),
-                        ...((selectionInfo.optionIds ?? []) as string[]),
+                        ...selection,
+                        ...normalizeIds(selectionInfo.ids),
+                        ...normalizeIds(selectionInfo.tagIds),
+                        ...normalizeIds(selectionInfo.fieldIds),
+                        ...normalizeIds(selectionInfo.optionIds),
                     ]
                         .filter(Boolean)
                         .map(String),
@@ -188,7 +193,7 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
                 clientY: input.clientY,
             });
         },
-        [canvas.selection, canvas.selector, selectionInfo.fieldIds, selectionInfo.ids, selectionInfo.optionIds, selectionInfo.tagIds],
+        [canvas, canvas.selector, selectionInfo.fieldIds, selectionInfo.ids, selectionInfo.optionIds, selectionInfo.tagIds],
     );
     const openEdgeContextMenu = useCallback((input: OpenEdgeContextMenuInput) => {
         setEdgeTarget(input);
@@ -288,24 +293,6 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
     }, [notices]);
 
     useEffect(() => {
-        if (!target) return;
-        const onPointerDown = (event: PointerEvent) => {
-            const el = menuRef.current;
-            if (!el || el.contains(event.target as Node)) return;
-            setTarget(null);
-        };
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') setTarget(null);
-        };
-        window.addEventListener('pointerdown', onPointerDown);
-        window.addEventListener('keydown', onKeyDown);
-        return () => {
-            window.removeEventListener('pointerdown', onPointerDown);
-            window.removeEventListener('keydown', onKeyDown);
-        };
-    }, [target]);
-
-    useEffect(() => {
         if (!edgeTarget) return;
         const onPointerDown = (event: PointerEvent) => {
             const el = menuRef.current;
@@ -343,28 +330,19 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (!target) return;
-        const timeout = window.setTimeout(() => {
-            if (import.meta.env.DEV) console.warn('[node-context] Auto-closing stale context menu', { nodeId: target.nodeId });
-            setTarget(null);
-        }, OVERLAY_STALE_TIMEOUT_MS);
+        const timeout = window.setTimeout(() => setTarget(null), OVERLAY_STALE_TIMEOUT_MS);
         return () => window.clearTimeout(timeout);
     }, [target]);
 
     useEffect(() => {
         if (!edgeTarget) return;
-        const timeout = window.setTimeout(() => {
-            if (import.meta.env.DEV) console.warn('[node-context] Auto-closing stale edge context menu', { edgeId: edgeTarget.edgeId });
-            closeEdgeContextMenu();
-        }, OVERLAY_STALE_TIMEOUT_MS);
+        const timeout = window.setTimeout(() => closeEdgeContextMenu(), OVERLAY_STALE_TIMEOUT_MS);
         return () => window.clearTimeout(timeout);
     }, [closeEdgeContextMenu, edgeTarget]);
 
     useEffect(() => {
         if (!dropIntent) return;
-        const timeout = window.setTimeout(() => {
-            if (import.meta.env.DEV) console.warn('[node-context] Auto-closing stale drop dial', { nodeId: dropIntent.receiver.nodeId });
-            setDropIntent(null);
-        }, OVERLAY_STALE_TIMEOUT_MS);
+        const timeout = window.setTimeout(() => setDropIntent(null), OVERLAY_STALE_TIMEOUT_MS);
         return () => window.clearTimeout(timeout);
     }, [dropIntent]);
 
@@ -399,6 +377,7 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
     }, [auth.canEditBranchContent, canvas.api.editor, dialogTarget, editDecision.reason, emitNodeError, renameValue]);
 
     const handleDelete = useCallback(() => {
+        console.log(dialogTarget, " this came here...")
         if (!dialogTarget) return;
         if (!auth.canEditBranchContent) {
             emitNodeError(editDecision.reason ?? 'Editing is disabled for this actor.', { action: 'delete-node' });
@@ -475,6 +454,32 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
         setBatchTargetDialog(null);
         setBatchTargetId('');
     }, [batchTargetDialog, batchTargetId, batchTargetOptions, emitNodeError]);
+
+    const openRenameLabelsDialog = useCallback((selectionIds: string[]) => {
+        const normalized = Array.from(new Set((selectionIds ?? []).map(String).filter(Boolean)));
+        if (!normalized.length) return;
+        setRenameLabelsDialog({ open: true, selectionIds: normalized });
+        setRenameLabelPrefix('');
+        setRenameLabelSuffix('');
+        setTarget(null);
+    }, []);
+
+    const handleRenameLabelsConfirm = useCallback(() => {
+        if (!renameLabelsDialog) return;
+        if (!auth.canEditBranchContent) {
+            emitNodeError(editDecision.reason ?? 'Editing is disabled for this actor.', { action: 'rename-labels-many' });
+            return;
+        }
+        const editorAny = canvas.api.editor as any;
+        if (typeof editorAny.renameLabelsMany !== 'function') {
+            emitNodeError('Batch label rename is unavailable on this editor instance', { action: 'rename-labels-many' });
+            return;
+        }
+        editorAny.renameLabelsMany(renameLabelsDialog.selectionIds, { prefix: renameLabelPrefix, suffix: renameLabelSuffix });
+        setRenameLabelsDialog(null);
+        setRenameLabelPrefix('');
+        setRenameLabelSuffix('');
+    }, [auth.canEditBranchContent, canvas.api.editor, editDecision.reason, emitNodeError, renameLabelPrefix, renameLabelSuffix, renameLabelsDialog]);
 
     const templateSaveDraft = useMemo(() => {
         if (!templateSaveFieldId) return null;
@@ -721,7 +726,9 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
             toggleNoticeManager,
         ],
     );
-    const hasPortalContent = Boolean(target || edgeTarget || dropIntent || renameOpen || deleteOpen || noticeManagerOpen || templateSaveOpen || batchTargetDialog?.open);
+    const hasPortalContent = Boolean(
+        target || edgeTarget || dropIntent || renameOpen || deleteOpen || noticeManagerOpen || templateSaveOpen || batchTargetDialog?.open || renameLabelsDialog?.open,
+    );
 
     return (
         <NodeContextMenuContext.Provider value={value}>
@@ -742,6 +749,7 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
                                   anchorStyle={anchorStyle}
                                   menuRef={menuRef}
                                   setRenameValue={setRenameValue}
+                                  openRenameLabelsDialog={openRenameLabelsDialog}
                               />
                           ) : null}
                           {edgeTarget && edgeAnchorStyle ? (
@@ -907,6 +915,34 @@ export function NodeContextMenuProvider({ children }: { children: ReactNode }) {
                                       <AlertDialogFooter>
                                           <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
                                           <AlertDialogAction type="button" onClick={handleBatchTargetConfirm}>
+                                              Apply
+                                          </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                  </div>
+                              </AlertDialogContent>
+                          </AlertDialog>
+
+                          <AlertDialog
+                              open={!!renameLabelsDialog?.open}
+                              onOpenChange={(open) => {
+                                  if (!open) {
+                                      setRenameLabelsDialog(null);
+                                      setRenameLabelPrefix('');
+                                      setRenameLabelSuffix('');
+                                  }
+                              }}
+                          >
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Rename labels</AlertDialogTitle>
+                                      <AlertDialogDescription>Apply a prefix and suffix to selected node labels.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <div className="space-y-4">
+                                      <InputField variant={'text'} label="Prefix" value={renameLabelPrefix} onChange={(event: any) => setRenameLabelPrefix(event.value)} />
+                                      <InputField variant={'text'} label="Suffix" value={renameLabelSuffix} onChange={(event: any) => setRenameLabelSuffix(event.value)} />
+                                      <AlertDialogFooter>
+                                          <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+                                          <AlertDialogAction type="button" onClick={handleRenameLabelsConfirm}>
                                               Apply
                                           </AlertDialogAction>
                                       </AlertDialogFooter>

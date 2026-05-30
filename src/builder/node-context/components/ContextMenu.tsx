@@ -41,6 +41,7 @@ export function ContextMenu({
     anchorStyle,
     menuRef,
     setRenameValue,
+    openRenameLabelsDialog,
 }) {
     const {
         batchSelectionIds,
@@ -51,7 +52,6 @@ export function ContextMenu({
         submitIncludeMany,
         submitExcludeMany,
         handleClearRelationsMany,
-        handleRenameLabelsMany,
         handleSetPricingRoleMany,
         handleClearFieldValidationMany,
         handleClearFieldDefaultsMany,
@@ -140,10 +140,12 @@ export function ContextMenu({
                     align="start"
                     side="right"
                     sideOffset={0}
+                    onEscapeKeyDown={() => setTarget(null)}
+                    onInteractOutside={() => setTarget(null)}
                     className="w-64 max-h-[calc(100vh-24px)] overflow-y-auto rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-950"
                 >
                     <DropdownMenuItem
-                        onClick={() => {
+                        onSelect={() => {
                             setRenameValue(getNodeLabel(activeNode, target.nodeId));
                             setDialogTarget(target);
                             setRenameOpen(true);
@@ -152,13 +154,13 @@ export function ContextMenu({
                     >
                         Rename
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDuplicate}>{isBatchMenu ? 'Duplicate selected' : 'Duplicate'}</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleDuplicate()}>{isBatchMenu ? 'Duplicate selected' : 'Duplicate'}</DropdownMenuItem>
                     {isBatchMenu ? (
                         <>
                             <BatchSection label="Primary">
                                 <DropdownMenuItem
                                     variant="destructive"
-                                    onClick={() => {
+                                    onSelect={() => {
                                         setDialogTarget(target);
                                         setDeleteOpen(true);
                                         setTarget(null);
@@ -169,7 +171,7 @@ export function ContextMenu({
                             </BatchSection>
                             {hasServiceSelection ? (
                                 <BatchSection label="Service">
-                                    <DropdownMenuItem onClick={handleClearServiceMany}>Unlink service IDs</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleClearServiceMany()}>Unlink service IDs</DropdownMenuItem>
                                 </BatchSection>
                             ) : null}
                             <BatchSection label="Structure / Visibility">
@@ -206,30 +208,29 @@ export function ContextMenu({
                                 >
                                     Exclude from...
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleClearRelationsMany}>Clear includes/excludes</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleClearRelationsMany()}>Clear includes/excludes</DropdownMenuItem>
                             </BatchSection>
                             <BatchSection label="Fields">
                                 <DropdownMenuItem
-                                    onClick={() => {
-                                        const prefix = window.prompt('Label prefix', '') ?? '';
-                                        const suffix = window.prompt('Label suffix', '') ?? '';
-                                        handleRenameLabelsMany(prefix, suffix);
+                                    onSelect={(event) => {
+                                        event.preventDefault();
+                                        openRenameLabelsDialog?.(batchSelectionIds);
                                     }}
                                 >
                                     Rename labels...
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleSetPricingRoleMany('base')}>Set pricing role: Base</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleSetPricingRoleMany('utility')}>Set pricing role: Utility</DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleClearFieldValidationMany}>Clear validation</DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleClearFieldDefaultsMany}>Clear defaults</DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleAutoCreateMissingOptions}>Auto-create missing options</DropdownMenuItem>
-                                <DropdownMenuItem variant="destructive" onClick={handleClearAllOptionsMany}>
+                                <DropdownMenuItem onSelect={() => handleSetPricingRoleMany('base')}>Set pricing role: Base</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleSetPricingRoleMany('utility')}>Set pricing role: Utility</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleClearFieldValidationMany()}>Clear validation</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleClearFieldDefaultsMany()}>Clear defaults</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleAutoCreateMissingOptions()}>Auto-create missing options</DropdownMenuItem>
+                                <DropdownMenuItem variant="destructive" onSelect={() => handleClearAllOptionsMany()}>
                                     Clear all options
                                 </DropdownMenuItem>
                             </BatchSection>
                             <BatchSection label="Notices">
                                 <DropdownMenuItem
-                                    onClick={() => {
+                                    onSelect={() => {
                                         openNoticeManager({
                                             mode: 'create',
                                             target: {
@@ -243,44 +244,36 @@ export function ContextMenu({
                                 >
                                     Add notice to selected
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleRemoveNoticesForNodes}>Remove notices for selected</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleSetNoticesVisibilityForNodes('public')}>Set notices public</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleSetNoticesVisibilityForNodes('private')}>Set notices private</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleRemoveNoticesForNodes()}>Remove notices for selected</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleSetNoticesVisibilityForNodes('public')}>Set notices public</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleSetNoticesVisibilityForNodes('private')}>Set notices private</DropdownMenuItem>
                             </BatchSection>
                         </>
                     ) : null}
                     {showWireframeMoveActions ? (
                         <>
-                            <DropdownMenuItem asChild>
-                                <button type="button" disabled={!canMoveUp} onClick={handleMoveUp}>
-                                    Move up
-                                </button>
+                            <DropdownMenuItem disabled={!canMoveUp} onSelect={() => handleMoveUp()}>
+                                Move up
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <button type="button" disabled={!canMoveDown} onClick={handleMoveDown}>
-                                    Move down
-                                </button>
+                            <DropdownMenuItem disabled={!canMoveDown} onSelect={() => handleMoveDown()}>
+                                Move down
                             </DropdownMenuItem>
                         </>
                     ) : null}
                     {showWireframeContextMoveActions ? (
                         <>
-                            <DropdownMenuItem asChild>
-                                <button type="button" disabled={!canMoveContextUp} onClick={handleMoveUpInContext}>
-                                    Move up (in context)
-                                </button>
+                            <DropdownMenuItem disabled={!canMoveContextUp} onSelect={() => handleMoveUpInContext()}>
+                                Move up (in context)
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <button type="button" disabled={!canMoveContextDown} onClick={handleMoveDownInContext}>
-                                    Move down (in context)
-                                </button>
+                            <DropdownMenuItem disabled={!canMoveContextDown} onSelect={() => handleMoveDownInContext()}>
+                                Move down (in context)
                             </DropdownMenuItem>
                         </>
                     ) : null}
-                    <DropdownMenuItem onClick={() => void handleCopyId()}>Copy ID</DropdownMenuItem>
-                    {canQuickAddFallbacks ? <DropdownMenuItem onClick={handleOpenFallbackQuickAdd}>Add fallbacks</DropdownMenuItem> : null}
+                    <DropdownMenuItem onSelect={() => void handleCopyId()}>Copy ID</DropdownMenuItem>
+                    {canQuickAddFallbacks ? <DropdownMenuItem onSelect={() => handleOpenFallbackQuickAdd()}>Add fallbacks</DropdownMenuItem> : null}
                     <DropdownMenuItem
-                        onClick={() => {
+                        onSelect={() => {
                             openNoticeManager({
                                 mode: 'create',
                                 target: {
@@ -295,15 +288,15 @@ export function ContextMenu({
                         Add notice
                     </DropdownMenuItem>
                     {target.nodeKind === 'field' ? (
-                        <DropdownMenuItem onClick={handleToggleFieldOptions}>
+                        <DropdownMenuItem onSelect={() => handleToggleFieldOptions()}>
                             {isFieldOptionsShown ? 'Hide option nodes' : 'Show option nodes'}
                         </DropdownMenuItem>
                     ) : null}
-                    {target.nodeKind === 'field' ? <DropdownMenuItem onClick={() => void handleSaveAsTemplate()}>Save as template</DropdownMenuItem> : null}
+                    {target.nodeKind === 'field' ? <DropdownMenuItem onSelect={() => void handleSaveAsTemplate()}>Save as template</DropdownMenuItem> : null}
                     {!isBatchMenu ? (
                         <DropdownMenuItem
                             variant="destructive"
-                            onClick={() => {
+                            onSelect={() => {
                                 setDialogTarget(target);
                                 setDeleteOpen(true);
                                 setTarget(null);
