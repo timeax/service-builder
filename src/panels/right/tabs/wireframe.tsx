@@ -275,7 +275,7 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
                                 {visibleFields.length ? (
                                     visibleFields.map((field) => {
                                         return (
-                                            <div onClick={() => select(field.id)} className="cursor-pointer pb-2" key={field.id}>
+                                            <div onDoubleClick={() => select(field.id)} className="cursor-pointer pb-2" key={field.id}>
                                                 <div
                                                     onContextMenu={(event) => {
                                                         event.preventDefault();
