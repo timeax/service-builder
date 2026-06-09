@@ -211,7 +211,9 @@ function AddServicePopover({
         [liveSnapshot.usedServiceIds, servicesMap],
     );
     const parsedManualPrimaryRate = useMemo(() => {
-        const value = Number(manualPrimaryRate.trim());
+        const trimmedRate = manualPrimaryRate.trim();
+        if (!trimmedRate) return null;
+        const value = Number(trimmedRate);
         return Number.isFinite(value) ? value : null;
     }, [manualPrimaryRate]);
     const hasValidCustomPrimary = useMemo(() => {
@@ -219,6 +221,7 @@ function AddServicePopover({
         if (rateContextSource === 'manual') return parsedManualPrimaryRate != null;
         return Boolean(primaryServiceId);
     }, [parsedManualPrimaryRate, primaryServiceId, rateContextMode, rateContextSource]);
+    const compatibilityFilterEnabled = contextFilterEnabled || rateContextMode === 'custom_primary_rate';
 
     useEffect(() => {
         if (primaryServiceId && contextServiceOptions.some((option) => option.value === primaryServiceId)) return;
@@ -257,7 +260,7 @@ function AddServicePopover({
     useEffect(() => {
         const requestId = ++compatibleRequestRef.current;
 
-        if (!contextFilterEnabled || !liveSnapshot.selectedTag) {
+        if (!compatibilityFilterEnabled || !liveSnapshot.selectedTag) {
             setCompatibleIds(null);
             return;
         }
@@ -317,7 +320,7 @@ function AddServicePopover({
     }, [
         candidateIds,
         canvas.api.editor,
-        contextFilterEnabled,
+        compatibilityFilterEnabled,
         hasValidCustomPrimary,
         liveSnapshot.selectedTag,
         liveSnapshot.state.selectedButtons,
@@ -337,7 +340,7 @@ function AddServicePopover({
         },
         [canvas.api.editor],
     );
-    const filterActive = contextFilterEnabled || catalogMode === 'catalog';
+    const filterActive = catalogMode === 'catalog' || contextFilterEnabled || (rateContextMode === 'custom_primary_rate' && hasValidCustomPrimary);
 
     const options = useMemo<ServiceOption[]>(() => {
         const lower = query.trim().toLowerCase();

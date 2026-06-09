@@ -247,12 +247,26 @@ describe('AddService catalog/context filter', () => {
         expect(screen.getByText('alpha')).toBeInTheDocument();
     });
 
-    it('passes custom manual rate context to compatibility filtering', async () => {
+    it('applies manual primary rate filtering without enabling current context', async () => {
+        filterServicesForVisibleGroup.mockImplementation((_candidateIds, args) => {
+            if (args.rateContext?.mode === 'custom_primary_rate' && args.rateContext?.source === 'manual' && args.rateContext?.primaryRate === 12) {
+                return [
+                    { id: 101, fitsConstraints: true, passesRate: true, passesPolicies: true },
+                    { id: 202, fitsConstraints: true, passesRate: false, passesPolicies: true },
+                    { id: 303, fitsConstraints: true, passesRate: true, passesPolicies: true },
+                ];
+            }
+
+            return [
+                { id: 101, fitsConstraints: true, passesRate: true, passesPolicies: true },
+                { id: 202, fitsConstraints: true, passesRate: true, passesPolicies: true },
+                { id: 303, fitsConstraints: true, passesRate: true, passesPolicies: true },
+            ];
+        });
         openAddServicePopover();
         fireEvent.click(screen.getByRole('button', { name: 'Service list filter' }));
         await screen.findByText('Service filters');
 
-        fireEvent.click(screen.getByLabelText('Current context'));
         fireEvent.click(screen.getByLabelText('Custom primary rate'));
         fireEvent.click(screen.getByLabelText('Manual rate'));
         fireEvent.change(screen.getByLabelText('Primary rate'), { target: { value: '12' } });
@@ -269,5 +283,24 @@ describe('AddService catalog/context filter', () => {
                 }),
             );
         });
+        await waitFor(() => {
+            expect(screen.getByText('Alpha Service')).toBeInTheDocument();
+            expect(screen.queryByText('Beta Service')).not.toBeInTheDocument();
+            expect(screen.getByText('Gamma Service')).toBeInTheDocument();
+        });
+    });
+
+    it('does not apply custom primary filtering until a manual rate is valid', async () => {
+        openAddServicePopover();
+        fireEvent.click(screen.getByRole('button', { name: 'Service list filter' }));
+        await screen.findByText('Service filters');
+
+        fireEvent.click(screen.getByLabelText('Custom primary rate'));
+        fireEvent.click(screen.getByLabelText('Manual rate'));
+
+        await screen.findByText('Provide a primary service or valid primary rate to apply compatibility filtering.');
+        expect(screen.getByText('Alpha Service')).toBeInTheDocument();
+        expect(screen.getByText('Beta Service')).toBeInTheDocument();
+        expect(screen.getByText('Gamma Service')).toBeInTheDocument();
     });
 });
