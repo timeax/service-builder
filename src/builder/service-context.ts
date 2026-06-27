@@ -50,6 +50,16 @@ export type ServiceContextSnapshot = {
     usedServiceIds: string[];
 };
 
+type OptionEffectForButton = {
+    forceVisible?: boolean;
+    include?: string[];
+    exclude?: string[];
+};
+
+type ServicePropsWithOptionEffects = ServiceProps & {
+    option_effects_for_buttons?: Record<string, Record<string, OptionEffectForButton>>;
+};
+
 export type ServiceListRowVM = {
     id: string;
     summary: BuilderServiceSummary;
@@ -86,17 +96,14 @@ export function createEmptyServiceContextSnapshot(state: ServiceContextState, pr
 export function createDefaultServiceContext(props?: ServiceProps | null, preferredTagId?: string | null): ServiceContextState {
     const tagIds = (props?.filters ?? []).map((tag) => tag.id);
     return {
-        selectedTagId: preferredTagId && tagIds.includes(preferredTagId) ? preferredTagId : tagIds[0] ?? null,
+        selectedTagId: preferredTagId && tagIds.includes(preferredTagId) ? preferredTagId : (tagIds[0] ?? null),
         selectedButtons: [],
         strictSafety: true,
         enforcePolicies: true,
     };
 }
 
-export function sanitizeServiceContext(
-    snapshot: ServiceContextSnapshot,
-    state: ServiceContextState,
-): ServiceContextState {
+export function sanitizeServiceContext(snapshot: ServiceContextSnapshot, state: ServiceContextState): ServiceContextState {
     const allowed = new Set(snapshot.buttonGroups.flatMap((group) => group.options.map((option) => option.id)));
     const selectedButtons = state.selectedButtons.filter((id) => allowed.has(id));
     if (selectedButtons.length === state.selectedButtons.length) return state;
@@ -123,7 +130,10 @@ export async function buildServiceContextSnapshot(args: {
             const sandbox = createBuilder({ serviceMap });
             sandbox.load(props);
 
-            const visibility = sandbox.resolveVisibility(selectedTag.id, args.state.selectedButtons);
+            const visibility =
+                typeof (sandbox as any).resolveVisibility === 'function'
+                    ? (sandbox as any).resolveVisibility(selectedTag.id, args.state.selectedButtons)
+                    : buildFallbackVisibility(props, sandbox.visibleFields(selectedTag.id, args.state.selectedButtons), args.state.selectedButtons);
             const visibleFieldIds = visibility.fieldIds;
             const buttonGroups = buildButtonGroups(props.fields ?? [], visibleFieldIds, visibility.optionsByFieldId);
             const usedServiceIds = collectUsedServiceIds({
@@ -144,6 +154,48 @@ export async function buildServiceContextSnapshot(args: {
             });
         }, 0);
     });
+}
+
+function buildFallbackVisibility(props: ServiceProps, visibleFieldIds: readonly string[], selectedButtons: readonly string[]) {
+    const fieldIds = new Set(visibleFieldIds.map(String));
+    const includesByFieldId = new Map<string, Set<string>>();
+    const excludesByFieldId = new Map<string, Set<string>>();
+    const effectMap = (props as ServicePropsWithOptionEffects).option_effects_for_buttons ?? {};
+
+    for (const triggerId of selectedButtons) {
+        const targets = effectMap[String(triggerId)];
+        if (!targets) continue;
+
+        for (const [targetFieldId, effect] of Object.entries(targets)) {
+            if (effect.forceVisible === true) fieldIds.add(targetFieldId);
+            if (effect.include?.length) {
+                const includes = includesByFieldId.get(targetFieldId) ?? new Set<string>();
+                effect.include.forEach((id) => includes.add(String(id)));
+                includesByFieldId.set(targetFieldId, includes);
+            }
+            if (effect.exclude?.length) {
+                const excludes = excludesByFieldId.get(targetFieldId) ?? new Set<string>();
+                effect.exclude.forEach((id) => excludes.add(String(id)));
+                excludesByFieldId.set(targetFieldId, excludes);
+            }
+        }
+    }
+
+    const optionsByFieldId: Record<string, string[]> = {};
+    for (const field of props.fields ?? []) {
+        const include = includesByFieldId.get(field.id);
+        const exclude = excludesByFieldId.get(field.id);
+        if (!include && !exclude) continue;
+
+        const allowed = include ? new Set(include) : new Set(walkFieldOptions(field).map((visit) => visit.option.id));
+        for (const optionId of exclude ?? []) allowed.delete(optionId);
+        optionsByFieldId[field.id] = Array.from(allowed);
+    }
+
+    return {
+        fieldIds: Array.from(fieldIds),
+        optionsByFieldId,
+    };
 }
 
 export function buildServiceRowVM(args: {
@@ -189,16 +241,17 @@ function buildButtonGroups(
         .filter((field) => visibleSet.has(field.id))
         .map((field) => {
             const optionAllowList = visibleOptionsByFieldId[field.id] ? new Set(visibleOptionsByFieldId[field.id]) : null;
-            const optionVisits = walkFieldOptions(field).filter((visit) => visit.option.id && (!optionAllowList || optionAllowList.has(visit.option.id)));
+            const optionVisits = walkFieldOptions(field).filter(
+                (visit) => visit.option.id && (!optionAllowList || optionAllowList.has(visit.option.id)),
+            );
             const options = optionVisits.length
-                ? optionVisits
-                      .map(({ option }) => ({
-                          id: String(option.id),
-                          label: optionBreadcrumb(field, option.id),
-                          description: `Option in ${field.label}`,
-                          fieldId: field.id,
-                          fieldLabel: field.label,
-                      }))
+                ? optionVisits.map(({ option }) => ({
+                      id: String(option.id),
+                      label: optionBreadcrumb(field, option.id),
+                      description: `Option in ${field.label}`,
+                      fieldId: field.id,
+                      fieldLabel: field.label,
+                  }))
                 : field.button
                   ? [
                         {
@@ -256,7 +309,10 @@ function describeTag(tag: Tag) {
     return constraints.length ? constraints.join(', ') : 'All visible services';
 }
 
-function servicePassesCurrentFilter(check: Pick<ServiceCheck, 'fitsConstraints' | 'passesRate' | 'passesPolicies'>, state?: Pick<ServiceContextState, 'strictSafety' | 'enforcePolicies'>) {
+function servicePassesCurrentFilter(
+    check: Pick<ServiceCheck, 'fitsConstraints' | 'passesRate' | 'passesPolicies'>,
+    state?: Pick<ServiceContextState, 'strictSafety' | 'enforcePolicies'>,
+) {
     const passesPolicies = state?.enforcePolicies === false ? true : check.passesPolicies;
     const safetyPass = check.fitsConstraints && check.passesRate && passesPolicies;
     return state?.strictSafety === false ? true : safetyPass;

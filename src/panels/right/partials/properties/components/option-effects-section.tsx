@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { IncludesList, Section, SectionActionButton, SectionActionTriggerButton } from '@/panels/right/components/sections.tsx';
 import type { FieldNode, OptionNode } from '@timeax/digital-service-engine/core';
-import type { Field, OptionEffectForButton } from '@timeax/digital-service-engine/schema';
+import type { Field } from '@timeax/digital-service-engine/schema';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
 import { useEffect, useMemo, useState } from 'react';
@@ -27,6 +27,21 @@ type FieldChoice = {
     label: string;
     value: string;
     description?: string;
+};
+
+type OptionEffectForButton = {
+    forceVisible?: boolean;
+    include?: string[];
+    exclude?: string[];
+};
+
+type OptionEffectsProps = {
+    option_effects_for_buttons?: Record<string, Record<string, OptionEffectForButton>>;
+};
+
+type OptionEffectEditorApi = {
+    setOptionEffect(triggerId: string, targetFieldId: string, effect: OptionEffectForButton | undefined | null): void;
+    clearOptionEffect(triggerId: string, targetFieldId: string): void;
 };
 
 function arrayValue(value: unknown): string[] {
@@ -66,7 +81,7 @@ export function OptionEffectsSection({ node, capability }: OptionEffectsSectionP
     const sourceFieldId = node.kind === 'option' ? node.field().id : undefined;
     const fields = (canvas.props.fields ?? []).filter((field) => field.id !== sourceFieldId);
     const fieldsById = useMemo(() => new Map(fields.map((field) => [field.id, field])), [fields]);
-    const effectMap = canvas.props.option_effects_for_buttons?.[node.id] ?? {};
+    const effectMap = ((canvas.props as OptionEffectsProps).option_effects_for_buttons?.[node.id] ?? {}) as Record<string, OptionEffectForButton>;
     const rules = useMemo(
         () =>
             Object.entries(effectMap).sort(([left], [right]) => {
@@ -162,7 +177,9 @@ export function OptionEffectsSection({ node, capability }: OptionEffectsSectionP
                                                 className="text-gray-400 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
                                                 aria-label={`Remove ${field?.label ?? targetFieldId} option effect`}
                                                 title="Remove"
-                                                onClick={() => canvas.api.editor.clearOptionEffect(node.id, targetFieldId)}
+                                                onClick={() =>
+                                                    (canvas.api.editor as unknown as OptionEffectEditorApi).clearOptionEffect(node.id, targetFieldId)
+                                                }
                                             >
                                                 <span className="text-lg">
                                                     <MdOutlineRemoveCircleOutline />
@@ -223,7 +240,7 @@ function OptionEffectEditor({ open, onOpenChange, triggerId, targetFieldId, fiel
 
     const save = () => {
         if (!target) return;
-        canvas.api.editor.setOptionEffect(
+        (canvas.api.editor as unknown as OptionEffectEditorApi).setOptionEffect(
             triggerId,
             target,
             normalizeDraft({

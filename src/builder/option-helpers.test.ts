@@ -40,8 +40,8 @@ describe('option helpers', () => {
     it('updates only the matched nested option', () => {
         const next = mapOptionsById(field.options, 'o:premium-fast', (option) => ({ ...option, label: 'Express' }));
 
-        expect(next?.[0].children?.[0].label).toBe('Express');
-        expect(next?.[0].children?.[1].label).toBe('Safer delivery');
+        expect((next?.[0] as any).children?.[0].label).toBe('Express');
+        expect((next?.[0] as any).children?.[1].label).toBe('Safer delivery');
         expect(next?.[1]).toBe(field.options[1]);
     });
 
