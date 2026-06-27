@@ -1,3 +1,4 @@
+import { mapOptionsById, optionBreadcrumb } from '@/builder/option-helpers.ts';
 import { describeBinding } from '@/builder/view-models.tsx';
 import { PropertyList } from '@/components/builder/index.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
@@ -7,10 +8,11 @@ import type { OptionNode } from '@timeax/digital-service-engine/core';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
 import { getOptionPropertyCapabilities } from './components/node-capabilities.ts';
+import OptionEffectsSection from './components/option-effects-section.tsx';
 import OrderKindSection from './components/order-kind-section.tsx';
 import QuantitySection from './components/quantity-section.tsx';
-import UtilitySection from './components/utility-section.tsx';
 import { IncExcludeSection } from './components/Union';
+import UtilitySection from './components/utility-section.tsx';
 
 export interface OptionPropertiesProps {
     className?: string;
@@ -24,6 +26,7 @@ export function OptionProperties({ className, node, kinds, defaultKind }: Option
     const capabilities = getOptionPropertyCapabilities(node);
     const field = node.field();
     const options = field.raw.options ?? [];
+    const breadcrumb = optionBreadcrumb(field.raw as any, node.id);
 
     return (
         <div className={className}>
@@ -40,7 +43,7 @@ export function OptionProperties({ className, node, kinds, defaultKind }: Option
                                 label="Label"
                                 value={node.raw.label}
                                 onChange={(e) => {
-                                    const next = options.map((option) => (option.id === node.id ? { ...option, label: e.value } : option));
+                                    const next = mapOptionsById(options, node.id, (option) => ({ ...option, label: e.value }));
                                     canvas.api.editor.updateField(field.id, { options: next });
                                 }}
                             />
@@ -49,14 +52,10 @@ export function OptionProperties({ className, node, kinds, defaultKind }: Option
                                 label="Value"
                                 value={String(node.raw.value ?? '')}
                                 onChange={(e) => {
-                                    const next = options.map((option) =>
-                                        option.id === node.id
-                                            ? {
-                                                  ...option,
-                                                  value: e.value,
-                                              }
-                                            : option,
-                                    );
+                                    const next = mapOptionsById(options, node.id, (option) => ({
+                                        ...option,
+                                        value: e.value,
+                                    }));
                                     canvas.api.editor.updateField(field.id, { options: next });
                                 }}
                             />
@@ -84,10 +83,9 @@ export function OptionProperties({ className, node, kinds, defaultKind }: Option
                             items={
                                 [
                                     { label: 'Parent field', value: field.raw.label },
+                                    { label: 'Option path', value: breadcrumb },
                                     { label: 'Binding', value: describeBinding(node) },
-                                    capabilities.service.canEdit
-                                        ? { label: 'Service id', value: String(node.raw.service_id ?? 'None') }
-                                        : null,
+                                    capabilities.service.canEdit ? { label: 'Service id', value: String(node.raw.service_id ?? 'None') } : null,
                                 ].filter(Boolean) as Array<{ label: string; value: string }>
                             }
                         />
@@ -99,6 +97,8 @@ export function OptionProperties({ className, node, kinds, defaultKind }: Option
                 <Separator />
 
                 <IncExcludeSection node={node} mode="excludes" capability={capabilities.triggerMappings} />
+                <Separator />
+                <OptionEffectsSection node={node} capability={capabilities.triggerMappings} />
                 <Separator />
                 <AddService data={node} readOnly={!capabilities.service.canEdit} readOnlyMessage={capabilities.service.message} />
             </div>

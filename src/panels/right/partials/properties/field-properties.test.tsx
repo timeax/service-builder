@@ -89,6 +89,10 @@ vi.mock('./components/validation-section.tsx', () => ({
     default: () => <div>ValidationSection</div>,
 }));
 
+vi.mock('./components/option-effects-section.tsx', () => ({
+    default: () => <div>OptionEffectsSection</div>,
+}));
+
 vi.mock('./components/Union', () => ({
     IncExcludeSection: () => <div>IncExcludeSection</div>,
 }));

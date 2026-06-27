@@ -1,5 +1,6 @@
 import { getNodePropertyCapabilities } from '@/panels/right/partials/properties/components/node-capabilities.ts';
 import { resolveFieldOptionCapability } from '@/panels/right/partials/properties/components/descriptor-options.ts';
+import { findOptionLocation, moveOptionWithinSiblings } from '@/builder/option-helpers.ts';
 import { deriveWorkspaceAuthorization, getAuthorizationDecision } from '@/workspace/authorization.ts';
 import { useFallbackQuickAdd } from '@/workspace/fallback-quick-add.tsx';
 import { useInputs } from '@timeax/digital-service-engine/react';
@@ -36,6 +37,27 @@ type TemplateFieldCandidate = {
 
 function moveIndex(index: number, direction: MoveDirection) {
     return direction === 'up' ? index - 1 : index + 1;
+}
+
+function moveOptionWithEditor(
+    editor: {
+        patchProps?: (fn: (props: { fields?: any[] }) => void) => void;
+        transact?: (label: string, fn: () => void) => void;
+        placeOption?: (id: string, opts: { index?: number }) => void;
+    },
+    optionId: string,
+    index: number,
+    label: string,
+) {
+    if (typeof editor.patchProps === 'function') {
+        const work = () => editor.patchProps?.((props) => moveOptionWithinSiblings(props.fields, optionId, index));
+        if (typeof editor.transact === 'function') editor.transact(label, work);
+        else work();
+        return true;
+    }
+
+    editor.placeOption?.(optionId, { index });
+    return typeof editor.placeOption === 'function';
 }
 
 export function useNodeActions(
@@ -155,7 +177,7 @@ export function useNodeActions(
 
         const props = canvas.api.builder.getProps() as {
             filters?: Array<{ id: string; bind_id?: string }>;
-            fields?: Array<{ id: string; options?: Array<{ id: string }> }>;
+            fields?: Array<any>;
         };
         if (target.nodeKind === 'tag') {
             const tags = props.filters ?? [];
@@ -172,9 +194,9 @@ export function useNodeActions(
         }
 
         if (target.nodeKind === 'option') {
-            const ownerField = (props.fields ?? []).find((field) => (field.options ?? []).some((option) => option.id === target.nodeId));
-            const options = ownerField?.options ?? [];
-            const index = options.findIndex((option) => option.id === target.nodeId);
+            const location = findOptionLocation(props.fields, target.nodeId);
+            const index = location?.index ?? -1;
+            const options = location?.siblings ?? [];
             return {
                 canMoveUp: index > 0,
                 canMoveDown: index >= 0 && index < options.length - 1,
@@ -390,14 +412,15 @@ export function useNodeActions(
                 if (target.nodeKind === 'option') {
                     if (direction === 'up' && !moveState.canMoveUp) return;
                     if (direction === 'down' && !moveState.canMoveDown) return;
-                    const props = canvas.api.builder.getProps() as { fields?: Array<{ id: string; options?: Array<{ id: string }> }> };
-                    const ownerField = (props.fields ?? []).find((field) => (field.options ?? []).some((option) => option.id === target.nodeId));
-                    const options = ownerField?.options ?? [];
-                    const index = options.findIndex((option) => option.id === target.nodeId);
+                    const props = canvas.api.builder.getProps() as { fields?: Array<any> };
+                    const location = findOptionLocation(props.fields, target.nodeId);
+                    const options = location?.siblings ?? [];
+                    const index = location?.index ?? -1;
                     const next = moveIndex(index, direction);
                     if (index < 0 || next < 0 || next >= options.length) return;
-                    canvas.api.editor.placeOption(target.nodeId, { index: next });
-                    setTarget(null);
+                    if (moveOptionWithEditor(canvas.api.editor as any, target.nodeId, next, direction === 'up' ? 'Move option up' : 'Move option down')) {
+                        setTarget(null);
+                    }
                     return;
                 }
 

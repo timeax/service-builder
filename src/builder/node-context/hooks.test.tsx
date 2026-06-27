@@ -334,6 +334,38 @@ describe('useDropHandling template option id regeneration', () => {
         expect(payload.options.every((option: any) => typeof option.id === 'string' && option.id.startsWith('o:'))).toBe(true);
     });
 
+    it('regenerates nested option ids when dropping templates with child options', async () => {
+        templatesData = [
+            {
+                id: 'tpl:1',
+                definition: {
+                    label: 'Package',
+                    type: 'select',
+                    options: [
+                        {
+                            id: 'o:legacy:parent',
+                            label: 'Premium',
+                            children: [
+                                { id: 'o:legacy:child', label: 'Fast', service_id: 101 },
+                            ],
+                        },
+                    ],
+                },
+            },
+        ];
+        const { result } = renderHook(() => useDropHandling(vi.fn(), vi.fn(), vi.fn()));
+
+        const actions = result.current.actionsForIntent(buildTemplateIntent({ nodeId: 't:root', nodeKind: 'tag' }));
+        await actions.find((action) => action.id === 'bind')?.execute({} as any);
+
+        const payload = addFieldFromDescriptor.mock.calls[0][1];
+        expect(payload.options[0].id).toMatch(/^o:/);
+        expect(payload.options[0].id).not.toBe('o:legacy:parent');
+        expect(payload.options[0].children[0].id).toMatch(/^o:/);
+        expect(payload.options[0].children[0].id).not.toBe('o:legacy:child');
+        expect(payload.options[0].children[0].service_id).toBe(101);
+    });
+
     it('leaves options undefined when template has no options array', async () => {
         templatesData = [{ id: 'tpl:1', definition: { label: 'Plain text', type: 'text' } }];
         const { result } = renderHook(() => useDropHandling(vi.fn(), vi.fn(), vi.fn()));

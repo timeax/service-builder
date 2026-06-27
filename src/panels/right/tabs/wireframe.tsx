@@ -272,8 +272,8 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
                             />
 
                             <div className="border-t border-slate-200 pt-3 flex flex-col gap-2 dark:border-slate-800">
-                                {visibleFields.length ? (
-                                    visibleFields.map((field) => {
+                                {previewFields.length ? (
+                                    previewFields.map(({ field }) => {
                                         return (
                                             <div onDoubleClick={() => select(field.id)} className="cursor-pointer pb-2" key={field.id}>
                                                 <div

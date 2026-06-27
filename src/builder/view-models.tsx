@@ -1,4 +1,5 @@
 import type { BuilderNodeViewModel } from '@/components/builder/index.tsx';
+import { countOptions, filterFieldOptionsById } from '@/builder/option-helpers.ts';
 import type { FieldNode, OptionNode, TagNode } from '@timeax/digital-service-engine/core';
 import type { CommentThread, DgpServiceCapability, Field, FieldOption, Tag } from '@timeax/digital-service-engine/schema';
 import type { UseCanvasReturn, WorkspaceAPI } from '@timeax/digital-service-engine/workspace';
@@ -84,7 +85,7 @@ export function getNodeSummary(node: TagNode | FieldNode | OptionNode) {
     }
 
     if (node.kind === 'field') {
-        const optionCount = node.raw.options?.length ?? 0;
+        const optionCount = countOptions(node.raw as any);
         const ownerCount = node.ownerTags().length;
         return `${node.raw.type} field${optionCount ? `, ${optionCount} option${optionCount === 1 ? '' : 's'}` : ''}${ownerCount ? `, ${ownerCount} owner tag${ownerCount === 1 ? '' : 's'}` : ''}`;
     }
@@ -114,18 +115,29 @@ export function getVisiblePreviewFields(canvas: UseCanvasReturn, tagId?: string 
     if (!resolvedTag) return [];
 
     const optionIds = canvas.selectionInfo.optionIds as string[];
-    const visibleIds = canvas.api.builder.visibleFields(String(resolvedTag), optionIds);
+    const visibility =
+        typeof (canvas.api.builder as any).resolveVisibility === 'function'
+            ? (canvas.api.builder as any).resolveVisibility(String(resolvedTag), optionIds)
+            : { fieldIds: canvas.api.builder.visibleFields(String(resolvedTag), optionIds), optionsByFieldId: {} };
+    const visibleIds = visibility.fieldIds as string[];
+    const optionsByFieldId = (visibility.optionsByFieldId ?? {}) as Record<string, string[]>;
 
     return visibleIds
         .map((id) => {
             const node = canvas.selector.getField(String(id));
             if (!node) return null;
 
+            const allowedOptions = optionsByFieldId[node.id] ? new Set(optionsByFieldId[node.id]) : null;
+            const options = allowedOptions ? (filterFieldOptionsById(node.raw.options, allowedOptions) ?? []) : (node.raw.options ?? []);
+
             return {
                 id,
-                field: node.raw,
+                field: {
+                    ...node.raw,
+                    options,
+                },
                 node,
-                options: node.raw.options ?? [],
+                options,
             };
         })
         .filter(Boolean) as WireframePreviewField[];

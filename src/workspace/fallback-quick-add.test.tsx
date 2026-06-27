@@ -47,6 +47,7 @@ describe('FallbackQuickAddProvider', () => {
             },
             api: {
                 builder: {
+                    getOptions: () => ({}),
                     getProps: () => ({
                         filters: [{ id: 't:root', label: 'Root' }],
                         fields: [{ id: 'f:amount', label: 'Amount', type: 'text', bind_id: 't:root', service_id: 101 }],

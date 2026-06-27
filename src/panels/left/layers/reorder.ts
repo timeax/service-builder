@@ -1,4 +1,5 @@
 import type { ChangeDetail, SortTreeProps } from '@/components/sort-tree/types.ts';
+import { moveOptionWithinSiblings } from '@/builder/option-helpers.ts';
 
 type DropArgs = Parameters<NonNullable<SortTreeProps['canDrop']>>[0];
 
@@ -6,7 +7,7 @@ export type LayersEditorPlacementApi = {
     placeNode: (id: string, opts: { index?: number; scopeTagId?: string }) => void;
     placeOption: (id: string, opts: { index?: number }) => void;
     transact?: (label: string, fn: () => void) => void;
-    patchProps?: (fn: (props: { order_for_tags?: Record<string, string[]> }) => void) => void;
+    patchProps?: (fn: (props: { order_for_tags?: Record<string, string[]>; fields?: any[] }) => void) => void;
 };
 
 function isOptionId(id: string) {
@@ -31,7 +32,7 @@ export function canDropFieldsSameParentOnly(args: DropArgs): boolean {
     const parentId = args.to.parent ? String(args.to.parent.id) : '';
 
     if (isOptionId(draggedId)) {
-        return parentId.startsWith('f:');
+        return parentId.startsWith('f:') || parentId.startsWith('o:');
     }
 
     return parentId === '';
@@ -63,6 +64,14 @@ export function applyFieldTreeReorder(
     const nodeId = String(detail.node.id);
 
     if (isOptionId(nodeId)) {
+        if (typeof args.editor.patchProps === 'function') {
+            const writeAndPlaceOption = () => {
+                args.editor.patchProps?.((props) => moveOptionWithinSiblings(props.fields, nodeId, detail.to.index));
+            };
+            if (typeof args.editor.transact === 'function') args.editor.transact('Reorder option', writeAndPlaceOption);
+            else writeAndPlaceOption();
+            return true;
+        }
         args.editor.placeOption(nodeId, { index: detail.to.index });
         return true;
     }

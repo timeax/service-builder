@@ -90,6 +90,53 @@ describe('layers reorder helpers', () => {
         expect(placeOption).toHaveBeenCalledWith('o:1', { index: 1 });
     });
 
+    it('reorders nested options within their child sibling list when patchProps is available', () => {
+        const preventDefault = vi.fn();
+        const placeOption = vi.fn();
+        const props = {
+            fields: [
+                {
+                    id: 'f:1',
+                    options: [
+                        {
+                            id: 'o:parent',
+                            label: 'Parent',
+                            children: [
+                                { id: 'o:a', label: 'A' },
+                                { id: 'o:b', label: 'B' },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        };
+        const patchProps = vi.fn((fn: (input: typeof props) => void) => fn(props));
+
+        const handled = applyFieldTreeReorder(
+            {
+                type: 'move',
+                node: { id: 'o:b', title: 'Option B' },
+                from: { parent: { id: 'o:parent', title: 'Parent' }, parentPath: ['f:1', 'o:parent'], index: 1, depth: 3 },
+                to: { parent: { id: 'o:parent', title: 'Parent' }, parentPath: ['f:1', 'o:parent'], index: 0, depth: 3 },
+                preventDefault,
+            } as any,
+            {
+                editor: {
+                    placeNode: vi.fn(),
+                    placeOption,
+                    patchProps,
+                },
+                currentTagId: 't:root',
+                contextFieldOrder: ['f:1'],
+            },
+        );
+
+        expect(handled).toBe(true);
+        expect(preventDefault).toHaveBeenCalledTimes(1);
+        expect(placeOption).not.toHaveBeenCalled();
+        expect(props.fields[0].options[0].children.map((option) => option.id)).toEqual(['o:b', 'o:a']);
+    });
+
     it('blocks reparenting in same-parent drop guard', () => {
         const allowed = canDropSameParentOnly({
             from: { parent: { id: 't:1' }, parentPath: ['t:1'], index: 0, depth: 2 },
@@ -107,5 +154,23 @@ describe('layers reorder helpers', () => {
         } as any);
 
         expect(allowed).toBe(false);
+    });
+
+    it('allows option drops under option parents for capability checks in the insert handler', () => {
+        const allowed = canDropFieldsSameParentOnly({
+            dragged: { id: 'o:child' },
+            from: { parent: { id: 'o:old-parent' }, parentPath: ['f:1', 'o:old-parent'], index: 0, depth: 3 },
+            to: { parent: { id: 'o:new-parent' }, parentPath: ['f:1', 'o:new-parent'], index: 0, depth: 3 },
+        } as any);
+
+        expect(allowed).toBe(false);
+
+        const sameParentAllowed = canDropFieldsSameParentOnly({
+            dragged: { id: 'o:child' },
+            from: { parent: { id: 'o:parent' }, parentPath: ['f:1', 'o:parent'], index: 0, depth: 3 },
+            to: { parent: { id: 'o:parent' }, parentPath: ['f:1', 'o:parent'], index: 1, depth: 3 },
+        } as any);
+
+        expect(sameParentAllowed).toBe(true);
     });
 });

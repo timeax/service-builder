@@ -1,3 +1,4 @@
+import { countOptions, walkFieldOptions } from '@/builder/option-helpers.ts';
 import { describeBinding } from '@/builder/view-models.tsx';
 import { PropertyList } from '@/components/builder/index.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
@@ -8,15 +9,16 @@ import { resolveInputDescriptor, useInputs } from '@timeax/digital-service-engin
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
 import { useEffect, useMemo, useState } from 'react';
+import { fieldHasOptions, resolveFieldOptionCapability } from './components/descriptor-options.ts';
 import { DescriptorSettings, getDescriptorUiKeys } from './components/descriptor-settings.tsx';
-import { fieldHasOptions } from './components/descriptor-options.ts';
 import { mergeNodeMeta } from './components/meta.ts';
 import { getFieldPropertyCapabilities } from './components/node-capabilities.ts';
+import OptionEffectsSection from './components/option-effects-section.tsx';
 import OrderKindSection from './components/order-kind-section.tsx';
 import QuantitySection from './components/quantity-section.tsx';
+import { IncExcludeSection } from './components/Union';
 import UtilitySection from './components/utility-section.tsx';
 import ValidationSection from './components/validation-section.tsx';
-import { IncExcludeSection } from './components/Union';
 
 export interface FieldPropertiesProps {
     className?: string;
@@ -37,11 +39,7 @@ const toLabel = (value: string) =>
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
         .join(' ');
 
-const pruneDescriptorDefaults = (
-    defaults: Record<string, unknown>,
-    previousDescriptorKeys: Set<string>,
-    nextDescriptorKeys: Set<string>,
-) => {
+const pruneDescriptorDefaults = (defaults: Record<string, unknown>, previousDescriptorKeys: Set<string>, nextDescriptorKeys: Set<string>) => {
     const nextDefaults = Object.fromEntries(
         Object.entries(defaults).filter(([key]) => !previousDescriptorKeys.has(key) || nextDescriptorKeys.has(key)),
     );
@@ -64,13 +62,19 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
     const [placeholderDraft, setPlaceholderDraft] = useState(placeholderValue);
     const [helpTextDraft, setHelpTextDraft] = useState(helpTextValue);
 
-    const descriptor = useMemo(() => resolveInputDescriptor(registry, currentType as any, currentVariant as any), [currentType, currentVariant, registry]);
+    const descriptor = useMemo(
+        () => resolveInputDescriptor(registry, currentType as any, currentVariant as any),
+        [currentType, currentVariant, registry],
+    );
     const descriptorForMulti = useMemo(() => {
         if (!descriptor) return null;
         return descriptor.multi?.autoEnable === true;
     }, [descriptor]);
     const descriptorUi = descriptor?.ui ?? {};
     const descriptorKeySet = useMemo(() => new Set(getDescriptorUiKeys(descriptorUi)), [descriptorUi]);
+    const optionCapability = useMemo(() => resolveFieldOptionCapability(registry, node.raw), [registry, node.raw]);
+    const totalOptions = useMemo(() => countOptions(node.raw as any), [node.raw.options]);
+    const optionVisits = useMemo(() => walkFieldOptions(node.raw as any), [node.raw.options]);
 
     useEffect(() => {
         setNameDraft(nameValue);
@@ -91,9 +95,7 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
             kinds.push(currentType);
         }
 
-        return kinds
-            .map((value) => ({ label: toLabel(value), value }))
-            .sort((a, b) => a.label.localeCompare(b.label));
+        return kinds.map((value) => ({ label: toLabel(value), value })).sort((a, b) => a.label.localeCompare(b.label));
     }, [currentType, registry]);
 
     const variantEntries = useMemo(() => {
@@ -136,14 +138,11 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
             multi: nextMulti,
         });
 
-        canvas.api.editor.updateField(
-            node.id,
-            {
-                type: nextType as any,
-                defaults: nextDefaults,
-                meta: nextMeta,
-            } as any,
-        );
+        canvas.api.editor.updateField(node.id, {
+            type: nextType as any,
+            defaults: nextDefaults,
+            meta: nextMeta,
+        } as any);
 
         if (nextDescriptor?.options?.supported === true && nextDescriptor?.options?.autoCreate === true && !fieldHasOptions(node.raw)) {
             (canvas.api.editor as any).autoCreateOptionsMany([node.id]);
@@ -240,9 +239,7 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
                     kinds={kinds}
                     defaultKind={defaultKind}
                     disabled={!canSetOrderKind}
-                    disabledMessage={
-                        !canSetOrderKind ? 'Order kind is supported only on button fields without options.' : undefined
-                    }
+                    disabledMessage={!canSetOrderKind ? 'Order kind is supported only on button fields without options.' : undefined}
                 />
                 <Separator />
 
@@ -311,7 +308,14 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
                         <PropertyList
                             items={[
                                 { label: 'Owners', value: describeBinding(node) },
-                                { label: 'Options', value: options.length ? String(options.length) : 'No options' },
+                                {
+                                    label: 'Options',
+                                    value: totalOptions
+                                        ? options.length === totalOptions
+                                            ? String(totalOptions)
+                                            : `${options.length} top-level / ${totalOptions} total`
+                                        : 'No options',
+                                },
                                 { label: 'Selection mode', value: node.raw.meta?.multi ? 'Multiple' : 'Single' },
                             ]}
                         />
@@ -325,12 +329,16 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
                                 <Section.Title>Options</Section.Title>
                             </Section.Header>
                             <Section.Content>
-                                <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">Current option labels available on this field.</p>
+                                <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+                                    Current option labels available on this field
+                                    {optionCapability.supportsChildOptions ? ', including child options' : ''}.
+                                </p>
                                 <div className="space-y-2">
-                                    {options.map((option) => (
+                                    {optionVisits.map(({ option, depth }) => (
                                         <div
                                             key={option.id}
                                             className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-slate-900"
+                                            style={{ marginLeft: depth ? depth * 14 : undefined }}
                                         >
                                             <span className="font-medium text-slate-900 dark:text-slate-100">{option.label}</span>
                                             <button
@@ -354,6 +362,8 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
                         <IncExcludeSection node={node} mode="includes" capability={capabilities.triggerMappings} />
                         <Separator />
                         <IncExcludeSection node={node} mode="excludes" capability={capabilities.triggerMappings} />
+                        <Separator />
+                        <OptionEffectsSection node={node} capability={capabilities.triggerMappings} />
                     </>
                 ) : (
                     <Section>

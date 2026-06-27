@@ -1,4 +1,5 @@
 import { formatEstimate } from '@/builder/view-models.tsx';
+import { optionBreadcrumb, walkFieldOptions } from '@/builder/option-helpers.ts';
 import type { DgpServiceCapability, Field, ServiceProps, Tag } from '@timeax/digital-service-engine/schema';
 import type { UseCanvasReturn, WorkspaceAPI } from '@timeax/digital-service-engine/workspace';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -199,11 +200,11 @@ function buildServiceNodeMap(props?: ServiceProps | null) {
 
     for (const field of props.fields ?? []) {
         nodes.set(field.id, toFieldDescriptor(field));
-        for (const option of field.options ?? []) {
+        for (const { option } of walkFieldOptions(field)) {
             nodes.set(option.id, {
                 id: option.id,
                 kind: 'option',
-                label: option.label,
+                label: optionBreadcrumb(field, option.id),
                 serviceId: option.service_id,
                 parentFieldLabel: field.label,
             });

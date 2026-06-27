@@ -28,6 +28,11 @@ export function sanitizeOption(option: Record<string, unknown>): Record<string, 
     const next = deepClone(option);
     delete (next as Record<string, unknown>).id;
     delete (next as Record<string, unknown>).service_id;
+    if (Array.isArray(next.children)) {
+        next.children = next.children.map((child) =>
+            child && typeof child === 'object' ? sanitizeOption(child as Record<string, unknown>) : child,
+        );
+    }
     return next;
 }
 
@@ -137,11 +142,16 @@ export function toSingleFieldDefinition(definition: unknown): Record<string, unk
 export function withFreshOptionIds(field: Record<string, unknown>): Record<string, unknown> {
     const next = deepClone(field);
     if (Array.isArray(next.options)) {
-        next.options = next.options.map((option) => {
-            const raw = option && typeof option === 'object' ? ({ ...(option as Record<string, unknown>) } as Record<string, unknown>) : {};
-            raw.id = buildOptionId();
-            return raw;
-        });
+        next.options = next.options.map(withFreshOptionId);
     }
     return next;
+}
+
+function withFreshOptionId(option: unknown): Record<string, unknown> {
+    const raw = option && typeof option === 'object' ? ({ ...(option as Record<string, unknown>) } as Record<string, unknown>) : {};
+    raw.id = buildOptionId();
+    if (Array.isArray(raw.children)) {
+        raw.children = raw.children.map(withFreshOptionId);
+    }
+    return raw;
 }

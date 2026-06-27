@@ -1,16 +1,16 @@
 import { useNodeContextMenu } from '@/builder/node-context-menu.tsx';
-import { buildFieldId } from '@/builder/node-context/utils.ts';
+import { buildFieldId, buildOptionId } from '@/builder/node-context/utils.ts';
+import { addChildOption, findOptionLocation } from '@/builder/option-helpers.ts';
 import { EmptyState, PanelSearch } from '@/components/builder/index.tsx';
 import { SortTree, type SortTreeProps, type TreeNode } from '@/components/sort-tree';
 import type { SortTreeRef } from '@/components/sort-tree/types.ts';
 import { Panel } from '@/components/ui/panel.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
-import {
-    shouldBlockOptionCreation
-} from '@/panels/right/partials/properties/components/descriptor-options.ts';
+import { resolveFieldOptionCapability, shouldBlockOptionCreation } from '@/panels/right/partials/properties/components/descriptor-options.ts';
 import { useInputs } from '@timeax/digital-service-engine/react';
 import type { Field, FieldOption, Tag } from '@timeax/digital-service-engine/schema';
 import { useCanvas } from '@timeax/digital-service-engine/workspace';
+import { FolderPlus } from 'lucide-react';
 import { type FocusEventHandler, useMemo, useRef, useState } from 'react';
 import { BsXDiamondFill } from 'react-icons/bs';
 import { CiSearch } from 'react-icons/ci';
@@ -18,12 +18,7 @@ import { LuTags } from 'react-icons/lu';
 import { MdOutlineAdd } from 'react-icons/md';
 import { RxInput } from 'react-icons/rx';
 import { VscNewFolder } from 'react-icons/vsc';
-import {
-    applyFieldTreeReorder,
-    applyTagTreeReorder,
-    canDropFieldsSameParentOnly,
-    canDropSameParentOnly
-} from './reorder.ts';
+import { applyFieldTreeReorder, applyTagTreeReorder, canDropFieldsSameParentOnly, canDropSameParentOnly } from './reorder.ts';
 
 function filterTree<T>(nodes: Array<TreeNode<T>>, query: string): Array<TreeNode<T>> {
     if (!query.trim()) return nodes;
@@ -50,7 +45,7 @@ const Layers = () => {
     const { registry } = useInputs();
     const { openNodeContextMenu, canAcceptDropPayload, handleNodeDrop } = useNodeContextMenu();
     const tagsRef = useRef<SortTreeRef<Tag>>(null);
-    const fieldsRef = useRef<SortTreeRef<Field>>(null);
+    const fieldsRef = useRef<SortTreeRef<Field | FieldOption>>(null);
     const tagSearchInputRef = useRef<HTMLInputElement>(null);
     const fieldSearchInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,6 +121,51 @@ const Layers = () => {
 
         if (detail.type === 'insert' && detail.context.via == 'ui.create') {
             const parent = detail.to.parent.id as string;
+            if (parent.startsWith('o:')) {
+                const props = canvas.api.builder.getProps() as { fields?: Field[] };
+                const location = findOptionLocation(props.fields, parent);
+                if (!location) {
+                    canvas.api.emit('error', {
+                        message: 'Unable to find the parent option for this child option.',
+                        meta: { action: 'add-child-option', optionId: parent },
+                    });
+                    return;
+                }
+
+                const capability = resolveFieldOptionCapability(registry, location.field as any);
+                if (!capability.supportsChildOptions) {
+                    canvas.api.emit('error', {
+                        message: 'This field type does not support child options.',
+                        meta: { action: 'add-child-option', fieldId: location.field.id, optionId: parent },
+                    });
+                    return;
+                }
+
+                const editorAny = canvas.api.editor as any;
+                const optionId = buildOptionId();
+                const work = () =>
+                    editorAny.patchProps?.((props: { fields?: Field[] }) => {
+                        addChildOption(props.fields, parent, {
+                            id: optionId,
+                            label: detail.node.title,
+                            value: capability.childDefaultValue,
+                        } as any);
+                    });
+
+                if (typeof editorAny.patchProps === 'function') {
+                    if (typeof editorAny.transact === 'function') editorAny.transact('Add child option', work);
+                    else work();
+                    canvas.api.select([optionId], optionId);
+                    return;
+                }
+
+                canvas.api.emit('error', {
+                    message: 'Child option creation is unavailable on this editor instance.',
+                    meta: { action: 'add-child-option', fieldId: location.field.id, optionId: parent },
+                });
+                return;
+            }
+
             const field = canvas.api.editor.getNode(parent)?.data;
             if (field && shouldBlockOptionCreation(registry, field as any)) {
                 canvas.api.emit('error', {
@@ -161,6 +201,34 @@ const Layers = () => {
 
     const handleFieldSearchBlur: FocusEventHandler<HTMLInputElement> = () => {
         if (!fieldSearch.trim()) setIsFieldSearchOpen(false);
+    };
+
+    const addFieldToCurrentTag = () => {
+        const fieldId = buildFieldId();
+        canvas.api.editor.addFieldFromDescriptor(registry, {
+            id: fieldId,
+            label: 'New Field',
+            type: 'text',
+            bind_id: canvas.api.selection.currentTag() ?? 't:root',
+        });
+        canvas.setActive(fieldId);
+        canvas.api.select([fieldId], fieldId);
+    };
+
+    const addOptionToSelectedNode = () => {
+        const selection = fieldsRef.current?.getSelectionLocated?.() ?? [];
+        const selected = selection.length === 1 ? selection[0] : null;
+        const selectedId = selected ? String(selected.id) : '';
+
+        if (!selected || (!selectedId.startsWith('f:') && !selectedId.startsWith('o:'))) {
+            canvas.api.emit('error', {
+                message: 'Select a field or option before adding an option.',
+                meta: { action: 'open-option-create-ui' },
+            });
+            return;
+        }
+
+        fieldsRef.current?.createUI(selected.path);
     };
 
     return (
@@ -288,35 +356,18 @@ const Layers = () => {
                         </button>
                         <button
                             type="button"
-                            onClick={() => {
-                                if (!fieldsRef.current) {
-                                    const fieldId = buildFieldId();
-                                    canvas.api.editor.addFieldFromDescriptor(registry, {
-                                        id: fieldId,
-                                        label: 'New Field',
-                                        type: 'text',
-                                        bind_id: canvas.api.selection.currentTag() ?? 't:root',
-                                    });
-                                    return;
-                                }
-                                const selection = fieldsRef.current.getSelectionLocated?.() ?? [];
-
-                                if (selection.length === 1) {
-                                    const node = selection[0];
-                                    const point = node?.path?.[0];
-
-                                    fieldsRef.current.createUI(point);
-                                    return;
-                                }
-
-                                const fieldId = buildFieldId();
-                                canvas.api.editor.addFieldFromDescriptor(registry, {
-                                    id: fieldId,
-                                    label: 'New Field',
-                                    type: 'text',
-                                    bind_id: canvas.api.selection.currentTag() ?? 't:root',
-                                });
-                            }}
+                            aria-label="Add option"
+                            title="Add option"
+                            onClick={addOptionToSelectedNode}
+                            className="cursor-pointer rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-900 dark:hover:text-slate-100"
+                        >
+                            <FolderPlus className="size-4" />
+                        </button>
+                        <button
+                            type="button"
+                            aria-label="Add field"
+                            title="Add field"
+                            onClick={addFieldToCurrentTag}
                             className="cursor-pointer rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-900 dark:hover:text-slate-100"
                         >
                             <MdOutlineAdd />

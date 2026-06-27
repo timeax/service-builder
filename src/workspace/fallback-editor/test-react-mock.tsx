@@ -1,4 +1,5 @@
 import React from 'react';
+import { walkFieldOptions } from '@/builder/option-helpers.ts';
 
 type TabKey = 'registrations' | 'settings';
 
@@ -21,7 +22,7 @@ function resolvePrimaryServiceId(props: any, snapshot: any, nodeId: string) {
     if (field?.service_id != null) return field.service_id;
 
     for (const fieldItem of props?.fields ?? []) {
-        const option = fieldItem.options?.find((entry: any) => entry.id === nodeId);
+        const option = walkFieldOptions(fieldItem).find((entry) => entry.option.id === nodeId)?.option;
         if (option?.service_id != null) return option.service_id;
     }
 

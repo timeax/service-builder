@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button.tsx';
 import { cn } from '@/lib/utils.ts';
+import { optionBreadcrumb, walkFieldOptions } from '@/builder/option-helpers.ts';
 import { InputField } from '@timeax/form-palette';
 import { useActiveFallbackRegistrations, useEligibleServiceList, useFallbackEditor } from '@timeax/digital-service-engine/react';
 import type { FallbackRegistration, FallbackScopeRef, ServiceIdRef, ServiceProps } from '@timeax/digital-service-engine/schema';
@@ -94,16 +95,13 @@ export function FallbackAddRegistrationDialog({
                     });
                 }
 
-                for (const option of field.options ?? []) {
+                for (const { option } of walkFieldOptions(field)) {
                     if (option.service_id == null || String(option.service_id) !== String(activeServiceId)) continue;
 
                     entries.push({
                         id: option.id,
                         kind: 'option',
-                        label:
-                            option.label ??
-                            (option as { title?: string }).title ??
-                            String((option as { value?: unknown }).value ?? option.id),
+                        label: optionBreadcrumb(field, option.id),
                         serviceId: option.service_id,
                     });
                 }
@@ -485,12 +483,12 @@ function resolveNodeMeta(
     }
 
     for (const fieldItem of props.fields ?? []) {
-        const option = fieldItem.options?.find((entry) => entry.id === nodeId);
+        const option = walkFieldOptions(fieldItem).find((entry) => entry.option.id === nodeId)?.option;
         if (!option) continue;
 
         return {
             kind: 'option',
-            label: option.label ?? (option as { title?: string }).title ?? String((option as { value?: unknown }).value ?? option.id),
+            label: optionBreadcrumb(fieldItem, option.id),
         };
     }
 

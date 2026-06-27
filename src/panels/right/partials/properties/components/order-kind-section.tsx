@@ -63,6 +63,7 @@ export function OrderKindSection({
                 <div className="space-y-3">
                     <InputField
                         variant="select"
+                        label="Kind"
                         disabled={!canEditSelect}
                         value={selectedKind}
                         options={selectOptions as any}

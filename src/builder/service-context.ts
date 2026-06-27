@@ -1,4 +1,5 @@
 import type { BuilderServiceSummary } from '@/builder/bottom-panel.ts';
+import { optionBreadcrumb, walkFieldOptions } from '@/builder/option-helpers.ts';
 import { createBuilder } from '@timeax/digital-service-engine/core';
 import type { DgpServiceCapability, Field, ServiceProps, Tag } from '@timeax/digital-service-engine/schema';
 
@@ -122,12 +123,14 @@ export async function buildServiceContextSnapshot(args: {
             const sandbox = createBuilder({ serviceMap });
             sandbox.load(props);
 
-            const visibleFieldIds = sandbox.visibleFields(selectedTag.id, args.state.selectedButtons);
-            const buttonGroups = buildButtonGroups(props.fields ?? [], visibleFieldIds);
+            const visibility = sandbox.resolveVisibility(selectedTag.id, args.state.selectedButtons);
+            const visibleFieldIds = visibility.fieldIds;
+            const buttonGroups = buildButtonGroups(props.fields ?? [], visibleFieldIds, visibility.optionsByFieldId);
             const usedServiceIds = collectUsedServiceIds({
                 props,
                 tagId: selectedTag.id,
                 visibleFieldIds,
+                visibleOptionsByFieldId: visibility.optionsByFieldId,
                 selectedButtons: args.state.selectedButtons,
             });
 
@@ -176,17 +179,22 @@ export function buildServiceRowVM(args: {
     };
 }
 
-function buildButtonGroups(fields: readonly Field[], visibleFieldIds: readonly string[]): ServiceContextButtonGroup[] {
+function buildButtonGroups(
+    fields: readonly Field[],
+    visibleFieldIds: readonly string[],
+    visibleOptionsByFieldId: Record<string, string[]> = {},
+): ServiceContextButtonGroup[] {
     const visibleSet = new Set(visibleFieldIds);
     return fields
         .filter((field) => visibleSet.has(field.id))
         .map((field) => {
-            const options = field.options?.length
-                ? field.options
-                      .filter((option) => option.id)
-                      .map((option) => ({
+            const optionAllowList = visibleOptionsByFieldId[field.id] ? new Set(visibleOptionsByFieldId[field.id]) : null;
+            const optionVisits = walkFieldOptions(field).filter((visit) => visit.option.id && (!optionAllowList || optionAllowList.has(visit.option.id)));
+            const options = optionVisits.length
+                ? optionVisits
+                      .map(({ option }) => ({
                           id: String(option.id),
-                          label: option.label,
+                          label: optionBreadcrumb(field, option.id),
                           description: `Option in ${field.label}`,
                           fieldId: field.id,
                           fieldLabel: field.label,
@@ -216,6 +224,7 @@ function collectUsedServiceIds(args: {
     props: ServiceProps;
     tagId: string;
     visibleFieldIds: readonly string[];
+    visibleOptionsByFieldId?: Record<string, string[]>;
     selectedButtons: readonly string[];
 }): string[] {
     const visibleSet = new Set(args.visibleFieldIds);
@@ -225,10 +234,12 @@ function collectUsedServiceIds(args: {
 
     for (const field of args.props.fields ?? []) {
         if (!visibleSet.has(field.id)) continue;
+        const optionAllowList = args.visibleOptionsByFieldId?.[field.id] ? new Set(args.visibleOptionsByFieldId[field.id]) : null;
         if ((field as { service_id?: number | string }).service_id != null) {
             used.add(String((field as { service_id?: number | string }).service_id));
         }
-        for (const option of field.options ?? []) {
+        for (const { option } of walkFieldOptions(field)) {
+            if (optionAllowList && !optionAllowList.has(option.id)) continue;
             if ((option as { service_id?: number | string }).service_id != null) {
                 used.add(String((option as { service_id?: number | string }).service_id));
             }

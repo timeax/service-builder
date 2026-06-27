@@ -127,7 +127,10 @@ describe('Wireframe footer summary', () => {
         mockUseCanvas.mockReturnValue(makeCanvas(['o:1', 'o:2', 'o:3']));
         mockUseOrderFlow.mockReturnValue(makeFlow());
         mockGetCurrentTag.mockReturnValue({ raw: { label: 'Instagram' } });
-        mockGetVisiblePreviewFields.mockReturnValue([{ id: 'f:1' }, { id: 'f:2' }]);
+        mockGetVisiblePreviewFields.mockReturnValue([
+            { id: 'f:1', field: { id: 'f:1', type: 'text' } },
+            { id: 'f:2', field: { id: 'f:2', type: 'text' } },
+        ]);
     });
 
     it('renders footer summary chips with quantity, range, pricing, and counts', () => {

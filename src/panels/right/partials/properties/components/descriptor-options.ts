@@ -9,9 +9,12 @@ type FieldLike = {
 export type ResolvedOptionCapability = {
     descriptorResolved: boolean;
     supportsOptions: boolean;
+    supportsChildOptions: boolean;
     shouldAutoCreate: boolean;
     defaultLabel: string;
     defaultValue: string | number;
+    childDefaultLabel: string;
+    childDefaultValue: string | number;
 };
 
 export function resolveFieldDescriptorVariant(field: FieldLike): string | undefined {
@@ -25,14 +28,19 @@ export function resolveFieldOptionCapability(registry: Registry, field: FieldLik
     const descriptor = resolveInputDescriptor(registry, kind as any, variant as any);
     const descriptorResolved = !!descriptor;
     const supportsOptions = descriptor?.options?.supported === true;
+    const childOptions = (descriptor?.options as any)?.children;
+    const supportsChildOptions = childOptions?.supported === true;
     const shouldAutoCreate = supportsOptions && descriptor?.options?.autoCreate === true;
 
     return {
         descriptorResolved,
         supportsOptions,
+        supportsChildOptions,
         shouldAutoCreate,
         defaultLabel: descriptor?.options?.defaultLabel ?? 'Option label',
         defaultValue: descriptor?.options?.defaultValue ?? 'option',
+        childDefaultLabel: childOptions?.defaultLabel ?? descriptor?.options?.defaultLabel ?? 'Child option label',
+        childDefaultValue: childOptions?.defaultValue ?? descriptor?.options?.defaultValue ?? 'child-option',
     };
 }
 
