@@ -1,16 +1,20 @@
-import type { BottomConsolePanelState } from '@/builder/bottom-panel.ts';
+import type { BottomConsolePanelState, BuilderServiceSummary } from '@/builder/bottom-panel.ts';
 import { useNodeContextMenu } from '@/builder/node-context-menu.tsx';
+import {
+    buildServiceContextSnapshot,
+    buildServiceRowVM,
+    createEmptyServiceContextSnapshot,
+    type ServiceContextState,
+} from '@/builder/service-context.ts';
 import { EmptyState } from '@/components/builder/index.tsx';
-import { buildServiceContextSnapshot, buildServiceRowVM, createEmptyServiceContextSnapshot, type ServiceContextState } from '@/builder/service-context.ts';
 import {
     defaultCanvasViewPrefs,
     deriveCanvasPresentation,
     edgeStyleForState,
     parseEdgeId as parseRelationEdgeId,
 } from '@/panels/canvas/presentation.ts';
-import type { BuilderServiceSummary } from '@/builder/bottom-panel.ts';
-import { BOOT_SECTION_LABELS, getBootActionReason, getFailedBlockingSections } from '@/workspace/boot.ts';
 import { deriveWorkspaceAuthorization, getAuthorizationDecision } from '@/workspace/authorization.ts';
+import { BOOT_SECTION_LABELS, getBootActionReason, getFailedBlockingSections } from '@/workspace/boot.ts';
 import type { EditorSnapshot } from '@timeax/digital-service-engine';
 import type { DgpServiceCapability, ServiceCatalogState, ServiceProps } from '@timeax/digital-service-engine/schema';
 import { useCanvas, type UseErrorsReturn, useWorkspace } from '@timeax/digital-service-engine/workspace';
@@ -46,6 +50,16 @@ type EditorHistoryEvent = {
 const EDITOR_GUARD_ORIGINALS = Symbol('service-builder.editor-guard-originals');
 const EDITOR_GUARD_WRAPPED = Symbol('service-builder.editor-guard-wrapped');
 
+function isSystemInactiveNode(node: unknown): boolean {
+    const candidate = node as { raw?: unknown; data?: unknown };
+    const raw = (candidate.raw ?? candidate.data ?? node) as {
+        inactive?: unknown;
+        disabled?: unknown;
+        meta?: { inactive?: unknown; disabled?: unknown };
+    };
+    return raw?.inactive === true || raw?.disabled === true || raw?.meta?.inactive === true || raw?.meta?.disabled === true;
+}
+
 export type CanvasPanelProps = {
     errors: UseErrorsReturn;
     bottomPanel: BottomConsolePanelState;
@@ -80,7 +94,8 @@ export default function CanvasPanel({
     showAppTools = true,
 }: CanvasPanelProps) {
     const canvas = useCanvas();
-    const { openNodeContextMenu, openEdgeContextMenu, canAcceptDropPayload, handleNodeDrop, toggleNoticeManager, isNoticeManagerOpen } = useNodeContextMenu();
+    const { openNodeContextMenu, openEdgeContextMenu, canAcceptDropPayload, handleNodeDrop, toggleNoticeManager, isNoticeManagerOpen } =
+        useNodeContextMenu();
     const ws = useWorkspace();
 
     const activeWorkspaceSnapshot = ws.snapshot.data as EditorSnapshot | undefined;
@@ -138,7 +153,6 @@ export default function CanvasPanel({
         },
         [canvas.api],
     );
-
 
     useEffect(() => {
         setViewPrefs(loadCanvasViewPrefs(viewPrefsStorageKey(ws), defaultCanvasViewPrefs));
@@ -551,6 +565,7 @@ export default function CanvasPanel({
                     isManualHighlighted: nodeState?.isManualHighlighted ?? false,
                     showCurrentTagDot: nodeState?.showCurrentTagDot ?? false,
                     focusDimLevel: nodeState?.focusDimLevel ?? 'none',
+                    isSystemInactive: isSystemInactiveNode(node),
                 },
             };
         },
@@ -631,16 +646,30 @@ export default function CanvasPanel({
                       defaultPosition: { x: 520, y: 64 },
                       data: serviceContextSystemData,
                   }
-                : { enabled: false, storageKey: `service-builder.canvas.system-node.service-context.${ws.info.id}.${ws.branches.currentId ?? 'none'}`, data: serviceContextSystemData },
+                : {
+                      enabled: false,
+                      storageKey: `service-builder.canvas.system-node.service-context.${ws.info.id}.${ws.branches.currentId ?? 'none'}`,
+                      data: serviceContextSystemData,
+                  },
         }),
-        [canCommentWrite, canEditBranchContent, edgeDecorators, editDecision.reason, emitPermissionDenied, nodeDecorators, options, serviceContextSystemData, showOverlays, ws.branches.currentId, ws.info.id],
+        [
+            canCommentWrite,
+            canEditBranchContent,
+            edgeDecorators,
+            editDecision.reason,
+            emitPermissionDenied,
+            nodeDecorators,
+            options,
+            serviceContextSystemData,
+            showOverlays,
+            ws.branches.currentId,
+            ws.info.id,
+        ],
     );
 
     const createAnchoredComment = useCallback(
         async (
-            anchor:
-                | { type: 'node'; nodeId: string; offset?: { dx: number; dy: number } }
-                | { type: 'free'; position: { x: number; y: number } },
+            anchor: { type: 'node'; nodeId: string; offset?: { dx: number; dy: number } } | { type: 'free'; position: { x: number; y: number } },
         ) => {
             if (!canCommentWrite) {
                 emitPermissionDenied(commentWriteDecision.reason ?? 'Comment write access is disabled for this actor.', 'comment-create');
@@ -777,7 +806,9 @@ export default function CanvasPanel({
                         bootActionReason={bootActionReason}
                         editDisabledReason={!canEditBranchContent ? (editDecision.reason ?? 'Editing is disabled for this actor.') : undefined}
                         publishDisabledReason={!canPublishBranch ? (publishDecision.reason ?? 'Publishing is disabled for this actor.') : undefined}
-                        commentDisabledReason={!canCommentWrite ? (commentWriteDecision.reason ?? 'Comment write access is disabled for this actor.') : undefined}
+                        commentDisabledReason={
+                            !canCommentWrite ? (commentWriteDecision.reason ?? 'Comment write access is disabled for this actor.') : undefined
+                        }
                         errors={errors}
                         showErrorBadges={showErrorBadges}
                         setShowErrorBadges={setShowErrorBadges}
@@ -864,7 +895,10 @@ export default function CanvasPanel({
                         onImportCatalog={() => setActiveImportTarget('catalog')}
                         onToggleCommentPlacement={() => {
                             if (!canCommentWrite) {
-                                emitPermissionDenied(commentWriteDecision.reason ?? 'Comment write access is disabled for this actor.', 'comment-placement-toggle');
+                                emitPermissionDenied(
+                                    commentWriteDecision.reason ?? 'Comment write access is disabled for this actor.',
+                                    'comment-placement-toggle',
+                                );
                                 return;
                             }
                             setCommentPlacementActive((current) => !current);

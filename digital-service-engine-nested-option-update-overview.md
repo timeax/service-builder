@@ -14,9 +14,9 @@ It is written for the `service-builder` project because that project consumes th
 
 ```ts
 type FieldOption = {
-  id: string;
-  label: string;
-  children?: FieldOption[];
+    id: string;
+    label: string;
+    children?: FieldOption[];
 };
 ```
 
@@ -27,16 +27,16 @@ Every top-level option and every child option must have its own globally unique 
 Correct:
 
 ```ts
-selectedOptionIds = ["o:premium-fast"];
-optionById.get("o:premium-fast");
+selectedOptionIds = ['o:premium-fast'];
+optionById.get('o:premium-fast');
 ```
 
 Incorrect:
 
 ```ts
-selectedOptionIds = ["f:package/o:premium/o:premium-fast"];
-selectedOptionIds = ["f:package:o:premium:o:premium-fast"];
-selectedOptionIds = ["f:package::o:premium-fast"];
+selectedOptionIds = ['f:package/o:premium/o:premium-fast'];
+selectedOptionIds = ['f:package:o:premium:o:premium-fast'];
+selectedOptionIds = ['f:package::o:premium-fast'];
 ```
 
 ### 2. Flat Option Identity Everywhere
@@ -49,7 +49,6 @@ This affects:
 - visibility
 - node maps
 - service maps
-- order kind resolution
 - fallback and policy context
 - validation
 - runtime snapshots
@@ -65,7 +64,7 @@ The old compatibility pattern `fieldId::optionId` is no longer valid option iden
 The engine no longer decomposes strings like:
 
 ```ts
-"f:package::o:premium-fast"
+'f:package::o:premium-fast';
 ```
 
 into field and option parts for selection or trigger resolution.
@@ -108,9 +107,9 @@ The engine now has a resolved visibility model:
 
 ```ts
 type ResolvedVisibility = {
-  fieldIds: string[];
-  optionsByFieldId: Record<string, string[]>;
-  forcedFieldIds: string[];
+    fieldIds: string[];
+    optionsByFieldId: Record<string, string[]>;
+    forcedFieldIds: string[];
 };
 ```
 
@@ -146,7 +145,7 @@ Filtering is recursive:
 Input descriptors can now advertise nested option support:
 
 ```ts
-descriptor.options.children.supported === true
+descriptor.options.children.supported === true;
 ```
 
 The new capability shape is future-safe:
@@ -200,7 +199,6 @@ The nested options can carry the same runtime meaning as any other option:
 - pricing role
 - utility metadata
 - quantity defaults
-- order kind
 - notices
 - include/exclude triggers
 - option effects
@@ -240,13 +238,13 @@ Nested position is structure. Option id is identity.
 This makes selection logic simpler and avoids bugs where the same option could be represented by both:
 
 ```ts
-"o:fast"
+'o:fast';
 ```
 
 and:
 
 ```ts
-"f:speed::o:fast"
+'f:speed::o:fast';
 ```
 
 ## Impact On `service-builder`
@@ -292,7 +290,7 @@ Current behavior resolves:
 It does not yet expose:
 
 ```ts
-descriptor.options.children.supported
+descriptor.options.children.supported;
 ```
 
 Recommended update:
@@ -340,9 +338,7 @@ Current behavior:
 
 ```ts
 const options = field.raw.options ?? [];
-const next = options.map((option) =>
-  option.id === node.id ? { ...option, label: e.value } : option
-);
+const next = options.map((option) => (option.id === node.id ? { ...option, label: e.value } : option));
 canvas.api.editor.updateField(field.id, { options: next });
 ```
 
@@ -399,13 +395,13 @@ src/builder/node-context/hooks.ts
 Current behavior finds an option owner using:
 
 ```ts
-(field.options ?? []).some((option) => option.id === target.nodeId)
+(field.options ?? []).some((option) => option.id === target.nodeId);
 ```
 
 and moves options among:
 
 ```ts
-ownerField.options
+ownerField.options;
 ```
 
 Impact:
@@ -418,8 +414,8 @@ Recommended update:
 
 - use an engine helper if exported, such as recursive option owner lookup
 - otherwise add service-builder local helpers:
-  - `findOptionLocation(fields, optionId)`
-  - returns `{ field, option, parentOption?, siblings, index }`
+    - `findOptionLocation(fields, optionId)`
+    - returns `{ field, option, parentOption?, siblings, index }`
 - use sibling list for move up/down
 - call an engine editor method that understands nested placement if available
 - keep move identity as `option.id`
@@ -448,9 +444,9 @@ Recommended update:
 
 - if the insert parent id is a field id, use existing top-level option creation
 - if the insert parent id is an option id:
-  - resolve the owner field and parent option
-  - check the owner field descriptor supports `options.children.supported`
-  - add the new option to `parentOption.children`
+    - resolve the owner field and parent option
+    - check the owner field descriptor supports `options.children.supported`
+    - add the new option to `parentOption.children`
 - ensure SortTree ids remain the option ids
 
 ### Service Context Panel
@@ -601,26 +597,23 @@ Add small helpers in service-builder unless the engine exports equivalent helper
 
 ```ts
 type OptionLocation = {
-  field: Field;
-  option: FieldOption;
-  parentOption?: FieldOption;
-  siblings: FieldOption[];
-  index: number;
+    field: Field;
+    option: FieldOption;
+    parentOption?: FieldOption;
+    siblings: FieldOption[];
+    index: number;
 };
 
 function walkFieldOptions(field: Field): Array<{
-  field: Field;
-  option: FieldOption;
-  parentOption?: FieldOption;
-  depth: number;
+    field: Field;
+    option: FieldOption;
+    parentOption?: FieldOption;
+    depth: number;
 }> {}
 
 function findOptionLocation(fields: Field[], optionId: string): OptionLocation | undefined {}
 
-function mapOptionsRecursive(
-  options: FieldOption[],
-  mapper: (option: FieldOption) => FieldOption
-): FieldOption[] {}
+function mapOptionsRecursive(options: FieldOption[], mapper: (option: FieldOption) => FieldOption): FieldOption[] {}
 ```
 
 Use these anywhere service-builder currently does:
@@ -749,7 +742,7 @@ This is the biggest compatibility risk.
 Do not create, persist, or compare option ids like:
 
 ```ts
-`${fieldId}::${optionId}`
+`${fieldId}::${optionId}`;
 ```
 
 If service-builder needs field ownership, resolve it from the option id using a recursive owner lookup.
@@ -778,7 +771,7 @@ Any loop like this is now suspicious:
 
 ```ts
 for (const option of field.options ?? []) {
-  // ...
+    // ...
 }
 ```
 

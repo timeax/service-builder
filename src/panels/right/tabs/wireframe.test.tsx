@@ -1,14 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Wireframe from './wireframe.tsx';
 
-const {
-    mockUseCanvas,
-    mockUseWorkspace,
-    mockUseOrderFlow,
-    mockGetCurrentTag,
-    mockGetVisiblePreviewFields,
-} = vi.hoisted(() => ({
+const { mockUseCanvas, mockUseWorkspace, mockUseOrderFlow, mockGetCurrentTag, mockGetVisiblePreviewFields } = vi.hoisted(() => ({
     mockUseCanvas: vi.fn(),
     mockUseWorkspace: vi.fn(),
     mockUseOrderFlow: vi.fn(),
@@ -81,11 +75,6 @@ function makeCanvas(optionIds: string[] = []) {
 }
 
 function makeFlow(overrides: Record<string, unknown> = {}) {
-    const snapshot = {
-        orderKind: 'contract',
-        orderKindSource: { nodeKind: 'field', nodeId: 'f:mode' },
-    };
-
     return {
         ready: true,
         min: 100,
@@ -101,7 +90,7 @@ function makeFlow(overrides: Record<string, unknown> = {}) {
             total: 14.5,
             utilityBreakdown: [{ nodeId: 'n:1', mode: 'flat', amount: 2 }],
         },
-        buildSnapshot: () => snapshot,
+        buildSnapshot: () => ({}),
         visibleGroup: null,
         ...overrides,
     };
@@ -145,10 +134,8 @@ describe('Wireframe footer summary', () => {
         expect(screen.getByText('1,500')).toBeInTheDocument();
         expect(screen.getByText('Min/Max:')).toBeInTheDocument();
         expect(screen.getByText('100 - 2,000')).toBeInTheDocument();
-        expect(screen.getByText('Order kind:')).toBeInTheDocument();
-        expect(screen.getByText('contract')).toBeInTheDocument();
-        expect(screen.getByText('Order kind source:')).toBeInTheDocument();
-        expect(screen.getByText('field:f:mode')).toBeInTheDocument();
+        expect(screen.queryByText('Order kind:')).not.toBeInTheDocument();
+        expect(screen.queryByText('Order kind source:')).not.toBeInTheDocument();
         expect(screen.getByText('Services:')).toBeInTheDocument();
         expect(screen.getByText('Base:')).toBeInTheDocument();
         expect(screen.getByText('12.5')).toBeInTheDocument();

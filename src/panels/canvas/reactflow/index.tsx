@@ -1,6 +1,6 @@
-import type React from 'react';
 import type { Node, NodeProps } from '@xyflow/react';
 import { Handle, Position } from '@xyflow/react';
+import type React from 'react';
 import { BsChatSquareQuote } from 'react-icons/bs';
 import { LuTags } from 'react-icons/lu';
 import { MdOutlineRadioButtonChecked } from 'react-icons/md';
@@ -26,6 +26,7 @@ type BaseData = {
     isManualHighlighted?: boolean;
     showCurrentTagDot?: boolean;
     focusDimLevel?: 'none' | 'soft' | 'medium' | 'strong';
+    isSystemInactive?: boolean;
     serviceContext?: {
         selectedTagLabel: string;
         selectedButtonsCount: number;
@@ -61,6 +62,7 @@ function NodeShell({
     isManualHighlighted,
     showCurrentTagDot,
     focusDimLevel,
+    isSystemInactive,
 }: {
     label: string;
     icon: React.ReactNode;
@@ -78,15 +80,10 @@ function NodeShell({
     isManualHighlighted?: boolean;
     showCurrentTagDot?: boolean;
     focusDimLevel?: 'none' | 'soft' | 'medium' | 'strong';
+    isSystemInactive?: boolean;
 }) {
     const dimClass =
-        focusDimLevel === 'soft'
-            ? 'opacity-80 '
-            : focusDimLevel === 'medium'
-              ? 'opacity-[0.55] '
-              : focusDimLevel === 'strong'
-                ? 'opacity-35 '
-                : '';
+        focusDimLevel === 'soft' ? 'opacity-80 ' : focusDimLevel === 'medium' ? 'opacity-[0.55] ' : focusDimLevel === 'strong' ? 'opacity-35 ' : '';
 
     return (
         <div
@@ -96,18 +93,20 @@ function NodeShell({
                 isVisibleGroupField ? 'visible-group' : '',
                 isRelatedTag ? 'related-tag' : '',
                 isManualHighlighted ? 'manual-highlighted' : '',
+                isSystemInactive ? 'system-inactive' : '',
                 focusDimLevel && focusDimLevel !== 'none' ? `dim-${focusDimLevel}` : '',
             ]
                 .filter(Boolean)
                 .join(' ')}
             className={
-                'group relative min-w-44 rounded-lg bg-white p-3 ring-1 ring-slate-200 shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-200 dark:bg-slate-900 dark:ring-slate-700 ' +
+                'group relative min-w-44 rounded-lg bg-white p-3 shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-slate-200 transition-all duration-200 dark:bg-slate-900 dark:ring-slate-700 ' +
                 (selected ? `${SELECTED_NODE_RING_CLASS} ` : 'hover:shadow-lg ') +
                 (isActiveNode ? `${ACTIVE_NODE_OUTLINE_CLASS} ` : '') +
-                (isCurrentTag ? 'ring-2 ring-emerald-500 bg-emerald-50/70 shadow-lg shadow-emerald-500/25 dark:bg-emerald-500/10 ' : '') +
-                (isVisibleGroupField ? 'ring-2 ring-emerald-300 bg-emerald-50/35 dark:bg-emerald-500/5 ' : '') +
-                (isRelatedTag ? 'ring-1 ring-teal-300 bg-teal-50/25 dark:bg-teal-500/8 ' : '') +
+                (isCurrentTag ? 'bg-emerald-50/70 shadow-lg ring-2 shadow-emerald-500/25 ring-emerald-500 dark:bg-emerald-500/10 ' : '') +
+                (isVisibleGroupField ? 'bg-emerald-50/35 ring-2 ring-emerald-300 dark:bg-emerald-500/5 ' : '') +
+                (isRelatedTag ? 'bg-teal-50/25 ring-1 ring-teal-300 dark:bg-teal-500/8 ' : '') +
                 (isManualHighlighted ? `${HIGHLIGHT_NODE_OUTLINE_CLASS} ` : '') +
+                (isSystemInactive ? 'ring-dashed opacity-55 grayscale ' : '') +
                 (draggingService && canAssignService ? 'border border-dashed border-emerald-400 ' : '') +
                 (!canAssignService && draggingService ? 'opacity-70 ' : '') +
                 dimClass
@@ -124,7 +123,9 @@ function NodeShell({
                 <span className="max-w-52 truncate text-sm font-medium text-slate-800 dark:text-slate-100">{label}</span>
             </div>
 
-            {showCurrentTagDot ? <span className="absolute top-2 left-2 h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(255,255,255,0.85)] dark:shadow-[0_0_0_2px_rgba(15,23,42,0.8)]" /> : null}
+            {showCurrentTagDot ? (
+                <span className="absolute top-2 left-2 h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(255,255,255,0.85)] dark:shadow-[0_0_0_2px_rgba(15,23,42,0.8)]" />
+            ) : null}
             {showErrorBadge && hasError ? <span className="absolute -top-1.5 -right-1.5 inline-flex h-3 w-3 rounded-full bg-rose-500" /> : null}
         </div>
     );
@@ -156,6 +157,7 @@ function TagNode(props: NodeProps<CanvasNode>) {
                 isManualHighlighted={props.data.isManualHighlighted}
                 showCurrentTagDot={props.data.showCurrentTagDot}
                 focusDimLevel={props.data.focusDimLevel}
+                isSystemInactive={props.data.isSystemInactive}
             />
             <Handle type="source" position={Position.Right} className="!h-2 !w-2 !bg-slate-400" />
         </>
@@ -188,6 +190,7 @@ function FieldNode(props: NodeProps<CanvasNode>) {
                 isManualHighlighted={props.data.isManualHighlighted}
                 showCurrentTagDot={props.data.showCurrentTagDot}
                 focusDimLevel={props.data.focusDimLevel}
+                isSystemInactive={props.data.isSystemInactive}
             />
             <Handle type="source" position={Position.Right} className="!h-2 !w-2 !bg-slate-400" />
         </>
@@ -206,24 +209,28 @@ function OptionNode(props: NodeProps<CanvasNode>) {
                     props.data.isVisibleGroupField ? 'visible-group' : '',
                     props.data.isRelatedTag ? 'related-tag' : '',
                     props.data.isManualHighlighted ? 'manual-highlighted' : '',
+                    props.data.isSystemInactive ? 'system-inactive' : '',
                     props.data.focusDimLevel && props.data.focusDimLevel !== 'none' ? `dim-${props.data.focusDimLevel}` : '',
                 ]
                     .filter(Boolean)
-                .join(' ')}
+                    .join(' ')}
                 className={
-                    'relative rounded-full border px-4 py-1.5 text-sm bg-white text-slate-800 transition dark:bg-slate-900 dark:text-slate-200 ' +
-                    (props.selected ? `border-sky-300 bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:border-sky-400 ${SELECTED_NODE_RING_CLASS} ` : 'border-slate-300 dark:border-slate-700 ') +
+                    'relative rounded-full border bg-white px-4 py-1.5 text-sm text-slate-800 transition dark:bg-slate-900 dark:text-slate-200 ' +
+                    (props.selected
+                        ? `border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-400 dark:bg-sky-500/15 ${SELECTED_NODE_RING_CLASS} `
+                        : 'border-slate-300 dark:border-slate-700 ') +
                     (props.data.isActiveNode ? `${ACTIVE_NODE_OUTLINE_CLASS} ` : '') +
-                    (props.data.isCurrentTag ? 'ring-2 ring-emerald-500 bg-emerald-50/70 dark:bg-emerald-500/10 ' : '') +
-                    (props.data.isVisibleGroupField ? 'ring-2 ring-emerald-300 bg-emerald-50/35 dark:bg-emerald-500/5 ' : '') +
-                    (props.data.isRelatedTag ? 'ring-1 ring-teal-300 bg-teal-50/25 dark:bg-teal-500/8 ' : '') +
+                    (props.data.isCurrentTag ? 'bg-emerald-50/70 ring-2 ring-emerald-500 dark:bg-emerald-500/10 ' : '') +
+                    (props.data.isVisibleGroupField ? 'bg-emerald-50/35 ring-2 ring-emerald-300 dark:bg-emerald-500/5 ' : '') +
+                    (props.data.isRelatedTag ? 'bg-teal-50/25 ring-1 ring-teal-300 dark:bg-teal-500/8 ' : '') +
                     (props.data.isManualHighlighted ? `${HIGHLIGHT_NODE_OUTLINE_CLASS} ` : '') +
+                    (props.data.isSystemInactive ? 'border-dashed opacity-55 grayscale ' : '') +
                     (props.data.focusDimLevel === 'soft'
-                        ? 'opacity-80 '
+                        ? 'opacity-80'
                         : props.data.focusDimLevel === 'medium'
-                          ? 'opacity-[0.55] '
+                          ? 'opacity-[0.55]'
                           : props.data.focusDimLevel === 'strong'
-                            ? 'opacity-35 '
+                            ? 'opacity-35'
                             : '')
                 }
                 onDragOver={(event) => {
@@ -241,8 +248,12 @@ function OptionNode(props: NodeProps<CanvasNode>) {
                     <MdOutlineRadioButtonChecked className="text-slate-400" />
                     <span className="max-w-36 truncate">{props.data.node?.label ?? props.id}</span>
                 </div>
-                {props.data.showCurrentTagDot ? <span className="absolute top-1 left-1 h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(255,255,255,0.85)] dark:shadow-[0_0_0_2px_rgba(15,23,42,0.8)]" /> : null}
-                {props.data.showErrorBadge && props.data.hasError ? <span className="absolute -top-1 -right-1 inline-flex h-3 w-3 rounded-full bg-rose-500" /> : null}
+                {props.data.showCurrentTagDot ? (
+                    <span className="absolute top-1 left-1 h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(255,255,255,0.85)] dark:shadow-[0_0_0_2px_rgba(15,23,42,0.8)]" />
+                ) : null}
+                {props.data.showErrorBadge && props.data.hasError ? (
+                    <span className="absolute -top-1 -right-1 inline-flex h-3 w-3 rounded-full bg-rose-500" />
+                ) : null}
             </div>
             <Handle type="source" position={Position.Right} className="!h-2 !w-2 !bg-slate-400" />
         </>
@@ -264,7 +275,9 @@ function CommentNode(props: NodeProps<CanvasNode>) {
                 <span>{main?.authorName ?? 'Comment'}</span>
             </div>
             <div className="px-3 py-2 text-sm leading-5 text-slate-700 dark:text-slate-200">{main?.body ?? ''}</div>
-            <div className="absolute bottom-2 right-2 text-[10px] uppercase tracking-[0.14em] text-slate-400">{thread?.resolved ? 'Resolved' : 'Open'}</div>
+            <div className="absolute right-2 bottom-2 text-[10px] tracking-[0.14em] text-slate-400 uppercase">
+                {thread?.resolved ? 'Resolved' : 'Open'}
+            </div>
         </div>
     );
 }
@@ -275,7 +288,7 @@ function ServiceContextSystemNode(props: NodeProps<CanvasNode>) {
     return (
         <div
             className={
-                'min-w-80 max-w-96 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/95 ' +
+                'max-w-96 min-w-80 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/95 ' +
                 (props.selected ? `${SELECTED_NODE_RING_CLASS} ` : '')
             }
         >
@@ -285,7 +298,9 @@ function ServiceContextSystemNode(props: NodeProps<CanvasNode>) {
 
             <div className="mt-3 space-y-2">
                 {services.length === 0 ? (
-                    <div className="rounded-lg bg-slate-50 px-2 py-2 text-sm text-slate-500 dark:bg-slate-900 dark:text-slate-400">No active services in current context</div>
+                    <div className="rounded-lg bg-slate-50 px-2 py-2 text-sm text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+                        No active services in current context
+                    </div>
                 ) : (
                     services.slice(0, 4).map((service) => (
                         <div key={service.id} className="rounded-lg bg-slate-50 px-2 py-2 dark:bg-slate-900">

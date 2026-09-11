@@ -4,11 +4,11 @@ import { EmptyState } from '@/components/builder';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import WireframeTagsWidget, { type TagNotice } from '@/panels/right/components/wireframe-tags-widget.tsx';
+import { WorkspaceBootInlineNotice } from '@/workspace/boot-status.tsx';
 import type { Field, Tag } from '@timeax/digital-service-engine';
 import { useOrderFlow, Wrapper } from '@timeax/digital-service-engine/react';
 import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
-import { WorkspaceBootInlineNotice } from '@/workspace/boot-status.tsx';
 import { BsChevronDown } from 'react-icons/bs';
 
 const CHECKBOX_SINGLE_EXTRA_PROPS = Object.freeze({ single: true });
@@ -26,17 +26,7 @@ type FooterSummaryItem = {
     detailsKind?: FooterDetailKind;
 };
 
-export type WireframeProps = {
-    kinds?: string[];
-    defaultKind?: string;
-};
-
-function formatOrderKindSource(source: { nodeKind: 'tag' | 'field' | 'option'; nodeId: string } | null | undefined): string {
-    if (!source) return '--';
-    return `${source.nodeKind}:${source.nodeId}`;
-}
-
-export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }: WireframeProps) {
+export function Wireframe() {
     const canvas = useCanvas();
     const ws = useWorkspace();
     const { openNodeContextMenu, canAcceptDropPayload, handleNodeDrop } = useNodeContextMenu();
@@ -44,14 +34,6 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
     const previewFields = useMemo(() => getVisiblePreviewFields(canvas, currentTag?.id), [canvas.props, canvas.selectionInfo, canvas.activeId]);
     const selectedOptionsCount = canvas.selectionInfo.optionIds.length;
     const flow = useOrderFlow();
-    const orderSnapshot = useMemo(() => {
-        if (!flow.ready) return undefined;
-        try {
-            return flow.buildSnapshot();
-        } catch {
-            return undefined;
-        }
-    }, [flow.ready, flow.activeTagId, flow.optionSelectionsByFieldId, flow.formValuesByFieldId]);
     const [isFooterOpen, setIsFooterOpen] = useState(true);
 
     const footerSummary = useMemo<FooterSummaryItem[]>(() => {
@@ -65,8 +47,6 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
             { label: 'Selected options', value: String(selectedOptionsCount) },
             { label: 'Quantity', value: formatMetricNumber(flow.quantityPreview) },
             { label: 'Min/Max', value: rangeText },
-            { label: 'Order kind', value: orderSnapshot?.orderKind ?? '--' },
-            { label: 'Order kind source', value: formatOrderKindSource(orderSnapshot?.orderKindSource) },
             { label: 'Services', value: String(flow.services.length), detailsKind: 'services' },
             { label: 'Base', value: formatMetricNumber(flow.pricingPreview?.base), detailsKind: 'pricing' },
             { label: 'Utilities', value: formatMetricNumber(flow.pricingPreview?.utilities), detailsKind: 'pricing' },
@@ -83,14 +63,15 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
         flow.pricingPreview?.utilityBreakdown?.length,
         flow.quantityPreview,
         flow.services.length,
-        orderSnapshot?.orderKind,
-        orderSnapshot?.orderKindSource,
         previewFields.length,
         selectedOptionsCount,
     ]);
 
     const serviceDetails = useMemo(() => {
-        const servicesMap = (ws.services.data ?? {}) as Record<string, { id?: string | number; name?: string; rate?: number; min?: number; max?: number }>;
+        const servicesMap = (ws.services.data ?? {}) as Record<
+            string,
+            { id?: string | number; name?: string; rate?: number; min?: number; max?: number }
+        >;
         return flow.services.map((serviceId) => {
             const service = servicesMap[String(serviceId)];
             return {
@@ -112,11 +93,15 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
                         {serviceDetails.length ? (
                             <div className="max-h-56 space-y-2 overflow-auto pr-1">
                                 {serviceDetails.map((service) => (
-                                    <div key={String(service.id)} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-900">
+                                    <div
+                                        key={String(service.id)}
+                                        className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-900"
+                                    >
                                         <p className="font-medium text-slate-700 dark:text-slate-200">{service.name}</p>
                                         <p className="text-slate-500 dark:text-slate-400">ID: {String(service.id)}</p>
                                         <p className="text-slate-500 dark:text-slate-400">
-                                            Rate: {formatMetricNumber(service.rate)} · Min/Max: {formatMetricNumber(service.min)} - {formatMetricNumber(service.max)}
+                                            Rate: {formatMetricNumber(service.rate)} · Min/Max: {formatMetricNumber(service.min)} -{' '}
+                                            {formatMetricNumber(service.max)}
                                         </p>
                                     </div>
                                 ))}
@@ -136,7 +121,10 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
                         {lines.length ? (
                             <div className="max-h-56 space-y-2 overflow-auto pr-1">
                                 {lines.map((line, index) => (
-                                    <div key={`${line.nodeId}:${index}`} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-900">
+                                    <div
+                                        key={`${line.nodeId}:${index}`}
+                                        className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-900"
+                                    >
                                         <p className="font-medium text-slate-700 dark:text-slate-200">Node: {line.nodeId}</p>
                                         <p className="text-slate-500 dark:text-slate-400">Mode: {line.mode}</p>
                                         <p className="text-slate-500 dark:text-slate-400">Amount: {formatMetricNumber(line.amount)}</p>
@@ -159,7 +147,13 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
                 </div>
             );
         },
-        [flow.pricingPreview?.base, flow.pricingPreview?.total, flow.pricingPreview?.utilities, flow.pricingPreview?.utilityBreakdown, serviceDetails],
+        [
+            flow.pricingPreview?.base,
+            flow.pricingPreview?.total,
+            flow.pricingPreview?.utilities,
+            flow.pricingPreview?.utilityBreakdown,
+            serviceDetails,
+        ],
     );
     const { visibleTag, parents, children, visibleFields } = useMemo(() => {
         const result = canvas.api.selection.visibleGroup();
@@ -230,9 +224,9 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
     );
 
     return (
-        <div className="flex h-full min-h-0 flex-col flex-1 w-full">
+        <div className="flex h-full min-h-0 w-full flex-1 flex-col">
             <ScrollArea className="min-h-0 flex-1" viewportClassName="[&>div]:!block [&>div]:w-full">
-                <div className="min-w-0 w-full p-4">
+                <div className="w-full min-w-0 p-4">
                     <div className="mx-auto max-w-md">
                         <div className="flex flex-col gap-4">
                             <WorkspaceBootInlineNotice boot={ws.boot} sections={['snapshotBody', 'policies']} />
@@ -271,7 +265,7 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
                                 }}
                             />
 
-                            <div className="border-t border-slate-200 pt-3 flex flex-col gap-2 dark:border-slate-800">
+                            <div className="flex flex-col gap-2 border-t border-slate-200 pt-3 dark:border-slate-800">
                                 {previewFields.length ? (
                                     previewFields.map(({ field }) => {
                                         return (
@@ -306,7 +300,9 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
                                                     }}
                                                 >
                                                     <Wrapper
-                                                        extraProps={field.type === 'checkbox' && !field.options ? CHECKBOX_SINGLE_EXTRA_PROPS : undefined}
+                                                        extraProps={
+                                                            field.type === 'checkbox' && !field.options ? CHECKBOX_SINGLE_EXTRA_PROPS : undefined
+                                                        }
                                                         field={field}
                                                     />
                                                 </div>
@@ -354,7 +350,7 @@ export function Wireframe({ kinds: _kinds = [], defaultKind: _defaultKind = '' }
                                     <PopoverTrigger asChild>
                                         <button
                                             type="button"
-                                            className="rounded-md transition-transform hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/50"
+                                            className="rounded-md transition-transform hover:scale-[1.01] focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:outline-none"
                                             aria-label={`${item.label} details`}
                                         >
                                             {chip}

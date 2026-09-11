@@ -9,19 +9,17 @@ import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
 import { getOptionPropertyCapabilities } from './components/node-capabilities.ts';
 import OptionEffectsSection from './components/option-effects-section.tsx';
-import OrderKindSection from './components/order-kind-section.tsx';
 import QuantitySection from './components/quantity-section.tsx';
 import { IncExcludeSection } from './components/Union';
 import UtilitySection from './components/utility-section.tsx';
+import ValueEffectsSection from './components/value-effects-section.tsx';
 
 export interface OptionPropertiesProps {
     className?: string;
     node: OptionNode;
-    kinds?: string[];
-    defaultKind?: string;
 }
 
-export function OptionProperties({ className, node, kinds, defaultKind }: OptionPropertiesProps) {
+export function OptionProperties({ className, node }: OptionPropertiesProps) {
     const canvas = useCanvas();
     const capabilities = getOptionPropertyCapabilities(node);
     const field = node.field();
@@ -64,9 +62,6 @@ export function OptionProperties({ className, node, kinds, defaultKind }: Option
                 </Section>
                 <Separator />
 
-                <OrderKindSection nodeId={node.id} nodeKind="option" kinds={kinds} defaultKind={defaultKind} />
-                <Separator />
-
                 <QuantitySection node={node} />
                 <Separator />
 
@@ -99,6 +94,8 @@ export function OptionProperties({ className, node, kinds, defaultKind }: Option
                 <IncExcludeSection node={node} mode="excludes" capability={capabilities.triggerMappings} />
                 <Separator />
                 <OptionEffectsSection node={node} capability={capabilities.triggerMappings} />
+                <Separator />
+                <ValueEffectsSection node={node} capability={capabilities.triggerMappings} />
                 <Separator />
                 <AddService data={node} readOnly={!capabilities.service.canEdit} readOnlyMessage={capabilities.service.message} />
             </div>

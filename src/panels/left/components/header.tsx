@@ -8,10 +8,10 @@ import Drafts from '@/panels/left/components/drafts.tsx';
 import { getWorkspaceBootHeadline } from '@/workspace/boot.ts';
 import type { WorkspaceAPI } from '@timeax/digital-service-engine/workspace';
 import { useCanvas, useWorkspace } from '@timeax/digital-service-engine/workspace';
+import { X } from 'lucide-react';
 import { useState } from 'react';
 import { BsChevronDown, BsChevronRight } from 'react-icons/bs';
 import { MdMenuOpen, MdOutlineSpaceDashboard } from 'react-icons/md';
-import { X } from 'lucide-react';
 
 interface HeaderProps {
     menu?: Menu[];
@@ -138,7 +138,6 @@ Use this output shape:
     "fields": [],
     "includes_for_buttons": {},
     "excludes_for_buttons": {},
-    "orderKinds": {},
     "fallbacks": {
       "global": {},
       "nodes": {}
@@ -534,10 +533,16 @@ const Header = ({ menu = [] }: HeaderProps) => {
                         <div className="mb-3 space-y-3">
                             <div className="flex items-start justify-between gap-3">
                                 <div>
-                                <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Prompts</h2>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">Catalog and service-props normalization prompts.</p>
+                                    <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Prompts</h2>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Catalog and service-props normalization prompts.</p>
                                 </div>
-                                <Button type="button" variant="outline" size="icon" onClick={() => setIsPromptsDialogOpen(false)} aria-label="Close prompts dialog">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => setIsPromptsDialogOpen(false)}
+                                    aria-label="Close prompts dialog"
+                                >
                                     <X className="h-4 w-4" />
                                 </Button>
                             </div>
@@ -559,20 +564,24 @@ const Header = ({ menu = [] }: HeaderProps) => {
 
                         {copyError ? <p className="mb-2 text-xs text-rose-600 dark:text-rose-300">{copyError}</p> : null}
 
-                        <Tabs className="min-h-0 flex-1" value={activePromptTab} onValueChange={(value) => setActivePromptTab(value as 'catalog' | 'service-props')}>
+                        <Tabs
+                            className="min-h-0 flex-1"
+                            value={activePromptTab}
+                            onValueChange={(value) => setActivePromptTab(value as 'catalog' | 'service-props')}
+                        >
                             <TabsList className="mb-3 grid w-full grid-cols-2">
                                 <TabsTrigger value="catalog">Catalog prompt</TabsTrigger>
                                 <TabsTrigger value="service-props">Service props generator prompt</TabsTrigger>
                             </TabsList>
-                            <ScrollArea className="min-h-0 flex-1 w-full rounded-md border border-slate-200 p-2 dark:border-slate-800">
+                            <ScrollArea className="min-h-0 w-full flex-1 rounded-md border border-slate-200 p-2 dark:border-slate-800">
                                 <TabsContent value="catalog">
-                                    <pre className="min-h-[520px] whitespace-pre-wrap rounded-md border border-slate-200 bg-slate-50 p-3 font-mono text-xs text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+                                    <pre className="min-h-[520px] rounded-md border border-slate-200 bg-slate-50 p-3 font-mono text-xs whitespace-pre-wrap text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
                                         {CATALOG_PROMPT}
                                     </pre>
                                 </TabsContent>
 
                                 <TabsContent value="service-props" className="space-y-2">
-                                    <pre className="min-h-[530px] whitespace-pre-wrap rounded-md border border-slate-200 bg-slate-50 p-3 font-mono text-xs text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+                                    <pre className="min-h-[530px] rounded-md border border-slate-200 bg-slate-50 p-3 font-mono text-xs whitespace-pre-wrap text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
                                         {SERVICE_PROPS_PROMPT}
                                     </pre>
                                 </TabsContent>

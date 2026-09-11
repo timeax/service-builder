@@ -53,10 +53,6 @@ vi.mock('./components/node-capabilities.ts', () => ({
     }),
 }));
 
-vi.mock('./components/order-kind-section.tsx', () => ({
-    default: () => <div />,
-}));
-
 vi.mock('./components/quantity-section.tsx', () => ({
     default: () => <div />,
 }));
@@ -66,6 +62,10 @@ vi.mock('./components/option-effects-section.tsx', () => ({
 }));
 
 vi.mock('./components/utility-section.tsx', () => ({
+    default: () => <div />,
+}));
+
+vi.mock('./components/value-effects-section.tsx', () => ({
     default: () => <div />,
 }));
 

@@ -11,20 +11,19 @@ import { InputField } from '@timeax/form-palette';
 import { useEffect, useMemo, useState } from 'react';
 import { fieldHasOptions, resolveFieldOptionCapability } from './components/descriptor-options.ts';
 import { DescriptorSettings, getDescriptorUiKeys } from './components/descriptor-settings.tsx';
+import FieldDefaultValueSection from './components/field-default-value-section.tsx';
 import { mergeNodeMeta } from './components/meta.ts';
 import { getFieldPropertyCapabilities } from './components/node-capabilities.ts';
 import OptionEffectsSection from './components/option-effects-section.tsx';
-import OrderKindSection from './components/order-kind-section.tsx';
 import QuantitySection from './components/quantity-section.tsx';
 import { IncExcludeSection } from './components/Union';
 import UtilitySection from './components/utility-section.tsx';
 import ValidationSection from './components/validation-section.tsx';
+import ValueEffectsSection from './components/value-effects-section.tsx';
 
 export interface FieldPropertiesProps {
     className?: string;
     node: FieldNode;
-    kinds?: string[];
-    defaultKind?: string;
 }
 
 const getVariant = (node: FieldNode) => {
@@ -47,7 +46,7 @@ const pruneDescriptorDefaults = (defaults: Record<string, unknown>, previousDesc
     return Object.keys(nextDefaults).length ? nextDefaults : undefined;
 };
 
-export function FieldProperties({ className, node, kinds, defaultKind }: FieldPropertiesProps) {
+export function FieldProperties({ className, node }: FieldPropertiesProps) {
     const canvas = useCanvas();
     const { registry } = useInputs();
     const capabilities = getFieldPropertyCapabilities(node);
@@ -109,8 +108,6 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
     }, [currentType, registry]);
 
     const canEditVariant = variantEntries.length > 0 || Boolean(currentVariant);
-    const canSetOrderKind = capabilities.isButton && !capabilities.hasOptions;
-
     const updateDefaults = (nextDefaults: Record<string, unknown> | undefined) => {
         canvas.api.editor.updateField(node.id, { defaults: nextDefaults } as any);
     };
@@ -233,14 +230,7 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
                 </Section>
                 <Separator />
 
-                <OrderKindSection
-                    nodeId={node.id}
-                    nodeKind="field"
-                    kinds={kinds}
-                    defaultKind={defaultKind}
-                    disabled={!canSetOrderKind}
-                    disabledMessage={!canSetOrderKind ? 'Order kind is supported only on button fields without options.' : undefined}
-                />
+                <FieldDefaultValueSection node={node} />
                 <Separator />
 
                 <Section>
@@ -364,6 +354,8 @@ export function FieldProperties({ className, node, kinds, defaultKind }: FieldPr
                         <IncExcludeSection node={node} mode="excludes" capability={capabilities.triggerMappings} />
                         <Separator />
                         <OptionEffectsSection node={node} capability={capabilities.triggerMappings} />
+                        <Separator />
+                        <ValueEffectsSection node={node} capability={capabilities.triggerMappings} />
                     </>
                 ) : (
                     <Section>

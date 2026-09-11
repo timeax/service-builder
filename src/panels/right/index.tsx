@@ -11,12 +11,15 @@ import { useCanvas } from '@timeax/digital-service-engine/workspace';
 
 export type RightPanelProps = {
     onShare?: (snapshotData: EditorSnapshot | undefined) => void | Promise<void>;
-    onPlay?: (payload: { serviceProps: ServiceProps; capabilitiesMap: DgpServiceMap; workspaceId: string; branchId?: string }) => void | Promise<void>;
-    kinds?: string[];
-    defaultKind?: string;
+    onPlay?: (payload: {
+        serviceProps: ServiceProps;
+        capabilitiesMap: DgpServiceMap;
+        workspaceId: string;
+        branchId?: string;
+    }) => void | Promise<void>;
 };
 
-const RightPanel = ({ onShare, onPlay, kinds = [], defaultKind = '' }: RightPanelProps) => {
+const RightPanel = ({ onShare, onPlay }: RightPanelProps) => {
     const tabClassName = cn(
         'm-0! rounded-none! border-t-0! border-r-0! border-b-2! border-l-0! border-transparent! py-2.5! shadow-none!',
         'bg-transparent! text-slate-400 hover:bg-transparent hover:text-slate-700! data-[state=active]:text-slate-900!',
@@ -55,16 +58,18 @@ const RightPanel = ({ onShare, onPlay, kinds = [], defaultKind = '' }: RightPane
                         <Comments />
                     </TabsContent>
                     <TabsContent className={'min-h-0 grow overflow-hidden'} value="properties">
-                        <Properties kinds={kinds} defaultKind={defaultKind} />
+                        <Properties />
                     </TabsContent>
                     <TabsContent
-                        className={'[&_form]:grow-col flex min-h-0 grow flex-col overflow-hidden [&_form]:flex [&_form]:h-full [&_form]:overflow-hidden'}
+                        className={
+                            '[&_form]:grow-col flex min-h-0 grow flex-col overflow-hidden [&_form]:flex [&_form]:h-full [&_form]:overflow-hidden'
+                        }
                         value="wireframe"
                         forceMount
                     >
                         {/*@ts-ignore*/}
                         <OrderFlowProvider serviceProps={props} builder={api.builder} selection={api.selection!} registry={registry}>
-                            <Wireframe kinds={kinds} defaultKind={defaultKind} />
+                            <Wireframe />
                         </OrderFlowProvider>
                     </TabsContent>
                 </Tabs>

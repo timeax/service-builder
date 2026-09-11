@@ -115,6 +115,32 @@ describe('canvas reactflow node styling', () => {
         expect(shell?.className).not.toContain('outline-emerald-500');
     });
 
+    it('marks system-inactive nodes as muted while keeping them visible', () => {
+        const FieldNode = nodeTypes.field;
+        render(
+            <FieldNode
+                id="f:inactive"
+                type="field"
+                selected={false}
+                data={{
+                    node: { id: 'f:inactive', label: 'Inactive field', kind: 'field' },
+                    isSystemInactive: true,
+                }}
+                dragging={false}
+                zIndex={0}
+                isConnectable
+                xPos={0}
+                yPos={0}
+            />,
+        );
+
+        const shell = screen.getByText('Inactive field').closest('div[data-node-state]');
+        expect(shell).toBeTruthy();
+        expect(shell?.getAttribute('data-node-state')).toContain('system-inactive');
+        expect(shell?.className).toContain('grayscale');
+        expect(shell?.className).toContain('opacity-55');
+    });
+
     it('applies active-node ring styling to comment nodes when selected', () => {
         const CommentNode = nodeTypes.comment;
         const { container } = render(

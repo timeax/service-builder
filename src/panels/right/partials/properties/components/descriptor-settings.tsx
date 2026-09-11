@@ -1,28 +1,29 @@
 import { Button } from '@/components/ui/button.tsx';
-import type { Ui, UiAnyOf, UiArray, UiObject } from '@timeax/digital-service-engine/schema';
+import type { Ui, UiArray, UiObject } from '@timeax/digital-service-engine/schema';
 import { InputField } from '@timeax/form-palette';
 import { useMemo, useState } from 'react';
-import { parseFiniteNumber } from './meta.ts';
+import { useDescriptorUiRendererRegistry, type DescriptorUiSchema } from './descriptor-ui-renderers.tsx';
 
 type PathSegment = string | number;
 type Path = PathSegment[];
+type DescriptorUiSchemaMap = Record<string, DescriptorUiSchema>;
+type DescriptorUiObjectSchema = Omit<UiObject, 'fields' | 'shape'> & {
+    fields: DescriptorUiSchemaMap;
+    shape?: DescriptorUiSchemaMap;
+};
+type DescriptorUiArraySchema = Omit<UiArray, 'item' | 'items' | 'shape'> & {
+    item?: DescriptorUiSchema;
+    items?: DescriptorUiSchema[];
+    shape?: DescriptorUiSchemaMap;
+};
 
-const RESERVED_DESCRIPTOR_KEYS = new Set([
-    'options',
-    'required',
-    'value',
-    'error',
-    'field',
-    'fieldKey',
-    'id',
-]);
+const RESERVED_DESCRIPTOR_KEYS = new Set(['options', 'required', 'value', 'error', 'field', 'fieldKey', 'id']);
 
 const isDescriptorEventKey = (key: string) => /^on[A-Z]/.test(key);
 
 const hasOwn = (value: object, key: PropertyKey) => Object.prototype.hasOwnProperty.call(value, key);
 
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-    typeof value === 'object' && value !== null && !Array.isArray(value);
+const isPlainObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const asRecord = (value: unknown): Record<string, unknown> => (isPlainObject(value) ? value : {});
 
@@ -37,8 +38,6 @@ const cloneValue = <T,>(value: T): T => {
     return value;
 };
 
-const toInputText = (value: unknown) => (value === undefined || value === null ? '' : String(value));
-
 const formatLabel = (value: string) =>
     value
         .split(/[-_:]/g)
@@ -46,16 +45,16 @@ const formatLabel = (value: string) =>
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
         .join(' ');
 
-const createDefaultValue = (schema: Ui): unknown => {
+const createDefaultValue = (schema: DescriptorUiSchema): unknown => {
     switch (schema.type) {
         case 'string':
-            return schema.enum?.[0] ?? '';
+            return (schema as Extract<Ui, { type: 'string' }>).enum?.[0] ?? '';
         case 'number':
-            return schema.minimum ?? 0;
+            return (schema as Extract<Ui, { type: 'number' }>).minimum ?? 0;
         case 'boolean':
             return false;
         case 'anyOf':
-            return schema.multiple ? [] : schema.items[0]?.value;
+            return (schema as Extract<Ui, { type: 'anyOf' }>).multiple ? [] : (schema as Extract<Ui, { type: 'anyOf' }>).items[0]?.value;
         case 'array':
             return [];
         case 'object':
@@ -148,13 +147,13 @@ const removeAtPath = (source: unknown, path: Path): unknown => {
     return compactContainer(container);
 };
 
-const getVisibleObjectEntries = (schema: Record<string, Ui>) =>
+const getVisibleObjectEntries = (schema: DescriptorUiSchemaMap) =>
     Object.entries(schema).filter(([key]) => !RESERVED_DESCRIPTOR_KEYS.has(key) && !isDescriptorEventKey(key));
 
-const getOrderedObjectEntries = (schema: UiObject) => {
+const getOrderedObjectEntries = (schema: DescriptorUiObjectSchema) => {
     const visibleEntries = getVisibleObjectEntries(schema.fields);
-    const byKey = new Map<string, Ui>(visibleEntries);
-    const ordered: Array<[string, Ui]> = [];
+    const byKey = new Map<string, DescriptorUiSchema>(visibleEntries);
+    const ordered: Array<[string, DescriptorUiSchema]> = [];
 
     for (const key of schema.order ?? []) {
         const entry = byKey.get(key);
@@ -167,7 +166,7 @@ const getOrderedObjectEntries = (schema: UiObject) => {
     return ordered;
 };
 
-const inferShapeKey = (shape: Record<string, Ui> | undefined, value: unknown) => {
+const inferShapeKey = (shape: DescriptorUiSchemaMap | undefined, value: unknown) => {
     if (!shape) return undefined;
 
     const entries = Object.entries(shape);
@@ -186,7 +185,7 @@ const inferShapeKey = (shape: Record<string, Ui> | undefined, value: unknown) =>
             case 'object':
                 return isPlainObject(value);
             case 'anyOf':
-                return Array.isArray(value) === Boolean(schema.multiple);
+                return Array.isArray(value) === Boolean((schema as Extract<Ui, { type: 'anyOf' }>).multiple);
             default:
                 return false;
         }
@@ -195,19 +194,19 @@ const inferShapeKey = (shape: Record<string, Ui> | undefined, value: unknown) =>
     return match?.[0] ?? entries[0]?.[0];
 };
 
-export const getDescriptorUiEntries = (schema?: Record<string, Ui>) => getVisibleObjectEntries(schema ?? {});
+export const getDescriptorUiEntries = (schema?: DescriptorUiSchemaMap) => getVisibleObjectEntries(schema ?? {});
 
-export const getDescriptorUiKeys = (schema?: Record<string, Ui>) => getDescriptorUiEntries(schema).map(([key]) => key);
+export const getDescriptorUiKeys = (schema?: DescriptorUiSchemaMap) => getDescriptorUiEntries(schema).map(([key]) => key);
 
 export interface DescriptorSettingsProps {
-    schema: Record<string, Ui>;
+    schema: DescriptorUiSchemaMap;
     defaults: Record<string, unknown>;
     onChange: (nextDefaults: Record<string, unknown> | undefined) => void;
 }
 
 type DescriptorNodeProps = {
     path: Path;
-    schema: Ui;
+    schema: DescriptorUiSchema;
     value: unknown;
     hasOverride: boolean;
     onSet: (path: Path, value: unknown) => void;
@@ -216,130 +215,42 @@ type DescriptorNodeProps = {
 };
 
 type DescriptorObjectFieldProps = Omit<DescriptorNodeProps, 'schema'> & {
-    schema: UiObject;
+    schema: DescriptorUiObjectSchema;
 };
 
 type DescriptorArrayFieldProps = Omit<DescriptorNodeProps, 'schema'> & {
-    schema: UiArray;
+    schema: DescriptorUiArraySchema;
 };
 
-function FieldDescription({
-    description,
-    canReset,
-    onReset,
-}: {
-    description?: string;
-    canReset?: boolean;
-    onReset?: () => void;
-}) {
-    if (!description && !canReset) return null;
+const noop = () => {};
 
+function UnknownDescriptorUiField({ schema }: { schema: DescriptorUiSchema }) {
     return (
-        <div className="flex items-start justify-between gap-3">
-            <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
-            {canReset ? (
-                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={onReset}>
-                    Reset
-                </Button>
-            ) : null}
+        <div className="rounded-md border border-amber-300 bg-amber-50/60 p-3 text-xs text-amber-900 dark:border-amber-700/70 dark:bg-amber-950/20 dark:text-amber-200">
+            No descriptor settings renderer is registered for "{schema.type}".
         </div>
     );
 }
 
 function DescriptorPrimitiveField({ schema, value, hasOverride, onSet, onClear, path }: DescriptorNodeProps) {
-    switch (schema.type) {
-        case 'string': {
-            const options = schema.enum?.map((item) => ({ label: item, value: item }));
+    const registry = useDescriptorUiRendererRegistry();
+    const renderer = registry.resolve(schema.type);
 
-            return (
-                <div className="space-y-2">
-                    <FieldDescription description={schema.description} canReset={hasOverride} onReset={() => onClear(path)} />
-                    <InputField
-                        variant={options?.length ? 'select' : 'text'}
-                        label={schema.label}
-                        value={typeof value === 'string' ? value : ''}
-                        options={options as any}
-                        placeholder={options?.length ? undefined : `Enter ${schema.label.toLowerCase()}`}
-                        onChange={(event) => {
-                            const nextValue = event.value;
-                            if (typeof nextValue === 'string' && nextValue.trim() === '' && !options?.length) {
-                                onClear(path);
-                                return;
-                            }
-
-                            onSet(path, nextValue);
-                        }}
-                    />
-                </div>
-            );
-        }
-        case 'number':
-            return (
-                <div className="space-y-2">
-                    <FieldDescription description={schema.description} canReset={hasOverride} onReset={() => onClear(path)} />
-                    <InputField
-                        variant="text"
-                        label={schema.label}
-                        value={toInputText(value)}
-                        placeholder="Enter a number"
-                        onChange={(event) => {
-                            const nextValue = parseFiniteNumber(event.value);
-                            if (nextValue === undefined) {
-                                onClear(path);
-                                return;
-                            }
-
-                            onSet(path, nextValue);
-                        }}
-                    />
-                </div>
-            );
-        case 'boolean':
-            return (
-                <div className="space-y-2">
-                    <FieldDescription description={schema.description} canReset={hasOverride} onReset={() => onClear(path)} />
-                    <InputField
-                        variant="toggle"
-                        label={schema.label}
-                        value={typeof value === 'boolean' ? value : false}
-                        onChange={(event) => onSet(path, Boolean(event.value))}
-                    />
-                </div>
-            );
-        case 'anyOf': {
-            const options = schema.items.map((item) => ({
-                label: item.title ?? String(item.value),
-                value: item.value,
-                description: item.description,
-            }));
-
-            return (
-                <div className="space-y-2">
-                    <FieldDescription description={schema.description} canReset={hasOverride} onReset={() => onClear(path)} />
-                    <InputField
-                        variant={schema.multiple ? 'multi-select' : 'select'}
-                        label={schema.label}
-                        value={(schema.multiple ? (Array.isArray(value) ? value : []) : value) as any}
-                        options={options as any}
-                        onChange={(event) => {
-                            const nextValue = event.value;
-
-                            if (schema.multiple) {
-                                if (!Array.isArray(nextValue) || !nextValue.length) {
-                                    onClear(path);
-                                    return;
-                                }
-                            }
-
-                            onSet(path, nextValue);
-                        }}
-                    />
-                </div>
-            );
-        }
-        default:
-            return null;
+    if (!renderer) {
+        return <UnknownDescriptorUiField schema={schema} />;
     }
+
+    return renderer({
+        name: String(path.at(-1) ?? ''),
+        path,
+        schema,
+        value,
+        hasOverride,
+        onChange: (nextValue) => onSet(path, nextValue),
+        onClear: () => onClear(path),
+        onBlur: noop,
+        disabled: false,
+    });
 }
 
 function DescriptorObjectField({ schema, value, hasOverride, onSet, onClear, path, allowClear = true }: DescriptorObjectFieldProps) {
@@ -587,7 +498,10 @@ function DescriptorArrayField({ schema, value, hasOverride, onSet, onClear, path
                               if (!itemSchema) return null;
 
                               return (
-                                  <div key={`${path.join('.')}:${index}`} className="space-y-3 rounded-lg border border-dashed border-slate-200 p-3 dark:border-slate-700">
+                                  <div
+                                      key={`${path.join('.')}:${index}`}
+                                      className="space-y-3 rounded-lg border border-dashed border-slate-200 p-3 dark:border-slate-700"
+                                  >
                                       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
                                           <div className="flex items-end text-xs text-slate-500 dark:text-slate-400">
                                               {formatLabel(schema.label)} item {index + 1}
@@ -645,9 +559,7 @@ function DescriptorArrayField({ schema, value, hasOverride, onSet, onClear, path
 
                     {!schema.items && (schema.editable ?? true) ? (
                         <div className="grid gap-3 rounded-lg border border-dashed border-slate-200 p-3 md:grid-cols-[minmax(0,1fr)_180px_auto] dark:border-slate-700">
-                            <div className="flex items-end text-xs text-slate-500 dark:text-slate-400">
-                                Add another {schema.label.toLowerCase()}
-                            </div>
+                            <div className="flex items-end text-xs text-slate-500 dark:text-slate-400">Add another {schema.label.toLowerCase()}</div>
                             {!schema.item && shapeEntries.length > 1 ? (
                                 <InputField
                                     variant="select"
@@ -681,11 +593,11 @@ function DescriptorArrayField({ schema, value, hasOverride, onSet, onClear, path
 
 function DescriptorNodeField(props: DescriptorNodeProps) {
     if (props.schema.type === 'object') {
-        return <DescriptorObjectField {...props} schema={props.schema as UiObject} />;
+        return <DescriptorObjectField {...props} schema={props.schema as DescriptorUiObjectSchema} />;
     }
 
     if (props.schema.type === 'array') {
-        return <DescriptorArrayField {...props} schema={props.schema as UiArray} />;
+        return <DescriptorArrayField {...props} schema={props.schema as DescriptorUiArraySchema} />;
     }
 
     return <DescriptorPrimitiveField {...props} />;

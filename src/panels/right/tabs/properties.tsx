@@ -22,12 +22,7 @@ const propertyComponents: Record<Exclude<NodeKind, 'comment'>, any> = {
     field: FieldProperties,
 };
 
-export type PropertiesProps = {
-    kinds?: string[];
-    defaultKind?: string;
-};
-
-export const Properties = ({ kinds = [], defaultKind = '' }: PropertiesProps) => {
+export const Properties = () => {
     const canvas = useCanvas();
     const ws = useWorkspace();
     const node: TagNode | FieldNode | OptionNode = useMemo(() => {
@@ -57,9 +52,7 @@ export const Properties = ({ kinds = [], defaultKind = '' }: PropertiesProps) =>
             return;
         }
 
-        const loadedLabel = selectedRawLabel.trim()
-            ? selectedRawLabel
-            : lastLoadedLabelByNodeId.current[selectedNodeId] ?? selectedNodeId;
+        const loadedLabel = selectedRawLabel.trim() ? selectedRawLabel : (lastLoadedLabelByNodeId.current[selectedNodeId] ?? selectedNodeId);
         const nodeChanged = labelDraftNodeId.current !== selectedNodeId;
 
         if (nodeChanged || !isEditingLabel.current) {
@@ -72,9 +65,7 @@ export const Properties = ({ kinds = [], defaultKind = '' }: PropertiesProps) =>
     const resetEmptyLabelDraft = () => {
         if (!selectedNodeId || labelDraft.trim()) return;
 
-        const loadedLabel = selectedRawLabel.trim()
-            ? selectedRawLabel
-            : lastLoadedLabelByNodeId.current[selectedNodeId] ?? selectedNodeId;
+        const loadedLabel = selectedRawLabel.trim() ? selectedRawLabel : (lastLoadedLabelByNodeId.current[selectedNodeId] ?? selectedNodeId);
         setLabelDraft(loadedLabel);
     };
 
@@ -178,7 +169,7 @@ export const Properties = ({ kinds = [], defaultKind = '' }: PropertiesProps) =>
                     </Section>
 
                     <Separator />
-                    <Kind node={node} kinds={kinds} defaultKind={defaultKind} />
+                    <Kind node={node} />
                 </div>
             </ScrollArea>
         </div>

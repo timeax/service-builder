@@ -25,6 +25,17 @@ import './node-row.css';
 
 export { NativeFallbackEditor } from '@/workspace/fallback-editor/index.tsx';
 export type { NativeFallbackEditorProps } from '@/workspace/fallback-editor/index.tsx';
+export {
+    createDefaultDescriptorUiRendererRegistry,
+    createDescriptorUiRendererRegistry,
+    DescriptorUiRendererProvider,
+    useDescriptorUiRendererRegistry,
+} from '@/panels/right/partials/properties/components/descriptor-ui-renderers.tsx';
+export type {
+    DescriptorUiRenderer,
+    DescriptorUiRendererProps,
+    DescriptorUiRendererRegistry,
+} from '@/panels/right/partials/properties/components/descriptor-ui-renderers.tsx';
 
 const inputRegistry = createInputRegistry();
 registerEntries(inputRegistry);
@@ -51,23 +62,14 @@ export type ServiceBuilderCallbacks = {
 
 export type ServiceBuilderLayoutProps = ServiceBuilderCallbacks & {
     menu?: Menu[];
-    kinds?: string[];
-    defaultKind?: string;
 };
 
-function WorkspaceLayout({ onShare, onPlay, menu, kinds, defaultKind }: ServiceBuilderLayoutProps) {
+function WorkspaceLayout({ onShare, onPlay, menu }: ServiceBuilderLayoutProps) {
     const canvas = useCanvas();
     const ws = useWorkspace();
     const errors = useErrors();
     const bottomPanel = useBottomConsolePanel();
     const [draggingServiceId, setDraggingServiceId] = useState<string | null>(null);
-    const resolvedKinds = useMemo(() => Array.from(new Set((kinds ?? []).map((kind) => String(kind).trim()).filter(Boolean))), [kinds]);
-    const resolvedDefaultKind = useMemo(() => {
-        const next = defaultKind?.trim();
-        if (next) return next;
-        return resolvedKinds[0] ?? '';
-    }, [defaultKind, resolvedKinds]);
-
     const serviceSummary = useMemo(() => buildServiceSummaries(canvas, ws), [canvas.props, canvas.selectionInfo, canvas.activeId, ws.services.data]);
 
     return (
@@ -90,7 +92,7 @@ function WorkspaceLayout({ onShare, onPlay, menu, kinds, defaultKind }: ServiceB
                                 onServiceDragStateChange={(serviceId) => setDraggingServiceId(serviceId)}
                             />
 
-                            <RightPanel onShare={onShare} onPlay={onPlay} kinds={resolvedKinds} defaultKind={resolvedDefaultKind} />
+                            <RightPanel onShare={onShare} onPlay={onPlay} />
                         </div>
 
                         <div className="pointer-events-none absolute inset-0 z-5">
@@ -189,17 +191,15 @@ export type ServiceBuilderProps = Pick<WorkspaceProviderProps, 'backend' | 'acto
     Pick<WorkspaceProps, 'ratePolicy' | 'fallbackSettings'> &
     ServiceBuilderCallbacks & {
         menu?: Menu[];
-        kinds?: string[];
-        defaultKind?: string;
     };
 
-export function ServiceBuilder({ backend, actor, ratePolicy, fallbackSettings, onShare, onPlay, menu, kinds, defaultKind }: ServiceBuilderProps) {
+export function ServiceBuilder({ backend, actor, ratePolicy, fallbackSettings, onShare, onPlay, menu }: ServiceBuilderProps) {
     return (
         <>
             <style>{Styles}</style>
             <InputsProvider initialRegistry={inputRegistry}>
                 <Workspace backend={backend} actor={actor} ratePolicy={ratePolicy} fallbackSettings={fallbackSettings}>
-                    {() => <WorkspaceLayout onShare={onShare} onPlay={onPlay} menu={menu} kinds={kinds} defaultKind={defaultKind} />}
+                    {() => <WorkspaceLayout onShare={onShare} onPlay={onPlay} menu={menu} />}
                 </Workspace>
             </InputsProvider>
         </>
@@ -209,11 +209,9 @@ export function ServiceBuilder({ backend, actor, ratePolicy, fallbackSettings, o
 export type ServiceBuilderWorkspaceProps = Pick<ServiceBuilderProps, 'ratePolicy' | 'fallbackSettings'> &
     ServiceBuilderCallbacks & {
         menu?: Menu[];
-        kinds?: string[];
-        defaultKind?: string;
     };
 
-export function ServiceBuilderWorkspace({ ratePolicy, fallbackSettings, onShare, onPlay, menu, kinds, defaultKind }: ServiceBuilderWorkspaceProps) {
+export function ServiceBuilderWorkspace({ ratePolicy, fallbackSettings, onShare, onPlay, menu }: ServiceBuilderWorkspaceProps) {
     return (
         <ServiceBuilder
             backend={workspaceBackend as any}
@@ -223,8 +221,6 @@ export function ServiceBuilderWorkspace({ ratePolicy, fallbackSettings, onShare,
             onShare={onShare}
             onPlay={onPlay}
             menu={menu}
-            kinds={kinds}
-            defaultKind={defaultKind}
         />
     );
 }
