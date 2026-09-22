@@ -19,9 +19,6 @@ export default defineConfig({
         'react',
         'react-dom',
         '@xyflow/react',
-        '@timeax/digital-service-engine',
-        '@timeax/digital-service-engine/react',
-        '@timeax/digital-service-engine/workspace',
         '@timeax/form-palette',
     ],
 });

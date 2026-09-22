@@ -65,15 +65,15 @@ export function NodeRow<T = unknown>({
     const showBinding = !!binding?.show && hasParent;
 
     const lineVars = {
-        ['--tree-line-color' as any]: binding?.color ?? 'var(--tree-line, #d1d5db)',
-        ['--tree-line-width' as any]: `${binding?.lineWidth ?? 1}px`,
-        ['--tree-line-style' as any]: binding?.lineStyle ?? 'solid',
-        ['--elbow-v-h' as any]: binding?.isLast ? '50%' : '100%',
+        '--tree-line-color': binding?.color ?? 'var(--tree-line, #d1d5db)',
+        '--tree-line-width': `${binding?.lineWidth ?? 1}px`,
+        '--tree-line-style': binding?.lineStyle ?? 'solid',
+        '--elbow-v-h': binding?.isLast ? '50%' : '100%',
     } as React.CSSProperties;
 
     const pad = Math.max(0, depth - 1) * indent;
 
-    const stopPropagation = (e: React.MouseEvent, callback?: (e?: any) => void) => {
+    const stopPropagation = (e: React.MouseEvent, callback?: (e?: React.MouseEvent) => void) => {
         e.stopPropagation();
         callback?.(e);
     };

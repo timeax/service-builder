@@ -21,7 +21,7 @@ export function findPathById<T>(nodes: Array<TreeNode<T>>, getKey: (n: TreeNode<
         const here = [...acc, getKey(n)];
         if (String(getKey(n)) === wanted) return here;
 
-        const rawChildren = (n as any).children;
+        const rawChildren = n.children;
         if (Array.isArray(rawChildren) && rawChildren.length) {
             const sub = findPathById(rawChildren as Array<TreeNode<T>>, getKey, id, here);
             if (sub) return sub;

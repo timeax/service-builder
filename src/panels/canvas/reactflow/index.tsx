@@ -19,6 +19,7 @@ type BaseData = {
     draggingService?: boolean;
     canAcceptDropPayload?: (dataTransfer: DataTransfer) => boolean;
     onNodeDrop?: (args: { nodeId: string; clientX: number; clientY: number; dataTransfer: DataTransfer }) => void;
+    onToggleResolved?: () => void;
     isActiveNode?: boolean;
     isCurrentTag?: boolean;
     isVisibleGroupField?: boolean;
@@ -275,9 +276,9 @@ function CommentNode(props: NodeProps<CanvasNode>) {
                 <span>{main?.authorName ?? 'Comment'}</span>
             </div>
             <div className="px-3 py-2 text-sm leading-5 text-slate-700 dark:text-slate-200">{main?.body ?? ''}</div>
-            <div className="absolute right-2 bottom-2 text-[10px] tracking-[0.14em] text-slate-400 uppercase">
+            <button type="button" className="absolute right-2 bottom-2 text-[10px] tracking-[0.14em] text-slate-400 uppercase" aria-label={thread?.resolved ? 'Reopen comment' : 'Resolve comment'} disabled={!props.data.onToggleResolved} onClick={(event) => { event.stopPropagation(); props.data.onToggleResolved?.(); }}>
                 {thread?.resolved ? 'Resolved' : 'Open'}
-            </div>
+            </button>
         </div>
     );
 }

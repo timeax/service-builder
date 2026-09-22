@@ -4,16 +4,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { cn } from '@/lib/utils.ts';
-import { type BranchParticipant } from '@timeax/digital-service-engine/workspace';
 import { useMemo, type FC } from 'react';
 import { GoChevronDown } from 'react-icons/go';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
 import { PiUserPlusThin } from 'react-icons/pi';
 
-export interface User extends BranchParticipant {
+export interface User {
+    id: string;
     name: string;
     avatar: string;
     isOnline: boolean;
+    roles?: readonly string[];
+    canWrite: boolean;
+    canRead: boolean;
 }
 
 interface UsersProps {

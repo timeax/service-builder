@@ -3,7 +3,7 @@ import { pathToString } from './utils';
 
 export function defaultMatch<T>(node: TreeNode<T>, q: string): boolean {
     if (!q) return false;
-    return String((node as any).title)
+    return String(node.title)
         .toLowerCase()
         .includes(q.toLowerCase());
 }
@@ -36,7 +36,7 @@ export function buildSearchSets<T>(
 
             const self = match(n, q);
 
-            const rawChildren = (n as any).children;
+            const rawChildren = n.children;
             const childrenIsArray = Array.isArray(rawChildren);
             const childrenArray = childrenIsArray ? (rawChildren as Array<TreeNode<T>>) : null;
             const childrenIsLazy = typeof rawChildren === 'function';

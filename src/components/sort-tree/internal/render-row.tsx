@@ -1,4 +1,5 @@
 import * as React from 'react';
+import type { RowComponentProps } from 'react-window';
 
 import { OnDroppableWrap } from '../core/droppable-wrap';
 import { isPrefix, samePath } from '../core/paths';
@@ -6,14 +7,15 @@ import { dragId, zoneId } from '../dnd-ids';
 import { DraggableRow } from '../draggable-row';
 import { DropZone as Zone } from '../drop-zone';
 import { NodeRow } from '../node-row';
-import type { NodeKey, NodePath, TreeNode } from '../types';
+import type { FlatRow } from '../flatten';
+import type { NodeKey, NodePath, SortTreeProps, TreeNode } from '../types';
 import { locateByPath } from '../utils';
 import { cn } from '@/lib/utils.ts';
 
 const ZONE_HEIGHT = 6;
 
 export function useRenderRow<T>(args: {
-    rows: any[];
+    rows: Array<FlatRow<T>>;
     tree: Array<TreeNode<T>>;
     getNodeKey: (n: TreeNode<T>) => NodeKey;
 
@@ -21,20 +23,20 @@ export function useRenderRow<T>(args: {
     canDrag: (n: TreeNode<T>) => boolean;
     activePath: NodePath | null;
 
-    renderNode: any;
+    renderNode: SortTreeProps<T>['renderNode'];
     showBinding: boolean;
 
-    nodeClassName: any;
-    activeClassName: any;
-    rowClassName: any;
+    nodeClassName: SortTreeProps<T>['nodeClassName'];
+    activeClassName: SortTreeProps<T>['activeClassName'];
+    rowClassName: SortTreeProps<T>['rowClassName'];
 
-    skinClassName: any;
-    selectedSkinClassName: any;
-    selectedRowClassName: any;
-    selectedNodeClassName: any;
+    skinClassName: SortTreeProps<T>['skinClassName'];
+    selectedSkinClassName: SortTreeProps<T>['selectedSkinClassName'];
+    selectedRowClassName: SortTreeProps<T>['selectedRowClassName'];
+    selectedNodeClassName: SortTreeProps<T>['selectedNodeClassName'];
 
     preventNativeContextMenu: boolean;
-    onContextMenu?: any;
+    onContextMenu?: SortTreeProps<T>['onContextMenu'];
 
     createUIAt: NodePath | null;
     createUIValue: string;
@@ -170,8 +172,8 @@ export function useRenderRow<T>(args: {
 
             // caret hint even before load
             const hasChildrenHint =
-                typeof (r.node as any).__childrenLoader === 'function' ||
-                typeof (r.node as any).children === 'function' ||
+                typeof (r.node as TreeNode<T> & { __childrenLoader?: unknown }).__childrenLoader === 'function' ||
+                typeof r.node.children === 'function' ||
                 (Array.isArray(r.node.children) && r.node.children.length > 0);
 
             // root (depth=1) => 0px; otherwise indent*(depth-1)
@@ -212,8 +214,8 @@ export function useRenderRow<T>(args: {
                                         hasChildren={hasChildrenHint}
                                         binding={{
                                             show: showBinding,
-                                            guides: (r as any).guides,
-                                            isLast: (r as any).sibling?.isLast ?? true,
+                                            guides: r.guides,
+                                            isLast: r.sibling.isLast,
                                         }}
                                         onContextMenu={(e) => {
                                             if (preventNativeContextMenu) e.preventDefault();
@@ -284,6 +286,7 @@ export function useRenderRow<T>(args: {
             renderNode,
             showBinding,
             nodeClassName,
+            activeClassName,
             rowClassName,
             skinClassName,
             selectedSkinClassName,
@@ -308,7 +311,7 @@ export function useRenderRow<T>(args: {
         ],
     );
 
-    const RowVirtual = React.useCallback(({ index, style }: any) => renderRow(index, style), [renderRow]);
+    const RowVirtual = React.useCallback(({ index, style }: RowComponentProps) => renderRow(index, style), [renderRow]);
 
     return { renderRow, RowVirtual } as const;
 }

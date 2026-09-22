@@ -55,7 +55,7 @@ const labelStyles: Record<LabelVariant, string> = {
 };
 
 export function Label({ as: Comp = 'span', variant = 'value', truncate, className, ...props }: LabelProps) {
-    //@ts-ignore
+    // @ts-expect-error Polymorphic intrinsic props are intentionally forwarded to the selected element.
     return <Comp className={cn(labelStyles[variant], truncate && 'min-w-0 truncate', className)} {...props} />;
 }
 

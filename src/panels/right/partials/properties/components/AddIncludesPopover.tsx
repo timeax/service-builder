@@ -8,12 +8,16 @@ import { BsPlus } from 'react-icons/bs';
 interface AddIncludesPopoverProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    options: unknown[];
+    options: Array<{ label: string; value: string; description?: string; tags?: Array<{ label: string; value: string }> }>;
     onSelect(value: string[]): void;
 }
 
 export function AddIncludesPopover({ open, onOpenChange, onSelect, options }: AddIncludesPopoverProps) {
-    const [value, setValue] = useState<any>();
+    const [value, setValue] = useState<string[]>([]);
+    const checkboxOptions = options.map((option) => ({
+        ...option,
+        tags: option.tags?.map((tag) => ({ ...tag, raw: tag.value })),
+    }));
 
     return (
         <Popover open={open} onOpenChange={onOpenChange}>
@@ -25,16 +29,16 @@ export function AddIncludesPopover({ open, onOpenChange, onSelect, options }: Ad
                     <InputField
                         value={value}
                         onChange={(e) => {
-                            setValue(e.value);
+                            setValue(Array.isArray(e.value) ? e.value.map(String) : e.value == null ? [] : [String(e.value)]);
                         }}
                         optGroupClassName={'gap-4'}
                         variant={'checkbox'}
-                        options={options as any}
+                        options={checkboxOptions}
                     />
                     <Button
                         onClick={() => {
                             onSelect(value);
-                            setValue(undefined);
+                            setValue([]);
                             onOpenChange(false);
                         }}
                         type={'submit'}

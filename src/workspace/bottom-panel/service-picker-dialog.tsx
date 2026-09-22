@@ -1,13 +1,11 @@
-import type { BuilderServiceSummary } from '@/builder/bottom-panel.ts';
 import { ServiceMetaPopover } from '@/components/service-meta-popover.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { cn } from '@/lib/utils.ts';
-import type { DgpServiceCapability } from '@timeax/digital-service-engine/schema';
 import { InputField } from '@timeax/form-palette';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { createDefaultServicePickerFilters, discoverServiceMetaPaths, filterServicePickerServices, type ServicePickerFilters } from './service-picker.ts';
+import { createDefaultServicePickerFilters, discoverServiceMetaPaths, filterServicePickerServices, type ServicePickerCatalogService, type ServicePickerFilters, type ServicePickerSummary } from './service-picker.ts';
 
 const EMPTY_SERVICE_IDS = new Set<string>();
 
@@ -17,8 +15,8 @@ type ServicePickerDialogProps = {
     selectedGroupId?: string | null;
     parentGroupId?: string | null;
     parentServiceIds?: Set<string>;
-    services: BuilderServiceSummary[];
-    serviceMap: Record<string, DgpServiceCapability>;
+    services: ServicePickerSummary[];
+    serviceMap: Record<string, ServicePickerCatalogService>;
     activeIds?: Set<string>;
     existingGroupServiceIds?: Set<string>;
     onOpenChange: (open: boolean) => void;
@@ -38,15 +36,15 @@ export function ServicePickerDialog({
     onOpenChange,
     onConfirm,
 }: ServicePickerDialogProps) {
-    const parentServiceIdsKey = useMemo(() => Array.from(parentServiceIds).sort((a, b) => a.localeCompare(b)).join('|'), [parentServiceIds]);
+    const stableParentServiceIds = useMemo(() => new Set(parentServiceIds), [parentServiceIds]);
     const defaultFilters = useMemo(
         () =>
             createDefaultServicePickerFilters({
                 selectedGroupId,
                 parentGroupId,
-                parentServiceIds,
+                parentServiceIds: stableParentServiceIds,
             }),
-        [parentGroupId, parentServiceIdsKey, selectedGroupId],
+        [parentGroupId, selectedGroupId, stableParentServiceIds],
     );
     const [filters, setFilters] = useState<ServicePickerFilters>(() => defaultFilters);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -149,7 +147,7 @@ export function ServicePickerDialog({
                                         [
                                             { label: 'Parent group services', value: 'parent' },
                                             { label: 'All services', value: 'all' },
-                                        ] as any
+                                        ]
                                     }
                                     onChange={(event) =>
                                         setFilters((current) => ({
@@ -192,7 +190,7 @@ export function ServicePickerDialog({
                                             { label: 'All services', value: 'all' },
                                             { label: 'Hide active', value: 'hide-active' },
                                             { label: 'Active only', value: 'active-only' },
-                                        ] as any
+                                        ]
                                     }
                                     onChange={(event) =>
                                         setFilters((current) => ({
@@ -236,7 +234,7 @@ export function ServicePickerDialog({
                                             [
                                                 { label: 'Must include', value: 'include' },
                                                 { label: 'Must not include', value: 'exclude' },
-                                            ] as any
+                                            ]
                                         }
                                         onChange={(event) =>
                                             setFilters((current) => ({
@@ -453,5 +451,5 @@ function toPickerSelectOptions(values: string[]) {
     return values.map((value) => ({
         label: value,
         value,
-    })) as any;
+    }));
 }

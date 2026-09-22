@@ -1,4 +1,4 @@
-import type { ChangeDetail, NodePath, TreeNode } from './types';
+import type { ChangeDetail, ChangeDetailMove, ChangeDetailRemove, NodePath, TreeNode } from './types';
 import { defaultGetKey, insertNodeAtPath, removeNodeAtPath, subtreeDepth } from './utils';
 
 export function moveNode<T>(args: {
@@ -8,7 +8,7 @@ export function moveNode<T>(args: {
     toParentPath: NodePath | null;
     toIndex: number;
     maxDepth?: number;
-}): { tree: Array<TreeNode<T>>; detail: ChangeDetail<T> } {
+}): { tree: Array<TreeNode<T>>; detail: ChangeDetailMove<T> } {
     const getKey = args.getNodeKey ?? defaultGetKey;
 
     const { tree: afterRemoval, removed } = removeNodeAtPath<T>(args.data, args.fromPath, getKey);
@@ -25,8 +25,7 @@ export function moveNode<T>(args: {
 
     const sameParent = removed.parentPath && toInfo.parentPath && removed.parentPath.join('/') === toInfo.parentPath.join('/');
 
-    //@ts-ignore
-    const detail: ChangeDetail<T> = {
+    const detail: ChangeDetailMove<T> = {
         type: sameParent ? 'reorder' : 'move',
         node: removed.node,
         from: {
@@ -86,7 +85,6 @@ export function addNode<T>(
     getKey: (n: TreeNode<T>) => string | number = defaultGetKey,
 ): { tree: Array<TreeNode<T>>; detail: ChangeDetail<T> } {
     const { tree, toInfo } = insertNodeAtPath<T>(data, parentPath, index, node, getKey);
-    //@ts-ignore
     const detail: ChangeDetail<T> = { type: 'insert', node, to: toInfo, preventDefault: () => {} };
     return { tree, detail };
 }
@@ -95,11 +93,11 @@ export function removeNode<T>(
     data: Array<TreeNode<T>>,
     path: NodePath,
     getKey: (n: TreeNode<T>) => string | number = defaultGetKey,
-): { tree: Array<TreeNode<T>>; detail?: ChangeDetail<T> } {
+): { tree: Array<TreeNode<T>>; detail?: ChangeDetailRemove<T> } {
     const { tree, removed } = removeNodeAtPath<T>(data, path, getKey);
     if (!removed) return { tree };
 
-    const detail: ChangeDetail<T> = {
+    const detail: ChangeDetailRemove<T> = {
         type: 'remove',
         node: removed.node,
         from: {

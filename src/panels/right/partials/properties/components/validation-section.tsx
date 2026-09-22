@@ -1,17 +1,25 @@
 import { Button } from '@/components/ui/button.tsx';
 import { Section, SectionActionButton } from '@/panels/right/components/sections.tsx';
-import type { FieldNode } from '@timeax/digital-service-engine/core';
-import type { FieldValidationOp, FieldValidationRule, FieldValidationValueBy } from '@timeax/digital-service-engine/schema';
-import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
-import { useMemo } from 'react';
 import { BsPlus } from 'react-icons/bs';
 import { MdDeleteOutline } from 'react-icons/md';
 import { parseFiniteNumber } from './meta.ts';
 
-type ValidationSectionProps = {
-    node: FieldNode;
+type FieldValidationOp = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'between' | 'in' | 'nin' | 'truthy' | 'falsy' | 'match';
+type FieldValidationValueBy = 'value' | 'length' | 'eval';
+export type FieldValidationEditorRule = {
+    op: FieldValidationOp;
+    valueBy?: FieldValidationValueBy;
+    value?: string | number | boolean | null;
+    min?: number;
+    max?: number;
+    values?: Array<string | number | boolean | null>;
+    pattern?: string;
+    flags?: string;
+    code?: string;
+    message?: string;
 };
+type FieldValidationRule = FieldValidationEditorRule;
 
 type ScalarType = 'string' | 'number' | 'boolean';
 type ScalarValue = string | number | boolean;
@@ -120,7 +128,7 @@ function TypedScalarEditor({
                         { label: 'String', value: 'string' },
                         { label: 'Number', value: 'number' },
                         { label: 'Boolean', value: 'boolean' },
-                    ] as any}
+                    ]}
                     onChange={(event) => onChange(defaultScalarValue(String(event.value ?? 'string') as ScalarType))}
                 />
 
@@ -240,7 +248,7 @@ function ValidationRuleCard({
                     variant="select"
                     label="Operation"
                     value={rule.op}
-                    options={opOptions as any}
+                    options={opOptions}
                     onChange={(event) =>
                         onChange(
                             sanitizeRule({
@@ -254,7 +262,7 @@ function ValidationRuleCard({
                     variant="select"
                     label="Value source"
                     value={valueBy}
-                    options={valueByOptions as any}
+                    options={valueByOptions}
                     onChange={(event) =>
                         onChange(
                             sanitizeRule({
@@ -396,29 +404,23 @@ function ValidationRuleCard({
     );
 }
 
-export default function ValidationSection({ node }: ValidationSectionProps) {
-    const canvas = useCanvas();
-
-    const rules = useMemo(
-        () => canvas.api.editor.getFieldValidation?.(node.id) ?? node.raw.validation ?? [],
-        [canvas.api.editor, canvas.props, node.id, node.raw.validation],
-    );
-
-    const persistRules = (nextRules: FieldValidationRule[]) => {
-        if (!nextRules.length) {
-            canvas.api.editor.clearFieldValidation(node.id);
-            return;
-        }
-
-        canvas.api.editor.setFieldValidation(node.id, nextRules);
-    };
+export default function ValidationRulesSection({
+    rules,
+    onChange,
+    disabled = false,
+}: {
+    rules: FieldValidationRule[];
+    onChange: (rules: FieldValidationRule[]) => void;
+    disabled?: boolean;
+}) {
+    const persistRules = onChange;
 
     const addRule = () => {
         persistRules([...rules, createDefaultRule()]);
     };
 
     const clearRules = () => {
-        canvas.api.editor.clearFieldValidation(node.id);
+        persistRules([]);
     };
 
     const updateRuleAt = (index: number, nextRule: FieldValidationRule) => {
@@ -435,7 +437,7 @@ export default function ValidationSection({ node }: ValidationSectionProps) {
                 <Section.Title>Validation</Section.Title>
                 <Section.Actions>
                     {!rules.length ? (
-                        <SectionActionButton icon={<BsPlus />} iconOnly tooltip="Add validation" aria-label="Add validation" onClick={addRule} />
+                        <SectionActionButton disabled={disabled} icon={<BsPlus />} iconOnly tooltip="Add validation" aria-label="Add validation" onClick={addRule} />
                     ) : null}
                     {rules.length ? (
                         <SectionActionButton
@@ -443,6 +445,7 @@ export default function ValidationSection({ node }: ValidationSectionProps) {
                             iconOnly
                             tooltip="Clear validation"
                             aria-label="Clear validation"
+                            disabled={disabled}
                             onClick={clearRules}
                         />
                     ) : null}
@@ -450,6 +453,7 @@ export default function ValidationSection({ node }: ValidationSectionProps) {
             </Section.Header>
 
             <Section.Content>
+                <fieldset disabled={disabled} className="m-0 min-w-0 border-0 p-0">
                 {rules.length ? (
                     <div className="space-y-4">
                         {rules.map((rule, index) => (
@@ -478,6 +482,7 @@ export default function ValidationSection({ node }: ValidationSectionProps) {
                         </Button>
                     </div>
                 )}
+                </fieldset>
             </Section.Content>
         </Section>
     );

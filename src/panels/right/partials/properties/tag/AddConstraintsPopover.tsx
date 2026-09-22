@@ -10,7 +10,7 @@ interface AddConstraintsPopoverProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     constraints: string[];
-    allConstraints: unknown[];
+    allConstraints: Array<{ label: string; value: string; description?: string }>;
     onSubmit: (data: Record<string, unknown>) => void;
 }
 
@@ -33,11 +33,11 @@ export function AddConstraintsPopover({ open, onOpenChange, constraints, allCons
                         <InputField
                             name={'constraints'}
                             variant={'checkbox'}
-                            defaultValue={constraints.map((item) => ({ state: true, value: item })) as any}
+                            defaultValue={constraints.map((item) => ({ state: true, value: item }))}
                             optGroupClassName={'gap-2'}
                             tristate
                             autoCap
-                            options={allConstraints as any}
+                            options={allConstraints}
                         />
 
                         <Button type={'submit'} size={'sm'}>

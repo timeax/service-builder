@@ -12,12 +12,12 @@ export interface DropZoneProps {
 }
 
 export const DropZone: React.FC<DropZoneProps> = ({ id, height, className, style, onNativeDrop, disabled }) => {
+    const { setNodeRef, isOver } = useDroppable({ id, disabled });
+
     if (disabled) {
         // Not registered with dnd-kit at all → collision detection ignores it
         return <div style={{ height, ...style }} className={['w-full transition-colors', className ?? ''].join(' ')} />;
     }
-
-    const { setNodeRef, isOver } = useDroppable({ id });
 
     return (
         <div

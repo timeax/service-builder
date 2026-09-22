@@ -1,17 +1,24 @@
 import { Button } from '@/components/ui/button.tsx';
-import type { Ui, UiArray, UiObject } from '@timeax/digital-service-engine/schema';
 import { InputField } from '@timeax/form-palette';
 import { useMemo, useState } from 'react';
-import { useDescriptorUiRendererRegistry, type DescriptorUiSchema } from './descriptor-ui-renderers.tsx';
+import type {
+    DescriptorUiAnyOf,
+    DescriptorUiArray,
+    DescriptorUiNumber,
+    DescriptorUiObject,
+    DescriptorUiSchema,
+    DescriptorUiString,
+} from './descriptor-ui-schema.ts';
+import { useDescriptorUiRendererRegistry } from './descriptor-ui-renderers.tsx';
 
 type PathSegment = string | number;
 type Path = PathSegment[];
 type DescriptorUiSchemaMap = Record<string, DescriptorUiSchema>;
-type DescriptorUiObjectSchema = Omit<UiObject, 'fields' | 'shape'> & {
+type DescriptorUiObjectSchema = Omit<DescriptorUiObject, 'fields' | 'shape'> & {
     fields: DescriptorUiSchemaMap;
     shape?: DescriptorUiSchemaMap;
 };
-type DescriptorUiArraySchema = Omit<UiArray, 'item' | 'items' | 'shape'> & {
+type DescriptorUiArraySchema = Omit<DescriptorUiArray, 'item' | 'items' | 'shape'> & {
     item?: DescriptorUiSchema;
     items?: DescriptorUiSchema[];
     shape?: DescriptorUiSchemaMap;
@@ -48,13 +55,13 @@ const formatLabel = (value: string) =>
 const createDefaultValue = (schema: DescriptorUiSchema): unknown => {
     switch (schema.type) {
         case 'string':
-            return (schema as Extract<Ui, { type: 'string' }>).enum?.[0] ?? '';
+            return (schema as DescriptorUiString).enum?.[0] ?? '';
         case 'number':
-            return (schema as Extract<Ui, { type: 'number' }>).minimum ?? 0;
+            return (schema as DescriptorUiNumber).minimum ?? 0;
         case 'boolean':
             return false;
         case 'anyOf':
-            return (schema as Extract<Ui, { type: 'anyOf' }>).multiple ? [] : (schema as Extract<Ui, { type: 'anyOf' }>).items[0]?.value;
+            return (schema as DescriptorUiAnyOf).multiple ? [] : (schema as DescriptorUiAnyOf).items[0]?.value;
         case 'array':
             return [];
         case 'object':
@@ -185,7 +192,7 @@ const inferShapeKey = (shape: DescriptorUiSchemaMap | undefined, value: unknown)
             case 'object':
                 return isPlainObject(value);
             case 'anyOf':
-                return Array.isArray(value) === Boolean((schema as Extract<Ui, { type: 'anyOf' }>).multiple);
+                return Array.isArray(value) === Boolean((schema as DescriptorUiAnyOf).multiple);
             default:
                 return false;
         }
@@ -201,6 +208,7 @@ export const getDescriptorUiKeys = (schema?: DescriptorUiSchemaMap) => getDescri
 export interface DescriptorSettingsProps {
     schema: DescriptorUiSchemaMap;
     defaults: Record<string, unknown>;
+    inheritedDefaults?: Record<string, unknown>;
     onChange: (nextDefaults: Record<string, unknown> | undefined) => void;
 }
 
@@ -356,7 +364,7 @@ function DescriptorObjectField({ schema, value, hasOverride, onSet, onClear, pat
                                             variant="select"
                                             label="Shape"
                                             value={shapeKey}
-                                            options={shapeEntries.map(([label]) => ({ label, value: label })) as any}
+                                            options={shapeEntries.map(([label]) => ({ label, value: label }))}
                                             onChange={(event) => {
                                                 const nextShape = String(event.value ?? '');
                                                 const nextSchema = schema.shape?.[nextShape];
@@ -417,7 +425,7 @@ function DescriptorObjectField({ schema, value, hasOverride, onSet, onClear, pat
                                 variant="select"
                                 label="Shape"
                                 value={draftShape}
-                                options={shapeEntries.map(([label]) => ({ label, value: label })) as any}
+                                options={shapeEntries.map(([label]) => ({ label, value: label }))}
                                 onChange={(event) => setDraftShape(String(event.value ?? shapeEntries[0]?.[0] ?? ''))}
                             />
                             <div className="flex items-end">
@@ -511,7 +519,7 @@ function DescriptorArrayField({ schema, value, hasOverride, onSet, onClear, path
                                                   variant="select"
                                                   label="Shape"
                                                   value={shapeKey}
-                                                  options={shapeEntries.map(([label]) => ({ label, value: label })) as any}
+                                                  options={shapeEntries.map(([label]) => ({ label, value: label }))}
                                                   onChange={(event) => {
                                                       const nextShape = String(event.value ?? '');
                                                       const nextSchema = schema.shape?.[nextShape];
@@ -565,7 +573,7 @@ function DescriptorArrayField({ schema, value, hasOverride, onSet, onClear, path
                                     variant="select"
                                     label="Shape"
                                     value={draftShape}
-                                    options={shapeEntries.map(([label]) => ({ label, value: label })) as any}
+                                    options={shapeEntries.map(([label]) => ({ label, value: label }))}
                                     onChange={(event) => setDraftShape(String(event.value ?? shapeEntries[0]?.[0] ?? ''))}
                                 />
                             ) : (
@@ -603,7 +611,7 @@ function DescriptorNodeField(props: DescriptorNodeProps) {
     return <DescriptorPrimitiveField {...props} />;
 }
 
-export function DescriptorSettings({ schema, defaults, onChange }: DescriptorSettingsProps) {
+export function DescriptorSettings({ schema, defaults, inheritedDefaults = {}, onChange }: DescriptorSettingsProps) {
     const entries = useMemo(() => getDescriptorUiEntries(schema), [schema]);
 
     const handleSet = (path: Path, value: unknown) => {
@@ -629,7 +637,7 @@ export function DescriptorSettings({ schema, defaults, onChange }: DescriptorSet
                         key={key}
                         path={path}
                         schema={fieldSchema}
-                        value={getAtPath(defaults, path)}
+                        value={getAtPath(defaults, path) ?? getAtPath(inheritedDefaults, path)}
                         hasOverride={hasOwn(defaults, key)}
                         onSet={handleSet}
                         onClear={handleClear}

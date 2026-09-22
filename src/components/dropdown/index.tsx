@@ -181,7 +181,7 @@ function tidySeparators(nodes: MenuNode[]): MenuNode[] {
     const out: MenuNode[] = [];
     let prevSep = true; // treat as if leading with sep to drop initial
     for (const n of nodes) {
-        if (n.type === 'separator' || (n as any).hidden) {
+        if (n.type === 'separator' || n.hidden) {
             if (!prevSep) {
                 prevSep = true;
                 out.push({ type: 'separator' });
@@ -205,11 +205,12 @@ async function runCommand(
         onAfterCommand?: (node: MenuNode, result: unknown) => void;
         onCommandError?: (node: MenuNode, error: unknown) => void;
     },
-    command?: ((e: { event: Event; item: any }) => void | Promise<unknown>) | undefined,
+    command?: ActionItem['command'] | LinkItem['command'],
 ) {
     try {
         hooks.onBeforeCommand?.(node);
-        const result = await (command?.({ event: ev, item: node as any }) ?? undefined);
+        const invoke = command as ((input: { event: Event; item: MenuNode }) => void | Promise<unknown>) | undefined;
+        const result = await (invoke?.({ event: ev, item: node }) ?? undefined);
         hooks.onAfterCommand?.(node, result);
         return result;
     } catch (err) {
@@ -284,7 +285,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
         if (id == null) return;
         setLoadingIds((prev) => {
             const next = new Set(prev);
-            state ? next.add(id) : next.delete(id);
+            if (state) next.add(id);
+            else next.delete(id);
             return next;
         });
     };
@@ -305,9 +307,16 @@ export const Dropdown: React.FC<DropdownProps> = ({
                 return true;
             });
             const mapped = visible.map((n) => {
-                if (isGroup(n) || isSubmenu(n) || isRadioGroup(n)) {
-                    const items = filterTree((n as any).items ?? []);
+                if (isGroup(n) || isSubmenu(n)) {
+                    const items = filterTree(n.items ?? []);
                     return { ...n, items } as MenuNode;
+                }
+                if (isRadioGroup(n)) {
+                    const items = n.items.filter((item) => {
+                        if (item.hidden || item.visible === false) return false;
+                        return !item.hiddenWhen?.(visibilityCtx ?? {});
+                    });
+                    return { ...n, items };
                 }
                 return n;
             });
@@ -336,7 +345,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
     /** Global hotkey binding (as requested) */
     React.useEffect(() => {
-        const bindings = flat.map((n) => ({ n, hot: parseShortcut((n as any).shortcut) })).filter((x) => x.hot);
+        const bindings = flat.map((n) => ({ n, hot: parseShortcut('shortcut' in n ? n.shortcut : undefined) })).filter((x) => x.hot);
 
         if (!bindings.length) return;
 
@@ -344,45 +353,45 @@ export const Dropdown: React.FC<DropdownProps> = ({
             for (const { n, hot } of bindings) {
                 if (!hot) continue;
                 if (matchHot(ev, hot)) {
-                    if ((n as any).disabled) return;
+                    if ('disabled' in n && n.disabled) return;
                     ev.preventDefault();
 
                     // Checkbox toggles
-                    if ((n as any).type === 'checkbox') {
+                    if (isCheckbox(n)) {
                         const c = n as CheckboxItem;
                         const next = !c.checked;
                         try {
-                            setLoading((n as any).id, true);
+                            setLoading(n.id, true);
                             await c.onCheckedChange?.(next);
                             onItemSelect?.({ node: n, event: ev as unknown as Event });
                         } finally {
-                            setLoading((n as any).id, false);
+                            setLoading(n.id, false);
                         }
                         return;
                     }
 
                     // Link fallback navigation (native)
                     if (isLink(n)) {
-                        setLoading((n as any).id, true);
+                        setLoading(n.id, true);
                         try {
                             await runCommand(n, ev as unknown as Event, { onBeforeCommand, onAfterCommand, onCommandError }, n.command);
                             const dest = (n as Record<string, unknown>)[linkKey];
                             if (typeof dest === 'string') window.location.assign(dest);
                             onItemSelect?.({ node: n, event: ev as unknown as Event });
                         } finally {
-                            setLoading((n as any).id, false);
+                            setLoading(n.id, false);
                         }
                         return;
                     }
 
                     // Default actions
                     const a = n as ActionItem;
-                    setLoading((n as any).id, true);
+                    setLoading(n.id, true);
                     try {
                         await runCommand(a, ev as unknown as Event, { onBeforeCommand, onAfterCommand, onCommandError }, a.command);
                         onItemSelect?.({ node: a, event: ev as unknown as Event });
                     } finally {
-                        setLoading((n as any).id, false);
+                        setLoading(n.id, false);
                     }
                     return;
                 }
@@ -395,10 +404,10 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
     /** Handle row selection (close/open behavior and confirms) */
     const handleSelect = async (node: MenuNode, ev: Event, commit: () => Promise<void>) => {
-        const shouldClose = (node as any).closeOnSelect ?? closeOnSelect;
+        const shouldClose = ('closeOnSelect' in node ? node.closeOnSelect : undefined) ?? closeOnSelect;
 
         // Confirm gate
-        const needsConfirm = (node as any).confirm != null;
+        const needsConfirm = 'confirm' in node && node.confirm != null;
         if (needsConfirm) {
             ev.preventDefault();
             setConfirmNode(node);
@@ -429,29 +438,29 @@ export const Dropdown: React.FC<DropdownProps> = ({
         const commit = async () => {
             // Branch on node type
             if (isLink(node)) {
-                setLoading((node as any).id, true);
+                setLoading(node.id, true);
                 try {
                     await runCommand(node, ev, { onBeforeCommand, onAfterCommand, onCommandError }, node.command);
                 } finally {
-                    setLoading((node as any).id, false);
+                    setLoading(node.id, false);
                 }
                 // Nav is left to consumer LinkComponent/native anchor
             } else if (isCheckbox(node)) {
                 const next = !node.checked;
-                setLoading((node as any).id, true);
+                setLoading(node.id, true);
                 try {
                     await node.onCheckedChange?.(next);
                 } finally {
-                    setLoading((node as any).id, false);
+                    setLoading(node.id, false);
                 }
             } else if (isRadioGroup(node)) {
                 // not applicable
             } else {
-                setLoading((node as any).id, true);
+                setLoading(node.id, true);
                 try {
                     await runCommand(node, ev, { onBeforeCommand, onAfterCommand, onCommandError }, (node as ActionItem).command);
                 } finally {
-                    setLoading((node as any).id, false);
+                    setLoading(node.id, false);
                 }
             }
         };
@@ -461,9 +470,9 @@ export const Dropdown: React.FC<DropdownProps> = ({
     };
 
     /** Content style controls */
-    const contentStyle: React.CSSProperties = {
-        ...(matchTriggerWidth ? { ['--dropdown-min-w' as any]: 'var(--radix-dropdown-menu-trigger-width)' } : {}),
-    };
+    const contentStyle = {
+        ...(matchTriggerWidth ? { '--dropdown-min-w': 'var(--radix-dropdown-menu-trigger-width)' } : {}),
+    } as React.CSSProperties;
 
     const contentWidthClass = matchTriggerWidth ? 'min-w-[--dropdown-min-w]' : 'min-w-44';
 
@@ -489,12 +498,12 @@ export const Dropdown: React.FC<DropdownProps> = ({
                                     'max-h-[--menu-max-h] overflow-y-auto overflow-x-hidden py-1.5',
                                     // Provide a CSS var for numeric or string heights
                                 )}
-                                style={{ ['--menu-max-h' as any]: typeof maxHeight === 'number' ? `${maxHeight}px` : String(maxHeight) }}
+                                style={{ '--menu-max-h': typeof maxHeight === 'number' ? `${maxHeight}px` : String(maxHeight) } as React.CSSProperties}
                             >
                                 <TooltipProvider delayDuration={250}>
                                     {prunedMenu.map((node, idx) => (
                                         <RenderNode
-                                            key={(node as any).id ?? idx}
+                                            key={node.id ?? idx}
                                             node={node}
                                             size={size}
                                             LinkComponent={LinkComponent}
@@ -502,7 +511,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                                             renderItem={renderItem}
                                             onItemHover={onItemHover}
                                             onItemSelect={onItemSelect}
-                                            loading={loadingIds.has((node as any).id)}
+                                            loading={loadingIds.has(node.id)}
                                             setLoading={setLoading}
                                             handleSelect={handleSelect}
                                             hooks={{ onBeforeCommand, onAfterCommand, onCommandError }}
@@ -528,8 +537,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                             {typeof confirmNode?.['confirm' as keyof MenuNode] === 'string'
-                                ? (confirmNode as any).confirm
-                                : ((confirmNode as any)?.confirm ?? 'Please confirm this action.')}
+                                ? ('confirm' in confirmNode ? confirmNode.confirm : undefined)
+                                : (confirmNode && 'confirm' in confirmNode ? confirmNode.confirm : undefined) ?? 'Please confirm this action.'}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -627,7 +636,7 @@ const RenderNode: React.FC<{
                 <DropdownMenuGroup>
                     {node.items.map((child, i) => (
                         <RenderNode
-                            key={(child as any).id ?? i}
+                            key={child.id ?? i}
                             node={child}
                             size={size}
                             LinkComponent={LinkComponent}
@@ -635,7 +644,7 @@ const RenderNode: React.FC<{
                             renderItem={renderItem}
                             onItemHover={onItemHover}
                             onItemSelect={onItemSelect}
-                            loading={loading && (child as any).id === (node as any).id}
+                            loading={loading && child.id === node.id}
                             setLoading={setLoading}
                             handleSelect={handleSelect}
                             hooks={hooks}
@@ -674,7 +683,7 @@ const RenderNode: React.FC<{
                 <DropdownMenuSubContent>
                     {node.items.map((child, i) => (
                         <RenderNode
-                            key={(child as any).id ?? i}
+                            key={child.id ?? i}
                             node={child}
                             size={size}
                             LinkComponent={LinkComponent}
@@ -682,7 +691,7 @@ const RenderNode: React.FC<{
                             renderItem={renderItem}
                             onItemHover={onItemHover}
                             onItemSelect={onItemSelect}
-                            loading={loading && (child as any).id === (node as any).id}
+                            loading={loading && child.id === node.id}
                             setLoading={setLoading}
                             handleSelect={handleSelect}
                             hooks={hooks}
@@ -706,11 +715,11 @@ const RenderNode: React.FC<{
                     checked={node.checked}
                     onCheckedChange={async (v) => {
                         try {
-                            setLoading((node as any).id, true);
+                            setLoading(node.id, true);
                             await node.onCheckedChange?.(v);
                             onItemSelect?.({ node, event: new Event('change') as unknown as Event });
                         } finally {
-                            setLoading((node as any).id, false);
+                            setLoading(node.id, false);
                         }
                     }}
                     disabled={node.disabled}
@@ -732,18 +741,18 @@ const RenderNode: React.FC<{
                 value={node.value}
                 onValueChange={async (v) => {
                     try {
-                        setLoading((node as any).id, true);
+                        setLoading(node.id, true);
                         await node.onValueChange?.(v);
                     } finally {
-                        setLoading((node as any).id, false);
+                        setLoading(node.id, false);
                     }
                 }}
             >
                 {node.items.map((opt, i) => {
                     const right = <RightSide badge={opt.badge} suffix={opt.suffix} shortcut={opt.shortcut} loading={loading} />;
-                    const inner = <RowInner node={opt as any} size={size} renderItem={renderItem} right={right} />;
+                    const inner = <RowInner node={opt as unknown as MenuNode} size={size} renderItem={renderItem} right={right} />;
                     return (
-                        <MaybeTooltip key={(opt as any).id ?? i} tooltip={opt.tooltip} disabled={opt.disabled}>
+                        <MaybeTooltip key={opt.id ?? i} tooltip={opt.tooltip} disabled={opt.disabled}>
                             <DropdownMenuRadioItem
                                 aria-label={opt.ariaLabel}
                                 value={opt.value}
@@ -769,12 +778,12 @@ const RenderNode: React.FC<{
         const inner = <RowInner node={node} size={size} renderItem={renderItem} right={right} />;
 
         const commit = async () => {
-            setLoading((node as any).id, true);
+            setLoading(node.id, true);
             try {
                 await runCommand(node, new Event('select') as unknown as Event, hooks, node.command);
                 // Navigation is handled by LinkComponent/native anchor
             } finally {
-                setLoading((node as any).id, false);
+                setLoading(node.id, false);
             }
         };
 
@@ -812,11 +821,11 @@ const RenderNode: React.FC<{
     const inner = <RowInner node={item} size={size} renderItem={renderItem} right={right} />;
 
     const commit = async (ev: Event) => {
-        setLoading((item as any).id, true);
+        setLoading(item.id, true);
         try {
             await runCommand(item, ev, hooks, item.command);
         } finally {
-            setLoading((item as any).id, false);
+            setLoading(item.id, false);
         }
     };
 

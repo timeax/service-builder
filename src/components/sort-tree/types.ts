@@ -1,5 +1,4 @@
 import type { SelectionMeta } from '@/components/sort-tree/core/use-selection.ts';
-import { type TreeNode as LayerNode } from '@timeax/digital-service-engine/workspace';
 import * as React from 'react';
 
 /** Primitives */
@@ -7,7 +6,7 @@ export type NodeKey = string | number;
 export type NodePath = NodeKey[];
 
 /** Tree node */
-export interface TreeNode<T = unknown> extends LayerNode {
+export interface TreeNode<T = unknown> {
     id: NodeKey;
     title: string;
     icon?: React.ReactNode;

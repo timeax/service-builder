@@ -47,7 +47,7 @@ export function computeInitialExpandedPaths<T>(
 ): string[] {
     for (const n of nodes) {
         const p: NodePath = [...prefix, getNodeKey(n)];
-        const exp = (n as any)?.expanded;
+        const exp = n.expanded;
         if (typeof exp === 'boolean' && exp === true) out.push(pathKey(p));
         if (Array.isArray(n.children)) computeInitialExpandedPaths(n.children, getNodeKey, p, out);
     }
@@ -64,7 +64,7 @@ export function decorateExpandedByPath<T>(
         const p: NodePath = [...prefix, getNodeKey(n)];
         const wantExpanded = expanded.has(pathKey(p));
 
-        const cur = (n as any).expanded;
+        const cur = n.expanded;
         const curIsBool = typeof cur === 'boolean';
         const sameExpanded = curIsBool ? cur === wantExpanded : false;
 
@@ -72,7 +72,7 @@ export function decorateExpandedByPath<T>(
 
         if (sameExpanded && nextChildren === n.children) return n;
 
-        const nn: any = { ...(n as any), expanded: wantExpanded };
+        const nn: TreeNode<T> = { ...n, expanded: wantExpanded };
         if (nextChildren !== n.children) nn.children = nextChildren;
 
         return nn as TreeNode<T>;
@@ -128,9 +128,9 @@ export function useExpandedPathsCache<T>(args: {
     }, [expReady, expandedArr, expandCache, EXP_KEY, data, getNodeKey]);
 
     const expandedSig = React.useMemo(() => (expandedArr ?? []).join('\u0000'), [expandedArr]);
-    const expandedSet = React.useMemo(() => new Set(expandedArr ?? []), [expandedSig]);
+    const expandedSet = React.useMemo(() => new Set(expandedArr ?? []), [expandedArr]);
 
-    const treeView = React.useMemo(() => decorateExpandedByPath<T>(tree, expandedSet, getNodeKey), [tree, expandedSig, getNodeKey]);
+    const treeView = React.useMemo(() => decorateExpandedByPath<T>(tree, expandedSet, getNodeKey), [tree, expandedSet, getNodeKey]);
 
     const setExpandedAtPath = React.useCallback(
         (path: NodePath, wantExpand?: boolean): { changed: boolean; nextExpanded: boolean } => {
@@ -148,10 +148,10 @@ export function useExpandedPathsCache<T>(args: {
 
             return { changed: true, nextExpanded: nextVal };
         },
-        [expandedSig, expandedSet, expandCache, EXP_KEY],
+        [expandedSet, expandCache, EXP_KEY],
     );
 
-    const isExpanded = React.useCallback((path: NodePath) => expandedSet.has(pathKey(path)), [expandedSig, expandedSet]);
+    const isExpanded = React.useCallback((path: NodePath) => expandedSet.has(pathKey(path)), [expandedSet]);
 
     return {
         treeView,

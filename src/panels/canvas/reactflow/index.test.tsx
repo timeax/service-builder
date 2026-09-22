@@ -1,4 +1,3 @@
-//@ts-nocheck
 import { render, screen } from '@testing-library/react';
 import { nodeTypes } from './index.tsx';
 
@@ -23,10 +22,13 @@ describe('canvas reactflow node styling', () => {
                     isActiveNode: true,
                 }}
                 dragging={false}
+                draggable
+                selectable
+                deletable
                 zIndex={0}
                 isConnectable
-                xPos={0}
-                yPos={0}
+                positionAbsoluteX={0}
+                positionAbsoluteY={0}
             />,
         );
 
@@ -48,10 +50,13 @@ describe('canvas reactflow node styling', () => {
                     isManualHighlighted: true,
                 }}
                 dragging={false}
+                draggable
+                selectable
+                deletable
                 zIndex={0}
                 isConnectable
-                xPos={0}
-                yPos={0}
+                positionAbsoluteX={0}
+                positionAbsoluteY={0}
             />,
         );
 
@@ -74,10 +79,13 @@ describe('canvas reactflow node styling', () => {
                     isManualHighlighted: true,
                 }}
                 dragging={false}
+                draggable
+                selectable
+                deletable
                 zIndex={0}
                 isConnectable
-                xPos={0}
-                yPos={0}
+                positionAbsoluteX={0}
+                positionAbsoluteY={0}
             />,
         );
 
@@ -101,10 +109,13 @@ describe('canvas reactflow node styling', () => {
                     isActiveNode: false,
                 }}
                 dragging={false}
+                draggable
+                selectable
+                deletable
                 zIndex={0}
                 isConnectable
-                xPos={0}
-                yPos={0}
+                positionAbsoluteX={0}
+                positionAbsoluteY={0}
             />,
         );
 
@@ -127,10 +138,13 @@ describe('canvas reactflow node styling', () => {
                     isSystemInactive: true,
                 }}
                 dragging={false}
+                draggable
+                selectable
+                deletable
                 zIndex={0}
                 isConnectable
-                xPos={0}
-                yPos={0}
+                positionAbsoluteX={0}
+                positionAbsoluteY={0}
             />,
         );
 
@@ -155,10 +169,13 @@ describe('canvas reactflow node styling', () => {
                     },
                 }}
                 dragging={false}
+                draggable
+                selectable
+                deletable
                 zIndex={0}
                 isConnectable
-                xPos={0}
-                yPos={0}
+                positionAbsoluteX={0}
+                positionAbsoluteY={0}
             />,
         );
 

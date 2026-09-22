@@ -1,35 +1,43 @@
 import * as React from 'react';
 
 import { changeNodeAtPath } from '../helpers';
-import type { NodeKey, NodePath, TreeNode } from '../types';
+import type { NodeKey, NodePath, SortTreeProps, TreeNode } from '../types';
 import { locateByPath } from '../utils';
 
-/** private flags kept on node objects (typed as `any` when used) */
+/** Private flags kept on node objects while lazy children are materialized. */
 export const LOADER = '__childrenLoader'; // () => Promise<TreeNode[]>
 export const LOADING = '__childrenLoading'; // boolean
 export const LOADED = '__childrenLoaded'; // boolean
 export const INVALID = '__childrenInvalid'; // boolean
 
+type LazyTreeNode<T> = TreeNode<T> & {
+    [LOADER]?: () => Promise<Array<TreeNode<T>>>;
+    [LOADING]?: boolean;
+    [LOADED]?: boolean;
+    [INVALID]?: boolean;
+};
+
 export function useLazyChildren<T>(args: {
     tree: Array<TreeNode<T>>;
     setTree: React.Dispatch<React.SetStateAction<Array<TreeNode<T>>>>;
     getNodeKey: (n: TreeNode<T>) => NodeKey;
-    onChange: (tree: Array<TreeNode<T>>, detail: any) => void;
+    onChange: SortTreeProps<T>['onChange'];
 }) {
     const { tree, setTree, getNodeKey, onChange } = args;
 
     /** Capture a function in LOADER; set LOADED depending on materialization. */
-    const normalizeLoader = React.useCallback((node: any) => {
-        if (typeof node.children === 'function') {
-            const f = node.children as () => Array<TreeNode<T>> | Promise<Array<TreeNode<T>>>;
-            node[LOADER] = () => Promise.resolve(f());
-            node.children = undefined; // do not recurse into a function
-            node[LOADED] = false;
-        } else if (Array.isArray(node.children)) {
-            node[LOADED] = true;
-        } else if (typeof node[LOADER] === 'function') {
+    const normalizeLoader = React.useCallback((node: TreeNode<T>) => {
+        const lazyNode = node as LazyTreeNode<T>;
+        if (typeof lazyNode.children === 'function') {
+            const f = lazyNode.children as () => Array<TreeNode<T>> | Promise<Array<TreeNode<T>>>;
+            lazyNode[LOADER] = () => Promise.resolve(f());
+            lazyNode.children = undefined; // do not recurse into a function
+            lazyNode[LOADED] = false;
+        } else if (Array.isArray(lazyNode.children)) {
+            lazyNode[LOADED] = true;
+        } else if (typeof lazyNode[LOADER] === 'function') {
             // has loader but not yet materialized
-            if (node[LOADED] == null) node[LOADED] = false;
+            if (lazyNode[LOADED] == null) lazyNode[LOADED] = false;
         }
     }, []);
 
@@ -37,16 +45,16 @@ export function useLazyChildren<T>(args: {
         (path: NodePath) => {
             const located = locateByPath<T>(tree, path, getNodeKey);
             if (!located) return;
-            const nAny: any = located.node;
-            normalizeLoader(nAny);
-            const loader = nAny[LOADER] as undefined | (() => Promise<Array<TreeNode<T>>>);
-            if (!loader || nAny[LOADING]) return;
+            const lazyNode = located.node as LazyTreeNode<T>;
+            normalizeLoader(lazyNode);
+            const loader = lazyNode[LOADER];
+            if (!loader || lazyNode[LOADING]) return;
 
-            nAny[LOADING] = true;
+            lazyNode[LOADING] = true;
             loader()
                 .then((kids) => {
                     const next = changeNodeAtPath<T>(tree, path, (node) => {
-                        const nn: any = { ...node };
+                        const nn: LazyTreeNode<T> = { ...node };
                         normalizeLoader(nn);
                         nn.children = Array.isArray(kids) ? kids : [];
                         nn[LOADING] = false;
@@ -58,7 +66,7 @@ export function useLazyChildren<T>(args: {
                     onChange(next, { type: 'update', node: located.node, preventDefault: () => {}, context: { lazyLoaded: true } });
                 })
                 .catch(() => {
-                    const next = changeNodeAtPath<T>(tree, path, (node) => ({ ...(node as any), [LOADING]: false }));
+                    const next = changeNodeAtPath<T>(tree, path, (node) => ({ ...node, [LOADING]: false }));
                     setTree(next);
                 });
         },
@@ -70,11 +78,11 @@ export function useLazyChildren<T>(args: {
         (path: NodePath) => {
             const located = locateByPath<T>(tree, path, getNodeKey);
             if (!located) return tree;
-            const nAny: any = located.node;
-            if (Array.isArray(nAny.children)) return tree;
-            normalizeLoader(nAny);
+            const lazyNode = located.node as LazyTreeNode<T>;
+            if (Array.isArray(lazyNode.children)) return tree;
+            normalizeLoader(lazyNode);
             const next = changeNodeAtPath<T>(tree, path, (node) => {
-                const nn: any = { ...node };
+                const nn: LazyTreeNode<T> = { ...node };
                 normalizeLoader(nn);
                 nn.children = []; // materialize empty
                 nn[LOADED] = true; // mark as loaded until refresh/invalidate says otherwise
@@ -90,12 +98,13 @@ export function useLazyChildren<T>(args: {
         const located = locateByPath<T>(tree, target, getNodeKey);
         if (!located) return;
 
-        const hasLoader = typeof (located.node as any)[LOADER] === 'function' || typeof (located.node as any).children === 'function';
+        const lazyNode = located.node as LazyTreeNode<T>;
+        const hasLoader = typeof lazyNode[LOADER] === 'function' || typeof lazyNode.children === 'function';
 
         if (!hasLoader) return;
 
         const next = changeNodeAtPath<T>(tree, target, (n) => {
-            const nn: any = { ...n };
+            const nn: LazyTreeNode<T> = { ...n };
             normalizeLoader(nn);
             nn.children = undefined; // drop cache
             nn[LOADING] = false;
@@ -110,13 +119,14 @@ export function useLazyChildren<T>(args: {
         const located = locateByPath<T>(tree, target, getNodeKey);
         if (!located) return;
 
-        const hasLoader = typeof (located.node as any)[LOADER] === 'function' || typeof (located.node as any).children === 'function';
+        const lazyNode = located.node as LazyTreeNode<T>;
+        const hasLoader = typeof lazyNode[LOADER] === 'function' || typeof lazyNode.children === 'function';
 
         if (!hasLoader) return;
 
         // Keep current children visible; mark as stale so next expand triggers load
         const next = changeNodeAtPath<T>(tree, target, (n) => {
-            const nn: any = { ...n };
+            const nn: LazyTreeNode<T> = { ...n };
             normalizeLoader(nn);
             nn[INVALID] = true;
             return nn;
@@ -127,8 +137,8 @@ export function useLazyChildren<T>(args: {
     function refreshAll(nodes: Array<TreeNode<T>>, prefix: NodePath = []) {
         nodes.forEach((n) => {
             const path = [...prefix, getNodeKey(n)];
-            const anyN: any = n;
-            if (typeof anyN[LOADER] === 'function' || typeof anyN.children === 'function') {
+            const lazyNode = n as LazyTreeNode<T>;
+            if (typeof lazyNode[LOADER] === 'function' || typeof lazyNode.children === 'function') {
                 refreshOne(path);
             }
             if (Array.isArray(n.children)) refreshAll(n.children, path);
@@ -138,8 +148,8 @@ export function useLazyChildren<T>(args: {
     function invalidateAll(nodes: Array<TreeNode<T>>, prefix: NodePath = []) {
         nodes.forEach((n) => {
             const path = [...prefix, getNodeKey(n)];
-            const anyN: any = n;
-            if (typeof anyN[LOADER] === 'function' || typeof anyN.children === 'function') {
+            const lazyNode = n as LazyTreeNode<T>;
+            if (typeof lazyNode[LOADER] === 'function' || typeof lazyNode.children === 'function') {
                 invalidateOne(path);
             }
             if (Array.isArray(n.children)) invalidateAll(n.children, path);

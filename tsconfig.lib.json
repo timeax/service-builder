@@ -16,7 +16,10 @@
     "skipLibCheck": true,
     "strict": false,
     "noEmit": false,
-    "types": []
+    "types": [
+      "vite/client",
+      "vitest/globals"
+    ]
   },
   "include": [
     "src",

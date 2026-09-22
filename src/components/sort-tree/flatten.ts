@@ -48,11 +48,11 @@ export function flatten<T>(
         const path = [...parentPath, getKey(n)];
         const pathStr = pathToString(path);
 
-        const rawChildren = (n as any).children;
+        const rawChildren = n.children;
         const childrenIsArray = Array.isArray(rawChildren);
         const childrenIsLazy = typeof rawChildren === 'function';
 
-        const isExpanded = !!(n as any).expanded || forcedExpand.has(pathStr);
+        const isExpanded = !!n.expanded || forcedExpand.has(pathStr);
         const count = list.length;
         const isFirst = i === 0;
         const isLast = i === count - 1;
@@ -64,7 +64,7 @@ export function flatten<T>(
 
         // Apply default icon *only* to the flattened row payload (no source mutation)
         let nodeForRow: TreeNode<T> = n;
-        const missingIcon = (n as any).icon == null; // treat undefined/null as missing
+        const missingIcon = n.icon == null; // treat undefined/null as missing
         if (missingIcon && defaultNodeIcon !== undefined) {
             const icon = typeof defaultNodeIcon === 'function' ? (defaultNodeIcon as (node: TreeNode<T>) => IconValue<T>)(n) : defaultNodeIcon;
             nodeForRow = { ...n, icon };
@@ -87,7 +87,7 @@ export function flatten<T>(
             // For children, extend guides: current level continues if NOT last sibling
             const nextGuides = [...ancestorGuides, !isLast];
             flatten(rawChildren as Array<TreeNode<T>>, getKey, {
-                parentPath: path as any,
+                parentPath: path,
                 out,
                 forcedExpand,
                 matchedPaths,

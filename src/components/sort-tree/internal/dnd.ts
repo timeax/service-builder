@@ -5,7 +5,7 @@ import { buildCollisionDetection } from '../core/collision';
 import { isPrefix } from '../core/paths';
 import { parseDragId, parseZoneId } from '../dnd-ids';
 import { moveNode } from '../helpers';
-import type { DropZone, NodeKey, NodePath, PositionInfo, TreeNode } from '../types';
+import type { DropZone, NodeKey, NodePath, PositionInfo, SortTreeProps, TreeNode } from '../types';
 import { locateByPath, subtreeDepth } from '../utils';
 
 export function useTreeDnd<T>(args: {
@@ -14,10 +14,10 @@ export function useTreeDnd<T>(args: {
     getNodeKey: (n: TreeNode<T>) => NodeKey;
     maxDepth: number;
     canDrag: (n: TreeNode<T>) => boolean;
-    canDrop: (args: any) => boolean;
+    canDrop: NonNullable<SortTreeProps<T>['canDrop']>;
     allSupportSubnodes: boolean;
-    onChange: (tree: Array<TreeNode<T>>, detail: any) => void;
-    onExternalDrop?: (args: any) => void;
+    onChange: SortTreeProps<T>['onChange'];
+    onExternalDrop?: SortTreeProps<T>['onExternalDrop'];
     primeChildrenArrayIfNeeded: (path: NodePath) => Array<TreeNode<T>>;
 }) {
     const { tree, setTree, getNodeKey, maxDepth, canDrag, canDrop, allSupportSubnodes, onChange, onExternalDrop, primeChildrenArrayIfNeeded } = args;
@@ -60,7 +60,7 @@ export function useTreeDnd<T>(args: {
     ): { toParentPath: NodePath | null; toIndex: number } {
         if (zone === 'before') return { toParentPath: overLocated.parentPath, toIndex: overLocated.index };
         if (zone === 'after') return { toParentPath: overLocated.parentPath, toIndex: overLocated.index + 1 };
-        return { toParentPath: overLocated.path, toIndex: (overLocated.node.children as any)?.length ?? 0 };
+        return { toParentPath: overLocated.path, toIndex: overLocated.node.children?.length ?? 0 };
     }
 
     function handleDragEnd(evt: DragEndEvent) {
@@ -80,17 +80,19 @@ export function useTreeDnd<T>(args: {
         const overLocated = locateByPath<T>(tree, parsed.path, getNodeKey);
         if (!overLocated) return;
 
-        let zone: DropZone = parsed.zone === 'on' && !allSupportSubnodes && !(overLocated.node.children as any)?.length ? 'after' : parsed.zone;
+        const zone: DropZone = parsed.zone === 'on' && !allSupportSubnodes && !overLocated.node.children?.length ? 'after' : parsed.zone;
 
         if (zone === 'on' && isPrefix(actPath, overLocated.path)) return;
 
         // Dropping ON a lazy node → materialize an empty array and treat it as loaded
         let workingTree = tree;
-        if (zone === 'on' && !(overLocated.node.children as any)?.length) {
+        if (zone === 'on' && !overLocated.node.children?.length) {
             workingTree = primeChildrenArrayIfNeeded(overLocated.path);
         }
 
-        let { toParentPath, toIndex } = resolveTarget(overLocated, zone);
+        const target = resolveTarget(overLocated, zone);
+        const toParentPath = target.toParentPath;
+        let { toIndex } = target;
 
         const fromLocated0 = locateByPath<T>(workingTree, actPath, getNodeKey);
         if (!fromLocated0) return;
@@ -166,7 +168,7 @@ export function useTreeDnd<T>(args: {
         const overLocated = locateByPath<T>(tree, parsed.path, getNodeKey);
         if (!overLocated) return;
 
-        const zone: DropZone = parsed.zone === 'on' && !allSupportSubnodes && !(overLocated.node.children as any)?.length ? 'after' : parsed.zone;
+        const zone: DropZone = parsed.zone === 'on' && !allSupportSubnodes && !overLocated.node.children?.length ? 'after' : parsed.zone;
 
         const { toParentPath, toIndex } = resolveTarget(overLocated, zone);
         const toInfo = makePositionInfo(toParentPath, toIndex);

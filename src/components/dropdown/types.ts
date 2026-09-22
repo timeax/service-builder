@@ -98,7 +98,7 @@ export type ActionItem = BaseNode & {
      * Called when the item is selected; may return a Promise.
      * If it returns a Promise, the row shows loading state until it settles.
      */
-    command?: (e: { event: Event; item: ActionItem }) => void | Promise<unknown> | any;
+    command?: (e: { event: Event; item: ActionItem }) => void | Promise<unknown>;
     /**
      * Confirmation UI before executing (inline alert dialog).
      * If provided, the dialog is shown and `command` fires only after confirm.
@@ -120,7 +120,7 @@ export type LinkItem = BaseNode & {
 };
 
 /** Visual separator (explicitly forbids icon) */
-export type SeparatorItem = { type: 'separator'; hidden?: boolean; icon?: undefined; id?: any; label?: undefined };
+export type SeparatorItem = { type: 'separator'; hidden?: boolean; icon?: undefined; id?: string | number; label?: undefined };
 
 /** Group with optional label */
 export type GroupItem = BaseNode & {

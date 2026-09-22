@@ -7,6 +7,9 @@ import typescript from 'typescript-eslint';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
+    {
+        ignores: ['**/node_modules/**', 'dist/**', 'app-dist/**', 'vendor/**', 'public/**', 'bootstrap/ssr/**'],
+    },
     js.configs.recommended,
     ...typescript.configs.recommended,
     {
@@ -39,7 +42,7 @@ export default [
     },
     {
         files: ['src/**/*.{ts,tsx}'],
-        ignores: ['src/App.tsx'],
+        ignores: ['src/App.tsx', 'src/**/*.test.{ts,tsx}', 'src/**/*.spec.{ts,tsx}'],
         rules: {
             'no-restricted-imports': [
                 'error',
@@ -63,7 +66,13 @@ export default [
         },
     },
     {
-        ignores: ['vendor', 'node_modules', 'public', 'dist', 'bootstrap/ssr', 'tailwind.config.js', 'scripts', 'src'],
+        files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off',
+        },
+    },
+    {
+        ignores: ['tailwind.config.js', 'scripts/**'],
     },
     prettier, // Turn off all rules that might conflict with Prettier
 ];
