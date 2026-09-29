@@ -1,15 +1,24 @@
-# Baseline behavioral test inventory
+# Baseline test reference inventory
 
-Baseline: `0fba74f`. Audit: 2026-09-22. All 49 baseline test files are listed below, including retained tests. This is an acceptance-case inventory, not a claim that every mapped outcome passes. All canonical treatment is **preserve behavior / replace legacy contracts**. No retirement is approved. Checklist IDs refer to `COMPLETION-AUDIT.md`.
+Baseline: `0fba74f`. Original inventory: 2026-09-22. Scope corrected: 2026-09-29.
 
-New tests and the current 167-test pass are recorded in the audit; new case counts cannot be compared one-for-one with old counts as a completeness measure. Retained tests prove their own components only, not that the shipped shell reaches those components.
+These 49 files and 222 named cases are historical references, not a mandatory acceptance suite. Test counts do not measure completion. Preserve useful existing tests; select new assertions only for actual UI changes and current canonical integration. The revised `COMPLETION-AUDIT.md` controls the bounded follow-up.
+
+Reference categories apply to assertions, so a file may span categories:
+
+- **UI**: appearance, controls, keyboard/focus, drafts, error feedback and visible interactions remain useful references.
+- **Integration**: replace old calls/payloads with assertions about current canonical APIs and visible results.
+- **Package**: domain rules and backend/runtime algorithms belong to DGP packages; this goal does not reimplement or exhaustively re-prove them.
+- **Legacy detail**: old aliases, wire keys, null normalization, internal event order, cache strategy and exact transaction counts are not acceptance requirements. This classification does not authorize deleting working UI.
+
+File-level routing below identifies how to read the historical titles; it does not claim every assertion in a mixed file has been reviewed or must be ported. Evidence paths are September 22 mappings and may name conceptual package destinations rather than existing files. An absent replacement test alone is not a defect. Retained tests prove their tested component; inspect assembled integration only when relevant to a concrete finding.
 
 ## `backend/memory/create-backend.test.ts`
 
 - Destination/evidence: `backend/canonical/create-backend.test.ts`; `src/react/workspace.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V04.
-- Assessment: Workspace owns backend authorization, template scope and revisions; current seed tests cover hydration and conflicts, not every baseline case.
+- Reference categories: Package / Integration / Legacy detail.
+- Related audit observations (not mandatory case gates): V04.
+- Current treatment: Use canonical contracts for domain rules and payloads. Verify only relevant host bindings here; old internal shapes are not completion criteria.
 
 - rejects snapshot writes for unknown actors
 - allows comment thread creation for the configured actor when comment write is enabled
@@ -21,18 +30,18 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/builder/bottom-panel.test.ts`
 
 - Destination/evidence: `src/react/bottom-panel-model.test.ts`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V02.
-- Assessment: Recursive attachment breadcrumb output needs exact baseline outcome coverage.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V02.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - includes services attached to nested options with breadcrumb labels
 
 ## `src/builder/compatibility-runner.test.ts`
 
 - Destination/evidence: `src/builder/compatibility-runner.test.ts`.
-- Status: retained component evidence.
-- Closure items: F01, V05.
-- Assessment: Retained test file; current checkpoint suite passes. Verify actual integration where callers changed; retention alone is not migration-complete evidence.
+- Reference categories: Integration / Legacy detail.
+- Related audit observations (not mandatory case gates): F01, V05.
+- Current treatment: Use visible responsiveness and canonical binding correctness as evidence. Old caching, event scheduling and transaction counts are not mandatory.
 
 - reuses cache entries and only computes missing ids
 - stops work when aborted
@@ -42,9 +51,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/builder/node-context-menu.test.tsx`
 
 - Destination/evidence: `src/react/canonical-node-context-menu.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: F03, F04, F11.
-- Assessment: Name/scope save dialog and batch include selection are missing.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): F03, F04, F11.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - requires name and sends branchId null when save-to-current-branch is unchecked
 - opens include dialog and executes includeMany after selecting a target
@@ -52,9 +61,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/builder/node-context/components/ContextMenu.test.tsx`
 
 - Destination/evidence: `src/react/canonical-node-context-menu.test.tsx`; `src/react/canonical-edge-menu.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: F04, V02.
-- Assessment: Option visibility exists; batch dialogs and wireframe movement/shortcuts are absent.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): F04, V02.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - shows "Show option nodes" for field nodes and triggers action
 - shows fallback action and routes clicks to the fallback editor opener
@@ -72,9 +81,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/builder/node-context/components/RenameNodeField.test.tsx`
 
 - Destination/evidence: `src/react/canonical-node-context-menu.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V02.
-- Assessment: Rename dialog exists; payload and Escape outcome need direct replacement evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V02.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - updates value through InputField payload
 - triggers escape handler on Escape key
@@ -82,9 +91,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/builder/node-context/hooks.test.tsx`
 
 - Destination/evidence: `src/react/canonical-node-context-menu.test.tsx`; `src/react/canonical-canvas-surface.test.tsx`; `Workspace template/Editor tests`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: F03, F04, F06, F07, V02.
-- Assessment: Partial drop coverage does not cover template identity/group relationships or wireframe movement.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): F03, F04, F06, F07, V02.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - toggles field option node visibility through canvas api
 - moves field globally by reordering fields array
@@ -102,9 +111,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/builder/node-context/template-utils.test.ts`
 
 - Destination/evidence: `Workspace template instantiation`; `src/react/canonical-canvas-surface.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: F03, F07.
-- Assessment: Preserve fresh IDs and appropriate service treatment through canonical owner APIs.
+- Reference categories: Package / Integration / Legacy detail.
+- Related audit observations (not mandatory case gates): F03, F07.
+- Current treatment: Use canonical contracts for domain rules and payloads. Verify only relevant host bindings here; old internal shapes are not completion criteria.
 
 - sanitizes nested option ids and service ids
 - regenerates ids for nested options
@@ -112,9 +121,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/builder/option-helpers.test.ts`
 
 - Destination/evidence: `src/react/presentation.test.ts`; `src/react/layer-commands.test.ts`; `Core option traversal`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V02, V03.
-- Assessment: Traversal/reorder have coverage; reconcile descendant visibility and exact update outcomes.
+- Reference categories: Package / Integration / Legacy detail.
+- Related audit observations (not mandatory case gates): V02, V03.
+- Current treatment: Use canonical contracts for domain rules and payloads. Verify only relevant host bindings here; old internal shapes are not completion criteria.
 
 - walks, counts, and labels nested options by raw option id
 - updates only the matched nested option
@@ -124,18 +133,18 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/builder/service-context.test.ts`
 
 - Destination/evidence: `src/react/catalog-context-model.test.ts`; `src/react/canonical-service-context.test.ts`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: F01, V02.
-- Assessment: Visible context exists; add nested raw-ID visibility case.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): F01, V02.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - lists nested option buttons with raw ids and applies resolved option visibility
 
 ## `src/components/dropdown/index.test.tsx`
 
 - Destination/evidence: `src/components/dropdown/index.test.tsx`.
-- Status: retained component evidence.
-- Closure items: V01, V06.
-- Assessment: Retained test file; current checkpoint suite passes. Verify actual integration where callers changed; retention alone is not migration-complete evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V01, V06.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - preserves indicator gutter class for checkbox rows and avoids generic x-padding override
 - preserves indicator gutter class for radio rows and avoids generic x-padding override
@@ -144,9 +153,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/components/service-meta-popover.test.tsx`
 
 - Destination/evidence: `src/components/service-meta-popover.test.tsx`.
-- Status: retained component evidence.
-- Closure items: V01, V06.
-- Assessment: Retained test file; current checkpoint suite passes. Verify actual integration where callers changed; retention alone is not migration-complete evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V01, V06.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - opens on click and shows invoice rows
 - opens on delayed hover
@@ -155,9 +164,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/components/service-meta.test.ts`
 
 - Destination/evidence: `src/components/service-meta.test.ts`.
-- Status: retained component evidence.
-- Closure items: V01, V06.
-- Assessment: Retained test file; current checkpoint suite passes. Verify actual integration where callers changed; retention alone is not migration-complete evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V01, V06.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - flattens nested keys and strips meta prefix
 - includes primitive leaves and skips object/array containers
@@ -166,9 +175,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/canvas/adapter.test.tsx`
 
 - Destination/evidence: `src/react/canonical-flow-adapter.test.tsx`; `src/react/canonical-canvas-surface.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: F08, V02.
-- Assessment: Only broad adapter happy path is replaced; drag/pan/history/echo contracts require evidence.
+- Reference categories: Integration / Legacy detail.
+- Related audit observations (not mandatory case gates): F08, V02.
+- Current treatment: Use visible responsiveness and canonical binding correctness as evidence. Old caching, event scheduling and transaction counts are not mandatory.
 
 - refreshes system node content when only system-node data changes
 - uses current toolbar relation mode for wire start and connect
@@ -189,18 +198,18 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/canvas/app-toolbar.test.tsx`
 
 - Destination/evidence: `src/panels/canvas/app-toolbar.test.tsx`.
-- Status: retained component evidence.
-- Closure items: V01, V06.
-- Assessment: Retained test file; current checkpoint suite passes. Verify actual integration where callers changed; retention alone is not migration-complete evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V01, V06.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - shows import actions from the toolbar menu
 
 ## `src/panels/canvas/canvas-surface.test.tsx`
 
 - Destination/evidence: `src/react/canonical-canvas-surface.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: F08, V01, V02.
-- Assessment: Initial-fit, persisted viewport, bounded updates and comment placement cases are not all replaced.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): F08, V01, V02.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - passes a default viewport without mounting ReactFlow with live fitView
 - runs a one-time fit only when there is no persisted viewport
@@ -211,9 +220,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/canvas/import-json-modal.test.tsx`
 
 - Destination/evidence: `src/react/canonical-import-json-modal.test.tsx`; `src/react/canonical-canvas-surface.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V01.
-- Assessment: Five modal tests plus undoable integration exist; canonical shapes intentionally replace legacy props.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V01.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - parses pasted props JSON and applies it on confirm
 - loads props JSON from a file upload
@@ -224,9 +233,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/canvas/index.test.tsx`
 
 - Destination/evidence: `src/react/canonical-canvas-surface.test.tsx`; `src/react/canonical-boot-status.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V02, V04.
-- Assessment: Boot and undo paths partly covered; live presentation and callback binding need matching integration cases.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V02, V04.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - shows seeded boot status while keeping the canvas visible
 - updates from booting to ready and reports non-blocking issues cleanly
@@ -237,9 +246,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/canvas/presentation.test.ts`
 
 - Destination/evidence: `src/panels/canvas/presentation.test.ts`.
-- Status: retained component evidence.
-- Closure items: V01, V06.
-- Assessment: Retained test file; current checkpoint suite passes. Verify actual integration where callers changed; retention alone is not migration-complete evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V01, V06.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - maps relation kinds to distinct base styles
 - hides exclude edges by default and keeps include visible
@@ -250,9 +259,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/canvas/reactflow/index.test.tsx`
 
 - Destination/evidence: `src/panels/canvas/reactflow/index.test.tsx`.
-- Status: retained component evidence.
-- Closure items: V01, V06.
-- Assessment: Retained test file; current checkpoint suite passes. Verify actual integration where callers changed; retention alone is not migration-complete evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V01, V06.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - applies active outline classes for tag nodes
 - applies lighter highlighted outline classes for tag nodes
@@ -264,9 +273,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/canvas/toolbar/index.test.tsx`
 
 - Destination/evidence: `src/react/canonical-canvas-surface.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V01, V02.
-- Assessment: Toolbars render; external edge-mode event and exact compact geometry need evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V01, V02.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - keeps relation buttons visible and exposes view toggles via the compact popover
 - uses the same standalone button sizing for the view trigger and orientation toggle
@@ -276,9 +285,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/left/assets/index.test.tsx`
 
 - Destination/evidence: `src/react/canonical-assets.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: F03, F07, F11, V04.
-- Assessment: Current tests cover rendering, record clone and denied mutation; rename/delete/global scope remain evidence gaps.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): F03, F07, F11, V04.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - opens template context menu on right click
 - renames template and sends branch id when checked
@@ -288,9 +297,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/left/components/header.test.tsx`
 
 - Destination/evidence: `src/react/canonical-header.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V04.
-- Assessment: Prompt test exists; custom leaf/nested/zero-argument commands need explicit coverage.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V04.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - calls a leaf menu command with workspace
 - calls nested child menu commands with workspace
@@ -300,18 +309,18 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/left/layers/rename-permission.test.tsx`
 
 - Destination/evidence: `src/react/canonical-layers.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V02, V04.
-- Assessment: Denied controls covered; reject-after-attempt and no ghost label not directly proven.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V02, V04.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - does not keep a ghost label in UI when rename is blocked upstream
 
 ## `src/panels/left/layers/reorder.test.ts`
 
 - Destination/evidence: `src/react/layer-commands.test.ts`; `src/react/canonical-layers.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V02.
-- Assessment: Pure sibling/context reorder tests exist; UI drop guards require direct outcome cases.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V02.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - dispatches tag reorder via editor.placeNode and prevents local mutation
 - dispatches field reorder in context by seeding order map then placing field
@@ -324,9 +333,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/left/layers/toolbar-add.test.tsx`
 
 - Destination/evidence: `src/react/canonical-layers.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: F05, F06.
-- Assessment: Inline naming and invalid-selection feedback are missing.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): F05, F06.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - plain add creates a field in the current visible group even when an option is selected
 - folder-plus opens inline option creation on a selected field
@@ -336,9 +345,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/right/components/header.test.tsx`
 
 - Destination/evidence: `src/react/canonical-right-header.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V04.
-- Assessment: Canonical callbacks replace legacy payloads; boot gating and absent callbacks need explicit coverage.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V04.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - calls onShare with snapshot data and onPlay with current canvas props payload
 - falls back to api.getServiceProps when canvas.props is missing
@@ -348,18 +357,18 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/right/index.test.tsx`
 
 - Destination/evidence: `src/react/canonical-right-panel.test.tsx`; `src/react/canonical-wireframe-browser.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V02.
-- Assessment: forceMount exists; composition test mocks preview, so real input preservation across tabs remains unproven.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V02.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - does not remount wireframe provider when toggling tabs repeatedly
 
 ## `src/panels/right/partials/global/add-service.test.tsx`
 
 - Destination/evidence: `src/react/canonical-properties.test.tsx`; `src/react/canonical-bottom-panel.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: F01, F02.
-- Assessment: Bottom-panel filtering does not replace inspector-specific catalog/filter/meta workflow.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): F01, F02.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - renders trailing filter control and opens filter popover
 - routes catalog scope and group selection through editor APIs
@@ -371,9 +380,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/right/partials/properties/components/descriptor-options.test.ts`
 
 - Destination/evidence: `src/react/canonical-properties.test.tsx`; `Workspace descriptor creation`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: F06, V03.
-- Assessment: Nested/flat descriptor capability treatment must survive creation and type transitions.
+- Reference categories: Package / Integration / Legacy detail.
+- Related audit observations (not mandatory case gates): F06, V03.
+- Current treatment: Use canonical contracts for domain rules and payloads. Verify only relevant host bindings here; old internal shapes are not completion criteria.
 
 - detects child option capability from descriptor options
 - keeps flat descriptors flat
@@ -381,9 +390,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/right/partials/properties/components/descriptor-settings.test.tsx`
 
 - Destination/evidence: `src/panels/right/partials/properties/components/descriptor-settings.test.tsx`.
-- Status: retained component evidence.
-- Closure items: F09, V03, V06.
-- Assessment: Retained test file; current checkpoint suite passes. Verify actual integration where callers changed; retention alone is not migration-complete evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): F09, V03, V06.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - renders label/color/bgColor for array object item after add
 - keeps internal event-like keys hidden while allowing normal label field keys
@@ -401,9 +410,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/right/partials/properties/components/descriptor-ui-renderers.test.tsx`
 
 - Destination/evidence: `src/panels/right/partials/properties/components/descriptor-ui-renderers.test.tsx`.
-- Status: retained component evidence.
-- Closure items: F09, V03, V06.
-- Assessment: Retained test file; current checkpoint suite passes. Verify actual integration where callers changed; retention alone is not migration-complete evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): F09, V03, V06.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - registers the built-in descriptor renderers by default
 - registers, replaces, resolves, and unregisters custom renderers
@@ -413,9 +422,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/right/partials/properties/components/field-default-value-section.test.tsx`
 
 - Destination/evidence: `src/react/canonical-properties.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V03.
-- Assessment: Canonical default editor exists; selection IDs, primitive parse and clear cases need direct assertions.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V03.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - saves selectable default option ids through the editor api
 - parses primitive draft defaults and clears empty values
@@ -423,9 +432,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/right/partials/properties/components/option-effects-section.test.tsx`
 
 - Destination/evidence: `src/react/canonical-properties.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V03.
-- Assessment: Basic create covered; removal, breadcrumbs, parent exclusion and force-visible-only cases remain evidence gaps.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V03.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - renders existing effects with nested breadcrumb labels for option triggers
 - saves raw field and nested option ids through the editor api
@@ -437,9 +446,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/right/partials/properties/components/value-effects-section.test.tsx`
 
 - Destination/evidence: `src/react/canonical-properties.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V03.
-- Assessment: Basic create covered; target eligibility, removal and mode details need evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V03.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - renders existing effects with option labels and mode details
 - saves raw ids and filters parent/inactive fields from target choices
@@ -448,9 +457,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/right/partials/properties/field-properties.test.tsx`
 
 - Destination/evidence: `src/react/canonical-properties.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: F06, V03.
-- Assessment: Multiple/default behavior is partly projected but descriptor transitions are incomplete.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): F06, V03.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - disables Is multiple and reflects descriptor autoEnable=true
 - disables Is multiple and reflects descriptor autoEnable=false
@@ -461,27 +470,27 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/panels/right/partials/properties/option-properties.test.tsx`
 
 - Destination/evidence: `src/react/canonical-properties.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V03.
-- Assessment: Nested option inspector exists; exact raw-ID relabel case needs evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V03.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - updates a nested option label by raw option id
 
 ## `src/panels/right/tabs/properties.test.tsx`
 
 - Destination/evidence: `src/react/canonical-properties.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V03.
-- Assessment: Local label draft exists; empty blur/Enter acceptance cases need direct coverage.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V03.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - keeps empty label drafts local and restores the loaded label on blur or Enter
 
 ## `src/panels/right/tabs/wireframe.test.tsx`
 
 - Destination/evidence: `src/react/canonical-wireframe.test.tsx`; `src/react/canonical-wireframe-browser.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: F04, V01, V02.
-- Assessment: Footer and failure paths implemented; collapse/popovers/invalid numbers and context-menu parity need evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): F04, V01, V02.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - renders footer summary chips with quantity, range, pricing, and counts
 - supports collapsing and expanding the footer summary
@@ -491,9 +500,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/workspace/authorization.test.ts`
 
 - Destination/evidence: `src/react/workspace.test.tsx`; `canonical denied-interaction suites`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V04.
-- Assessment: Canonical permissions replace old keys; default-deny and read-only/comment-write split must be demonstrated.
+- Reference categories: Package / Integration / Legacy detail.
+- Related audit observations (not mandatory case gates): V04.
+- Current treatment: Use canonical contracts for domain rules and payloads. Verify only relevant host bindings here; old internal shapes are not completion criteria.
 
 - allows full editing for an editor with branch write permissions
 - blocks branch edits for read-only users while still allowing comment writes when permitted
@@ -502,9 +511,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/workspace/boot-status.test.tsx`
 
 - Destination/evidence: `src/react/boot.test.ts`; `src/react/canonical-boot-status.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V01, V04.
-- Assessment: Real partial/full recovery tests pass; ready dismissal and seeded/loading presentation remain explicit checks.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V01, V04.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - renders booting state with seeded view messaging
 - renders fully ready state
@@ -516,9 +525,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/workspace/bottom-panel/index.test.tsx`
 
 - Destination/evidence: `src/react/canonical-bottom-panel.test.tsx`; `src/workspace/bottom-panel/service-picker-dialog.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: F01, V01, V04.
-- Assessment: Eleven current panel tests cover restored controls; combined eligibility and catalog assignment/select-all still require reconciliation.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): F01, V01, V04.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - uses manual popover context by default and applies compatibility independently from used services
 - keeps hide active separate from compatibility filtering
@@ -540,9 +549,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/workspace/bottom-panel/service-picker-dialog.test.tsx`
 
 - Destination/evidence: `src/workspace/bottom-panel/service-picker-dialog.test.tsx`.
-- Status: retained component evidence.
-- Closure items: V01, V06.
-- Assessment: Retained test file; current checkpoint suite passes. Verify actual integration where callers changed; retention alone is not migration-complete evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V01, V06.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - renders row-level meta info popover and opens it
 - defaults source to parent when parent has assigned services and resets on clear filters
@@ -551,9 +560,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/workspace/bottom-panel/service-picker.test.ts`
 
 - Destination/evidence: `src/workspace/bottom-panel/service-picker.test.ts`.
-- Status: retained component evidence.
-- Closure items: V01, V06.
-- Assessment: Retained test file; current checkpoint suite passes. Verify actual integration where callers changed; retention alone is not migration-complete evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V01, V06.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - defaults to parent for child groups when parent has assigned services
 - defaults to all for child groups when parent has no assigned services
@@ -565,9 +574,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/workspace/fallback-editor-modal.test.tsx`
 
 - Destination/evidence: `src/react/canonical-fallbacks.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V04.
-- Assessment: Persistence is covered; failing persistence surface must have direct evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V04.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - opens for a service and persists fallback edits through the canvas editor
 - shows the surface error banner when persistence fails
@@ -575,9 +584,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/workspace/fallback-editor/native-fallback-editor.test.tsx`
 
 - Destination/evidence: `src/react/canonical-fallbacks.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V01, V04.
-- Assessment: Add/remove/reset/settings covered partly; switching, required selection and loading controls need explicit checks.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V01, V04.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - switches services and updates the visible registrations
 - opens the registration flow, requires a valid node selection, and adds candidates
@@ -588,9 +597,9 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/workspace/fallback-quick-add-helpers.test.ts`
 
 - Destination/evidence: `src/react/canonical-fallbacks.test.tsx`; `Core fallback eligibility`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V04.
-- Assessment: Global/node registration covered; exclude primary/bound/active/duplicate and initial discovery cases need owner/integration evidence.
+- Reference categories: Package / Integration / Legacy detail.
+- Related audit observations (not mandatory case gates): V04.
+- Current treatment: Use canonical contracts for domain rules and payloads. Verify only relevant host bindings here; old internal shapes are not completion criteria.
 
 - reads bound ids for a global service scope
 - collects active service ids across tags, fields, and options
@@ -601,18 +610,18 @@ New tests and the current 167-test pass are recorded in the audit; new case coun
 ## `src/workspace/fallback-quick-add.test.tsx`
 
 - Destination/evidence: `src/react/canonical-fallbacks.test.tsx`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V01, V04.
-- Assessment: Node/global launch flows exist; retain visual and cancellation evidence.
+- Reference categories: UI / Integration.
+- Related audit observations (not mandatory case gates): V01, V04.
+- Current treatment: Use relevant visible outcomes as references for changed controls. Translate calls to canonical APIs; do not preserve old payloads or infer a missing feature solely from an unported title.
 
 - opens the quick-add overlay for a node launch
 
 ## `src/workspace/permissions.test.ts`
 
 - Destination/evidence: `src/react/workspace.test.tsx`; `canonical denied-interaction suites`.
-- Status: replacement evidence partial; pending gates below.
-- Closure items: V04.
-- Assessment: Canonical keys replace legacy adaptation; preserve default-deny and grants, not legacy key aliases.
+- Reference categories: Package / Integration / Legacy detail.
+- Related audit observations (not mandatory case gates): V04.
+- Current treatment: Use canonical contracts for domain rules and payloads. Verify only relevant host bindings here; old internal shapes are not completion criteria.
 
 - denies by default when key is missing
 - returns true when permission keys are present

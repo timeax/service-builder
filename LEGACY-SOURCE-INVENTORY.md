@@ -1,5 +1,7 @@
 # Legacy source removal ledger
 
+Scope note, 2026-09-29: this is historical removal/ownership evidence, not an acceptance checklist. Removed tests and source do not create a requirement to reproduce legacy engine semantics or exports. Use the revised `COMPLETION-AUDIT.md` for UI integration completion and `BASELINE-TEST-INVENTORY.md` as selective reference. Removal evidence below records prior checks; it does not establish full UI correctness or fresh verification.
+
 This ledger records the 68 production files that imported `@timeax/digital-service-engine` after the canonical Service Builder cutover. The user explicitly authorized deletion, and these superseded files have now been removed together with their legacy-only wrappers and tests. Git retains the recoverable history.
 
 `npm run check:boundaries` now reports `0/0` legacy production files, traverses both shipped entrypoints (`src/index.tsx` and `src/main.tsx`), and rejects any future transitive legacy-engine import. The dependency itself has also been removed from the manifest and lockfile.
