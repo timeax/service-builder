@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { Separator } from '@/components/ui/separator.tsx';
 import { PropertyList } from '@/components/builder/index.tsx';
+import { ServiceMetaPopover } from '@/components/service-meta-popover.tsx';
 import { cn } from '@/lib/utils.ts';
 import { RenderIf } from '@/panels/right/components/renderif.tsx';
 import { IncludesItem, IncludesItemMissing, IncludesList, Section, SectionActionButton, SectionActionTriggerButton } from '@/panels/right/components/sections.tsx';
@@ -18,6 +19,7 @@ import { MdDeleteOutline, MdOutlineRemoveCircleOutline } from 'react-icons/md';
 import { TiDelete } from 'react-icons/ti';
 import { ArrowUpRight } from 'lucide-react';
 import { useServiceBuilderCanvasModel } from './presentation';
+import { CanonicalServicePicker } from './canonical-service-picker';
 import type { CanonicalInspectorNode } from './property-model';
 import { useWorkspaceSelector } from './workspace';
 
@@ -44,7 +46,7 @@ const toValidationEditorRule = (rule: CanonicalValidationRule) => ({
     ...(rule.pattern === undefined ? {} : { pattern: rule.pattern }),
     ...(rule.pattern_flags === undefined ? {} : { flags: rule.pattern_flags }),
     ...(rule.code === undefined ? {} : { code: rule.code }),
-    ...(rule.value_by === 'eval' ? { code: rule.expression.body } : {}),
+    ...(rule.value_by === 'eval' ? { expressionBody: rule.expression.body } : {}),
     ...(rule.message === undefined ? {} : { message: rule.message }),
 });
 
@@ -61,18 +63,19 @@ const fromValidationEditorRule = (rule: ReturnType<typeof toValidationEditorRule
         ...(rule.message === undefined ? {} : { message: rule.message }),
     };
     if (rule.valueBy === 'eval') {
-        return { ...base, value_by: 'eval', expression: { language: 'javascript', body: rule.code ?? '' } };
+        return { ...base, value_by: 'eval', expression: { language: 'javascript', body: rule.expressionBody ?? '' } };
     }
     return { ...base, ...(rule.valueBy === 'length' ? { value_by: 'length' as const } : {}) };
 };
 
-function PropertySection({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+function PropertySection({ title, description, children, actions }: { title: string; description: string; children: ReactNode; actions?: ReactNode }) {
     return (
         <>
             <Separator />
             <Section defaultOpen={false}>
                 <Section.Header>
                     <Section.Title>{title}</Section.Title>
+                    {actions ? <Section.Actions>{actions}</Section.Actions> : null}
                 </Section.Header>
                 <Section.Content>
                     <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{description}</p>
@@ -233,25 +236,22 @@ function ServiceSection({ node, disabled }: { node: Exclude<CanonicalInspectorNo
                 ? node.raw.service_id
                 : undefined;
     const supported = node.kind !== 'field' || node.raw.button === true;
+    const connected = services.find((service) => String(service.id) === String(serviceId));
     return (
-        <PropertySection title="Service" description="Bind this node to a handler-owned catalog service.">
+        <PropertySection title="Service" description="Bind this node to a handler-owned catalog service." actions={!disabled && supported ? <CanonicalServicePicker nodeId={node.id} /> : null}>
             {supported ? (
-                <InputField
-                    variant="select"
-                    label="Service id"
-                    disabled={disabled}
-                    value={serviceId === undefined ? '' : String(serviceId)}
-                    onChange={({ value }) => {
-                        const match = services.find((service) => String(service.id) === String(value));
-                        canvas.editor?.set_service(node.id, match?.id);
-                    }}
-                    options={[
-                        { value: '', label: 'None' },
-                        ...services.map((service) => ({ value: String(service.id), label: `#${String(service.id)} - ${service.name}` })),
-                    ]}
-                    searchable
-                    clearable={false}
-                />
+                connected ? <>
+                    <IncludesItem title={connected.name} badge={<span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold tracking-[0.16em] text-slate-600 uppercase dark:bg-slate-800 dark:text-slate-300">#{String(connected.id)}</span>} actions={disabled ? undefined : [{ kind: 'remove', title: 'Clear service', onClick: () => canvas.editor?.set_service(node.id, undefined) }]} />
+                    <div className="rounded-md bg-gray-50 p-3 text-sm dark:bg-gray-800/50">
+                        <div className="mb-2 flex justify-end"><ServiceMetaPopover meta={connected.meta} className="h-6 w-6" /></div>
+                        <div className="space-y-1 text-xs text-gray-600 dark:text-gray-300">
+                            <p><span className="font-medium text-gray-800 dark:text-gray-200">Category:</span> {connected.category ?? 'Uncategorised'}</p>
+                            <p><span className="font-medium text-gray-800 dark:text-gray-200">Rate:</span> {connected.rate ?? 'Not set'}</p>
+                            <p><span className="font-medium text-gray-800 dark:text-gray-200">Range:</span> {connected.min} - {connected.max}</p>
+                        </div>
+                        {!disabled ? <div className="mt-3 flex justify-end"><button type="button" onClick={() => canvas.editor?.set_service(node.id, undefined)} className="text-xs font-medium text-red-500 transition hover:text-red-600 dark:hover:text-red-400">Clear</button></div> : null}
+                    </div>
+                </> : <p className="text-sm text-slate-500">None</p>
             ) : (
                 <p className="text-xs text-slate-500">Enable Button mode to attach a service directly. Choice services belong to options.</p>
             )}

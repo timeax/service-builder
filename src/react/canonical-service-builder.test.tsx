@@ -11,7 +11,10 @@ vi.mock('./canonical-canvas-surface', () => ({ CanonicalCanvasSurface: () => <ma
 vi.mock('./canonical-right-panel', () => ({ CanonicalRightPanel: () => <aside>Right panel</aside> }));
 vi.mock('./canonical-bottom-panel', () => ({ useCanonicalBottomPanel: () => ({ isOpen: false, activeTab: 'console', width: 960, height: 300, toggle: vi.fn(), open: vi.fn(), close: vi.fn(), setActiveTab: vi.fn(), setWidth: vi.fn(), setHeight: vi.fn(), shortcutLabel: 'Ctrl/Cmd + J' }), CanonicalBottomConsolePanel: () => <div>Bottom console</div> }));
 vi.mock('./canonical-fallbacks', () => ({ CanonicalFallbackProvider: ({ children }: { children: React.ReactNode }) => children, useOptionalCanonicalFallbacks: () => null }));
-vi.mock('@timeax/form-palette', () => ({ InputField: () => <input /> }));
+vi.mock('@timeax/form-palette', async (importOriginal) => ({
+    ...await importOriginal<typeof import('@timeax/form-palette')>(),
+    InputField: () => <input />,
+}));
 
 describe('canonical Service Builder shell', () => {
     it('preserves the established three-panel and floating-console composition', async () => {

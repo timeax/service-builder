@@ -33,12 +33,13 @@ vi.mock('@timeax/form-palette', () => ({
             {children}
         </form>
     ),
-    InputField: ({ label, value, disabled, onChange, onFocus, onBlur, onKeyDown }: any) => {
+    InputField: ({ label, value, disabled, onChange, onFocus, onBlur, onKeyDown, placeholder }: any) => {
         const ariaLabel = typeof label === 'string' ? label : (label?.props?.children ?? 'input-field');
         return (
             <input
                 aria-label={ariaLabel}
                 value={value ?? ''}
+                placeholder={placeholder}
                 disabled={disabled}
                 onChange={(event) => onChange?.({ value: event.target.value })}
                 onFocus={onFocus}
@@ -206,8 +207,14 @@ describe('canonical properties', () => {
         const serviceSection = screen.getByRole('button', { name: 'Service' });
         fireEvent.click(serviceSection);
         await waitFor(() => expect(serviceSection).toHaveAttribute('aria-expanded', 'true'));
-        fireEvent.change(await screen.findByLabelText('Service id'), { target: { value: '2946' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
+        expect(screen.getByRole('button', { name: 'Service list filter' })).toBeInTheDocument();
+        fireEvent.change(screen.getByPlaceholderText('Search services...'), { target: { value: '2946' } });
+        fireEvent.click(await screen.findByRole('button', { name: 'Choose service 2946' }));
+        expect(screen.queryByRole('button', { name: 'Choose service 10147' })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }));
         await waitFor(() => expect(screen.getByLabelText('Current field service')).toHaveTextContent('2946'));
+        expect(screen.getByText('Rate:')).toBeInTheDocument();
     }, 10_000);
 
     it('persists structured validation, trigger mappings, option effects, and value effects through the preserved advanced sections', async () => {
@@ -254,6 +261,38 @@ describe('canonical properties', () => {
                 '"field:url":{"value":"preset","mode":"if_empty","clear_on_deactivate":true}',
             ),
         );
+    }, 15_000);
+
+    it('keeps validation diagnostic code distinct from Eval expression text', async () => {
+        const definition = structuredClone(workspaceSeed.definition);
+        const field = definition.fields.find((item) => item.id === 'field:service')!;
+        field.validation = [{
+            op: 'gt',
+            value_by: 'eval',
+            expression: { language: 'javascript', body: 'return Number(value);' },
+            code: 'quantity_too_small',
+            value: 0,
+            message: 'Enter a positive quantity',
+        }];
+        const backend = new MemoryWorkspaceBackend({ ...workspaceSeed, definition, persistence: undefined });
+        render(
+            <ServiceBuilderProvider backend={backend} actor={workspaceActor}>
+                <SelectServiceField />
+                <CanonicalProperties />
+                <CurrentAdvancedProperties />
+            </ServiceBuilderProvider>,
+        );
+
+        await screen.findByText('No active node selected');
+        fireEvent.click(screen.getByRole('button', { name: 'Select service field' }));
+        await screen.findByText('Selection overview');
+        const current = screen.getByLabelText('Current advanced properties');
+        expect(current).toHaveTextContent('"code":"quantity_too_small"');
+        expect(current).toHaveTextContent('"body":"return Number(value);"');
+        fireEvent.change(await screen.findByLabelText('Eval code'), { target: { value: 'return Number(value) * 2;' } });
+        await waitFor(() => expect(current).toHaveTextContent('"body":"return Number(value) * 2;"'));
+        expect(current).toHaveTextContent('"code":"quantity_too_small"');
+        expect(current).not.toHaveTextContent('"code":"return Number(value) * 2;"');
     }, 15_000);
 
     it('persists advisory utility settings through the canonical Editor', async () => {

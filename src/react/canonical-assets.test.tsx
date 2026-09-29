@@ -18,6 +18,22 @@ vi.mock('@timeax/form-palette', () => ({
 }));
 
 describe('canonical assets', () => {
+    it('retains clone input and permits retry after a backend failure', async () => {
+        const snapshot = await workspaceSeed.persistence!.load(workspaceSeed.workspace_id);
+        const backend = new MemoryWorkspaceBackend({ ...workspaceSeed, persistence: { load: async () => structuredClone(snapshot), save: async () => {} } });
+        vi.spyOn(backend, 'save_template').mockResolvedValueOnce({ ok: false, error: { code: 'unavailable', message: 'Template service unavailable', retryable: true, meta: {} } });
+        render(<ServiceBuilderProvider backend={backend} actor={workspaceActor}><CanonicalAssets /></ServiceBuilderProvider>);
+        fireEvent.contextMenu((await screen.findByText('Target URL')).closest('button')!);
+        fireEvent.click(await screen.findByRole('button', { name: 'Clone template' }));
+        fireEvent.change(screen.getByPlaceholderText('Template name'), { target: { value: 'Retry copy' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Clone' }));
+        expect(await screen.findByRole('alert')).toHaveTextContent('Template service unavailable');
+        expect(screen.getByPlaceholderText('Template name')).toHaveValue('Retry copy');
+        fireEvent.click(screen.getByRole('button', { name: 'Clone' }));
+        await waitFor(() => expect(screen.queryByRole('alertdialog', { name: 'Clone template' })).not.toBeInTheDocument());
+        expect(screen.getByText('Retry copy')).toBeInTheDocument();
+    });
+
     it('preserves built-in and saved-template cards from canonical registries and Workspace', async () => {
         render(
             <ServiceBuilderProvider backend={new MemoryWorkspaceBackend(workspaceSeed)} actor={workspaceActor}>

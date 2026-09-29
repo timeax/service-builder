@@ -18,6 +18,7 @@ import type { CanonicalBottomPanelController } from './canonical-bottom-panel';
 import { CanonicalImportJsonModal, type ImportTarget } from './canonical-import-json-modal';
 import { useCanonicalReactFlowAdapter } from './canonical-flow-adapter';
 import { CanonicalHistoryPanel } from './canonical-history';
+import { canonicalAuthoringDescriptor } from './canonical-input-registry';
 import { CanonicalNoticeManager, type NoticeManagerRequest } from './canonical-notice-manager';
 import { useOptionalCanonicalNodeContextMenu } from './canonical-node-context-menu';
 import { buildCanonicalCanvasServiceContext } from './canonical-service-context';
@@ -25,7 +26,25 @@ import { acceptsCanonicalCanvasDrop, DRAG_MIME_SERVICE, readCanonicalAssetDrag }
 import { useCanvasAPI, useCanvasSelector, useWorkspacePermission, useWorkspaceRuntime, useWorkspaceSelector } from './workspace';
 
 const SERVICE_CONTEXT_NODE_ID = 'sys::service-context';
-const DEFAULT_SERVICE_CONTEXT_POSITION = { x: 520, y: 64 };
+const DEFAULT_SERVICE_CONTEXT_POSITION = { x: 500, y: -200 };
+
+function hasPersistedViewport(viewport: { x: number; y: number; zoom: number }) {
+    return Math.abs(viewport.x) > 0.5 || Math.abs(viewport.y) > 0.5 || Math.abs(viewport.zoom - 1) > 1e-4;
+}
+
+function InitialFitController({ enabled, nodeIds }: { enabled: boolean; nodeIds: string[] }) {
+    const flow = useReactFlow();
+    const didFit = useRef(false);
+    useEffect(() => {
+        if (!enabled || didFit.current || nodeIds.length === 0) return;
+        const frame = requestAnimationFrame(() => {
+            didFit.current = true;
+            void flow.fitView({ nodes: nodeIds.map((id) => ({ id })), padding: 0.08, maxZoom: 1 });
+        });
+        return () => cancelAnimationFrame(frame);
+    }, [enabled, flow, nodeIds]);
+    return null;
+}
 
 function readServiceContextPosition(key: string) {
     if (typeof window === 'undefined') return DEFAULT_SERVICE_CONTEXT_POSITION;
@@ -282,6 +301,7 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
     const [commentPlacementActive, setCommentPlacementActive] = useState(false);
     const [pendingAction, setPendingAction] = useState<'save' | 'publish' | null>(null);
     const [actionError, setActionError] = useState<{ action: 'save' | 'publish'; code: string; message: string } | null>(null);
+    const [dropError, setDropError] = useState<string | null>(null);
     const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
     const [edgeMenu, setEdgeMenu] = useState<{ edge: Edge; x: number; y: number } | null>(null);
     const serviceContextStorageKey = `service-builder.canvas.system-node.service-context.${workspaceId ?? 'none'}.${branchId ?? 'none'}`;
@@ -289,6 +309,8 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
     const [serviceContextSelected, setServiceContextSelected] = useState(false);
     useEffect(() => setServiceContextPosition(readServiceContextPosition(serviceContextStorageKey)), [serviceContextStorageKey]);
     const adapter = useCanonicalReactFlowAdapter(api, { can_edit: canEdit, snap_to_grid: false, comments_revision: workspaceState.comments });
+    const initialViewport = useMemo(() => api.get_viewport(), [api]);
+    const fitNodeIds = useMemo(() => adapter.nodes.map((node) => node.id), [adapter.nodes]);
     const serviceContext = useMemo(() => {
         const definition = workspaceState.definition;
         const selectedPart = selectionKey.split('\u0001')[0] ?? '';
@@ -326,6 +348,10 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
         const asset = readCanonicalAssetDrag(dataTransfer);
         if (!asset) return;
         const template = asset.kind === 'template' ? templates.find((item) => item.id === asset.template_id) : undefined;
+        if (template?.field.options?.length) {
+            setDropError('This template contains options and cannot be inserted safely: Workspace 1.0.1 does not assign new nested option IDs.');
+            return;
+        }
         const id = template
             ? api.editor.add_field({
                   ...structuredClone(template.field),
@@ -333,7 +359,7 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
                   label: template.field.label,
                   bind_id: bindId ?? template.field.bind_id,
               })
-            : api.editor.add_field({ type: asset.kind === 'builtin' ? asset.field_type : 'text', label: asset.label, bind_id: bindId, meta: {} });
+            : api.editor.add_field_from_descriptor(canonicalAuthoringDescriptor(asset.kind === 'builtin' ? asset.field_type : 'text', asset.kind === 'builtin' ? asset.variant : undefined), { label: asset.label, bind_id: bindId });
         if (position) api.editor.place_node(id, position.x, position.y);
         api.select([id], id);
     }, [api, canEdit, templates]);
@@ -377,9 +403,7 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
             <ReactFlow
                 nodes={[...canvasNodes, { id: SERVICE_CONTEXT_NODE_ID, type: 'serviceContextSystem', data: { serviceContext }, position: serviceContextPosition, selected: serviceContextSelected, draggable: true, selectable: true }] as Node[]}
                 edges={edges}
-                defaultViewport={api.get_viewport()}
-                fitView
-                fitViewOptions={{ padding: 0.15 }}
+                defaultViewport={initialViewport}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 connectionMode={ConnectionMode.Loose}
@@ -434,6 +458,7 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
                     createDraggedField(event.dataTransfer, undefined, position);
                 }}
             >
+                <InitialFitController enabled={!hasPersistedViewport(initialViewport)} nodeIds={fitNodeIds} />
                 {showGrid ? <Background gap={18} size={1} /> : null}
                 {showMiniMap ? <MiniMap position="bottom-right" pannable zoomable /> : null}
                 <CanvasToolbar
@@ -526,6 +551,11 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
                     {actionError.code === 'publication_validation_failed' && bottom_panel ? (
                         <button type="button" className="mt-2 text-xs font-semibold underline" onClick={() => bottom_panel.open('console')}>Review diagnostics</button>
                     ) : null}
+                </div>
+            ) : null}
+            {dropError ? (
+                <div role="alert" className="pointer-events-auto absolute top-16 right-4 z-30 w-[min(24rem,calc(100%-2rem))] rounded-2xl border border-amber-200 bg-white/95 p-3 text-sm text-amber-900 shadow-2xl dark:border-amber-500/30 dark:bg-slate-950/95 dark:text-amber-200">
+                    <div className="flex items-start justify-between gap-3"><p>{dropError}</p><button type="button" className="text-xs font-medium underline" onClick={() => setDropError(null)}>Dismiss</button></div>
                 </div>
             ) : null}
             <CanonicalImportJsonModal

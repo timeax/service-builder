@@ -373,7 +373,6 @@ export function CanonicalProperties() {
                                     label={<FieldLabel>ID</FieldLabel>}
                                     disabled
                                     value={node.id}
-                                    variantClassName="bg-muted"
                                     extendBoxToControls
                                     joinControls
                                     trailingControl={

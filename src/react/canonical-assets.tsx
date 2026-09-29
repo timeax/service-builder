@@ -2,7 +2,6 @@
 import { EmptyState } from '@/components/builder/index.tsx';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -11,6 +10,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
+import { Button } from '@/components/ui/button.tsx';
 import { BUILT_IN_INPUT_TYPES } from '@elqora/dgp-ordering-form-palette';
 import { InputField } from '@timeax/form-palette';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -44,6 +44,8 @@ export function CanonicalAssets() {
     const [dialog, setDialog] = useState<'rename' | 'clone' | 'delete' | null>(null);
     const [templateName, setTemplateName] = useState('');
     const [saveToCurrentBranch, setSaveToCurrentBranch] = useState(true);
+    const [actionError, setActionError] = useState<string | null>(null);
+    const [actionPending, setActionPending] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
     const builtins = useMemo(() => BUILT_IN_INPUT_TYPES.map((kind) => ({ key: `${kind}::default`, kind, label: title(kind) })), []);
     const lower = query.trim().toLowerCase();
@@ -83,24 +85,31 @@ export function CanonicalAssets() {
         setActionTarget({ id: menuTarget.id, name: menuTarget.name });
         setTemplateName(kind === 'clone' ? `Copy of ${menuTarget.name}` : menuTarget.name);
         setSaveToCurrentBranch(true);
+        setActionError(null);
         setDialog(kind);
         setMenuTarget(null);
     };
     const scope = () => (saveToCurrentBranch ? branchId : null);
-    const applyRename = async () => {
-        if (!actionTarget || !templateName.trim()) return;
-        const result = await runtime.update_template(actionTarget.id, { name: templateName.trim(), branch_id: scope() });
-        if (result.ok) setDialog(null);
-    };
-    const applyClone = async () => {
-        if (!actionTarget || !templateName.trim()) return;
-        const result = await runtime.clone_template({ id: actionTarget.id }, { name: templateName.trim(), branch_id: scope() });
-        if (result.ok) setDialog(null);
-    };
-    const applyDelete = async () => {
-        if (!actionTarget) return;
-        const result = await runtime.delete_template(actionTarget.id);
-        if (result.ok) setDialog(null);
+    const applyAction = async () => {
+        if (!actionTarget || !dialog || actionPending || (dialog !== 'delete' && !templateName.trim())) return;
+        setActionPending(true);
+        setActionError(null);
+        try {
+            const result = dialog === 'rename'
+                ? await runtime.update_template(actionTarget.id, { name: templateName.trim(), branch_id: scope() })
+                : dialog === 'clone'
+                    ? await runtime.clone_template({ id: actionTarget.id }, { name: templateName.trim(), branch_id: scope() })
+                    : await runtime.delete_template(actionTarget.id);
+            if (result.ok === false) {
+                setActionError(result.error.message);
+                return;
+            }
+            setDialog(null);
+        } catch (error) {
+            setActionError(error instanceof Error ? error.message : 'The template action failed.');
+        } finally {
+            setActionPending(false);
+        }
     };
 
     return (
@@ -247,11 +256,10 @@ export function CanonicalAssets() {
                         </label>
                     </div>
                     <AlertDialogFooter>
-                        <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
-                        <AlertDialogAction type="button" disabled={!templateName.trim()} onClick={() => void applyRename()}>
-                            Save
-                        </AlertDialogAction>
+                        <AlertDialogCancel type="button" disabled={actionPending}>Cancel</AlertDialogCancel>
+                        <Button type="button" disabled={!templateName.trim() || actionPending} onClick={() => void applyAction()}>{actionPending ? 'Saving…' : 'Save'}</Button>
                     </AlertDialogFooter>
+                    {actionError ? <p role="alert" className="text-sm text-rose-600">{actionError}</p> : null}
                 </AlertDialogContent>
             </AlertDialog>
             <AlertDialog
@@ -278,11 +286,10 @@ export function CanonicalAssets() {
                         </label>
                     </div>
                     <AlertDialogFooter>
-                        <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
-                        <AlertDialogAction type="button" disabled={!templateName.trim()} onClick={() => void applyClone()}>
-                            Clone
-                        </AlertDialogAction>
+                        <AlertDialogCancel type="button" disabled={actionPending}>Cancel</AlertDialogCancel>
+                        <Button type="button" disabled={!templateName.trim() || actionPending} onClick={() => void applyAction()}>{actionPending ? 'Cloning…' : 'Clone'}</Button>
                     </AlertDialogFooter>
+                    {actionError ? <p role="alert" className="text-sm text-rose-600">{actionError}</p> : null}
                 </AlertDialogContent>
             </AlertDialog>
             <AlertDialog
@@ -297,11 +304,10 @@ export function CanonicalAssets() {
                         <AlertDialogDescription>This action permanently removes the selected template.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
-                        <AlertDialogAction type="button" className="bg-rose-600 hover:bg-rose-700" onClick={() => void applyDelete()}>
-                            Delete
-                        </AlertDialogAction>
+                        <AlertDialogCancel type="button" disabled={actionPending}>Cancel</AlertDialogCancel>
+                        <Button type="button" variant="destructive" disabled={actionPending} onClick={() => void applyAction()}>{actionPending ? 'Deleting…' : 'Delete'}</Button>
                     </AlertDialogFooter>
+                    {actionError ? <p role="alert" className="text-sm text-rose-600">{actionError}</p> : null}
                 </AlertDialogContent>
             </AlertDialog>
         </div>

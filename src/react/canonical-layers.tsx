@@ -15,6 +15,7 @@ import { MdOutlineAdd } from 'react-icons/md';
 import { RxInput } from 'react-icons/rx';
 import { VscNewFolder } from 'react-icons/vsc';
 import { reorderCanonicalFieldForFilter, reorderCanonicalFilter, reorderCanonicalOption } from './layer-commands';
+import { canonicalAuthoringDescriptor } from './canonical-input-registry';
 import { useServiceBuilderCanvasModel } from './presentation';
 import { useWorkspacePermission } from './workspace';
 
@@ -50,12 +51,22 @@ export function CanonicalLayers() {
     const [fieldSearch, setFieldSearch] = useState('');
     const [isFilterSearchOpen, setIsFilterSearchOpen] = useState(false);
     const [isFieldSearchOpen, setIsFieldSearchOpen] = useState(false);
+    const [isAddingOption, setIsAddingOption] = useState(false);
+    const [optionName, setOptionName] = useState('');
+    const [optionError, setOptionError] = useState<string | null>(null);
 
     const filters = useMemo(() => filterTree(canvas.layers.filters, filterSearch), [canvas.layers.filters, filterSearch]);
     const fields = useMemo(() => filterTree(canvas.layers.fields, fieldSearch), [canvas.layers.fields, fieldSearch]);
     const contextFilter = canvas.definition?.filters.find((filter) => filter.id === canvas.context_filter_id) ?? canvas.definition?.filters[0];
     const hasFilterSearch = filterSearch.trim() !== '';
     const hasFieldSearch = fieldSearch.trim() !== '';
+    const selectedId = canvas.selection.primary_id;
+    const selectedNode = canvas.graph.nodes.find((candidate) => candidate.id === selectedId);
+    const selectedFieldId = selectedNode?.kind === 'field'
+        ? selectedNode.id
+        : selectedNode?.kind === 'option' && canvas.definition
+            ? walkOptions(canvas.definition).find((visit) => visit.optionId === selectedNode.id)?.fieldId
+            : undefined;
 
     const select: SortTreeProps['onSelect'] = (ids, meta) => {
         if (meta?.via === 'api' || canvas.api === undefined) return;
@@ -146,29 +157,21 @@ export function CanonicalLayers() {
 
     const addField = () => {
         if (!canMutate || canvas.editor === undefined) return;
-        const id = canvas.editor.add_field({
-            type: 'text',
-            label: 'New Field',
-            bind_id: contextFilter?.id,
-            meta: {},
-        });
+        const id = canvas.editor.add_field_from_descriptor(canonicalAuthoringDescriptor('text'), { label: 'New Field', bind_id: contextFilter?.id });
         canvas.api?.select([id], id);
     };
 
     const addOption = () => {
-        if (!canMutate || canvas.editor === undefined || canvas.definition === null) return;
-        const selectedId = canvas.selection.primary_id;
-        if (selectedId === undefined) return;
-        const node = canvas.graph.nodes.find((candidate) => candidate.id === selectedId);
-        const fieldId =
-            node?.kind === 'field'
-                ? node.id
-                : node?.kind === 'option'
-                  ? walkOptions(canvas.definition).find((visit) => visit.optionId === node.id)?.fieldId
-                  : undefined;
-        if (fieldId === undefined) return;
-        const id = canvas.editor.add_option(fieldId, { label: 'New option', meta: {} }, node?.kind === 'option' ? node.id : undefined);
-        canvas.api?.select([id], id);
+        if (!canMutate || canvas.editor === undefined || selectedFieldId === undefined || !optionName.trim()) return;
+        try {
+            const id = canvas.editor.add_option(selectedFieldId, { label: optionName.trim(), meta: {} }, selectedNode?.kind === 'option' ? selectedNode.id : undefined);
+            canvas.api?.select([id], id);
+            setIsAddingOption(false);
+            setOptionName('');
+            setOptionError(null);
+        } catch (error) {
+            setOptionError(error instanceof Error ? error.message : 'Could not add the option.');
+        }
     };
 
     const filterBlur: FocusEventHandler<HTMLInputElement> = () => {
@@ -276,9 +279,9 @@ export function CanonicalLayers() {
                         <button
                             type="button"
                             aria-label="Add option"
-                            title={mutationDeniedReason ?? 'Add option'}
-                            disabled={!canMutate}
-                            onClick={addOption}
+                            title={mutationDeniedReason ?? (selectedFieldId === undefined ? 'Select a field or option to add an option.' : 'Add option')}
+                            disabled={!canMutate || selectedFieldId === undefined}
+                            onClick={() => { setOptionName(''); setOptionError(null); setIsAddingOption(true); }}
                             className="cursor-pointer rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-900 dark:hover:text-slate-100"
                         >
                             <FolderPlus className="size-4" />
@@ -296,6 +299,17 @@ export function CanonicalLayers() {
                     </div>
                 </div>
                 <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
+                    {isAddingOption ? (
+                        <form onSubmit={(event) => { event.preventDefault(); addOption(); }} className="flex flex-col gap-2 rounded-xl border border-blue-200 bg-blue-50/50 p-2 dark:border-blue-500/30 dark:bg-blue-500/10">
+                            <label className="text-xs font-medium text-slate-700 dark:text-slate-200" htmlFor="new-layer-option-name">New option name</label>
+                            <input id="new-layer-option-name" autoFocus value={optionName} onChange={(event) => setOptionName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); setIsAddingOption(false); setOptionError(null); } }} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950" />
+                            {optionError ? <p role="alert" className="text-xs text-rose-600">{optionError}</p> : null}
+                            <div className="flex justify-end gap-2">
+                                <button type="button" onClick={() => { setIsAddingOption(false); setOptionError(null); }} className="rounded-lg px-2 py-1 text-xs">Cancel</button>
+                                <button type="submit" disabled={!optionName.trim() || selectedFieldId === undefined} className="rounded-lg bg-blue-600 px-2 py-1 text-xs text-white disabled:opacity-50">Add option</button>
+                            </div>
+                        </form>
+                    ) : null}
                     {isFieldSearchOpen || hasFieldSearch ? (
                         <PanelSearch
                             ref={fieldSearchInputRef}

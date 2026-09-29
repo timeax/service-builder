@@ -12,13 +12,18 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
+import { Button } from '@/components/ui/button.tsx';
 import { InputField } from '@timeax/form-palette';
+import { walkOptions } from '@elqora/dgp-core';
+import type { NodeReference } from '@elqora/dgp-workspace';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useOptionalCanonicalFallbacks } from './canonical-fallbacks';
+import { canonicalAuthoringDescriptor } from './canonical-input-registry';
 import { CanonicalNoticeManager, type NoticeManagerRequest } from './canonical-notice-manager';
 import { DRAG_MIME_ASSET_BUILTIN, DRAG_MIME_ASSET_TEMPLATE, DRAG_MIME_SERVICE } from './drag-contracts';
 import { useCanvasAPI, useWorkspacePermission, useWorkspaceRuntime, useWorkspaceSelector } from './workspace';
+import { reorderCanonicalFieldForFilter } from './layer-commands';
 
 export type CanonicalContextNodeKind = 'filter' | 'field' | 'option';
 export interface OpenCanonicalNodeContextMenuInput {
@@ -26,6 +31,7 @@ export interface OpenCanonicalNodeContextMenuInput {
     node_kind: CanonicalContextNodeKind;
     client_x: number;
     client_y: number;
+    surface?: 'canvas' | 'wireframe';
 }
 export interface OpenCanonicalNodeDropInput extends OpenCanonicalNodeContextMenuInput {
     data_transfer: DataTransfer;
@@ -67,8 +73,18 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
     const templates = useWorkspaceSelector((state) => state.templates);
     const [target, setTarget] = useState<OpenCanonicalNodeContextMenuInput | null>(null);
     const [dropIntent, setDropIntent] = useState<DropIntent | null>(null);
-    const [dialog, setDialog] = useState<'rename' | 'delete' | null>(null);
+    const [dropError, setDropError] = useState<string | null>(null);
+    const [dialog, setDialog] = useState<'rename' | 'delete' | 'template' | 'batch-target' | 'batch-labels' | null>(null);
     const [renameValue, setRenameValue] = useState('');
+    const [templateName, setTemplateName] = useState('');
+    const [templateInBranch, setTemplateInBranch] = useState(true);
+    const [templateError, setTemplateError] = useState<string | null>(null);
+    const [templatePending, setTemplatePending] = useState(false);
+    const [batchMode, setBatchMode] = useState<'rebind' | 'include' | 'exclude'>('rebind');
+    const [batchTargetId, setBatchTargetId] = useState('');
+    const [batchPrefix, setBatchPrefix] = useState('');
+    const [batchSuffix, setBatchSuffix] = useState('');
+    const [batchError, setBatchError] = useState<string | null>(null);
     const [noticeRequest, setNoticeRequest] = useState<NoticeManagerRequest | null>(null);
     const noticeToken = useRef(0);
     const openNoticeManager = useCallback((input?: { mode?: 'manage' | 'create'; target?: NoticeManagerRequest['target'] }) => {
@@ -102,20 +118,30 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
                   top: Math.max(12, Math.min(target.client_y, window.innerHeight - 360)),
               }
             : undefined;
+    const selectedIds = canvas?.get_selection() ?? [];
+    const actionIds = target && selectedIds.includes(target.node_id) && selectedIds.length > 1 ? selectedIds : target ? [target.node_id] : [];
+    const isBatch = actionIds.length > 1;
+    const selectedFields = actionIds.filter((id) => canvas?.editor.get_node(id).kind === 'field');
+    const hasServiceSelection = actionIds.some((id) => {
+        const indexed = canvas?.editor.get_node(id);
+        return indexed?.kind === 'filter' ? indexed.filter.service_id !== undefined : indexed?.kind === 'field' ? indexed.field.button === true && indexed.field.service_id !== undefined : indexed?.kind === 'option' ? indexed.option.service_id !== undefined : false;
+    });
+    const references = (): NodeReference[] => {
+        const refs: NodeReference[] = [];
+        for (const id of actionIds) {
+            const indexed = canvas?.editor.get_node(id);
+            if (indexed?.kind === 'filter') refs.push({ kind: 'filter', id });
+            if (indexed?.kind === 'field') refs.push({ kind: 'field', id });
+            if (indexed?.kind === 'option') refs.push({ kind: 'option', field_id: indexed.field.id, id });
+        }
+        return refs;
+    };
     const duplicate = () => {
         if (!target || !canvas || !canEdit) return;
-        const indexed = canvas.editor.get_node(target.node_id);
-        const reference =
-            indexed.kind === 'option'
-                ? { kind: 'option' as const, field_id: indexed.field.id, id: indexed.id }
-                : indexed.kind === 'field'
-                  ? { kind: 'field' as const, id: indexed.id }
-                  : indexed.kind === 'filter'
-                    ? { kind: 'filter' as const, id: indexed.id }
-                    : undefined;
-        if (!reference) return;
-        const id = canvas.editor.duplicate(reference);
-        canvas.select([id], id);
+        const refs = references();
+        if (!refs.length) return;
+        const ids = refs.length > 1 ? canvas.editor.duplicate_many(refs) : [canvas.editor.duplicate(refs[0]!)];
+        canvas.select(ids, ids.at(-1));
         setTarget(null);
     };
     const addNotice = () => {
@@ -127,18 +153,31 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
         setTarget(null);
     };
     const saveTemplate = async () => {
-        if (!target || target.node_kind !== 'field' || !canvas || !canTemplate) return;
+        if (!target || target.node_kind !== 'field' || !canvas || !canTemplate || !templateName.trim() || templatePending) return;
         const field = canvas.builder.index.getField(target.node_id);
         if (!field) return;
-        await runtime.create_template({
-            key: slug(`${field.label}-${field.id}`),
-            name: `${field.label} Template`,
-            field: structuredClone(field),
-            branch_id: branchId,
-            published: false,
-            meta: {},
-        });
-        setTarget(null);
+        setTemplatePending(true);
+        setTemplateError(null);
+        try {
+            const result = await runtime.create_template({
+                key: slug(`${templateName.trim()}-${field.id}`),
+                name: templateName.trim(),
+                field: structuredClone(field),
+                branch_id: templateInBranch ? branchId : null,
+                published: false,
+                meta: {},
+            });
+            if (result.ok === false) {
+                setTemplateError(result.error.message);
+                return;
+            }
+            setDialog(null);
+            setTarget(null);
+        } catch (error) {
+            setTemplateError(error instanceof Error ? error.message : 'Could not save the template.');
+        } finally {
+            setTemplatePending(false);
+        }
     };
     const rename = () => {
         if (!target || !canvas || !canEdit || !renameValue.trim()) return;
@@ -148,10 +187,64 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
     };
     const remove = () => {
         if (!target || !canvas || !canEdit) return;
-        canvas.editor.remove(target.node_id);
+        if (isBatch) canvas.editor.remove_many(actionIds);
+        else canvas.editor.remove(target.node_id);
         setDialog(null);
         setTarget(null);
     };
+    const applyBatchTarget = () => {
+        if (!canvas || !canEdit || !batchTargetId || !actionIds.length) return;
+        try {
+            if (batchMode === 'rebind') canvas.editor.bind_many(actionIds, batchTargetId);
+            else if (batchMode === 'include') canvas.editor.include(batchTargetId, actionIds);
+            else canvas.editor.exclude(batchTargetId, actionIds);
+            setDialog(null);
+            setTarget(null);
+            setBatchError(null);
+        } catch (error) {
+            setBatchError(error instanceof Error ? error.message : 'The batch action failed.');
+        }
+    };
+    const moveWireframeField = useCallback((delta: number, scope: 'base' | 'context') => {
+        if (!target || !canvas || !canEdit || target.node_kind !== 'field') return;
+        const definition = canvas.editor.definition;
+        if (scope === 'base') {
+            const from = definition.fields.findIndex((field) => field.id === target.node_id);
+            const to = from + delta;
+            if (from < 0 || to < 0 || to >= definition.fields.length) return;
+            const fields = [...definition.fields];
+            [fields[from], fields[to]] = [fields[to]!, fields[from]!];
+            canvas.editor.replace({ ...definition, fields }, 'Reorder field');
+            setTarget(null);
+            return;
+        }
+        const filterId = canvas.selection.current_filter() ?? definition.filters[0]?.id;
+        if (!filterId) return;
+        const visible = canvas.selection.visible_group();
+        const ordered = definition.order_for_tags[filterId] ?? (visible.kind === 'single' ? visible.group.field_ids : definition.fields.map((field) => field.id));
+        const from = ordered.indexOf(target.node_id);
+        if (from < 0 || from + delta < 0 || from + delta >= ordered.length) return;
+        canvas.editor.replace(reorderCanonicalFieldForFilter(definition, filterId, target.node_id, ordered, from + delta), 'Reorder field in context');
+        setTarget(null);
+    }, [target, canvas, canEdit]);
+    useEffect(() => {
+        if (target?.surface !== 'wireframe' || target.node_kind !== 'field' || !canEdit) return;
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (!event.altKey || event.ctrlKey || event.metaKey || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+            const element = event.target as HTMLElement | null;
+            if (element?.closest?.('input, textarea, [contenteditable="true"], [role="combobox"]')) return;
+            event.preventDefault();
+            moveWireframeField(event.key === 'ArrowUp' ? -1 : 1, event.shiftKey ? 'context' : 'base');
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [target, canvas, canEdit, moveWireframeField]);
+    const batchTargetChoices = canvas ? batchMode === 'rebind'
+        ? canvas.editor.definition.filters.map((filter) => ({ id: filter.id, label: filter.label }))
+        : [
+            ...canvas.editor.definition.fields.filter((field) => field.button).map((field) => ({ id: field.id, label: field.label })),
+            ...walkOptions(canvas.editor.definition).map((visit) => ({ id: visit.optionId, label: visit.option.label })),
+        ] : [];
 
     const parseDropSource = useCallback((dataTransfer: DataTransfer): DropSource | null => {
         const serviceId = dataTransfer.getData(DRAG_MIME_SERVICE);
@@ -217,15 +310,14 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
             if (!canvas || !canEdit || source.kind === 'service') return null;
             let id: string;
             if (source.kind === 'asset_builtin') {
-                id = canvas.editor.add_field({
-                    type: source.asset.kind,
-                    label: source.asset.label,
-                    bind_id: bindId,
-                    meta: source.asset.variant ? { variant: source.asset.variant } : {},
-                });
+                id = canvas.editor.add_field_from_descriptor(canonicalAuthoringDescriptor(source.asset.kind, source.asset.variant), { label: source.asset.label, bind_id: bindId });
             } else {
                 const template = templates.find((item) => item.id === source.asset.id);
                 if (!template) return null;
+                if (template.field.options?.length) {
+                    setDropError('This template contains options and cannot be inserted safely: Workspace 1.0.1 does not assign new nested option IDs.');
+                    return null;
+                }
                 const templateBindId = Array.isArray(template.field.bind_id) ? template.field.bind_id[0] : template.field.bind_id;
                 id = canvas.editor.add_field({ ...structuredClone(template.field), id: undefined, bind_id: bindId ?? templateBindId });
             }
@@ -313,9 +405,10 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
         <Context.Provider value={value}>
             {children}
             <CanonicalNoticeManager request={noticeRequest} onClose={() => setNoticeRequest(null)} />
-            {typeof document !== 'undefined' && (target || dialog || dropIntent)
+            {typeof document !== 'undefined' && (target || dialog || dropIntent || dropError)
                 ? createPortal(
                       <>
+                          {dropError ? <div role="alert" className="fixed top-4 right-4 z-50 max-w-sm rounded-xl border border-amber-200 bg-white p-3 text-sm text-amber-900 shadow-xl dark:border-amber-500/30 dark:bg-slate-950 dark:text-amber-200"><div className="flex gap-3"><p>{dropError}</p><button type="button" className="self-start text-xs underline" onClick={() => setDropError(null)}>Dismiss</button></div></div> : null}
                           {target && anchor ? (
                               <div className="fixed z-40" style={anchor}>
                                   <DropdownMenu
@@ -346,8 +439,35 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
                                               Rename
                                           </DropdownMenuItem>
                                           <DropdownMenuItem disabled={!canEdit} title={editDeniedReason} onSelect={duplicate}>
-                                              Duplicate
+                                              {isBatch ? 'Duplicate selected' : 'Duplicate'}
                                           </DropdownMenuItem>
+                                          {isBatch ? (
+                                              <>
+                                                  <DropdownMenuItem disabled={!canEdit} title={editDeniedReason} onSelect={() => { canvas?.editor.clear_services(actionIds); setTarget(null); }} hidden={!hasServiceSelection}>Unlink service IDs</DropdownMenuItem>
+                                                  {(['rebind', 'include', 'exclude'] as const).map((mode) => (
+                                                      <DropdownMenuItem key={mode} disabled={!canEdit} title={editDeniedReason} onSelect={() => { setBatchMode(mode); setBatchTargetId(''); setBatchError(null); setDialog('batch-target'); }}>
+                                                          {mode === 'rebind' ? 'Move / Rebind to tag' : mode === 'include' ? 'Include in...' : 'Exclude from...'}
+                                                      </DropdownMenuItem>
+                                                  ))}
+                                                  <DropdownMenuItem disabled={!canEdit} title={editDeniedReason} onSelect={() => { canvas?.editor.clear_relationships(actionIds); setTarget(null); }}>Clear includes/excludes</DropdownMenuItem>
+                                                  <DropdownMenuItem disabled={!canEdit} title={editDeniedReason} onSelect={() => { setBatchPrefix(''); setBatchSuffix(''); setDialog('batch-labels'); }}>Rename labels...</DropdownMenuItem>
+                                                  {(['base', 'utility'] as const).map((role) => <DropdownMenuItem key={role} disabled={!canEdit || !selectedFields.length} title={editDeniedReason} onSelect={() => { canvas?.editor.set_pricing_role(selectedFields, role); setTarget(null); }}>Set pricing role: {role === 'base' ? 'Base' : 'Utility'}</DropdownMenuItem>)}
+                                                  <DropdownMenuItem disabled={!canEdit || !selectedFields.length} title={editDeniedReason} onSelect={() => { canvas?.editor.clear_field_validations(selectedFields); setTarget(null); }}>Clear validation</DropdownMenuItem>
+                                                  <DropdownMenuItem disabled={!canEdit || !selectedFields.length} title={editDeniedReason} onSelect={() => { canvas?.editor.clear_field_defaults(selectedFields); setTarget(null); }}>Clear defaults</DropdownMenuItem>
+                                                  <DropdownMenuItem disabled={!canEdit || !selectedFields.length} title={editDeniedReason} onSelect={() => { canvas?.editor.auto_create_options(selectedFields); setTarget(null); }}>Auto-create missing options</DropdownMenuItem>
+                                                  <DropdownMenuItem disabled={!canEdit || !selectedFields.length} title={editDeniedReason} onSelect={() => { canvas?.editor.clear_options(selectedFields); setTarget(null); }}>Clear all options</DropdownMenuItem>
+                                                  <DropdownMenuItem disabled={!canEdit} title={editDeniedReason} onSelect={() => { canvas?.editor.remove_notices_for_nodes(actionIds); setTarget(null); }}>Remove notices for selected</DropdownMenuItem>
+                                                  {(['public', 'private'] as const).map((type) => <DropdownMenuItem key={type} disabled={!canEdit} title={editDeniedReason} onSelect={() => { canvas?.editor.set_notices_type_for_nodes(actionIds, type); setTarget(null); }}>Set notices {type}</DropdownMenuItem>)}
+                                              </>
+                                          ) : null}
+                                          {target.surface === 'wireframe' && target.node_kind === 'field' ? (
+                                              <>
+                                                  <DropdownMenuItem disabled={!canEdit} title={editDeniedReason} onSelect={() => moveWireframeField(-1, 'base')}>Move up</DropdownMenuItem>
+                                                  <DropdownMenuItem disabled={!canEdit} title={editDeniedReason} onSelect={() => moveWireframeField(1, 'base')}>Move down</DropdownMenuItem>
+                                                  <DropdownMenuItem disabled={!canEdit} title={editDeniedReason} onSelect={() => moveWireframeField(-1, 'context')}>Move up (in context)</DropdownMenuItem>
+                                                  <DropdownMenuItem disabled={!canEdit} title={editDeniedReason} onSelect={() => moveWireframeField(1, 'context')}>Move down (in context)</DropdownMenuItem>
+                                              </>
+                                          ) : null}
                                           <DropdownMenuItem onSelect={() => void navigator.clipboard.writeText(target.node_id)}>
                                               Copy ID
                                           </DropdownMenuItem>
@@ -402,7 +522,12 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
                                               <DropdownMenuItem
                                                   disabled={!canTemplate}
                                                   title={templateDeniedReason}
-                                                  onSelect={() => void saveTemplate()}
+                                                  onSelect={() => {
+                                                      setTemplateName(`${label} Template`);
+                                                      setTemplateInBranch(true);
+                                                      setTemplateError(null);
+                                                      setDialog('template');
+                                                  }}
                                               >
                                                   Save as template
                                               </DropdownMenuItem>
@@ -413,7 +538,7 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
                                               title={editDeniedReason}
                                               onSelect={() => setDialog('delete')}
                                           >
-                                              Delete
+                                              {isBatch ? 'Delete selected' : 'Delete'}
                                           </DropdownMenuItem>
                                       </DropdownMenuContent>
                                   </DropdownMenu>
@@ -425,10 +550,79 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
                                   dropIntent={dropIntent}
                                   dialAnchorStyle={dialAnchorStyle}
                                   dialRef={dialRef}
-                                  emitNodeError={(message) => console.error(message)}
+                                  emitNodeError={setDropError}
                                   setDropIntent={setDropIntent}
                               />
                           ) : null}
+                          <AlertDialog
+                              open={dialog === 'batch-target'}
+                              onOpenChange={(open) => { if (!open) setDialog(null); }}
+                          >
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>{batchMode === 'rebind' ? 'Move / Rebind to tag' : batchMode === 'include' ? 'Include in...' : 'Exclude from...'}</AlertDialogTitle>
+                                      <AlertDialogDescription>Choose a target for the selected nodes.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <label className="space-y-2 text-sm">Target
+                                      <select aria-label="Batch target" value={batchTargetId} onChange={(event) => setBatchTargetId(event.target.value)} className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950">
+                                          <option value="">Select target</option>
+                                          {batchTargetChoices.map((choice) => <option key={choice.id} value={choice.id}>{choice.label}</option>)}
+                                      </select>
+                                  </label>
+                                  {batchError ? <p role="alert" className="text-sm text-rose-600">{batchError}</p> : null}
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+                                      <Button type="button" disabled={!batchTargetId} onClick={applyBatchTarget}>Apply</Button>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                          </AlertDialog>
+                          <AlertDialog
+                              open={dialog === 'batch-labels'}
+                              onOpenChange={(open) => { if (!open) setDialog(null); }}
+                          >
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Rename labels</AlertDialogTitle>
+                                      <AlertDialogDescription>Add a prefix or suffix to selected labels.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <InputField variant="text" label="Prefix" value={batchPrefix} onChange={(event) => setBatchPrefix(String(event.value ?? ''))} />
+                                  <InputField variant="text" label="Suffix" value={batchSuffix} onChange={(event) => setBatchSuffix(String(event.value ?? ''))} />
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+                                      <Button type="button" disabled={!batchPrefix && !batchSuffix} onClick={() => { canvas?.editor.rename_labels(actionIds, batchPrefix, batchSuffix); setDialog(null); setTarget(null); }}>Apply</Button>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                          </AlertDialog>
+                          <AlertDialog
+                              open={dialog === 'template'}
+                              onOpenChange={(open) => {
+                                  if (!open && !templatePending) setDialog(null);
+                              }}
+                          >
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Save as template</AlertDialogTitle>
+                                      <AlertDialogDescription>Name this field template and choose its scope.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <form onSubmit={(event) => { event.preventDefault(); void saveTemplate(); }} className="space-y-4">
+                                      <InputField variant="text" label="Template name" value={templateName} onChange={(event) => setTemplateName(String(event.value ?? ''))} />
+                                      <label className="flex items-center gap-2 text-sm">
+                                          <input type="checkbox" checked={templateInBranch} onChange={(event) => setTemplateInBranch(event.target.checked)} />
+                                          <span>Save to current branch</span>
+                                      </label>
+                                      <label className="flex items-center gap-2 text-sm text-slate-500" title="Workspace 1.0.1 templates store one field; connected fields and relationships cannot be saved as a group.">
+                                          <input type="checkbox" disabled />
+                                          <span>Include connected fields (unavailable)</span>
+                                      </label>
+                                      <p className="text-xs text-slate-500">This saves the field and its nested options. The installed Workspace API does not support group templates.</p>
+                                      {templateError ? <p role="alert" className="text-sm text-rose-600">{templateError}</p> : null}
+                                      <AlertDialogFooter>
+                                          <AlertDialogCancel type="button" disabled={templatePending}>Cancel</AlertDialogCancel>
+                                          <Button type="submit" disabled={!templateName.trim() || templatePending}>{templatePending ? 'Saving…' : 'Save template'}</Button>
+                                      </AlertDialogFooter>
+                                  </form>
+                              </AlertDialogContent>
+                          </AlertDialog>
                           <AlertDialog
                               open={dialog === 'rename'}
                               onOpenChange={(open) => {

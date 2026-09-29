@@ -14,6 +14,8 @@ describe('canonical canvas drag contracts', () => {
         const builtin = transfer({ [DRAG_MIME_ASSET_BUILTIN]: JSON.stringify({ kind: 'number', label: 'Number' }) });
         expect(acceptsCanonicalCanvasDrop(builtin)).toBe(true);
         expect(readCanonicalAssetDrag(builtin)).toEqual({ kind: 'builtin', field_type: 'number', label: 'Number' });
+        const variant = transfer({ [DRAG_MIME_ASSET_BUILTIN]: JSON.stringify({ kind: 'checkbox', label: 'Checkbox options', variant: 'options' }) });
+        expect(readCanonicalAssetDrag(variant)).toEqual({ kind: 'builtin', field_type: 'checkbox', label: 'Checkbox options', variant: 'options' });
 
         const template = transfer({ [DRAG_MIME_ASSET_TEMPLATE]: JSON.stringify({ id: 'template:1', name: 'Quantity', kind: 'number' }) });
         expect(readCanonicalAssetDrag(template)).toEqual({ kind: 'template', template_id: 'template:1', label: 'Quantity' });

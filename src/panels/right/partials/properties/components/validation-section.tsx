@@ -17,6 +17,7 @@ export type FieldValidationEditorRule = {
     pattern?: string;
     flags?: string;
     code?: string;
+    expressionBody?: string;
     message?: string;
 };
 type FieldValidationRule = FieldValidationEditorRule;
@@ -83,7 +84,8 @@ const sanitizeRule = (rule: FieldValidationRule): FieldValidationRule => {
 
     if (rule.valueBy && rule.valueBy !== 'value') next.valueBy = rule.valueBy;
     if (typeof rule.message === 'string' && rule.message.trim()) next.message = rule.message;
-    if (rule.valueBy === 'eval' && typeof rule.code === 'string' && rule.code.trim()) next.code = rule.code;
+    if (typeof rule.code === 'string' && rule.code.trim()) next.code = rule.code;
+    if (rule.valueBy === 'eval') next.expressionBody = rule.expressionBody ?? '';
 
     if (singleValueOps.has(rule.op)) {
         next.value = rule.value ?? '';
@@ -388,13 +390,13 @@ function ValidationRuleCard({
                 <InputField
                     variant="textarea"
                     label="Eval code"
-                    value={rule.code ?? ''}
+                    value={rule.expressionBody ?? ''}
                     placeholder="return typeof value === 'string' ? value.length : 0;"
                     onChange={(event) =>
                         onChange(
                             sanitizeRule({
                                 ...rule,
-                                code: String(event.value ?? ''),
+                                expressionBody: String(event.value ?? ''),
                             }),
                         )
                     }

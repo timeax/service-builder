@@ -7,7 +7,7 @@ import { createSeedPersistence, definition, workspaceSeed } from '../../backend/
 import { workspaceActor } from '../../backend/canonical/seed/meta';
 import { CanonicalCanvasSurface } from './canonical-canvas-surface';
 import { CanonicalNodeContextMenuProvider, useCanonicalNodeContextMenu } from './canonical-node-context-menu';
-import { DRAG_MIME_ASSET_BUILTIN, DRAG_MIME_SERVICE } from './drag-contracts';
+import { DRAG_MIME_ASSET_BUILTIN, DRAG_MIME_ASSET_TEMPLATE, DRAG_MIME_SERVICE } from './drag-contracts';
 import { ServiceBuilderProvider, useCanvasAPI, useWorkspaceRuntime, useWorkspaceSelector } from './workspace';
 
 function createIsolatedBackend() {
@@ -79,6 +79,15 @@ function builtinTransfer(fieldType: string, label: string) {
         types: [DRAG_MIME_ASSET_BUILTIN],
         getData(type: string) {
             return type === DRAG_MIME_ASSET_BUILTIN ? JSON.stringify({ kind: fieldType, label }) : '';
+        },
+    } as unknown as DataTransfer;
+}
+
+function templateTransfer(templateId: string) {
+    return {
+        types: [DRAG_MIME_ASSET_TEMPLATE],
+        getData(type: string) {
+            return type === DRAG_MIME_ASSET_TEMPLATE ? JSON.stringify({ id: templateId, name: 'Reusable select' }) : '';
         },
     } as unknown as DataTransfer;
 }
@@ -264,6 +273,28 @@ describe('canonical canvas surface', () => {
             expect(Number.isFinite(Number(y))).toBe(true);
         });
     }, 10_000);
+
+    it('explains why option-bearing templates cannot be dropped without safe nested identities', async () => {
+        const snapshot = await createSeedPersistence().load(workspaceSeed.workspace_id);
+        if (!snapshot) throw new Error('Missing seeded workspace');
+        snapshot.branches[0]!.templates.push({
+            id: 'template:select', key: 'select', name: 'Reusable select', branch_id: null, published: true,
+            updated_at: new Date(0).toISOString(), meta: {},
+            field: { id: 'field:reusable', type: 'select', label: 'Reusable select', options: [{ id: 'option:reusable', label: 'Choice', value: 'choice' }] },
+        });
+        const backend = new MemoryWorkspaceBackend({
+            ...workspaceSeed,
+            persistence: { load: async () => structuredClone(snapshot), save: async () => {} },
+        });
+        render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={backend} actor={workspaceActor}><PaneDropProbe /><CanonicalCanvasSurface /></ServiceBuilderProvider></div>);
+        await waitFor(() => expect(screen.getByLabelText('Pane drop state')).toHaveTextContent('3|none|none'));
+        const canvas = await screen.findByTestId('rf__wrapper');
+        const drop = new MouseEvent('drop', { bubbles: true, cancelable: true, clientX: 320, clientY: 240 });
+        Object.defineProperty(drop, 'dataTransfer', { value: templateTransfer('template:select') });
+        fireEvent(canvas, drop);
+        expect(await screen.findByRole('alert')).toHaveTextContent('cannot be inserted safely');
+        expect(screen.getByLabelText('Pane drop state')).toHaveTextContent('3|none|none');
+    });
 
     it('presents canonical permission denials through the preserved toolbar controls', async () => {
         const backend = new MemoryWorkspaceBackend({

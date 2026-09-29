@@ -69,6 +69,11 @@ export function CanonicalWorkspaceBootStatusSurface({
     useEffect(() => {
         if (boot.is_booting) setDismissed(false);
     }, [boot.is_booting]);
+    useEffect(() => {
+        if (!boot.is_ready || boot.has_errors) return;
+        const timeout = window.setTimeout(() => setDismissed(true), 2500);
+        return () => window.clearTimeout(timeout);
+    }, [boot.is_ready, boot.has_errors]);
 
     if (!shouldShow) return null;
     const progress = getCanonicalBootProgress(boot);

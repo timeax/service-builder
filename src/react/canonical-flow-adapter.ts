@@ -13,7 +13,7 @@ import {
     type OnMoveEnd,
     type OnNodesChange,
 } from '@xyflow/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatCanonicalCanvasCommentTarget, toCanonicalReactFlowModel } from './canvas-model';
 
 export interface CanonicalFlowAdapterOptions {
@@ -52,11 +52,17 @@ export function useCanonicalReactFlowAdapter(api: CanvasAPI, options: CanonicalF
         [api],
     );
     const [model, setModel] = useState(project);
+    const modelRef = useRef(model);
+    modelRef.current = model;
 
     useEffect(() => {
         void commentsRevision;
-        setModel(project());
-        const refresh = () => setModel(project());
+        const refresh = () => {
+            const next = project();
+            modelRef.current = next;
+            setModel(next);
+        };
+        refresh();
         const offState = api.on('state:change', refresh);
         const offComments = api.on('comments:change', refresh);
         return () => {
@@ -91,33 +97,33 @@ export function useCanonicalReactFlowAdapter(api: CanvasAPI, options: CanonicalF
                 setModel(project());
                 return;
             }
-            setModel((current) => {
-                const nodes = applyNodeChanges(changes, current.nodes);
-                const positions = { ...api.snapshot().positions };
-                let positionChanged = false;
-                let selectionChanged = false;
-                for (const change of changes) {
-                    if (change.type === 'position' && change.position !== undefined) {
-                        const point = snap(change.position);
-                        if (isCommentNode(change.id)) {
-                            const threadId = change.id.slice('comment:'.length);
-                            api.comments.move(threadId, formatCanonicalCanvasCommentTarget(point));
-                        } else {
-                            positions[change.id] = point;
-                            positionChanged = true;
-                        }
+            const nodes = applyNodeChanges(changes, modelRef.current.nodes);
+            const next = { ...modelRef.current, nodes };
+            modelRef.current = next;
+            setModel(next);
+            const positions = { ...api.snapshot().positions };
+            let positionChanged = false;
+            let selectionChanged = false;
+            for (const change of changes) {
+                if (change.type === 'position' && change.position !== undefined) {
+                    const point = snap(change.position);
+                    if (isCommentNode(change.id)) {
+                        const threadId = change.id.slice('comment:'.length);
+                        api.comments.move(threadId, formatCanonicalCanvasCommentTarget(point));
+                    } else {
+                        positions[change.id] = point;
+                        positionChanged = true;
                     }
-                    if (change.type === 'select') selectionChanged = true;
                 }
-                if (positionChanged) api.set_positions(positions);
-                if (selectionChanged) {
-                    const ids = nodes.filter((node) => !isCommentNode(node.id) && node.selected).map((node) => node.id);
-                    api.select(ids, ids.at(-1));
-                    const comment = nodes.find((node) => isCommentNode(node.id) && node.selected);
-                    api.select_comment(comment?.id.slice('comment:'.length));
-                }
-                return { ...current, nodes };
-            });
+                if (change.type === 'select') selectionChanged = true;
+            }
+            if (positionChanged) api.set_positions(positions);
+            if (selectionChanged) {
+                const ids = nodes.filter((node) => !isCommentNode(node.id) && node.selected).map((node) => node.id);
+                api.select(ids, ids.at(-1));
+                const comment = nodes.find((node) => isCommentNode(node.id) && node.selected);
+                api.select_comment(comment?.id.slice('comment:'.length));
+            }
         },
         [api, options, project, snap],
     );
@@ -129,15 +135,16 @@ export function useCanonicalReactFlowAdapter(api: CanvasAPI, options: CanonicalF
                 setModel(project());
                 return;
             }
-            setModel((current) => {
-                for (const change of changes) {
-                    if (change.type !== 'remove') continue;
-                    const edge = current.edges.find((candidate) => candidate.id === change.id);
-                    const relation = edge === undefined ? undefined : relationEdge(edge);
-                    if (relation !== undefined) api.editor.disconnect(relation.kind, relation.from, relation.to);
-                }
-                return { ...current, edges: applyEdgeChanges(changes, current.edges) };
-            });
+            const current = modelRef.current;
+            const next = { ...current, edges: applyEdgeChanges(changes, current.edges) };
+            modelRef.current = next;
+            setModel(next);
+            for (const change of changes) {
+                if (change.type !== 'remove') continue;
+                const edge = current.edges.find((candidate) => candidate.id === change.id);
+                const relation = edge === undefined ? undefined : relationEdge(edge);
+                if (relation !== undefined) api.editor.disconnect(relation.kind, relation.from, relation.to);
+            }
         },
         [api, options, project],
     );
