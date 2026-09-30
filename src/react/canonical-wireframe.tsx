@@ -8,6 +8,7 @@ import { FormPaletteOrderingProvider, OrderingInput } from '@elqora/dgp-ordering
 import type { HandlerService, ProductDefinition } from '@elqora/dgp-spec';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { BsChevronDown } from 'react-icons/bs';
+import { primaryServiceAdvisoryAmounts } from '../ordering/advisory-pricing';
 import { CanonicalWorkspaceBootInlineNotice } from './canonical-boot-status';
 import { canonicalInputRegistry } from './canonical-input-registry';
 import { useOptionalCanonicalNodeContextMenu } from './canonical-node-context-menu';
@@ -63,15 +64,15 @@ function CanonicalWireframeBody({
                 state: orderingState,
                 services,
                 mode: 'dev',
+                advisory_service_amounts_for_quantity: primaryServiceAdvisoryAmounts,
             }),
         [definition, orderingState, services, session],
     );
     const preview = previewResult.ok ? previewResult.preview : undefined;
     const serviceById = useMemo(() => new Map(services.map((service) => [String(service.id), service])), [services]);
-    const base = preview?.service_ids.reduce<number>((sum, id) => sum + (serviceById.get(String(id))?.rate ?? 0), 0);
-    const utilities = preview?.utilities.every((utility) => utility.advisory_amount !== null)
-        ? preview.utilities.reduce((sum, utility) => sum + (utility.advisory_amount ?? 0), 0)
-        : undefined;
+    const base = previewResult.ok ? previewResult.pricing.base_amount : undefined;
+    const utilities = previewResult.ok ? previewResult.pricing.utility_amount : undefined;
+    const total = previewResult.ok ? previewResult.pricing.total_amount : undefined;
     const footerSummary: FooterSummaryItem[] = [
         { label: 'Tag', value: currentFilter?.label ?? 'No active tag' },
         { label: 'Visible fields', value: String(visibleFields.length) },
@@ -81,7 +82,7 @@ function CanonicalWireframeBody({
         { label: 'Services', value: String(preview?.service_ids.length ?? 0), detailsKind: 'services' },
         { label: 'Base', value: formatMetricNumber(base), detailsKind: 'pricing' },
         { label: 'Utilities', value: formatMetricNumber(utilities), detailsKind: 'pricing' },
-        { label: 'Total', value: formatMetricNumber(base === undefined || utilities === undefined ? undefined : base + utilities), detailsKind: 'pricing' },
+        { label: 'Total', value: formatMetricNumber(total), detailsKind: 'pricing' },
         { label: 'Utility lines', value: String(preview?.utilities.length ?? 0), detailsKind: 'utility_lines' },
     ];
     const previewFailure = formatPreviewFailure(previewResult);
@@ -160,7 +161,7 @@ function CanonicalWireframeBody({
                 <p className="text-slate-500 dark:text-slate-400">Base: {formatMetricNumber(base)}</p>
                 <p className="text-slate-500 dark:text-slate-400">Utilities: {formatMetricNumber(utilities)}</p>
                 <p className="text-slate-500 dark:text-slate-400">
-                    Total: {formatMetricNumber(base === undefined || utilities === undefined ? undefined : base + utilities)}
+                    Total: {formatMetricNumber(total)}
                 </p>
             </div>
         );

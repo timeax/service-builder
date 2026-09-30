@@ -89,12 +89,15 @@ describe('canonical wireframe browser inputs', () => {
 
         expect(screen.getByText('Quantity:').parentElement).toHaveTextContent('Quantity:100');
         expect(screen.getByText('Services:').parentElement).toHaveTextContent('Services:1');
-        expect(screen.getByText('Base:').parentElement).toHaveTextContent('Base:0.8375');
+        expect(screen.getByText('Base:').parentElement).toHaveTextContent('Base:83.75');
+        expect(screen.getByText('Total:').parentElement).toHaveTextContent('Total:83.75');
         expect(screen.getByText('1 customer input issue in this preview.')).toBeInTheDocument();
 
         const quantity = screen.getByLabelText(/Quantity/i);
         fireEvent.change(quantity, { target: { value: '250' } });
         await waitFor(() => expect(screen.getByText('Quantity:').parentElement).toHaveTextContent('Quantity:250'));
+        expect(screen.getByText('Base:').parentElement).toHaveTextContent('Base:209.375');
+        expect(screen.getByText('Total:').parentElement).toHaveTextContent('Total:209.375');
 
         const target = await screen.findByLabelText(/Target URL/i);
         fireEvent.change(target, { target: { value: 'https://example.test/post' } });
