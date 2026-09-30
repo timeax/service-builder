@@ -149,6 +149,7 @@ function TagNode(props: NodeProps<CanvasNode>) {
                 onDrop={(event) => {
                     if (!props.data.canAcceptDropPayload?.(event.dataTransfer)) return;
                     event.preventDefault();
+                    event.stopPropagation();
                     props.data.onNodeDrop?.({ nodeId: id, clientX: event.clientX, clientY: event.clientY, dataTransfer: event.dataTransfer });
                 }}
                 isActiveNode={props.data.isActiveNode}
@@ -182,6 +183,7 @@ function FieldNode(props: NodeProps<CanvasNode>) {
                 onDrop={(event) => {
                     if (!props.data.canAcceptDropPayload?.(event.dataTransfer)) return;
                     event.preventDefault();
+                    event.stopPropagation();
                     props.data.onNodeDrop?.({ nodeId: id, clientX: event.clientX, clientY: event.clientY, dataTransfer: event.dataTransfer });
                 }}
                 isActiveNode={props.data.isActiveNode}
@@ -242,6 +244,7 @@ function OptionNode(props: NodeProps<CanvasNode>) {
                 onDrop={(event) => {
                     if (!props.data.canAcceptDropPayload?.(event.dataTransfer)) return;
                     event.preventDefault();
+                    event.stopPropagation();
                     props.data.onNodeDrop?.({ nodeId: id, clientX: event.clientX, clientY: event.clientY, dataTransfer: event.dataTransfer });
                 }}
             >

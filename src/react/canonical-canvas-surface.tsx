@@ -124,6 +124,8 @@ function CanvasToolbar({
     setShowExclude,
     showComments,
     setShowComments,
+    showServiceContext,
+    setShowServiceContext,
 }: {
     showGrid: boolean;
     setShowGrid(value: boolean): void;
@@ -137,6 +139,8 @@ function CanvasToolbar({
     setShowExclude(value: boolean): void;
     showComments: boolean;
     setShowComments(value: boolean): void;
+    showServiceContext: boolean;
+    setShowServiceContext(value: boolean): void;
 }) {
     const api = useCanvasAPI()!;
     const flow = useReactFlow();
@@ -223,6 +227,14 @@ function CanvasToolbar({
                         </button>
                         <button
                             type="button"
+                            aria-pressed={showServiceContext}
+                            className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+                            onClick={() => setShowServiceContext(!showServiceContext)}
+                        >
+                            Service context <span>{showServiceContext ? 'On' : 'Off'}</span>
+                        </button>
+                        <button
+                            type="button"
                             className="w-full rounded-lg px-2 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
                             onClick={() => void flow.fitView()}
                         >
@@ -272,6 +284,7 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
     const [showInclude, setShowInclude] = useState(true);
     const [showExclude, setShowExclude] = useState(false);
     const [showComments, setShowComments] = useState(false);
+    const [showServiceContext, setShowServiceContext] = useState(true);
     const [showErrorBadges, setShowErrorBadges] = useState(true);
     const [localNoticeRequest, setLocalNoticeRequest] = useState<NoticeManagerRequest | null>(null);
     const localNoticeToken = useRef(0);
@@ -381,7 +394,7 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
     return (
         <div className="relative h-full w-full" data-workspace={workspaceId ?? undefined} data-branch={branchId ?? undefined}>
             <ReactFlow
-                nodes={[...canvasNodes, { id: SERVICE_CONTEXT_NODE_ID, type: 'serviceContextSystem', data: { serviceContext }, position: serviceContextPosition, selected: serviceContextSelected, draggable: true, selectable: true }] as Node[]}
+                nodes={[...canvasNodes, ...(showServiceContext ? [{ id: SERVICE_CONTEXT_NODE_ID, type: 'serviceContextSystem', data: { serviceContext }, position: serviceContextPosition, selected: serviceContextSelected, draggable: true, selectable: true }] : [])] as Node[]}
                 edges={edges}
                 defaultViewport={initialViewport}
                 nodeTypes={nodeTypes}
@@ -455,6 +468,8 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
                     setShowExclude={setShowExclude}
                     showComments={showComments}
                     setShowComments={setShowComments}
+                    showServiceContext={showServiceContext}
+                    setShowServiceContext={setShowServiceContext}
                 />
                 <AppToolbar
                     bootActionReason={getCanonicalBootActionReason(boot)}

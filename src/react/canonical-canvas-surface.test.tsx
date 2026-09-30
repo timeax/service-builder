@@ -4,7 +4,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { useEffect, useState } from 'react';
 import { createSeedPersistence, definition, workspaceSeed } from '../../backend/canonical/seed';
-import { workspaceActor } from '../../backend/canonical/seed/meta';
+import { MAIN_BRANCH_ID, workspaceActor } from '../../backend/canonical/seed/meta';
 import { CanonicalCanvasSurface } from './canonical-canvas-surface';
 import { CanonicalNodeContextMenuProvider, useCanonicalNodeContextMenu } from './canonical-node-context-menu';
 import { DRAG_MIME_ASSET_BUILTIN, DRAG_MIME_ASSET_TEMPLATE, DRAG_MIME_SERVICE } from './drag-contracts';
@@ -50,6 +50,17 @@ function FieldDropProbe() {
     const urlType = fields.find((field) => field.id === 'field:url')?.type;
     const platformFieldCount = fields.filter((field) => field.bind_id === 'filter:platform').length;
     return <output aria-label="Field drop state">{urlType ?? 'missing'}|{platformFieldCount}|{includeCount}</output>;
+}
+
+function DroppedFieldProbe({ label }: { label: string }) {
+    const canvas = useCanvasAPI();
+    const fields = useWorkspaceSelector((state) => state.definition?.fields ?? []);
+    const matches = fields.filter((field) => field.label === label).map((field) => ({
+        id: field.id,
+        bind_id: field.bind_id,
+        wired: canvas?.get_graph().edges.some((edge) => edge.kind === 'bind' && edge.from === 'filter:platform' && edge.to === field.id) ?? false,
+    }));
+    return <output aria-label={`Dropped ${label}`}>{JSON.stringify(matches)}</output>;
 }
 
 function DropAwareCanvas() {
@@ -170,6 +181,31 @@ describe('canonical canvas surface', () => {
         await waitFor(() => expect(screen.getByText('Active tag: Instagram')).toBeInTheDocument());
     });
 
+    it('toggles the Service context card from Canvas view without losing its saved position', async () => {
+        const storageKey = `service-builder.canvas.system-node.service-context.${workspaceSeed.workspace_id}.${MAIN_BRANCH_ID}`;
+        window.localStorage.setItem(storageKey, JSON.stringify({ x: 321, y: 123 }));
+        try {
+            render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}><CanonicalCanvasSurface /></ServiceBuilderProvider></div>);
+            const card = await screen.findByTestId('rf__node-sys::service-context');
+            expect(card.style.transform).toBe('translate(321px,123px)');
+            fireEvent.click(screen.getByRole('button', { name: 'Canvas view' }));
+            const hide = await screen.findByRole('button', { name: 'Service context On' });
+            expect(hide).toHaveAttribute('aria-pressed', 'true');
+            hide.focus();
+            expect(document.activeElement).toBe(hide);
+            fireEvent.click(hide);
+            await waitFor(() => expect(screen.queryByTestId('rf__node-sys::service-context')).not.toBeInTheDocument());
+            expect(screen.getByTestId('rf__node-filter:platform')).toBeInTheDocument();
+            const show = screen.getByRole('button', { name: 'Service context Off' });
+            expect(show).toHaveAttribute('aria-pressed', 'false');
+            fireEvent.click(show);
+            expect((await screen.findByTestId('rf__node-sys::service-context')).style.transform).toBe('translate(321px,123px)');
+            expect(window.localStorage.getItem(storageKey)).toBe(JSON.stringify({ x: 321, y: 123 }));
+        } finally {
+            window.localStorage.removeItem(storageKey);
+        }
+    });
+
     it('opens the preserved import dialog and applies a canonical product as an undoable change', async () => {
         render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}><ImportProbe /><CanonicalCanvasSurface /></ServiceBuilderProvider></div>);
         await waitFor(() => expect(screen.getByLabelText('Imported product name')).toHaveTextContent(definition.name));
@@ -239,7 +275,7 @@ describe('canonical canvas surface', () => {
     }, 10_000);
 
     it('preserves the Include/Exclude dial for an input dropped on an option and routes the choice through canonical Workspace', async () => {
-        render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}><CanonicalNodeContextMenuProvider><FieldDropProbe /><DropAwareCanvas /></CanonicalNodeContextMenuProvider></ServiceBuilderProvider></div>);
+        render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}><CanonicalNodeContextMenuProvider><FieldDropProbe /><DroppedFieldProbe label="Number" /><DropAwareCanvas /></CanonicalNodeContextMenuProvider></ServiceBuilderProvider></div>);
         await waitFor(() => expect(screen.getByLabelText('Field drop state')).toHaveTextContent('text|3|0'));
         const optionNode = document.querySelector('[data-testid="rf__node-option:instagram-followers"]');
         const dropTarget = optionNode?.querySelector('[data-node-state]');
@@ -249,20 +285,54 @@ describe('canonical canvas surface', () => {
         const excludeAction = screen.getAllByRole('button', { name: 'Exclude' }).find((button) => button.textContent === 'Exclude');
         expect(includeAction).toBeInTheDocument();
         expect(excludeAction).toBeInTheDocument();
+        expect(screen.getByLabelText('Dropped Number')).toHaveTextContent('[]');
         fireEvent.click(includeAction!);
         await waitFor(() => expect(screen.getByLabelText('Field drop state')).toHaveTextContent('text|4|1'));
+        expect(JSON.parse(screen.getByLabelText('Dropped Number').textContent ?? '[]')).toHaveLength(1);
     }, 10_000);
 
     it('preserves the Bind dial for an input dropped on a filter and creates a canonical bound field', async () => {
-        render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}><CanonicalNodeContextMenuProvider><FieldDropProbe /><DropAwareCanvas /></CanonicalNodeContextMenuProvider></ServiceBuilderProvider></div>);
+        render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}><CanonicalNodeContextMenuProvider><FieldDropProbe /><DroppedFieldProbe label="New text field" /><DropAwareCanvas /></CanonicalNodeContextMenuProvider></ServiceBuilderProvider></div>);
         await waitFor(() => expect(screen.getByLabelText('Field drop state')).toHaveTextContent('text|3|0'));
         const filterNode = document.querySelector('[data-testid="rf__node-filter:platform"]');
         const dropTarget = filterNode?.querySelector('[data-node-state]');
         expect(dropTarget).not.toBeNull();
         fireEvent.drop(dropTarget!, { dataTransfer: builtinTransfer('text', 'New text field') });
         const bindAction = (await screen.findAllByRole('button', { name: 'Bind' })).find((button) => button.textContent === 'Bind');
+        expect(screen.getByLabelText('Dropped New text field')).toHaveTextContent('[]');
         fireEvent.click(bindAction!);
         await waitFor(() => expect(screen.getByLabelText('Field drop state')).toHaveTextContent('text|4|0'));
+        const dropped = JSON.parse(screen.getByLabelText('Dropped New text field').textContent ?? '[]') as Array<{ bind_id: string; wired: boolean }>;
+        expect(dropped).toHaveLength(1);
+        expect(dropped[0]).toMatchObject({ bind_id: 'filter:platform', wired: true });
+    }, 10_000);
+
+    it('creates just one bound template field when a template is dropped on a filter', async () => {
+        const snapshot = await createSeedPersistence().load(workspaceSeed.workspace_id);
+        if (!snapshot) throw new Error('Missing seeded workspace');
+        snapshot.branches[0]!.templates.push({
+            id: 'template:select', key: 'select', name: 'Reusable select', branch_id: null, published: true,
+            updated_at: new Date(0).toISOString(), meta: {},
+            field: { id: 'field:reusable', type: 'select', label: 'Reusable select', options: [{ id: 'option:reusable', label: 'Choice', value: 'choice' }] },
+        });
+        const backend = new MemoryWorkspaceBackend({
+            ...workspaceSeed,
+            persistence: { load: async () => structuredClone(snapshot), save: async () => {} },
+        });
+        render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={backend} actor={workspaceActor}><CanonicalNodeContextMenuProvider><DroppedFieldProbe label="Reusable select" /><DropAwareCanvas /></CanonicalNodeContextMenuProvider></ServiceBuilderProvider></div>);
+        await waitFor(() => expect(screen.getByLabelText('Dropped Reusable select')).toHaveTextContent('[]'));
+        const filterNode = document.querySelector('[data-testid="rf__node-filter:platform"]');
+        const dropTarget = filterNode?.querySelector('[data-node-state]');
+        expect(dropTarget).not.toBeNull();
+        fireEvent.drop(dropTarget!, { dataTransfer: templateTransfer('template:select') });
+        const bindAction = (await screen.findAllByRole('button', { name: 'Bind' })).find((button) => button.textContent === 'Bind');
+        expect(screen.getByLabelText('Dropped Reusable select')).toHaveTextContent('[]');
+        fireEvent.click(bindAction!);
+        await waitFor(() => {
+            const dropped = JSON.parse(screen.getByLabelText('Dropped Reusable select').textContent ?? '[]') as Array<{ bind_id: string; wired: boolean }>;
+            expect(dropped).toHaveLength(1);
+            expect(dropped[0]).toMatchObject({ bind_id: 'filter:platform', wired: true });
+        });
     }, 10_000);
 
     it('creates and places a built-in input dropped on the canvas pane through canonical Workspace', async () => {
