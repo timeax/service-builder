@@ -11,6 +11,7 @@ import {
     type OnConnectStart,
     type OnEdgesChange,
     type OnMoveEnd,
+    type OnNodeDrag,
     type OnNodesChange,
 } from '@xyflow/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -19,6 +20,7 @@ import { formatCanonicalCanvasCommentTarget, toCanonicalReactFlowModel } from '.
 export interface CanonicalFlowAdapterOptions {
     can_edit?: boolean;
     snap_to_grid?: boolean | { x: number; y: number };
+    scope_key?: string;
     comments_revision?: unknown;
     before_connect?: (connection: { from: string; to: string; kind: CanvasEdgeMode; api: CanvasAPI }) => {
         ok: boolean;
@@ -54,11 +56,16 @@ export function useCanonicalReactFlowAdapter(api: CanvasAPI, options: CanonicalF
     const [model, setModel] = useState(project);
     const modelRef = useRef(model);
     modelRef.current = model;
+    const pendingPositions = useRef(new Map<string, { start: { x: number; y: number }; latest: { x: number; y: number } }>());
 
     useEffect(() => {
         void commentsRevision;
         const refresh = () => {
             const next = project();
+            for (const [id, pending] of pendingPositions.current) {
+                const node = next.nodes.find((candidate) => candidate.id === id);
+                if (node !== undefined) node.position = pending.latest;
+            }
             modelRef.current = next;
             setModel(next);
         };
@@ -70,6 +77,15 @@ export function useCanonicalReactFlowAdapter(api: CanvasAPI, options: CanonicalF
             offComments();
         };
     }, [api, commentsRevision, project]);
+
+    useEffect(() => {
+        const pending = pendingPositions.current;
+        pending.clear();
+        const next = project();
+        modelRef.current = next;
+        setModel(next);
+        return () => pending.clear();
+    }, [api, options.scope_key, project]);
 
     const snapVector = useMemo<[number, number] | undefined>(() => {
         if (options.snap_to_grid === true) return [16, 16];
@@ -90,6 +106,27 @@ export function useCanonicalReactFlowAdapter(api: CanvasAPI, options: CanonicalF
         [snapVector],
     );
 
+    const commitPositions = useCallback((positions: Map<string, { x: number; y: number }>, starts?: Map<string, { x: number; y: number }>) => {
+        const productMoves: Array<{ id: string; point: { x: number; y: number } }> = [];
+        for (const [id, position] of positions) {
+            const point = snap(position);
+            const start = starts?.get(id) ?? modelRef.current.nodes.find((node) => node.id === id)?.position;
+            if (start !== undefined && start.x === point.x && start.y === point.y) continue;
+            if (isCommentNode(id)) {
+                const threadId = id.slice('comment:'.length);
+                const target = formatCanonicalCanvasCommentTarget(point);
+                if (api.comments.get(threadId)?.target_path !== target) api.comments.move(threadId, target);
+            } else productMoves.push({ id, point });
+        }
+        if (productMoves.length > 0) {
+            api.editor.transact('nodes:move', () => {
+                const next = { ...api.snapshot_positions() };
+                for (const { id, point } of productMoves) next[id] = point;
+                api.restore_positions(next);
+            });
+        }
+    }, [api, snap]);
+
     const onNodesChange: OnNodesChange = useCallback(
         (changes) => {
             if (options.can_edit === false && changes.some((change) => change.type === 'position' || change.type === 'remove')) {
@@ -97,27 +134,30 @@ export function useCanonicalReactFlowAdapter(api: CanvasAPI, options: CanonicalF
                 setModel(project());
                 return;
             }
-            const nodes = applyNodeChanges(changes, modelRef.current.nodes);
+            const before = modelRef.current.nodes;
+            const nodes = applyNodeChanges(changes, before);
             const next = { ...modelRef.current, nodes };
             modelRef.current = next;
             setModel(next);
-            const positions = { ...api.snapshot().positions };
-            let positionChanged = false;
+            const immediate = new Map<string, { x: number; y: number }>();
+            const starts = new Map<string, { x: number; y: number }>();
             let selectionChanged = false;
             for (const change of changes) {
                 if (change.type === 'position' && change.position !== undefined) {
-                    const point = snap(change.position);
-                    if (isCommentNode(change.id)) {
-                        const threadId = change.id.slice('comment:'.length);
-                        api.comments.move(threadId, formatCanonicalCanvasCommentTarget(point));
+                    const pending = pendingPositions.current.get(change.id);
+                    if (pending !== undefined) pending.latest = change.position;
+                    else if (change.dragging) {
+                        const start = before.find((node) => node.id === change.id)?.position ?? change.position;
+                        pendingPositions.current.set(change.id, { start, latest: change.position });
                     } else {
-                        positions[change.id] = point;
-                        positionChanged = true;
+                        immediate.set(change.id, change.position);
+                        const start = before.find((node) => node.id === change.id)?.position;
+                        if (start !== undefined) starts.set(change.id, start);
                     }
                 }
                 if (change.type === 'select') selectionChanged = true;
             }
-            if (positionChanged) api.set_positions(positions);
+            if (immediate.size > 0) commitPositions(immediate, starts);
             if (selectionChanged) {
                 const ids = nodes.filter((node) => !isCommentNode(node.id) && node.selected).map((node) => node.id);
                 api.select(ids, ids.at(-1));
@@ -125,8 +165,26 @@ export function useCanonicalReactFlowAdapter(api: CanvasAPI, options: CanonicalF
                 api.select_comment(comment?.id.slice('comment:'.length));
             }
         },
-        [api, options, project, snap],
+        [api, commitPositions, options, project],
     );
+
+    const onNodeDragStop: OnNodeDrag = useCallback((_event, _node, nodes) => {
+        if (pendingPositions.current.size === 0) return;
+        if (options.can_edit === false) {
+            pendingPositions.current.clear();
+            setModel(project());
+            return;
+        }
+        const finalNodes = new Map(nodes.map((node) => [node.id, node.position]));
+        const finalPositions = new Map<string, { x: number; y: number }>();
+        const starts = new Map<string, { x: number; y: number }>();
+        for (const [id, pending] of pendingPositions.current) {
+            finalPositions.set(id, finalNodes.get(id) ?? pending.latest);
+            starts.set(id, pending.start);
+        }
+        pendingPositions.current.clear();
+        commitPositions(finalPositions, starts);
+    }, [commitPositions, options.can_edit, project]);
 
     const onEdgesChange: OnEdgesChange = useCallback(
         (changes) => {
@@ -190,6 +248,7 @@ export function useCanonicalReactFlowAdapter(api: CanvasAPI, options: CanonicalF
         nodes: model.nodes,
         edges: model.edges,
         onNodesChange,
+        onNodeDragStop,
         onEdgesChange,
         onConnect,
         onConnectStart,

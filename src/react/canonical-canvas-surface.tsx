@@ -23,10 +23,10 @@ import { CanonicalNoticeManager, type NoticeManagerRequest } from './canonical-n
 import { useOptionalCanonicalNodeContextMenu } from './canonical-node-context-menu';
 import { buildCanonicalCanvasServiceContext } from './canonical-service-context';
 import { acceptsCanonicalCanvasDrop, DRAG_MIME_SERVICE, readCanonicalAssetDrag } from './drag-contracts';
+import { useServiceContextPosition } from './service-context-position';
 import { useCanvasAPI, useCanvasSelector, useWorkspacePermission, useWorkspaceRuntime, useWorkspaceSelector } from './workspace';
 
 const SERVICE_CONTEXT_NODE_ID = 'sys::service-context';
-const DEFAULT_SERVICE_CONTEXT_POSITION = { x: 500, y: -200 };
 
 function hasPersistedViewport(viewport: { x: number; y: number; zoom: number }) {
     return Math.abs(viewport.x) > 0.5 || Math.abs(viewport.y) > 0.5 || Math.abs(viewport.zoom - 1) > 1e-4;
@@ -44,25 +44,6 @@ function InitialFitController({ enabled, nodeIds }: { enabled: boolean; nodeIds:
         return () => cancelAnimationFrame(frame);
     }, [enabled, flow, nodeIds]);
     return null;
-}
-
-function readServiceContextPosition(key: string) {
-    if (typeof window === 'undefined') return DEFAULT_SERVICE_CONTEXT_POSITION;
-    try {
-        const stored = JSON.parse(window.localStorage.getItem(key) ?? 'null');
-        if (Number.isFinite(stored?.x) && Number.isFinite(stored?.y)) return { x: stored.x as number, y: stored.y as number };
-    } catch {
-        // Storage is optional; an invalid saved position must not hide the canvas card.
-    }
-    return DEFAULT_SERVICE_CONTEXT_POSITION;
-}
-
-function saveServiceContextPosition(key: string, position: { x: number; y: number }) {
-    try {
-        window.localStorage.setItem(key, JSON.stringify(position));
-    } catch {
-        // The card remains draggable when storage is unavailable.
-    }
 }
 
 export interface CanonicalCanvasSurfaceProps {
@@ -304,10 +285,9 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
     const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
     const [edgeMenu, setEdgeMenu] = useState<{ edge: Edge; x: number; y: number } | null>(null);
     const serviceContextStorageKey = `service-builder.canvas.system-node.service-context.${workspaceId ?? 'none'}.${branchId ?? 'none'}`;
-    const [serviceContextPosition, setServiceContextPosition] = useState(() => readServiceContextPosition(serviceContextStorageKey));
+    const { position: serviceContextPosition, onPositionChange: onServiceContextPositionChange, onDragStop: onServiceContextDragStop } = useServiceContextPosition(serviceContextStorageKey);
     const [serviceContextSelected, setServiceContextSelected] = useState(false);
-    useEffect(() => setServiceContextPosition(readServiceContextPosition(serviceContextStorageKey)), [serviceContextStorageKey]);
-    const adapter = useCanonicalReactFlowAdapter(api, { can_edit: canEdit, snap_to_grid: false, comments_revision: workspaceState.comments });
+    const adapter = useCanonicalReactFlowAdapter(api, { can_edit: canEdit, snap_to_grid: false, comments_revision: workspaceState.comments, scope_key: serviceContextStorageKey });
     const initialViewport = useMemo(() => api.get_viewport(), [api]);
     const fitNodeIds = useMemo(() => adapter.nodes.map((node) => node.id), [adapter.nodes]);
     const serviceContext = useMemo(() => {
@@ -324,13 +304,16 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
         for (const change of changes) {
             if (!('id' in change) || change.id !== SERVICE_CONTEXT_NODE_ID) continue;
             if (change.type === 'position' && change.position !== undefined) {
-                setServiceContextPosition(change.position);
-                saveServiceContextPosition(serviceContextStorageKey, change.position);
+                onServiceContextPositionChange(change.position, change.dragging);
             } else if (change.type === 'select') setServiceContextSelected(change.selected);
         }
         const documentChanges = changes.filter((change) => !('id' in change) || change.id !== SERVICE_CONTEXT_NODE_ID);
         if (documentChanges.length) adapter.onNodesChange(documentChanges);
-    }, [adapter, serviceContextStorageKey]);
+    }, [adapter, onServiceContextPositionChange]);
+    const onCanvasNodeDragStop: NonNullable<React.ComponentProps<typeof ReactFlow>['onNodeDragStop']> = useCallback((event, node, nodes) => {
+        adapter.onNodeDragStop(event, node, nodes);
+        onServiceContextDragStop(nodes.find((candidate) => candidate.id === SERVICE_CONTEXT_NODE_ID)?.position);
+    }, [adapter, onServiceContextDragStop]);
     const edges = useMemo(
         () =>
             adapter.edges.filter((edge) => {
@@ -405,6 +388,7 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
                 edgeTypes={edgeTypes}
                 connectionMode={ConnectionMode.Loose}
                 onNodesChange={onCanvasNodesChange}
+                onNodeDragStop={onCanvasNodeDragStop}
                 onEdgesChange={adapter.onEdgesChange}
                 onConnectStart={adapter.onConnectStart}
                 onConnectEnd={adapter.onConnectEnd}

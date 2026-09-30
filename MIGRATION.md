@@ -66,6 +66,7 @@ Selective-capture follow-up: Workspace `df92cab` is pinned in the manifest and l
 
 ## Historical verification checkpoints (not final acceptance)
 
+- A post-integration canvas performance fix keeps product-node and comment-pin positions local during React Flow dragging, then commits final product positions as one Workspace Editor undo entry or moves a comment pin once on release. The Service context card likewise writes local storage only on release. Focused adapter tests verify no intermediate Workspace revision or undo entry, one-step multi-node undo/redo, no-op and scope-change cancellation, comment moves, selection, and permissions; focused card-position tests verify deferred storage and branch cancellation. The existing canvas surface interactions remain covered without a visual redesign.
 - `npm run lint`, `npm run typecheck`, and `npm run check:boundaries` pass; the boundary result is `0/0` legacy production files.
 - `npm run build` passes for both the distributable library and the Vite application.
 - The repository-wide test run passed 135 tests and exposed one Includes value-shape compatibility regression. After normalizing both real checkbox arrays and the established single-value test adapter, the affected `canonical-properties.test.tsx` suite passed all 8 tests. Per the impact-based test policy, the unrelated 135 passing tests were not rerun after that one-line scoped correction.
