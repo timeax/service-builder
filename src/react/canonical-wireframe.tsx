@@ -3,7 +3,7 @@ import { EmptyState } from '@/components/builder';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import WireframeTagsWidget, { type TagNotice } from '@/panels/right/components/wireframe-tags-widget.tsx';
-import { buildOrderSnapshot, createOrderingSession, type BuildOrderSnapshotResult, type OrderingSession } from '@elqora/dgp-ordering';
+import { buildOrderPreview, createOrderingSession, type BuildOrderPreviewResult, type OrderingSession } from '@elqora/dgp-ordering';
 import { FormPaletteOrderingProvider, OrderingInput } from '@elqora/dgp-ordering-form-palette';
 import type { HandlerService, ProductDefinition } from '@elqora/dgp-spec';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -21,10 +21,11 @@ function formatMetricNumber(value: unknown): string {
 type FooterDetailKind = 'services' | 'pricing' | 'utility_lines';
 type FooterSummaryItem = { label: string; value: string; detailsKind?: FooterDetailKind };
 
-function formatPreviewFailure(result: BuildOrderSnapshotResult): string | null {
-    if (!('kind' in result)) return null;
-    if (result.kind === 'host_configuration') return result.failure.message;
-    return `${result.issues.length} customer input issue${result.issues.length === 1 ? '' : 's'} in this preview.`;
+function formatPreviewFailure(result: BuildOrderPreviewResult): string | null {
+    if ('failure' in result) return result.failure.message;
+    return result.issues.length
+        ? `${result.issues.length} customer input issue${result.issues.length === 1 ? '' : 's'} in this preview.`
+        : null;
 }
 
 function CanonicalWireframeBody({
@@ -53,9 +54,9 @@ function CanonicalWireframeBody({
     const visibleIds = new Set(context?.visibility.fieldIds ?? []);
     const visibleFields = definition.fields.filter((field) => visibleIds.has(field.id));
     const selectedOptionsCount = Object.values(orderingState.selections).reduce((sum, ids) => sum + ids.length, 0);
-    const snapshotResult = useMemo(
+    const previewResult = useMemo(
         () =>
-            buildOrderSnapshot({
+            buildOrderPreview({
                 definition,
                 filter_id: session.get_filter_id(),
                 trigger_ids: session.get_trigger_ids(),
@@ -65,23 +66,25 @@ function CanonicalWireframeBody({
             }),
         [definition, orderingState, services, session],
     );
-    const snapshot = snapshotResult.ok ? snapshotResult.snapshot : undefined;
+    const preview = previewResult.ok ? previewResult.preview : undefined;
     const serviceById = useMemo(() => new Map(services.map((service) => [String(service.id), service])), [services]);
-    const base = snapshot?.service_ids.reduce<number>((sum, id) => sum + (serviceById.get(String(id))?.rate ?? 0), 0);
-    const utilities = snapshot?.utilities.reduce((sum, utility) => sum + utility.advisory_amount, 0);
+    const base = preview?.service_ids.reduce<number>((sum, id) => sum + (serviceById.get(String(id))?.rate ?? 0), 0);
+    const utilities = preview?.utilities.every((utility) => utility.advisory_amount !== null)
+        ? preview.utilities.reduce((sum, utility) => sum + (utility.advisory_amount ?? 0), 0)
+        : undefined;
     const footerSummary: FooterSummaryItem[] = [
         { label: 'Tag', value: currentFilter?.label ?? 'No active tag' },
         { label: 'Visible fields', value: String(visibleFields.length) },
         { label: 'Selected options', value: String(selectedOptionsCount) },
-        { label: 'Quantity', value: formatMetricNumber(snapshot?.quantity) },
-        { label: 'Min/Max', value: snapshot ? `${formatMetricNumber(snapshot.min)} - ${formatMetricNumber(snapshot.max)}` : '--' },
-        { label: 'Services', value: String(snapshot?.service_ids.length ?? 0), detailsKind: 'services' },
+        { label: 'Quantity', value: formatMetricNumber(preview?.quantity) },
+        { label: 'Min/Max', value: preview ? `${formatMetricNumber(preview.min)} - ${formatMetricNumber(preview.max)}` : '--' },
+        { label: 'Services', value: String(preview?.service_ids.length ?? 0), detailsKind: 'services' },
         { label: 'Base', value: formatMetricNumber(base), detailsKind: 'pricing' },
         { label: 'Utilities', value: formatMetricNumber(utilities), detailsKind: 'pricing' },
-        { label: 'Total', value: formatMetricNumber(base === undefined ? undefined : base + (utilities ?? 0)), detailsKind: 'pricing' },
-        { label: 'Utility lines', value: String(snapshot?.utilities.length ?? 0), detailsKind: 'utility_lines' },
+        { label: 'Total', value: formatMetricNumber(base === undefined || utilities === undefined ? undefined : base + utilities), detailsKind: 'pricing' },
+        { label: 'Utility lines', value: String(preview?.utilities.length ?? 0), detailsKind: 'utility_lines' },
     ];
-    const previewFailure = formatPreviewFailure(snapshotResult);
+    const previewFailure = formatPreviewFailure(previewResult);
     const noticesByTagId = useMemo(() => {
         const map = new Map<string, TagNotice[]>();
         for (const notice of definition.notices) {
@@ -109,8 +112,8 @@ function CanonicalWireframeBody({
             return (
                 <div className="space-y-2">
                     <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Visible Services</p>
-                    {snapshot?.service_ids.length ? (
-                        snapshot.service_ids.map((id) => {
+                    {preview?.service_ids.length ? (
+                        preview.service_ids.map((id) => {
                             const service = serviceById.get(String(id));
                             return (
                                 <div
@@ -135,8 +138,8 @@ function CanonicalWireframeBody({
             return (
                 <div className="space-y-2">
                     <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Utility Breakdown</p>
-                    {snapshot?.utilities.length ? (
-                        snapshot.utilities.map((line, index) => (
+                    {preview?.utilities.length ? (
+                        preview.utilities.map((line, index) => (
                             <div
                                 key={`${line.node_id}:${index}`}
                                 className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-900"
@@ -157,7 +160,7 @@ function CanonicalWireframeBody({
                 <p className="text-slate-500 dark:text-slate-400">Base: {formatMetricNumber(base)}</p>
                 <p className="text-slate-500 dark:text-slate-400">Utilities: {formatMetricNumber(utilities)}</p>
                 <p className="text-slate-500 dark:text-slate-400">
-                    Total: {formatMetricNumber(base === undefined ? undefined : base + (utilities ?? 0))}
+                    Total: {formatMetricNumber(base === undefined || utilities === undefined ? undefined : base + utilities)}
                 </p>
             </div>
         );

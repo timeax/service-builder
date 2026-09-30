@@ -37,6 +37,25 @@ describe('canonical wireframe', () => {
         expect(screen.getByText('Visible fields:')).toBeInTheDocument();
     });
 
+    it('keeps known preview values while an unresolved utility leaves the total unavailable', async () => {
+        const partialDefinition = structuredClone(definition);
+        partialDefinition.fields.push({
+            id: 'field:units', type: 'number', label: 'Units', name: 'units', bind_id: 'filter:platform',
+            pricing_role: 'utility', utility: { mode: 'per_value', rate: 2 },
+        });
+        partialDefinition.order_for_tags['filter:platform'] = [
+            ...(partialDefinition.order_for_tags['filter:platform'] ?? []), 'field:units',
+        ];
+        const backend = new MemoryWorkspaceBackend({ ...workspaceSeed, definition: partialDefinition, persistence: undefined });
+        render(<ServiceBuilderProvider backend={backend} actor={workspaceActor}><CanonicalWireframe /></ServiceBuilderProvider>);
+
+        await screen.findByText('Quantity:');
+        expect(screen.getByText('Quantity:').parentElement).toHaveTextContent('Quantity:100');
+        expect(screen.getByText('Utilities:').parentElement).toHaveTextContent('Utilities:--');
+        expect(screen.getByText('Total:').parentElement).toHaveTextContent('Total:--');
+        expect(screen.getByText('2 customer input issues in this preview.')).toBeInTheDocument();
+    });
+
     it('presents a canonical expression failure without presenting a completed snapshot', async () => {
         const invalidDefinition = structuredClone(definition);
         const quantityField = invalidDefinition.fields.find((field) => field.id === 'field:quantity');

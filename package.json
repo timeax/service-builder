@@ -36,7 +36,7 @@
     "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@elqora/dgp-core": "github:elqora/dgp-core#bf8e7f0b9eb96f400bb9a0a14addf960d760dd99",
-        "@elqora/dgp-ordering": "github:elqora/dgp-ordering#1f1b4418374207c41cad8c875f34c898abfd61da",
+        "@elqora/dgp-ordering": "github:elqora/dgp-ordering#77c23f9203987f210809c1946f279d278a4fc5dc",
         "@elqora/dgp-ordering-form-palette": "github:elqora/dgp-ordering-form-palette#0580bdc7fba27d2753b4710dac606730c854ad5f",
         "@elqora/dgp-spec": "github:elqora/dgp-spec#6300c59a07743203686d5c66a4aaba586a55e92c",
         "@elqora/dgp-validation": "github:elqora/dgp-validation#666add59d2662e15f921742208baaf0e4ebc9b1f",

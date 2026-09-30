@@ -87,13 +87,19 @@ describe('canonical wireframe browser inputs', () => {
         fireEvent.click(await screen.findByRole('option', { name: 'Instagram followers - fast' }));
         await waitFor(() => expect(screen.getByText('Selected options:').parentElement).toHaveTextContent('Selected options:1'));
 
-        const target = await screen.findByLabelText(/Target URL/i);
-        fireEvent.change(target, { target: { value: 'https://example.test/post' } });
-        expect(target).toHaveValue('https://example.test/post');
+        expect(screen.getByText('Quantity:').parentElement).toHaveTextContent('Quantity:100');
+        expect(screen.getByText('Services:').parentElement).toHaveTextContent('Services:1');
+        expect(screen.getByText('Base:').parentElement).toHaveTextContent('Base:0.8375');
+        expect(screen.getByText('1 customer input issue in this preview.')).toBeInTheDocument();
 
         const quantity = screen.getByLabelText(/Quantity/i);
         fireEvent.change(quantity, { target: { value: '250' } });
         await waitFor(() => expect(screen.getByText('Quantity:').parentElement).toHaveTextContent('Quantity:250'));
+
+        const target = await screen.findByLabelText(/Target URL/i);
+        fireEvent.change(target, { target: { value: 'https://example.test/post' } });
+        expect(target).toHaveValue('https://example.test/post');
+        await waitFor(() => expect(screen.queryByText('1 customer input issue in this preview.')).not.toBeInTheDocument());
     }, 15_000);
 
     it('keeps specialized textarea and single-checkbox inputs interactive through the real adapter', async () => {
