@@ -40,7 +40,7 @@
         "@elqora/dgp-ordering-form-palette": "github:elqora/dgp-ordering-form-palette#0580bdc7fba27d2753b4710dac606730c854ad5f",
         "@elqora/dgp-spec": "github:elqora/dgp-spec#6300c59a07743203686d5c66a4aaba586a55e92c",
         "@elqora/dgp-validation": "github:elqora/dgp-validation#666add59d2662e15f921742208baaf0e4ebc9b1f",
-        "@elqora/dgp-workspace": "github:elqora/dgp-workspace#dfebcd934a16907b22e56c1f36d2c38418287dda",
+        "@elqora/dgp-workspace": "github:elqora/dgp-workspace#df92cab6d5d1f27d13c58255de28695b214a4807",
         "@radix-ui/react-alert-dialog": "^1.1.15",
         "@radix-ui/react-avatar": "^1.1.11",
         "@radix-ui/react-collapsible": "^1.1.12",

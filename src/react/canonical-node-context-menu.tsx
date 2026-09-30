@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/alert-dialog.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
 import { Button } from '@/components/ui/button.tsx';
+import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { InputField } from '@timeax/form-palette';
 import { walkOptions } from '@elqora/dgp-core';
 import type { NodeReference } from '@elqora/dgp-workspace';
@@ -70,7 +71,6 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
     const canTemplate = useWorkspacePermission('template.write');
     const editDeniedReason = canEdit ? undefined : 'You do not have permission to edit this definition.';
     const templateDeniedReason = canTemplate ? undefined : 'You do not have permission to manage templates.';
-    const templates = useWorkspaceSelector((state) => state.templates);
     const [target, setTarget] = useState<OpenCanonicalNodeContextMenuInput | null>(null);
     const [dropIntent, setDropIntent] = useState<DropIntent | null>(null);
     const [dropError, setDropError] = useState<string | null>(null);
@@ -78,6 +78,10 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
     const [renameValue, setRenameValue] = useState('');
     const [templateName, setTemplateName] = useState('');
     const [templateInBranch, setTemplateInBranch] = useState(true);
+    const [templateIncludeConnected, setTemplateIncludeConnected] = useState(false);
+    const [templateGroupLabel, setTemplateGroupLabel] = useState('');
+    const [templateFields, setTemplateFields] = useState<Record<string, boolean>>({});
+    const [templateProperties, setTemplateProperties] = useState<Record<string, Record<string, boolean>>>({});
     const [templateError, setTemplateError] = useState<string | null>(null);
     const [templatePending, setTemplatePending] = useState(false);
     const [batchMode, setBatchMode] = useState<'rebind' | 'include' | 'exclude'>('rebind');
@@ -93,6 +97,11 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
     const toggleNoticeManager = useCallback(() => setNoticeRequest((current) => current ? null : { mode: 'manage', token: ++noticeToken.current }), []);
     const dialRef = useRef<HTMLDivElement>(null);
     const node = target && canvas ? canvas.editor.get_node(target.node_id) : undefined;
+    const templatePreview = useMemo(() => {
+        if (dialog !== 'template' || target?.node_kind !== 'field' || !canTemplate) return null;
+        const result = runtime.capture_field_template(target.node_id, true);
+        return result.ok ? result.value : null;
+    }, [canTemplate, dialog, runtime, target]);
     const label =
         node?.kind === 'filter'
             ? node.filter.label
@@ -154,15 +163,25 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
     };
     const saveTemplate = async () => {
         if (!target || target.node_kind !== 'field' || !canvas || !canTemplate || !templateName.trim() || templatePending) return;
-        const field = canvas.builder.index.getField(target.node_id);
-        if (!field) return;
         setTemplatePending(true);
         setTemplateError(null);
         try {
+            const available = templatePreview ? [templatePreview.field, ...(templatePreview.connected_fields ?? [])] : [];
+            const selected = available.filter((field) => field.id === target.node_id || (templateIncludeConnected && templateFields[field.id] !== false));
+            const captured = runtime.capture_field_template(target.node_id, {
+                include_connected: templateIncludeConnected,
+                field_ids: selected.map((field) => field.id),
+                property_keys: Object.fromEntries(selected.map((field) => [field.id, Object.keys(field).filter((key) => ['id', 'type', 'label'].includes(key) || templateProperties[field.id]?.[key] !== false)])),
+            });
+            if (captured.ok === false) {
+                setTemplateError(captured.error.message);
+                return;
+            }
             const result = await runtime.create_template({
-                key: slug(`${templateName.trim()}-${field.id}`),
+                key: slug(`${templateName.trim()}-${target.node_id}`),
                 name: templateName.trim(),
-                field: structuredClone(field),
+                ...(templateIncludeConnected ? { group_label: templateGroupLabel.trim() || `${label} group` } : {}),
+                ...captured.value,
                 branch_id: templateInBranch ? branchId : null,
                 published: false,
                 meta: {},
@@ -312,19 +331,17 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
             if (source.kind === 'asset_builtin') {
                 id = canvas.editor.add_field_from_descriptor(canonicalAuthoringDescriptor(source.asset.kind, source.asset.variant), { label: source.asset.label, bind_id: bindId });
             } else {
-                const template = templates.find((item) => item.id === source.asset.id);
-                if (!template) return null;
-                if (template.field.options?.length) {
-                    setDropError('This template contains options and cannot be inserted safely: Workspace 1.0.1 does not assign new nested option IDs.');
+                const result = runtime.instantiate_template(source.asset.id, bindId === undefined ? undefined : { bind_id: bindId });
+                if (result.ok === false) {
+                    setDropError(result.error.message);
                     return null;
                 }
-                const templateBindId = Array.isArray(template.field.bind_id) ? template.field.bind_id[0] : template.field.bind_id;
-                id = canvas.editor.add_field({ ...structuredClone(template.field), id: undefined, bind_id: bindId ?? templateBindId });
+                id = result.value.root_id;
             }
             canvas.select([id], id);
             return id;
         },
-        [canEdit, canvas, templates],
+        [canEdit, canvas, runtime],
     );
     const dialActions = useMemo<DialAction[]>(() => {
         if (!dropIntent || !canvas) return [];
@@ -525,6 +542,10 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
                                                   onSelect={() => {
                                                       setTemplateName(`${label} Template`);
                                                       setTemplateInBranch(true);
+                                                      setTemplateIncludeConnected(false);
+                                                      setTemplateGroupLabel(`${label} group`);
+                                                      setTemplateFields({});
+                                                      setTemplateProperties({});
                                                       setTemplateError(null);
                                                       setDialog('template');
                                                   }}
@@ -610,11 +631,46 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
                                           <input type="checkbox" checked={templateInBranch} onChange={(event) => setTemplateInBranch(event.target.checked)} />
                                           <span>Save to current branch</span>
                                       </label>
-                                      <label className="flex items-center gap-2 text-sm text-slate-500" title="Workspace 1.0.1 templates store one field; connected fields and relationships cannot be saved as a group.">
-                                          <input type="checkbox" disabled />
-                                          <span>Include connected fields (unavailable)</span>
+                                      <label className="flex items-center gap-2 text-sm">
+                                          <input type="checkbox" checked={templateIncludeConnected} onChange={(event) => setTemplateIncludeConnected(event.target.checked)} />
+                                          <span>Include connected fields</span>
                                       </label>
-                                      <p className="text-xs text-slate-500">This saves the field and its nested options. The installed Workspace API does not support group templates.</p>
+                                      <p className="text-xs text-slate-500">The template preserves its fields, nested options, and supported relationships.</p>
+                                      {templatePreview ? (
+                                          <ScrollArea className="max-h-72 rounded-md border border-slate-200 p-3 dark:border-slate-700">
+                                              {templateIncludeConnected ? (
+                                                  <div className="space-y-2">
+                                                      <InputField variant="text" label="Template label" value={templateGroupLabel} onChange={(event) => setTemplateGroupLabel(String(event.value ?? ''))} />
+                                                      <p className="text-sm font-medium">Fields in group</p>
+                                                      {[templatePreview.field, ...(templatePreview.connected_fields ?? [])].map((field) => (
+                                                          <label key={field.id} className="flex items-center gap-2 text-sm">
+                                                              <input type="checkbox" checked={field.id === templatePreview.field.id || templateFields[field.id] !== false} disabled={field.id === templatePreview.field.id} onChange={(event) => setTemplateFields((current) => ({ ...current, [field.id]: event.target.checked }))} />
+                                                              <span>{field.label}</span>
+                                                          </label>
+                                                      ))}
+                                                  </div>
+                                              ) : null}
+                                              <div className="mt-3 space-y-2">
+                                                  <p className="text-sm font-medium">Copied properties</p>
+                                                  {[templatePreview.field, ...(templateIncludeConnected ? templatePreview.connected_fields ?? [] : [])]
+                                                      .filter((field) => field.id === templatePreview.field.id || templateFields[field.id] !== false)
+                                                      .map((field) => (
+                                                          <details key={field.id} open className="rounded border border-slate-200 p-2 dark:border-slate-700">
+                                                              <summary className="cursor-pointer text-sm font-medium">{field.label} ({field.id})</summary>
+                                                              <div className="mt-2 grid grid-cols-1 gap-1">
+                                                                  {Object.keys(field).map((key) => {
+                                                                      const required = ['id', 'type', 'label'].includes(key);
+                                                                      return <label key={key} className="flex items-center gap-2 text-xs">
+                                                                          <input type="checkbox" aria-label={`Copy ${key} from ${field.label}`} checked={required || templateProperties[field.id]?.[key] !== false} disabled={required} onChange={(event) => setTemplateProperties((current) => ({ ...current, [field.id]: { ...(current[field.id] ?? {}), [key]: event.target.checked } }))} />
+                                                                          <span className="font-mono">{key}</span>
+                                                                      </label>;
+                                                                  })}
+                                                              </div>
+                                                          </details>
+                                                      ))}
+                                              </div>
+                                          </ScrollArea>
+                                      ) : null}
                                       {templateError ? <p role="alert" className="text-sm text-rose-600">{templateError}</p> : null}
                                       <AlertDialogFooter>
                                           <AlertDialogCancel type="button" disabled={templatePending}>Cancel</AlertDialogCancel>

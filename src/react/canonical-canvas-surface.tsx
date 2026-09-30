@@ -285,7 +285,6 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
     const workspaceId = useWorkspaceSelector((state) => state.workspace_id);
     const branchId = useWorkspaceSelector((state) => state.current_branch_id);
     const selectionKey = useCanvasSelector((state) => `${[...state.selection].sort().join('\u0000')}\u0001${api.selection.primary() ?? ''}`, '\u0001');
-    const templates = useWorkspaceSelector((state) => state.templates);
     const [showGrid, setShowGrid] = useState(true);
     const [showMiniMap, setShowMiniMap] = useState(false);
     const [showBind, setShowBind] = useState(true);
@@ -347,22 +346,20 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
         if (!canEdit) return;
         const asset = readCanonicalAssetDrag(dataTransfer);
         if (!asset) return;
-        const template = asset.kind === 'template' ? templates.find((item) => item.id === asset.template_id) : undefined;
-        if (template?.field.options?.length) {
-            setDropError('This template contains options and cannot be inserted safely: Workspace 1.0.1 does not assign new nested option IDs.');
-            return;
+        let id: string;
+        if (asset.kind === 'template') {
+            const result = runtime.instantiate_template(asset.template_id, bindId === undefined ? undefined : { bind_id: bindId });
+            if (result.ok === false) {
+                setDropError(result.error.message);
+                return;
+            }
+            id = result.value.root_id;
+        } else {
+            id = api.editor.add_field_from_descriptor(canonicalAuthoringDescriptor(asset.field_type, asset.variant), { label: asset.label, bind_id: bindId });
         }
-        const id = template
-            ? api.editor.add_field({
-                  ...structuredClone(template.field),
-                  id: undefined,
-                  label: template.field.label,
-                  bind_id: bindId ?? template.field.bind_id,
-              })
-            : api.editor.add_field_from_descriptor(canonicalAuthoringDescriptor(asset.kind === 'builtin' ? asset.field_type : 'text', asset.kind === 'builtin' ? asset.variant : undefined), { label: asset.label, bind_id: bindId });
         if (position) api.editor.place_node(id, position.x, position.y);
         api.select([id], id);
-    }, [api, canEdit, templates]);
+    }, [api, canEdit, runtime]);
     const canvasNodes = useMemo(
         () =>
             adapter.nodes

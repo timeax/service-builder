@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { workspaceSeed } from '../../backend/canonical/seed';
 import { workspaceActor } from '../../backend/canonical/seed/meta';
+import { DRAG_MIME_ASSET_TEMPLATE } from './drag-contracts';
 import { CanonicalNodeContextMenuProvider, useCanonicalNodeContextMenu } from './canonical-node-context-menu';
 import { ServiceBuilderProvider, useCanvasAPI, useWorkspaceSelector } from './workspace';
 
@@ -71,12 +72,40 @@ function DropProbe() {
     );
 }
 
+function TemplateDropHarness() {
+    const menu = useCanonicalNodeContextMenu();
+    const canvas = useCanvasAPI();
+    const fields = useWorkspaceSelector((state) => state.definition?.fields ?? []);
+    return <>
+        <button type="button" disabled={!canvas} onClick={() => menu.open_drop_dial({
+            node_id: 'filter:platform', node_kind: 'filter', client_x: 100, client_y: 100,
+            data_transfer: { getData: (type: string) => type === DRAG_MIME_ASSET_TEMPLATE ? JSON.stringify({ id: 'template:select', name: 'Reusable select' }) : '' } as DataTransfer,
+        })}>Drop template on tag</button>
+        <output aria-label="Template option IDs">{fields.filter((field) => field.label === 'Reusable select').map((field) => field.options?.[0]?.id).join(',')}</output>
+    </>;
+}
+
 async function isolatedBackend() {
     const snapshot = await workspaceSeed.persistence!.load(workspaceSeed.workspace_id);
     return new MemoryWorkspaceBackend({ ...workspaceSeed, persistence: { load: async () => structuredClone(snapshot), save: async () => {} } });
 }
 
 describe('canonical node context menu', () => {
+    it('uses canonical template instantiation for a node drop', async () => {
+        const snapshot = await workspaceSeed.persistence!.load(workspaceSeed.workspace_id);
+        if (!snapshot) throw new Error('Missing seeded workspace');
+        snapshot.branches[0]!.templates.push({
+            id: 'template:select', key: 'select', name: 'Reusable select', branch_id: null, published: true,
+            updated_at: new Date(0).toISOString(), meta: {},
+            field: { id: 'field:reusable', type: 'select', label: 'Reusable select', options: [{ id: 'option:reusable', label: 'Choice', value: 'choice' }] },
+        });
+        const backend = new MemoryWorkspaceBackend({ ...workspaceSeed, persistence: { load: async () => structuredClone(snapshot), save: async () => {} } });
+        render(<ServiceBuilderProvider backend={backend} actor={workspaceActor}><CanonicalNodeContextMenuProvider><TemplateDropHarness /></CanonicalNodeContextMenuProvider></ServiceBuilderProvider>);
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Drop template on tag' })).toBeEnabled());
+        fireEvent.click(screen.getByRole('button', { name: 'Drop template on tag' }));
+        fireEvent.click(await screen.findByRole('button', { name: 'Bind' }));
+        await waitFor(() => expect(screen.getByLabelText('Template option IDs')).toHaveTextContent('option:reusable-copy'));
+    });
     it('moves a wireframe field in base and context order through Workspace history', async () => {
         render(<ServiceBuilderProvider backend={await isolatedBackend()} actor={workspaceActor}><CanonicalNodeContextMenuProvider><Harness /></CanonicalNodeContextMenuProvider></ServiceBuilderProvider>);
         await waitFor(() => expect(screen.getByLabelText('Field order')).toHaveTextContent('field:service,field:url,field:quantity'));
@@ -124,6 +153,44 @@ describe('canonical node context menu', () => {
         await waitFor(() => expect(screen.queryByRole('alertdialog', { name: 'Save as template' })).not.toBeInTheDocument());
     });
 
+    it('saves connected fields and relationships through the canonical capture API', async () => {
+        const snapshot = await workspaceSeed.persistence!.load(workspaceSeed.workspace_id);
+        if (!snapshot) throw new Error('Missing seeded workspace');
+        snapshot.branches[0]!.definition.includes_for_buttons['option:instagram-followers'] = ['field:url', 'field:quantity'];
+        const backend = new MemoryWorkspaceBackend({ ...workspaceSeed, persistence: { load: async () => structuredClone(snapshot), save: async () => {} } });
+        const save = vi.spyOn(backend, 'save_template');
+        render(<ServiceBuilderProvider backend={backend} actor={workspaceActor}><CanonicalNodeContextMenuProvider><Harness /></CanonicalNodeContextMenuProvider></ServiceBuilderProvider>);
+        await waitFor(() => expect(screen.getByLabelText('Field count')).toHaveTextContent('3'));
+        fireEvent.contextMenu(screen.getByRole('button', { name: 'Open node menu' }));
+        fireEvent.click(await screen.findByText('Save as template'));
+        fireEvent.click(screen.getByLabelText('Include connected fields'));
+        expect(screen.getByText('Fields in group')).toBeInTheDocument();
+        expect(screen.getByText('Copied properties')).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('Template label'), { target: { value: 'Selected group' } });
+        fireEvent.click(screen.getByText('Quantity').closest('label')!.querySelector('input')!);
+        fireEvent.click(screen.getByRole('checkbox', { name: 'Copy name from Target URL' }));
+        expect(screen.getByRole('checkbox', { name: 'Copy id from Target URL' })).toBeDisabled();
+        fireEvent.click(screen.getByRole('button', { name: 'Save template' }));
+        await waitFor(() => expect(save).toHaveBeenCalled());
+        expect(save.mock.calls.at(-1)?.[0]).toMatchObject({ group_label: 'Selected group', connected_fields: [{ id: 'field:url' }] });
+        expect(save.mock.calls.at(-1)?.[0].connected_fields?.[0]?.name).toBeUndefined();
+        expect(save.mock.calls.at(-1)?.[0].relationships?.includes_for_buttons['option:instagram-followers']).toEqual(['field:url']);
+    });
+
+    it('saves a global template through the canonical development backend', async () => {
+        const backend = await isolatedBackend();
+        const save = vi.spyOn(backend, 'save_template');
+        render(<ServiceBuilderProvider backend={backend} actor={workspaceActor}><CanonicalNodeContextMenuProvider><Harness /></CanonicalNodeContextMenuProvider></ServiceBuilderProvider>);
+        await waitFor(() => expect(screen.getByLabelText('Field count')).toHaveTextContent('3'));
+        fireEvent.contextMenu(screen.getByRole('button', { name: 'Open node menu' }));
+        fireEvent.click(await screen.findByText('Save as template'));
+        fireEvent.click(screen.getByLabelText('Save to current branch'));
+        fireEvent.click(screen.getByRole('button', { name: 'Save template' }));
+        await waitFor(() => expect(save).toHaveBeenCalled());
+        expect(save.mock.calls.at(-1)?.[0].branch_id).toBeNull();
+        await waitFor(() => expect(screen.queryByRole('alertdialog', { name: 'Save as template' })).not.toBeInTheDocument());
+    });
+
     it('shows template save failures and retains the name for retry', async () => {
         const backend = await isolatedBackend();
         vi.spyOn(backend, 'save_template').mockResolvedValueOnce({ ok: false, error: { code: 'unavailable', message: 'Template service unavailable', retryable: true, meta: {} } });
@@ -132,9 +199,11 @@ describe('canonical node context menu', () => {
         fireEvent.contextMenu(screen.getByRole('button', { name: 'Open node menu' }));
         fireEvent.click(await screen.findByText('Save as template'));
         fireEvent.change(screen.getByLabelText('Template name'), { target: { value: 'Retry field' } });
+        fireEvent.click(screen.getByRole('checkbox', { name: 'Copy options from Service' }));
         fireEvent.click(screen.getByRole('button', { name: 'Save template' }));
         expect(await screen.findByRole('alert')).toHaveTextContent('Template service unavailable');
         expect(screen.getByLabelText('Template name')).toHaveValue('Retry field');
+        expect(screen.getByRole('checkbox', { name: 'Copy options from Service' })).not.toBeChecked();
         fireEvent.click(screen.getByRole('button', { name: 'Save template' }));
         await waitFor(() => expect(screen.queryByRole('alertdialog', { name: 'Save as template' })).not.toBeInTheDocument());
     });

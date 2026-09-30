@@ -65,6 +65,12 @@ function PaneDropProbe() {
     return <output aria-label="Pane drop state">{fields.length}|{position?.x ?? 'none'}|{position?.y ?? 'none'}</output>;
 }
 
+function TemplateDropProbe() {
+    const fields = useWorkspaceSelector((state) => state.definition?.fields ?? []);
+    const copies = fields.filter((field) => field.label === 'Reusable select');
+    return <output aria-label="Template drop identities">{JSON.stringify(copies.map((field) => ({ field: field.id, option: field.options?.[0]?.id })))}</output>;
+}
+
 function serviceTransfer(serviceId: string) {
     return {
         types: [DRAG_MIME_SERVICE],
@@ -274,7 +280,7 @@ describe('canonical canvas surface', () => {
         });
     }, 10_000);
 
-    it('explains why option-bearing templates cannot be dropped without safe nested identities', async () => {
+    it('instantiates option-bearing templates repeatedly with distinct canonical identities', async () => {
         const snapshot = await createSeedPersistence().load(workspaceSeed.workspace_id);
         if (!snapshot) throw new Error('Missing seeded workspace');
         snapshot.branches[0]!.templates.push({
@@ -286,14 +292,20 @@ describe('canonical canvas surface', () => {
             ...workspaceSeed,
             persistence: { load: async () => structuredClone(snapshot), save: async () => {} },
         });
-        render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={backend} actor={workspaceActor}><PaneDropProbe /><CanonicalCanvasSurface /></ServiceBuilderProvider></div>);
-        await waitFor(() => expect(screen.getByLabelText('Pane drop state')).toHaveTextContent('3|none|none'));
+        render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={backend} actor={workspaceActor}><TemplateDropProbe /><CanonicalCanvasSurface /></ServiceBuilderProvider></div>);
+        await waitFor(() => expect(screen.getByLabelText('Template drop identities')).toHaveTextContent('[]'));
         const canvas = await screen.findByTestId('rf__wrapper');
-        const drop = new MouseEvent('drop', { bubbles: true, cancelable: true, clientX: 320, clientY: 240 });
-        Object.defineProperty(drop, 'dataTransfer', { value: templateTransfer('template:select') });
-        fireEvent(canvas, drop);
-        expect(await screen.findByRole('alert')).toHaveTextContent('cannot be inserted safely');
-        expect(screen.getByLabelText('Pane drop state')).toHaveTextContent('3|none|none');
+        for (let index = 0; index < 2; index++) {
+            const drop = new MouseEvent('drop', { bubbles: true, cancelable: true, clientX: 320, clientY: 240 });
+            Object.defineProperty(drop, 'dataTransfer', { value: templateTransfer('template:select') });
+            fireEvent(canvas, drop);
+        }
+        await waitFor(() => {
+            const copies = JSON.parse(screen.getByLabelText('Template drop identities').textContent ?? '[]') as Array<{ field: string; option: string }>;
+            expect(copies).toHaveLength(2);
+            expect(new Set(copies.map((copy) => copy.field)).size).toBe(2);
+            expect(new Set(copies.map((copy) => copy.option)).size).toBe(2);
+        });
     });
 
     it('presents canonical permission denials through the preserved toolbar controls', async () => {
