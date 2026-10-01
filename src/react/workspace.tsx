@@ -34,7 +34,18 @@ export function ServiceBuilderProvider({ backend, actor, options, children }: Se
         return () => runtime.dispose();
     }, [runtime]);
 
-    return <WorkspaceRuntimeContext.Provider value={runtime}>{children}</WorkspaceRuntimeContext.Provider>;
+    return <WorkspaceRuntimeContext.Provider value={runtime}><WorkspaceValidationSync />{children}</WorkspaceRuntimeContext.Provider>;
+}
+
+function WorkspaceValidationSync() {
+    const runtime = useWorkspaceRuntime();
+    const validationInputs = useWorkspaceSelector((state) => JSON.stringify([state.workspace_id, state.current_branch_id, state.definition !== null, state.revision, state.services, state.policy_rules]));
+    useEffect(() => {
+        if (!runtime.state.definition) return;
+        const timer = window.setTimeout(() => runtime.validate(), 150);
+        return () => window.clearTimeout(timer);
+    }, [runtime, validationInputs]);
+    return null;
 }
 
 export function useWorkspaceRuntime(): WorkspaceRuntime {

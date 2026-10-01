@@ -21,7 +21,7 @@ import { DEFAULT_CANONICAL_FALLBACK_POLICY, useCanonicalFallbacks } from './cano
 import { CanonicalServicesSplitPane } from './canonical-services-split-pane';
 import { buildCatalogContext, type CatalogContextSnapshot, type CatalogContextState } from './catalog-context-model';
 import { useServiceBuilderCanvasModel } from './presentation';
-import { useWorkspacePermission, useWorkspaceRuntime, useWorkspaceSelector } from './workspace';
+import { useWorkspacePermission, useWorkspaceSelector } from './workspace';
 
 export type CanonicalBottomPanelTab = 'console' | 'activeServices' | 'allServices';
 export interface CanonicalBottomPanelController {
@@ -130,7 +130,6 @@ export function useCanonicalBottomPanel(): CanonicalBottomPanelController {
 }
 
 export function CanonicalBottomConsolePanel({ controller }: { controller: CanonicalBottomPanelController }) {
-    const runtime = useWorkspaceRuntime();
     const canvas = useServiceBuilderCanvasModel();
     const fallbacks = useCanonicalFallbacks();
     const canMutate = useWorkspacePermission('document.mutate');
@@ -198,11 +197,6 @@ export function CanonicalBottomConsolePanel({ controller }: { controller: Canoni
         if (primaryServiceId !== next) setPrimaryServiceId(next);
     }, [contextServices, primaryServiceId, rateContextSource]);
     const source = controller.activeTab === 'activeServices' ? activeServices : allServices;
-    useEffect(() => {
-        if (!controller.isOpen || controller.activeTab !== 'console' || !canvas.definition) return;
-        const timer = window.setTimeout(() => runtime.validate(), 150);
-        return () => window.clearTimeout(timer);
-    }, [runtime, controller.isOpen, controller.activeTab, canvas.definition]);
     useEffect(() => {
         if (!controller.isOpen) return;
         setPanelPosition((current) => resolvePanelPosition(current, panelRef.current, panelContainerRef.current));

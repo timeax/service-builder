@@ -476,7 +476,7 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
                     editDisabledReason="Editing is disabled for this actor."
                     publishDisabledReason="Publishing is disabled for this actor."
                     commentDisabledReason="Comment write access is disabled for this actor."
-                    errors={{ merged: { counts: { total: workspaceState.validation?.protocol.diagnostics.length ?? 0 } } }}
+                    errors={{ merged: { counts: { total: (workspaceState.validation?.protocol.diagnostics.length ?? 0) + (workspaceState.validation?.policyDiagnostics.length ?? 0) } } }}
                     bottomPanelOpen={bottom_panel?.isOpen ?? false}
                     onConsoleToggle={() => bottom_panel?.toggle()}
                     canUndo={api.editor.can_undo()}

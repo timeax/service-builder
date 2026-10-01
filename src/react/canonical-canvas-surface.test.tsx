@@ -21,6 +21,12 @@ function WorkspaceMutationProbe() {
     return <><button type="button" onClick={() => runtime.editor?.relabel('filter:platform', 'Edited platform')}>Edit platform</button><output aria-label="Workspace mutation state">{label}|{state.snapshot_state}|{state.draft ? 'draft' : 'no-draft'}|{state.head?.message}</output></>;
 }
 
+function ValidationMutationProbe() {
+    const runtime = useWorkspaceRuntime();
+    const validation = useWorkspaceSelector((state) => state.validation);
+    return <><button type="button" onClick={() => runtime.mutate((current) => ({ ...current, fields: current.fields.map((field) => field.id === 'field:quantity' ? { ...field, name: 'link' } : field) }))}>Create duplicate field name</button><output aria-label="Validation diagnostic count">{validation === null ? 'pending' : validation.protocol.diagnostics.length + validation.policyDiagnostics.length}</output></>;
+}
+
 function ImportProbe() {
     const name = useWorkspaceSelector((state) => state.definition?.name);
     return <output aria-label="Imported product name">{name}</output>;
@@ -137,6 +143,14 @@ beforeAll(() => {
 });
 
 describe('canonical canvas surface', () => {
+    it('shows validation diagnostics in the toolbar before the bottom panel opens and refreshes after an edit', async () => {
+        render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}><ValidationMutationProbe /><CanonicalCanvasSurface /></ServiceBuilderProvider></div>);
+        await waitFor(() => expect(screen.getByLabelText('Validation diagnostic count')).not.toHaveTextContent('pending'));
+        const initialCount = Number(screen.getByLabelText('Validation diagnostic count').textContent);
+        fireEvent.click(screen.getByRole('button', { name: 'Create duplicate field name' }));
+        await waitFor(() => expect(Number(screen.getByLabelText('Validation diagnostic count').textContent)).toBeGreaterThan(initialCount));
+        expect(screen.getByTestId('console-diagnostic-badge')).toBeInTheDocument();
+    });
     it('opens the preserved Notice Manager from the canvas toolbar', async () => {
         render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}><CanonicalNodeContextMenuProvider><CanonicalCanvasSurface /></CanonicalNodeContextMenuProvider></ServiceBuilderProvider></div>);
         fireEvent.click(await screen.findByTitle('Toggle notices manager'));

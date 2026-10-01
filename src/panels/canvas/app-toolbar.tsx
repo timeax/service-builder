@@ -150,7 +150,7 @@ export function AppToolbar({
                 >
                     <FiTerminal />
                     {errors.merged.counts.total > 0 ? (
-                        <span className="absolute top-1.5 right-1.5 inline-flex h-2.5 w-2.5 rounded-full bg-rose-500" />
+                        <span data-testid="console-diagnostic-badge" className="absolute top-1.5 right-1.5 inline-flex h-2.5 w-2.5 rounded-full bg-rose-500" />
                     ) : null}
                 </Button>
                 <Button
