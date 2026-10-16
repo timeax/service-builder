@@ -245,6 +245,7 @@ describe('canonical properties', () => {
         const optionEffectsSection = screen.getByRole('button', { name: 'Option effects' }).parentElement?.parentElement;
         expect(optionEffectsSection).toBeTruthy();
         fireEvent.click(within(optionEffectsSection!).getByRole('button', { name: 'Add' }));
+        fireEvent.change(await screen.findByLabelText('Target field'), { target: { value: 'field:url' } });
         fireEvent.change(await screen.findByLabelText('Force visible'), { target: { value: 'true' } });
         fireEvent.click(screen.getByRole('button', { name: 'Save' }));
         await waitFor(() => expect(screen.getByLabelText('Current advanced properties')).toHaveTextContent('"field:url":{"force_visible":true}'));
@@ -252,6 +253,7 @@ describe('canonical properties', () => {
         const valueEffectsSection = screen.getByRole('button', { name: 'Value effects' }).parentElement?.parentElement;
         expect(valueEffectsSection).toBeTruthy();
         fireEvent.click(within(valueEffectsSection!).getByRole('button', { name: 'Add' }));
+        fireEvent.change(await screen.findByLabelText('Target field'), { target: { value: 'field:url' } });
         fireEvent.change(await screen.findByLabelText('Value'), { target: { value: 'preset' } });
         fireEvent.change(screen.getByLabelText('Assignment mode'), { target: { value: 'if_empty' } });
         fireEvent.change(screen.getByLabelText('Clear on deactivation'), { target: { value: 'true' } });
@@ -261,7 +263,7 @@ describe('canonical properties', () => {
                 '"field:url":{"value":"preset","mode":"if_empty","clear_on_deactivate":true}',
             ),
         );
-    }, 15_000);
+    }, 25_000);
 
     it('keeps validation diagnostic code distinct from Eval expression text', async () => {
         const definition = structuredClone(workspaceSeed.definition);

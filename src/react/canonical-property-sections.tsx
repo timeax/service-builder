@@ -31,7 +31,7 @@ type OptionChoice = { label: string; value: string; description?: string };
 const fieldOptionChoices = (options: readonly FieldOption[] | undefined, prefix = ''): OptionChoice[] =>
     (options ?? []).flatMap((option) => {
         const label = prefix ? `${prefix} / ${option.label}` : option.label;
-        return [{ label, value: option.id }, ...fieldOptionChoices(option.children, label)];
+        return [...(option.id ? [{ label, value: option.id }] : []), ...fieldOptionChoices(option.children, label)];
     });
 
 const selectedValues = (value: unknown): string[] => Array.isArray(value) ? value.map(String).filter(Boolean) : value ? [String(value)] : [];
@@ -393,7 +393,7 @@ function UtilitySection({ node, disabled }: { node: Extract<CanonicalInspectorNo
                             {hasStoredUtility && !isActiveUtility ? <p className="text-xs text-slate-500 dark:text-slate-400">This node still has utility marker values stored, but its pricing role is base. Activate utility to apply these charges, or clear the marker.</p> : null}
                             <InputField variant="text" label="Rate" value={String(base.rate)} placeholder="Enter utility rate" onChange={({ value }) => update({ rate: numberOrUndefined(value) ?? 0 })} />
                             <InputField
-                                variant="select"
+                                variant="select" autoCap
                                 label="Mode"
                                 value={base.mode}
                                 options={[
@@ -406,7 +406,7 @@ function UtilitySection({ node, disabled }: { node: Extract<CanonicalInspectorNo
                             />
                             {base.mode === 'per_value' ? (
                         <InputField
-                            variant="select"
+                            variant="select" autoCap
                             label="Value source"
                             value={base.value_by ?? 'value'}
                             onChange={({ value }) => update({ value_by: value as 'value' | 'length' })}
@@ -419,7 +419,7 @@ function UtilitySection({ node, disabled }: { node: Extract<CanonicalInspectorNo
                     ) : null}
                             {base.mode === 'percent' ? (
                         <InputField
-                            variant="select"
+                            variant="select" autoCap
                             label="Percent base"
                             disabled={disabled}
                             value={base.percent_base ?? 'service_total'}
@@ -552,7 +552,7 @@ function OptionEffectsSection({ node, disabled }: { node: Extract<CanonicalInspe
                                 <PopoverTrigger asChild><SectionActionTriggerButton icon={<BsPlus />}>Add</SectionActionTriggerButton></PopoverTrigger>
                                 <PopoverContent align="end" className="w-80">
                                     <div className="flex flex-col gap-3">
-                                        <InputField variant="select" label="Target field" value={target} options={fields.map((field) => ({ label: field.label, value: field.id, description: field.description }))} onChange={({ value }) => { setTarget(String(value ?? '')); setInclude([]); setExclude([]); }} />
+                                        <InputField variant="select" autoCap label="Target field" value={target || undefined} options={fields.map((field) => ({ label: field.label, value: field.id, description: field.description }))} onChange={({ value }) => { setTarget(String(value ?? '')); setInclude([]); setExclude([]); }} />
                                         <InputField variant="toggle" label="Force visible" value={forceVisible} onChange={({ value }) => setForceVisible(Boolean(value))} />
                                         {choices.length ? <><InputField variant="checkbox" label="Include options" value={include} options={choices as never} onChange={({ value }) => setInclude(selectedValues(value))} /><InputField variant="checkbox" label="Exclude options" value={exclude} options={choices as never} onChange={({ value }) => setExclude(selectedValues(value))} /></> : <p className="text-xs text-slate-500 dark:text-slate-400">This target field has no options. Only force-visible behavior can be saved.</p>}
                                         <div className="flex justify-end gap-2"><SectionActionButton onClick={close}>Cancel</SectionActionButton><Button type="button" size="sm" onClick={save} disabled={!target}>Save</Button></div>
@@ -636,9 +636,9 @@ function ValueEffectsSection({ node, disabled }: { node: Exclude<CanonicalInspec
                                 <PopoverTrigger asChild><SectionActionTriggerButton icon={<BsPlus />}>Add</SectionActionTriggerButton></PopoverTrigger>
                                 <PopoverContent align="end" className="w-80">
                                     <div className="flex flex-col gap-3">
-                                        <InputField variant="select" label="Target field" value={target} options={fields.map((field) => ({ label: field.label, value: field.id, description: field.description }))} onChange={({ value }) => { setTarget(String(value ?? '')); setSelectedOptions([]); setPrimitiveDraft(''); }} />
-                                        {choices.length && targetField?.multiple ? <InputField variant="checkbox" label="Value" value={selectedOptions} options={choices as never} onChange={({ value }) => setSelectedOptions(selectedValues(value))} /> : choices.length ? <InputField variant="select" label="Value" clearable value={selectedOptions[0] ?? ''} options={choices as never} onChange={({ value }) => setSelectedOptions(selectedValues(value))} /> : <InputField variant="text" label="Value" value={primitiveDraft} onChange={({ value }) => setPrimitiveDraft(String(value ?? ''))} />}
-                                        <InputField variant="select" label="Assignment mode" value={mode} options={[{ label: 'Always', value: 'always' }, { label: 'If empty', value: 'if_empty' }]} onChange={({ value }) => setMode(value === 'if_empty' ? 'if_empty' : 'always')} />
+                                        <InputField variant="select" autoCap label="Target field" value={target || undefined} options={fields.map((field) => ({ label: field.label, value: field.id, description: field.description }))} onChange={({ value }) => { setTarget(String(value ?? '')); setSelectedOptions([]); setPrimitiveDraft(''); }} />
+                                        {choices.length && targetField?.multiple ? <InputField variant="checkbox" label="Value" value={selectedOptions} options={choices as never} onChange={({ value }) => setSelectedOptions(selectedValues(value))} /> : choices.length ? <InputField variant="select" autoCap label="Value" clearable value={selectedOptions[0] || undefined} options={choices as never} onChange={({ value }) => setSelectedOptions(selectedValues(value))} /> : <InputField variant="text" label="Value" value={primitiveDraft} onChange={({ value }) => setPrimitiveDraft(String(value ?? ''))} />}
+                                        <InputField variant="select" autoCap label="Assignment mode" value={mode} options={[{ label: 'Always', value: 'always' }, { label: 'If empty', value: 'if_empty' }]} onChange={({ value }) => setMode(value === 'if_empty' ? 'if_empty' : 'always')} />
                                         <InputField variant="toggle" label="Clear on deactivation" value={clearOnDeactivate} onChange={({ value }) => setClearOnDeactivate(Boolean(value))} />
                                         <div className="flex justify-end gap-2"><SectionActionButton onClick={close}>Cancel</SectionActionButton><Button type="button" size="sm" onClick={save} disabled={!target}>Save</Button></div>
                                     </div>

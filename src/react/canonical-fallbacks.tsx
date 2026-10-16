@@ -708,7 +708,7 @@ function CanonicalFallbackEditorModal({
                                                                 hint="Controls how fallback service rates are compared against the primary service."
                                                             >
                                                                 <InputField
-                                                                    variant="select"
+                                                                    variant="select" autoCap
                                                                     value={policyDraft.rate_policy.kind}
                                                                     onChange={({ value }) =>
                                                                         setPolicyDraft((current) => ({
@@ -766,7 +766,7 @@ function CanonicalFallbackEditorModal({
                                                                 hint="How valid fallback candidates are ordered in previews."
                                                             >
                                                                 <InputField
-                                                                    variant="select"
+                                                                    variant="select" autoCap
                                                                     value={policyDraft.selection_strategy}
                                                                     onChange={({ value }) =>
                                                                         setPolicyDraft((current) => ({
@@ -787,7 +787,7 @@ function CanonicalFallbackEditorModal({
                                                                 hint="Use strict for enforced filtering, dev for advisory feedback."
                                                             >
                                                                 <InputField
-                                                                    variant="select"
+                                                                    variant="select" autoCap
                                                                     value={policyDraft.mode}
                                                                     onChange={({ value }) =>
                                                                         setPolicyDraft((current) => ({

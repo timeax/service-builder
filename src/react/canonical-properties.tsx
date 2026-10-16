@@ -32,7 +32,7 @@ function parsePrimitive(value: unknown): JsonPrimitive | undefined {
 function optionChoices(options: readonly FieldOption[] = [], prefix = ''): Array<{ label: string; value: string }> {
     return options.flatMap((option) => {
         const label = prefix ? `${prefix} / ${option.label}` : option.label;
-        return [{ label, value: option.id }, ...optionChoices(option.children, label)];
+        return [...(option.id ? [{ label, value: option.id }] : []), ...optionChoices(option.children, label)];
     });
 }
 
@@ -98,7 +98,7 @@ function FieldProperties({ node, disabled }: { node: Extract<CanonicalInspectorN
                             onChange={(event) => canvas.editor?.set_field_name(node.id, String(event.value ?? '') || undefined)}
                         />
                         <InputField
-                            variant="select"
+                            variant="select" autoCap
                             label="Type"
                             disabled={disabled}
                             value={field.type}
@@ -107,7 +107,7 @@ function FieldProperties({ node, disabled }: { node: Extract<CanonicalInspectorN
                         />
                         {canEditVariant ? (
                             <InputField
-                                variant="select"
+                                variant="select" autoCap
                                 label="Input variant"
                                 disabled={disabled}
                                 value={field.variant ?? 'default'}
@@ -163,11 +163,12 @@ function FieldProperties({ node, disabled }: { node: Extract<CanonicalInspectorN
                         />
                     ) : choices.length ? (
                         <InputField
-                            variant="select"
+                            variant="select" autoCap
                             label="Default value"
                             disabled={disabled}
-                            value={selectedDefaults[0] ?? ''}
-                            options={[{ label: 'None', value: '' }, ...choices] as never}
+                            value={selectedDefaults[0] || undefined}
+                            placeholder="None"
+                            options={choices as never}
                             onChange={(event) =>
                                 canvas.editor?.set_field_default(node.id, (String(event.value ?? '') || undefined) as JsonValue | undefined)
                             }

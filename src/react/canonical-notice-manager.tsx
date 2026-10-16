@@ -152,7 +152,7 @@ export function CanonicalNoticeManager({ request, onClose }: { request: NoticeMa
             return `${notice.title} ${notice.kind} ${notice.severity} ${notice.id} ${target}`.toLowerCase().includes(query);
         });
     }, [notices, search]);
-    const nodeOptionsForKind = nodeOptions.filter((item) => item.kind === draft.targetNodeKind).map((item) => ({ label: item.label, value: item.value }));
+    const nodeOptionsForKind = nodeOptions.filter((item) => item.kind === draft.targetNodeKind && item.value !== '').map((item) => ({ label: item.label, value: item.value }));
 
     const save = () => {
         if (!canEdit || !canvas) return;
@@ -251,21 +251,21 @@ export function CanonicalNoticeManager({ request, onClose }: { request: NoticeMa
                         <InputField variant="text" label="ID" value={draft.id} onChange={(event) => set('id', String(event.value ?? ''))} />
                         <InputField variant="text" label="Marked At" value={draft.markedAt} placeholder="2026-03-18T12:00:00.000Z" onChange={(event) => set('markedAt', String(event.value ?? ''))} />
                         <p className="col-span-2 mt-1 text-[11px] font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">Classification</p>
-                        <InputField variant="select" label="Type" value={draft.type} options={[{ label: 'Private', value: 'private' }, { label: 'Public', value: 'public' }]} onChange={(event) => select('type', String(event.value ?? 'private'))} />
-                        <InputField variant="select" label="Kind" value={draft.kind} options={[{ label: 'Label', value: 'label' }, { label: 'Warning', value: 'warning' }, { label: 'Deprecation', value: 'deprecation' }, { label: 'Compat', value: 'compat' }, { label: 'Migration', value: 'migration' }, { label: 'Policy', value: 'policy' }]} onChange={(event) => select('kind', String(event.value ?? 'label'))} />
-                        <InputField variant="select" label="Severity" value={draft.severity} options={[{ label: 'Info', value: 'info' }, { label: 'Warning', value: 'warning' }, { label: 'Error', value: 'error' }]} onChange={(event) => select('severity', String(event.value ?? 'info'))} />
-                        <InputField variant="select" label="Target Scope" value={draft.targetScope} options={[{ label: 'Global', value: 'global' }, { label: 'Node', value: 'node' }]} onChange={(event) => {
+                        <InputField variant="select" autoCap label="Type" value={draft.type} options={[{ label: 'Private', value: 'private' }, { label: 'Public', value: 'public' }]} onChange={(event) => select('type', String(event.value ?? 'private'))} />
+                        <InputField variant="select" autoCap label="Kind" value={draft.kind} options={[{ label: 'Label', value: 'label' }, { label: 'Warning', value: 'warning' }, { label: 'Deprecation', value: 'deprecation' }, { label: 'Compat', value: 'compat' }, { label: 'Migration', value: 'migration' }, { label: 'Policy', value: 'policy' }]} onChange={(event) => select('kind', String(event.value ?? 'label'))} />
+                        <InputField variant="select" autoCap label="Severity" value={draft.severity} options={[{ label: 'Info', value: 'info' }, { label: 'Warning', value: 'warning' }, { label: 'Error', value: 'error' }]} onChange={(event) => select('severity', String(event.value ?? 'info'))} />
+                        <InputField variant="select" autoCap label="Target Scope" value={draft.targetScope} options={[{ label: 'Global', value: 'global' }, { label: 'Node', value: 'node' }]} onChange={(event) => {
                             const scope = event.value === 'node' ? 'node' : 'global';
                             setDraft((current) => ({ ...current, targetScope: scope, targetNodeId: scope === 'node' ? current.targetNodeId : '' }));
                         }} />
                         <p className="col-span-2 mt-1 text-[11px] font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">Content</p>
                         <div className="flex items-end"><button type="button" className="h-9 rounded-md border border-slate-200 px-2 text-xs text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900" onClick={useCurrentSelection}>Use current selection</button></div>
                         {draft.targetScope === 'node' ? <>
-                            <InputField variant="select" label="Target Node Kind" value={draft.targetNodeKind} options={[{ label: 'Tag', value: 'tag' }, { label: 'Field', value: 'field' }, { label: 'Option', value: 'option' }]} onChange={(event) => {
+                            <InputField variant="select" autoCap label="Target Node Kind" value={draft.targetNodeKind} options={[{ label: 'Tag', value: 'tag' }, { label: 'Field', value: 'field' }, { label: 'Option', value: 'option' }]} onChange={(event) => {
                                 const kind = event.value as NoticeNodeKind;
                                 setDraft((current) => ({ ...current, targetNodeKind: kind, targetNodeId: nodeOptions.find((item) => item.value === current.targetNodeId && item.kind === kind)?.value ?? '' }));
                             }} />
-                            <InputField variant="select" label="Target Node" value={draft.targetNodeId} options={nodeOptionsForKind} placeholder="Select target node" onChange={(event) => set('targetNodeId', String(event.value ?? ''))} />
+                        <InputField variant="select" autoCap label="Target Node" value={draft.targetNodeId || undefined} options={nodeOptionsForKind} placeholder="Select target node" onChange={(event) => set('targetNodeId', String(event.value ?? ''))} />
                         </> : null}
                         <div className="col-span-2"><InputField variant="text" label="Title" value={draft.title} onChange={(event) => set('title', String(event.value ?? ''))} /></div>
                         <div className="col-span-2"><InputField variant="textarea" label="Description" value={draft.description} onChange={(event) => set('description', String(event.value ?? ''))} /></div>

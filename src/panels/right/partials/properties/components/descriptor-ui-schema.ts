@@ -1,3 +1,5 @@
+import type { VariantKey } from '@timeax/form-palette';
+
 export interface DescriptorUiBase {
     type: string;
     label?: string;
@@ -7,15 +9,18 @@ export interface DescriptorUiBase {
 export interface DescriptorUiString extends DescriptorUiBase {
     type: 'string';
     enum?: string[];
+    variant?: VariantKey;
 }
 
 export interface DescriptorUiNumber extends DescriptorUiBase {
     type: 'number';
     minimum?: number;
+    variant?: VariantKey;
 }
 
 export interface DescriptorUiBoolean extends DescriptorUiBase {
     type: 'boolean';
+    variant?: VariantKey;
 }
 
 export interface DescriptorUiAnyOf extends DescriptorUiBase {

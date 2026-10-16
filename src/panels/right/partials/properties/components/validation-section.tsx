@@ -123,7 +123,7 @@ function TypedScalarEditor({
         <div className="space-y-3 rounded-lg border border-slate-200/80 p-3 dark:border-slate-800">
             <div className="grid gap-3 md:grid-cols-[160px_minmax(0,1fr)]">
                 <InputField
-                    variant="select"
+                    variant="select" autoCap
                     label={`${label} type`}
                     value={scalarType}
                     options={[
@@ -247,7 +247,7 @@ function ValidationRuleCard({
 
             <div className="grid gap-3 md:grid-cols-2">
                 <InputField
-                    variant="select"
+                    variant="select" autoCap
                     label="Operation"
                     value={rule.op}
                     options={opOptions}
@@ -261,7 +261,7 @@ function ValidationRuleCard({
                     }
                 />
                 <InputField
-                    variant="select"
+                    variant="select" autoCap
                     label="Value source"
                     value={valueBy}
                     options={valueByOptions}

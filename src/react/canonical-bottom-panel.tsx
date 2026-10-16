@@ -796,7 +796,7 @@ function CatalogContextPopover({
                                 />
                                 {rateContextSource === 'service' ? (
                                     <InputField
-                                        variant="select"
+                                        variant="select" autoCap
                                         label="Primary context service"
                                         options={services.map((service) => ({
                                             value: String(service.id),

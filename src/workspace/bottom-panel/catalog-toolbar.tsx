@@ -90,7 +90,7 @@ export function CatalogToolbar({
                 </IconButton>
             </div>
             <InputField
-                variant="treeselect"
+                variant="treeselect" autoCap
                 mode="button"
                 label="Catalog group selector"
                 className="w-fit!"

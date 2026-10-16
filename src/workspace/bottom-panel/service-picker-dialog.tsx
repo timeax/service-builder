@@ -140,7 +140,7 @@ export function ServicePickerDialog({
 
                             <FilterField label="Source">
                                 <InputField
-                                    variant="select"
+                                    variant="select" autoCap
                                     label="Source filter"
                                     value={filters.source}
                                     options={
@@ -160,9 +160,9 @@ export function ServicePickerDialog({
 
                             <FilterField label="Category">
                                 <InputField
-                                    variant="select"
+                                    variant="select" autoCap
                                     label="Category filter"
-                                    value={filters.category}
+                                    value={filters.category || undefined}
                                     placeholder="All categories"
                                     options={toPickerSelectOptions(categories)}
                                     onChange={(event) => setFilters((current) => ({ ...current, category: String(event.value ?? '') }))}
@@ -171,9 +171,9 @@ export function ServicePickerDialog({
 
                             <FilterField label="Flag">
                                 <InputField
-                                    variant="select"
+                                    variant="select" autoCap
                                     label="Flag filter"
-                                    value={filters.flag}
+                                    value={filters.flag || undefined}
                                     placeholder="Any flag"
                                     options={toPickerSelectOptions(flags)}
                                     onChange={(event) => setFilters((current) => ({ ...current, flag: String(event.value ?? '') }))}
@@ -182,7 +182,7 @@ export function ServicePickerDialog({
 
                             <FilterField label="Activity">
                                 <InputField
-                                    variant="select"
+                                    variant="select" autoCap
                                     label="Activity filter"
                                     value={filters.activity}
                                     options={
@@ -227,7 +227,7 @@ export function ServicePickerDialog({
                             <FilterField label="Name keyword">
                                 <div className="space-y-2">
                                     <InputField
-                                        variant="select"
+                                        variant="select" autoCap
                                         label="Keyword mode"
                                         value={filters.keywordMode}
                                         options={
@@ -256,9 +256,9 @@ export function ServicePickerDialog({
 
                             <FilterField label="Meta key">
                                     <InputField
-                                        variant="select"
+                                        variant="select" autoCap
                                         label="Meta key filter"
-                                    value={filters.metaPath}
+                                    value={filters.metaPath || undefined}
                                     placeholder="Any meta key"
                                     options={toPickerSelectOptions(metaPaths.map((entry) => entry.path))}
                                     onChange={(event) =>
@@ -273,10 +273,10 @@ export function ServicePickerDialog({
 
                             <FilterField label="Meta value">
                                 <InputField
-                                    variant="select"
+                                    variant="select" autoCap
                                     label="Meta value filter"
                                     disabled={!filters.metaPath}
-                                    value={filters.metaValue}
+                                    value={filters.metaValue || undefined}
                                     placeholder="Any value"
                                     options={toPickerSelectOptions(metaValues)}
                                     onChange={(event) => setFilters((current) => ({ ...current, metaValue: String(event.value ?? '') }))}
@@ -448,7 +448,7 @@ function FilterField({ label, children }: { label: string; children: React.React
 }
 
 function toPickerSelectOptions(values: string[]) {
-    return values.map((value) => ({
+    return values.filter((value) => value !== '').map((value) => ({
         label: value,
         value,
     }));

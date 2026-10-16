@@ -9,13 +9,14 @@ import {
 } from './descriptor-ui-renderers.tsx';
 
 vi.mock('@timeax/form-palette', () => ({
-    InputField: ({ variant, label, value, options, onChange, onBlur, placeholder, disabled, autoComplete }: any) => {
+    InputField: ({ variant, label, value, options, onChange, onBlur, placeholder, disabled, autoComplete, autoCap }: any) => {
         const ariaLabel = label ?? placeholder ?? 'input-field';
 
         if (variant === 'select') {
             return (
                 <select
                     aria-label={ariaLabel}
+                    data-auto-cap={autoCap ? 'true' : undefined}
                     value={value ?? ''}
                     disabled={disabled}
                     onBlur={onBlur}
@@ -48,7 +49,7 @@ vi.mock('@timeax/form-palette', () => ({
 
         if (variant === 'multi-select') {
             return (
-                <div aria-label={ariaLabel}>
+                <div aria-label={ariaLabel} data-auto-cap={autoCap ? 'true' : undefined}>
                     {(options ?? []).map((option: any) => (
                         <button
                             key={String(option.value)}
@@ -71,12 +72,17 @@ vi.mock('@timeax/form-palette', () => ({
         return (
             <input
                 aria-label={ariaLabel}
+                data-variant={variant}
                 value={value ?? ''}
                 placeholder={placeholder}
                 autoComplete={autoComplete}
                 disabled={disabled}
                 onBlur={onBlur}
-                onChange={(event) => onChange?.({ value: event.target.value })}
+                onChange={(event) => onChange?.({
+                    value: variant === 'date' && event.target.value
+                        ? new Date(`${event.target.value}T00:00:00.000Z`)
+                        : event.target.value,
+                })}
             />
         );
     },
@@ -141,6 +147,54 @@ describe('DescriptorSettings', () => {
         expect(screen.getByLabelText('Label')).toBeInTheDocument();
         expect(screen.getByLabelText('Text color')).toBeInTheDocument();
         expect(screen.getByLabelText('Background color')).toBeInTheDocument();
+        expect(readDefaults()).toEqual({});
+        fireEvent.change(screen.getByLabelText('Label'), { target: { value: 'Limited offer' } });
+        fireEvent.change(screen.getByLabelText('Text color'), { target: { value: '#ffffff' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+        expect(readDefaults()).toEqual({ tags: [{ label: 'Limited offer', color: '#ffffff' }] });
+    });
+
+    it('edits array items in a popup and keeps changes only after Save', () => {
+        const initialTags = [{ label: 'Existing tag', color: '#111111' }];
+        render(
+            <Harness
+                initialDefaults={{ tags: initialTags }}
+                schema={{ tags: { type: 'array', label: 'Tags', item: { type: 'object', fields: { label: { type: 'string', label: 'Label' }, color: { type: 'string', label: 'Color' } } } } }}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+        fireEvent.change(screen.getByLabelText('Label'), { target: { value: 'Canceled change' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+        expect(readDefaults()).toEqual({ tags: initialTags });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+        fireEvent.change(screen.getByLabelText('Label'), { target: { value: 'Saved change' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+        expect(readDefaults()).toEqual({ tags: [{ label: 'Saved change', color: '#111111' }] });
+    });
+
+    it('derives a label for an unlabeled nested string property', () => {
+        render(<Harness schema={{
+            tags: {
+                type: 'array',
+                label: 'Tags',
+                item: { type: 'object', fields: { label: { type: 'string' } } },
+            },
+        }} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Add item' }));
+
+        expect(screen.getByLabelText('Label')).toBeInTheDocument();
+    });
+
+    it('omits empty-string enum values from descriptor selects', () => {
+        render(<Harness schema={{ mode: { type: 'string', enum: ['', 'compact', 'comfortable'] } }} />);
+
+        const modeSelect = screen.getByLabelText('Mode');
+        const options = Array.from(modeSelect.querySelectorAll('option')).map((option) => option.value);
+        expect(options).toEqual(['compact', 'comfortable']);
+        expect(modeSelect).toHaveAttribute('data-auto-cap', 'true');
     });
 
     it('keeps internal event-like keys hidden while allowing normal label field keys', () => {
@@ -187,6 +241,26 @@ describe('DescriptorSettings', () => {
 
         fireEvent.change(screen.getByLabelText('Count'), { target: { value: 'nope' } });
         expect(readDefaults()).toEqual({});
+    });
+
+    it('uses a supported Form Palette variant while preserving the primitive value type', () => {
+        render(<Harness schema={{ accent: { type: 'string', variant: 'color', label: 'Accent', description: 'Accent color.' } }} />);
+
+        const input = screen.getByLabelText('Accent');
+        expect(input).toHaveAttribute('data-variant', 'color');
+        fireEvent.change(input, { target: { value: '#336699' } });
+
+        expect(readDefaults()).toEqual({ accent: '#336699' });
+    });
+
+    it('serializes a single date variant back to a JSON-safe string', () => {
+        render(<Harness schema={{ date: { type: 'string', variant: 'date', label: 'Date', description: 'Date value.' } }} />);
+
+        const input = screen.getByLabelText('Date');
+        expect(input).toHaveAttribute('data-variant', 'date');
+        fireEvent.change(input, { target: { value: '2026-04-10' } });
+
+        expect(readDefaults()).toEqual({ date: '2026-04-10T00:00:00.000Z' });
     });
 
     it('stores boolean toggle values', () => {
@@ -238,6 +312,7 @@ describe('DescriptorSettings', () => {
         );
 
         fireEvent.click(screen.getByRole('button', { name: 'SMS' }));
+        expect(screen.getByLabelText('Channels')).toHaveAttribute('data-auto-cap', 'true');
         expect(readDefaults()).toEqual({ channels: ['sms'] });
 
         fireEvent.click(screen.getByRole('button', { name: 'Clear Channels' }));
@@ -330,6 +405,7 @@ describe('DescriptorSettings', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Add item' }));
         fireEvent.click(screen.getByRole('button', { name: 'Set items.0' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }));
         expect(readDefaults()).toEqual({
             config: { icon: 'value:config.icon' },
             items: ['value:items.0'],
