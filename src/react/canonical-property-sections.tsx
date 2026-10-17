@@ -39,6 +39,7 @@ const selectedValues = (value: unknown): string[] => Array.isArray(value) ? valu
 const toValidationEditorRule = (rule: CanonicalValidationRule) => ({
     op: rule.op,
     ...(rule.value_by === undefined ? {} : { valueBy: rule.value_by }),
+    ...(rule.error_message_on === undefined ? {} : { errorMessageOn: rule.error_message_on }),
     ...(rule.value === undefined ? {} : { value: rule.value }),
     ...(rule.min === undefined ? {} : { min: rule.min }),
     ...(rule.max === undefined ? {} : { max: rule.max }),
@@ -53,6 +54,7 @@ const toValidationEditorRule = (rule: CanonicalValidationRule) => ({
 const fromValidationEditorRule = (rule: ReturnType<typeof toValidationEditorRule>): CanonicalValidationRule => {
     const base = {
         op: rule.op,
+        ...(rule.errorMessageOn === undefined ? {} : { error_message_on: rule.errorMessageOn }),
         ...(rule.value === undefined ? {} : { value: rule.value }),
         ...(rule.min === undefined ? {} : { min: rule.min }),
         ...(rule.max === undefined ? {} : { max: rule.max }),

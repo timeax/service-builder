@@ -230,6 +230,8 @@ describe('canonical properties', () => {
         await waitFor(() => expect(screen.getByLabelText('Current advanced properties')).toHaveTextContent('"op":"truthy"'));
         fireEvent.change(await screen.findByLabelText('Message'), { target: { value: 'Required for delivery' } });
         await waitFor(() => expect(screen.getByLabelText('Current advanced properties')).toHaveTextContent('Required for delivery'));
+        fireEvent.change(await screen.findByLabelText('Show message'), { target: { value: 'change' } });
+        await waitFor(() => expect(screen.getByLabelText('Current advanced properties')).toHaveTextContent('"error_message_on":"change"'));
         fireEvent.click(screen.getByRole('button', { name: 'Clear validation' }));
         await waitFor(() => expect(screen.getByLabelText('Current advanced properties')).toHaveTextContent('"validation":[]'));
 

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button.tsx';
 import { Section, SectionActionButton } from '@/panels/right/components/sections.tsx';
 import { InputField } from '@timeax/form-palette';
+import type { FieldValidationErrorMessageOn } from '@elqora/dgp-spec';
 import { BsPlus } from 'react-icons/bs';
 import { MdDeleteOutline } from 'react-icons/md';
 import { parseFiniteNumber } from './meta.ts';
@@ -10,6 +11,7 @@ type FieldValidationValueBy = 'value' | 'length' | 'eval';
 export type FieldValidationEditorRule = {
     op: FieldValidationOp;
     valueBy?: FieldValidationValueBy;
+    errorMessageOn?: FieldValidationErrorMessageOn;
     value?: string | number | boolean | null;
     min?: number;
     max?: number;
@@ -44,6 +46,11 @@ const valueByOptions: Array<{ label: string; value: FieldValidationValueBy }> = 
     { label: 'Value', value: 'value' },
     { label: 'Length', value: 'length' },
     { label: 'Eval', value: 'eval' },
+] as const;
+
+const errorMessageOnOptions: Array<{ label: string; value: FieldValidationErrorMessageOn }> = [
+    { label: 'After submit', value: 'submit' },
+    { label: 'After field changes', value: 'change' },
 ] as const;
 
 const singleValueOps = new Set<FieldValidationOp>(['eq', 'neq', 'gt', 'gte', 'lt', 'lte']);
@@ -83,6 +90,7 @@ const sanitizeRule = (rule: FieldValidationRule): FieldValidationRule => {
     };
 
     if (rule.valueBy && rule.valueBy !== 'value') next.valueBy = rule.valueBy;
+    if (rule.errorMessageOn) next.errorMessageOn = rule.errorMessageOn;
     if (typeof rule.message === 'string' && rule.message.trim()) next.message = rule.message;
     if (typeof rule.code === 'string' && rule.code.trim()) next.code = rule.code;
     if (rule.valueBy === 'eval') next.expressionBody = rule.expressionBody ?? '';
@@ -234,7 +242,7 @@ function ValidationRuleCard({
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <div className="text-xs font-medium tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">Rule {index + 1}</div>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Rules are evaluated in order, and the first failing rule provides the field message.</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Rules are evaluated in order, and all failing rules provide field messages.</p>
                 </div>
                 <SectionActionButton
                     icon={<MdDeleteOutline />}
@@ -286,6 +294,21 @@ function ValidationRuleCard({
                         sanitizeRule({
                             ...rule,
                             message: String(event.value ?? ''),
+                        }),
+                    )
+                }
+            />
+
+            <InputField
+                variant="select" autoCap
+                label="Show message"
+                value={rule.errorMessageOn ?? 'submit'}
+                options={errorMessageOnOptions}
+                onChange={(event) =>
+                    onChange(
+                        sanitizeRule({
+                            ...rule,
+                            errorMessageOn: String(event.value ?? 'submit') as FieldValidationErrorMessageOn,
                         }),
                     )
                 }
@@ -476,8 +499,8 @@ export default function ValidationRulesSection({
                     <div className="space-y-3 rounded-xl border border-dashed border-slate-200 p-4 dark:border-slate-800">
                         <p className="text-sm font-medium text-slate-900 dark:text-slate-100">No validation rules yet</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Add ordered rules to validate this field value, its length, or an eval-derived subject. The first failing rule supplies the
-                            field message.
+                            Add ordered rules to validate this field value, its length, or an eval-derived subject. All failing rules can show their
+                            messages when their configured timing is reached.
                         </p>
                         <Button type="button" variant="outline" size="sm" onClick={addRule}>
                             Add validation
