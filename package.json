@@ -36,11 +36,11 @@
     "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@elqora/dgp-core": "github:elqora/dgp-core#bf8e7f0b9eb96f400bb9a0a14addf960d760dd99",
-        "@elqora/dgp-ordering": "github:elqora/dgp-ordering#b35a567fa6bb84b965d1149c5aca2df90c1fb976",
-        "@elqora/dgp-ordering-form-palette": "github:elqora/dgp-ordering-form-palette#2a36efbad336e40fa30a7a87c0a5c39552d112ef",
-        "@elqora/dgp-spec": "github:elqora/dgp-spec#4f8b6387e3eb35de3d2b55c779a8a67cbc4223b",
+        "@elqora/dgp-ordering": "1.0.2-validation.0",
+        "@elqora/dgp-ordering-form-palette": "1.0.2-validation.0",
+        "@elqora/dgp-spec": "1.4.0",
         "@elqora/dgp-validation": "github:elqora/dgp-validation#666add59d2662e15f921742208baaf0e4ebc9b1f",
-        "@elqora/dgp-workspace": "github:elqora/dgp-workspace#184aa1fdfd4fa335eba32be750d35240c9c30cc7",
+        "@elqora/dgp-workspace": "1.0.2-validation.0",
         "@radix-ui/react-alert-dialog": "^1.1.15",
         "@radix-ui/react-avatar": "^1.1.11",
         "@radix-ui/react-collapsible": "^1.1.12",
@@ -102,5 +102,8 @@
         "typescript-eslint": "^8.57.2",
         "vite": "8.0.5",
         "vitest": "^3.2.4"
+    },
+    "overrides": {
+        "@elqora/dgp-spec": "1.4.0"
     }
 }
