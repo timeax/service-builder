@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@toast-ui/editor/dist/toastui-editor.css";
 
 @custom-variant dark (&:is(.dark *));
 @source "../node_modules/@timeax/form-palette/dist";
