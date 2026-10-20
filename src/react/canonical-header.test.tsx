@@ -4,11 +4,11 @@ import { MemoryWorkspaceBackend } from '@elqora/dgp-workspace';
 import { describe, expect, it, vi } from 'vitest';
 import { workspaceSeed } from '../../backend/canonical/seed';
 import { workspaceActor } from '../../backend/canonical/seed/meta';
-import { CanonicalHeader } from './canonical-header';
+import { CanonicalHeader, SERVICE_BUILDER_GUIDE_URL } from './canonical-header';
 import { ServiceBuilderProvider } from './workspace';
 
 describe('canonical service-builder header', () => {
-    it('copies one prompt containing the guide, current workspace data, and user instructions', async () => {
+    it('copies one prompt linking the guide and containing current workspace data and user instructions', async () => {
         const writeText = vi.fn().mockResolvedValue(undefined);
         Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
         render(<ServiceBuilderProvider backend={new MemoryWorkspaceBackend(workspaceSeed)} actor={workspaceActor}><CanonicalHeader /></ServiceBuilderProvider>);
@@ -21,7 +21,8 @@ describe('canonical service-builder header', () => {
         fireEvent.change(instructions, { target: { value: 'Create a birthday greeting service.' } });
         const preview = screen.getByText((_, element) => element?.tagName === 'PRE');
         const prompt = preview.textContent ?? '';
-        expect(prompt).toContain('# Service Builder AI generation guide');
+        expect(prompt).toContain(SERVICE_BUILDER_GUIDE_URL);
+        expect(prompt).not.toContain('interface ProductDefinition');
         expect(prompt).toContain('"handler_services":');
         expect(prompt).toContain('"current_definition":');
         expect(prompt).toContain('"current_catalog":');

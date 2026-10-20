@@ -14,7 +14,6 @@ export default defineConfig({
     sourcemap: true,
     esbuildOptions(options) {
         options.conditions = [...(options.conditions ?? []), 'style'];
-        options.loader = { ...(options.loader ?? {}), '.md': 'text' };
     },
     external: [
         'react',
