@@ -1,6 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import type { CommentMessage, CommentThread, ThreadId } from '@timeax/digital-service-engine/schema';
 import { InputField } from '@timeax/form-palette';
 import * as React from 'react';
 
@@ -97,8 +96,23 @@ export type YourIdentity = {
     avatar?: { src: string; alt?: string };
 };
 
+export type CommentMessageViewModel = {
+    id: string;
+    authorId?: string;
+    authorName?: string;
+    body: string;
+    createdAt: number;
+    isMain?: boolean;
+};
+
+export type CommentThreadViewModel = {
+    id: string;
+    resolved?: boolean;
+    messages: CommentMessageViewModel[];
+};
+
 export type CommentThreadProps = {
-    thread: CommentThread;
+    thread: CommentThreadViewModel;
 
     /** Used only for rendering author avatar/name (no layout changes) */
     identities?: IdentityMap;
@@ -112,7 +126,7 @@ export type CommentThreadProps = {
     /** formatting hook for timestamps; defaults to a tiny relative formatter */
     formatTime?: (ts: number) => string;
 
-    onReply?: (args: { threadId: ThreadId; text: string }) => void;
+    onReply?: (args: { threadId: string; text: string }) => void;
 };
 
 /** ---------------- Helpers ---------------- */
@@ -140,7 +154,7 @@ function defaultFormatTime(ts: number) {
     return `${d}d ago`;
 }
 
-function resolveAuthor(msg: CommentMessage, identities?: IdentityMap): { name: string; avatar?: { src: string; alt?: string } } {
+function resolveAuthor(msg: CommentMessageViewModel, identities?: IdentityMap): { name: string; avatar?: { src: string; alt?: string } } {
     const id = msg.authorId ?? '';
     const fromMap = id && identities ? identities[id] : undefined;
 
@@ -189,7 +203,7 @@ function ReplyInputRow({
                 placeholder="Add a reply..."
                 value={value}
                 onChange={(e) => setValue(e.value ?? '')}
-                onKeyDown={(e: any) => {
+                onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         onSubmit();
@@ -202,7 +216,7 @@ function ReplyInputRow({
 
 /** ---------------- Components ---------------- */
 
-export function CommentItem({ msg, identities, formatTime }: { msg: CommentMessage; identities?: IdentityMap; formatTime: (ts: number) => string }) {
+export function CommentItem({ msg, identities, formatTime }: { msg: CommentMessageViewModel; identities?: IdentityMap; formatTime: (ts: number) => string }) {
     const author = resolveAuthor(msg, identities);
 
     return (
@@ -229,6 +243,7 @@ export function CommentThreadView({ thread, identities, you, highlight, formatTi
     const isHighlighted = Boolean(highlight);
 
     const [value, setValue] = React.useState('');
+    const [open, setOpen] = useThreadOpenState(thread.id, true);
 
     const submit = () => {
         const text = value.trim();
@@ -238,9 +253,6 @@ export function CommentThreadView({ thread, identities, you, highlight, formatTi
     };
 
     if (!main) return null;
-
-    // ✅ persisted open state (key = thread.id)
-    const [open, setOpen] = useThreadOpenState(thread.id, true);
 
     return (
         <div

@@ -51,7 +51,7 @@ export function useSelection<T>({ rows, getNodeKey, selectionMode, controlledVal
 
     React.useEffect(() => {
         if (!controlled) return;
-        const v = controlledValue as any;
+        const v = controlledValue;
         setSelected(new Set<string>(v === undefined ? [] : Array.isArray(v) ? v.map(String) : [String(v)]));
     }, [controlled, controlledValue]);
 
@@ -168,9 +168,9 @@ export function useSelection<T>({ rows, getNodeKey, selectionMode, controlledVal
 
         const modifiers = {
             shift: e.shiftKey || undefined,
-            ctrl: (e as any).ctrlKey || undefined,
-            meta: (e as any).metaKey || undefined,
-            alt: (e as any).altKey || undefined,
+            ctrl: e.ctrlKey || undefined,
+            meta: e.metaKey || undefined,
+            alt: e.altKey || undefined,
         };
 
         const maxIdx = rows.length - 1;

@@ -9,5 +9,5 @@ export function toolbarSplitSurfaceClass(className?: string) {
 }
 
 export function toolbarIconButtonClass(active = false, className?: string) {
-    return cn('h-8 w-8', active && 'text-blue-600', className);
+    return cn('pointer-events-auto h-8 w-8', active && 'text-blue-600', className);
 }

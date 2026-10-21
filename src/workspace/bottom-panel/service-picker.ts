@@ -1,5 +1,20 @@
-import type { BuilderServiceSummary } from '@/builder/bottom-panel.ts';
-import type { DgpServiceCapability } from '@timeax/digital-service-engine/schema';
+export type ServicePickerSummary = {
+    id: string | number;
+    name: string;
+    category?: string;
+    rate?: number;
+    platformId?: string;
+    flags: string[];
+    attachmentCount?: number;
+    attachedNodeIds?: string[];
+    attachedNodeLabels?: string[];
+    active?: boolean;
+    min?: number;
+    max?: number;
+    estimate?: string | null;
+};
+
+export type ServicePickerCatalogService = { meta?: unknown };
 
 export type ServicePickerFilters = {
     source: 'parent' | 'all';
@@ -49,7 +64,7 @@ export function createDefaultServicePickerFilters(args: ServicePickerDefaultSour
     return { ...DEFAULT_FILTERS, source: resolveServicePickerSourceDefault(args) };
 }
 
-export function discoverServiceMetaPaths(services: DgpServiceCapability[]): ServiceMetaPath[] {
+export function discoverServiceMetaPaths(services: ServicePickerCatalogService[]): ServiceMetaPath[] {
     const valueMap = new Map<string, Set<string>>();
 
     for (const service of services) {
@@ -65,8 +80,8 @@ export function discoverServiceMetaPaths(services: DgpServiceCapability[]): Serv
 }
 
 export function filterServicePickerServices(args: {
-    services: BuilderServiceSummary[];
-    serviceMap: Record<string, DgpServiceCapability>;
+    services: ServicePickerSummary[];
+    serviceMap: Record<string, ServicePickerCatalogService>;
     filters: ServicePickerFilters;
     activeIds?: Set<string>;
     parentServiceIds?: Set<string>;
@@ -171,7 +186,7 @@ function parseNullableNumber(value: string) {
     return Number.isFinite(parsed) ? parsed : null;
 }
 
-function compareServices(a: BuilderServiceSummary, b: BuilderServiceSummary, query: string) {
+function compareServices(a: ServicePickerSummary, b: ServicePickerSummary, query: string) {
     const aMatch = query ? Number(a.name.toLowerCase().includes(query)) : 0;
     const bMatch = query ? Number(b.name.toLowerCase().includes(query)) : 0;
     return bMatch - aMatch || (a.category ?? '').localeCompare(b.category ?? '') || a.name.localeCompare(b.name);

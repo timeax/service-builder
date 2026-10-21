@@ -10,9 +10,9 @@ export function OnDroppableWrap(props: {
 }) {
     const { id, onNativeDrop, children, disabled } = props;
 
-    if (disabled) return <div>{children}</div>;
+    const { setNodeRef } = useDroppable({ id, disabled });
 
-    const { setNodeRef } = useDroppable({ id });
+    if (disabled) return <div>{children}</div>;
     return (
         <div
             ref={setNodeRef}

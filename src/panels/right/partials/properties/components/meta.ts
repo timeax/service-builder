@@ -1,4 +1,12 @@
-import type { QuantityRule } from '@timeax/digital-service-engine/schema';
+// SPDX-License-Identifier: GPL-3.0-only
+
+export interface QuantityRule {
+    valueBy: 'value' | 'length' | 'eval';
+    code?: string;
+    multiply?: number;
+    clamp?: { min?: number; max?: number };
+    fallback?: number;
+}
 
 export type NodeMeta = Record<string, unknown> | undefined;
 

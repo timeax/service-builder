@@ -5,6 +5,7 @@ import * as React from 'react';
 import { List } from 'react-window';
 
 import { flatten } from './flatten';
+import { removeNode as removeTreeNode } from './helpers';
 import { buildSearchSets, defaultMatch } from './search';
 import type { NodeKey, NodePath, SortTreeProps, SortTreeRef, TreeNode } from './types';
 import { defaultGetKey, locateByPath } from './utils';
@@ -76,7 +77,7 @@ function SortTreeInner<T = unknown>(props: SortTreeProps<T> & { cacheKey?: strin
     React.useEffect(() => setTree(data), [data]);
 
     /* expanded paths (IDB) -> view tree */
-    const { treeView, expandedSet, expandedSig, setExpandedAtPath, isExpanded } = useExpandedPathsCache<T>({
+    const { treeView, expandedSet, setExpandedAtPath, isExpanded } = useExpandedPathsCache<T>({
         data,
         tree,
         getNodeKey,
@@ -107,6 +108,40 @@ function SortTreeInner<T = unknown>(props: SortTreeProps<T> & { cacheKey?: strin
         [treeView, getNodeKey, autoExpandSearchResults, expandPaths, matchedPaths, defaultNodeIcon],
     );
 
+    const toggle = React.useCallback(
+        (path: NodePath, wantExpand?: boolean) => {
+            const located = locateByPath<T>(tree, path, getNodeKey);
+            const { changed, nextExpanded } = setExpandedAtPath(path, wantExpand);
+            if (!changed) return;
+
+            if (located) {
+                onChange(tree, {
+                    type: 'toggle',
+                    node: located.node,
+                    from: {
+                        parent: located.parent,
+                        parentPath: located.parentPath,
+                        index: located.index,
+                        depth: located.depth,
+                    },
+                    context: { expanded: nextExpanded },
+                    preventDefault() {},
+                });
+
+                // Lazy-load only when user expands AND content not yet loaded or was invalidated
+                if (nextExpanded) {
+                    const reLoc = locateByPath<T>(tree, path, getNodeKey);
+                    const lazyNode = reLoc?.node as (TreeNode<T> & { [LOADED]?: boolean; [INVALID]?: boolean }) | undefined;
+                    if (lazyNode) {
+                        normalizeLoader(lazyNode);
+                        if (!lazyNode[LOADED] || lazyNode[INVALID]) loadChildren(path);
+                    }
+                }
+            }
+        },
+        [tree, getNodeKey, setExpandedAtPath, onChange, normalizeLoader, loadChildren],
+    );
+
     /* selection */
     const onToggleAtRow = React.useCallback(
         (idx: number, wantExpand?: boolean) => {
@@ -119,7 +154,7 @@ function SortTreeInner<T = unknown>(props: SortTreeProps<T> & { cacheKey?: strin
             else if (wantExpand && !isExp) toggle(r.path, true);
             else if (!wantExpand && isExp) toggle(r.path, false);
         },
-        [rows, expandedSig, expandedSet],
+        [rows, expandedSet, toggle],
     );
 
     const { indexById, onRowPointerDown, onKeyDown, apiSelect, apiSelectMany, apiClear, isSelected, selected } = useSelection<T>({
@@ -132,7 +167,7 @@ function SortTreeInner<T = unknown>(props: SortTreeProps<T> & { cacheKey?: strin
             // richer selection context (range/toggle + modifiers)
             const context = { via, selection: meta };
 
-            onSelect?.(ids, context as any);
+            onSelect?.(ids, context);
 
             onChange(tree, {
                 type: 'selection',
@@ -175,37 +210,6 @@ function SortTreeInner<T = unknown>(props: SortTreeProps<T> & { cacheKey?: strin
         onChange,
         resolvePath: (t) => pathFromTarget(t),
     });
-
-    function toggle(path: NodePath, wantExpand?: boolean) {
-        const located = locateByPath<T>(tree, path, getNodeKey);
-        const { changed, nextExpanded } = setExpandedAtPath(path, wantExpand);
-        if (!changed) return;
-
-        if (located) {
-            onChange(tree, {
-                type: 'toggle',
-                node: located.node,
-                from: {
-                    parent: located.parent,
-                    parentPath: located.parentPath,
-                    index: located.index,
-                    depth: located.depth,
-                },
-                context: { expanded: nextExpanded },
-                preventDefault() {},
-            });
-
-            // Lazy-load only when user expands AND content not yet loaded or was invalidated
-            if (nextExpanded) {
-                const reLoc = locateByPath<T>(tree, path, getNodeKey);
-                const anyN: any = reLoc?.node;
-                if (anyN) {
-                    normalizeLoader(anyN);
-                    if (!anyN[LOADED] || anyN[INVALID]) loadChildren(path);
-                }
-            }
-        }
-    }
 
     /* dnd */
     const { sensors, collisionDetection, activePath, activeNode, handleDragStart, handleDragEnd, handleExternalDrop } = useTreeDnd<T>({
@@ -291,7 +295,7 @@ function SortTreeInner<T = unknown>(props: SortTreeProps<T> & { cacheKey?: strin
                     if (p) refreshOne(p);
                 }
                 // If expanded now, reload immediately
-                const p2 = pathFromTarget(target as any);
+                const p2 = pathFromTarget(target);
                 if (p2 && isExpanded(p2)) loadChildren(p2);
             },
             invalidate: (target) => {
@@ -303,9 +307,22 @@ function SortTreeInner<T = unknown>(props: SortTreeProps<T> & { cacheKey?: strin
                 }
             },
             remove(target: NodePath | NodeKey) {
-                console.log(target);
-                // left untouched here (still lives in original file if you want it extracted next)
-                // you can keep your existing remove logic as-is
+                const path = pathFromTarget(target);
+                if (!path) return;
+
+                const { tree: next, detail } = removeTreeNode(tree, path, getNodeKey);
+                if (!detail) return;
+
+                let prevented = false;
+                onChange(next, {
+                    ...detail,
+                    preventDefault() {
+                        prevented = true;
+                    },
+                    context: { via: 'api' },
+                });
+
+                if (!prevented) setTree(next);
             },
             getSelectionNodes: () => {
                 const out: Array<TreeNode<T>> = [];
@@ -346,6 +363,7 @@ function SortTreeInner<T = unknown>(props: SortTreeProps<T> & { cacheKey?: strin
             selected,
             tree,
             getNodeKey,
+            onChange,
             apiSelect,
             apiSelectMany,
             apiClear,
@@ -353,7 +371,6 @@ function SortTreeInner<T = unknown>(props: SortTreeProps<T> & { cacheKey?: strin
             cancelCreateUI,
             apiCreate,
             pathFromTarget,
-            expandedSig,
             isExpanded,
             toggle,
             refreshAll,
@@ -370,7 +387,7 @@ function SortTreeInner<T = unknown>(props: SortTreeProps<T> & { cacheKey?: strin
             <div className={className} style={style} tabIndex={0} onKeyDown={onKeyDown}>
                 {height ? (
                     <List
-                        rowComponent={RowVirtual as unknown as any}
+                        rowComponent={RowVirtual}
                         rowProps={{}}
                         rowCount={rows.length}
                         rowHeight={rowHeight}

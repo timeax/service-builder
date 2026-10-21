@@ -202,7 +202,7 @@ export function insertNodeAtPath<T>(
     const located = locateByPath(next, parentPath, getKey);
     if (!located) throw new Error('insertNodeAtPath: parent not found');
 
-    const parent = located.node as any;
+    const parent = located.node;
 
     // Ensure an array is present (do not call loaders here).
     const current = Array.isArray(parent.children) ? parent.children : [];

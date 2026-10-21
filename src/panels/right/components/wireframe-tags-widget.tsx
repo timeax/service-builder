@@ -1,4 +1,4 @@
-import type { Tag } from '@timeax/digital-service-engine';
+import type { ProductFilter } from '@elqora/dgp-spec';
 import { IoClose } from 'react-icons/io5';
 import type React from 'react';
 
@@ -35,9 +35,9 @@ function noticeToneClass(notice: TagNotice) {
 }
 
 type TagsWidgetProps = {
-    visibleTag: Tag | null;
-    parents: Tag[];
-    children: Tag[];
+    visibleTag: ProductFilter | null;
+    parents: ProductFilter[];
+    children: ProductFilter[];
     noticesByTagId: Map<string, TagNotice[]>;
     onSelect: (id: string) => void;
     onTagContextMenu?: (args: { id: string; event: React.MouseEvent }) => void;

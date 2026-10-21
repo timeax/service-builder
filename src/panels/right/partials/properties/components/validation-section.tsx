@@ -1,17 +1,28 @@
 import { Button } from '@/components/ui/button.tsx';
 import { Section, SectionActionButton } from '@/panels/right/components/sections.tsx';
-import type { FieldNode } from '@timeax/digital-service-engine/core';
-import type { FieldValidationOp, FieldValidationRule, FieldValidationValueBy } from '@timeax/digital-service-engine/schema';
-import { useCanvas } from '@timeax/digital-service-engine/workspace';
 import { InputField } from '@timeax/form-palette';
-import { useMemo } from 'react';
+import type { FieldValidationErrorMessageOn } from '@elqora/dgp-spec';
 import { BsPlus } from 'react-icons/bs';
 import { MdDeleteOutline } from 'react-icons/md';
 import { parseFiniteNumber } from './meta.ts';
 
-type ValidationSectionProps = {
-    node: FieldNode;
+type FieldValidationOp = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'between' | 'in' | 'nin' | 'truthy' | 'falsy' | 'match';
+type FieldValidationValueBy = 'value' | 'length' | 'eval';
+export type FieldValidationEditorRule = {
+    op: FieldValidationOp;
+    valueBy?: FieldValidationValueBy;
+    errorMessageOn?: FieldValidationErrorMessageOn;
+    value?: string | number | boolean | null;
+    min?: number;
+    max?: number;
+    values?: Array<string | number | boolean | null>;
+    pattern?: string;
+    flags?: string;
+    code?: string;
+    expressionBody?: string;
+    message?: string;
 };
+type FieldValidationRule = FieldValidationEditorRule;
 
 type ScalarType = 'string' | 'number' | 'boolean';
 type ScalarValue = string | number | boolean;
@@ -35,6 +46,11 @@ const valueByOptions: Array<{ label: string; value: FieldValidationValueBy }> = 
     { label: 'Value', value: 'value' },
     { label: 'Length', value: 'length' },
     { label: 'Eval', value: 'eval' },
+] as const;
+
+const errorMessageOnOptions: Array<{ label: string; value: FieldValidationErrorMessageOn }> = [
+    { label: 'After submit', value: 'submit' },
+    { label: 'After field changes', value: 'change' },
 ] as const;
 
 const singleValueOps = new Set<FieldValidationOp>(['eq', 'neq', 'gt', 'gte', 'lt', 'lte']);
@@ -74,8 +90,10 @@ const sanitizeRule = (rule: FieldValidationRule): FieldValidationRule => {
     };
 
     if (rule.valueBy && rule.valueBy !== 'value') next.valueBy = rule.valueBy;
+    if (rule.errorMessageOn) next.errorMessageOn = rule.errorMessageOn;
     if (typeof rule.message === 'string' && rule.message.trim()) next.message = rule.message;
-    if (rule.valueBy === 'eval' && typeof rule.code === 'string' && rule.code.trim()) next.code = rule.code;
+    if (typeof rule.code === 'string' && rule.code.trim()) next.code = rule.code;
+    if (rule.valueBy === 'eval') next.expressionBody = rule.expressionBody ?? '';
 
     if (singleValueOps.has(rule.op)) {
         next.value = rule.value ?? '';
@@ -113,14 +131,14 @@ function TypedScalarEditor({
         <div className="space-y-3 rounded-lg border border-slate-200/80 p-3 dark:border-slate-800">
             <div className="grid gap-3 md:grid-cols-[160px_minmax(0,1fr)]">
                 <InputField
-                    variant="select"
+                    variant="select" autoCap
                     label={`${label} type`}
                     value={scalarType}
                     options={[
                         { label: 'String', value: 'string' },
                         { label: 'Number', value: 'number' },
                         { label: 'Boolean', value: 'boolean' },
-                    ] as any}
+                    ]}
                     onChange={(event) => onChange(defaultScalarValue(String(event.value ?? 'string') as ScalarType))}
                 />
 
@@ -224,7 +242,7 @@ function ValidationRuleCard({
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <div className="text-xs font-medium tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">Rule {index + 1}</div>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Rules are evaluated in order, and the first failing rule provides the field message.</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Rules are evaluated in order, and all failing rules provide field messages.</p>
                 </div>
                 <SectionActionButton
                     icon={<MdDeleteOutline />}
@@ -237,10 +255,10 @@ function ValidationRuleCard({
 
             <div className="grid gap-3 md:grid-cols-2">
                 <InputField
-                    variant="select"
+                    variant="select" autoCap
                     label="Operation"
                     value={rule.op}
-                    options={opOptions as any}
+                    options={opOptions}
                     onChange={(event) =>
                         onChange(
                             sanitizeRule({
@@ -251,10 +269,10 @@ function ValidationRuleCard({
                     }
                 />
                 <InputField
-                    variant="select"
+                    variant="select" autoCap
                     label="Value source"
                     value={valueBy}
-                    options={valueByOptions as any}
+                    options={valueByOptions}
                     onChange={(event) =>
                         onChange(
                             sanitizeRule({
@@ -276,6 +294,21 @@ function ValidationRuleCard({
                         sanitizeRule({
                             ...rule,
                             message: String(event.value ?? ''),
+                        }),
+                    )
+                }
+            />
+
+            <InputField
+                variant="select" autoCap
+                label="Show message"
+                value={rule.errorMessageOn ?? 'submit'}
+                options={errorMessageOnOptions}
+                onChange={(event) =>
+                    onChange(
+                        sanitizeRule({
+                            ...rule,
+                            errorMessageOn: String(event.value ?? 'submit') as FieldValidationErrorMessageOn,
                         }),
                     )
                 }
@@ -380,13 +413,13 @@ function ValidationRuleCard({
                 <InputField
                     variant="textarea"
                     label="Eval code"
-                    value={rule.code ?? ''}
+                    value={rule.expressionBody ?? ''}
                     placeholder="return typeof value === 'string' ? value.length : 0;"
                     onChange={(event) =>
                         onChange(
                             sanitizeRule({
                                 ...rule,
-                                code: String(event.value ?? ''),
+                                expressionBody: String(event.value ?? ''),
                             }),
                         )
                     }
@@ -396,29 +429,23 @@ function ValidationRuleCard({
     );
 }
 
-export default function ValidationSection({ node }: ValidationSectionProps) {
-    const canvas = useCanvas();
-
-    const rules = useMemo(
-        () => canvas.api.editor.getFieldValidation?.(node.id) ?? node.raw.validation ?? [],
-        [canvas.api.editor, canvas.props, node.id, node.raw.validation],
-    );
-
-    const persistRules = (nextRules: FieldValidationRule[]) => {
-        if (!nextRules.length) {
-            canvas.api.editor.clearFieldValidation(node.id);
-            return;
-        }
-
-        canvas.api.editor.setFieldValidation(node.id, nextRules);
-    };
+export default function ValidationRulesSection({
+    rules,
+    onChange,
+    disabled = false,
+}: {
+    rules: FieldValidationRule[];
+    onChange: (rules: FieldValidationRule[]) => void;
+    disabled?: boolean;
+}) {
+    const persistRules = onChange;
 
     const addRule = () => {
         persistRules([...rules, createDefaultRule()]);
     };
 
     const clearRules = () => {
-        canvas.api.editor.clearFieldValidation(node.id);
+        persistRules([]);
     };
 
     const updateRuleAt = (index: number, nextRule: FieldValidationRule) => {
@@ -435,7 +462,7 @@ export default function ValidationSection({ node }: ValidationSectionProps) {
                 <Section.Title>Validation</Section.Title>
                 <Section.Actions>
                     {!rules.length ? (
-                        <SectionActionButton icon={<BsPlus />} iconOnly tooltip="Add validation" aria-label="Add validation" onClick={addRule} />
+                        <SectionActionButton disabled={disabled} icon={<BsPlus />} iconOnly tooltip="Add validation" aria-label="Add validation" onClick={addRule} />
                     ) : null}
                     {rules.length ? (
                         <SectionActionButton
@@ -443,6 +470,7 @@ export default function ValidationSection({ node }: ValidationSectionProps) {
                             iconOnly
                             tooltip="Clear validation"
                             aria-label="Clear validation"
+                            disabled={disabled}
                             onClick={clearRules}
                         />
                     ) : null}
@@ -450,6 +478,7 @@ export default function ValidationSection({ node }: ValidationSectionProps) {
             </Section.Header>
 
             <Section.Content>
+                <fieldset disabled={disabled} className="m-0 min-w-0 border-0 p-0">
                 {rules.length ? (
                     <div className="space-y-4">
                         {rules.map((rule, index) => (
@@ -470,14 +499,15 @@ export default function ValidationSection({ node }: ValidationSectionProps) {
                     <div className="space-y-3 rounded-xl border border-dashed border-slate-200 p-4 dark:border-slate-800">
                         <p className="text-sm font-medium text-slate-900 dark:text-slate-100">No validation rules yet</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Add ordered rules to validate this field value, its length, or an eval-derived subject. The first failing rule supplies the
-                            field message.
+                            Add ordered rules to validate this field value, its length, or an eval-derived subject. All failing rules can show their
+                            messages when their configured timing is reached.
                         </p>
                         <Button type="button" variant="outline" size="sm" onClick={addRule}>
                             Add validation
                         </Button>
                     </div>
                 )}
+                </fieldset>
             </Section.Content>
         </Section>
     );

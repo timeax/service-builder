@@ -1,17 +1,25 @@
 import { Button } from '@/components/ui/button.tsx';
-import type { Ui, UiArray, UiObject } from '@timeax/digital-service-engine/schema';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover.tsx';
 import { InputField } from '@timeax/form-palette';
 import { useMemo, useState } from 'react';
-import { useDescriptorUiRendererRegistry, type DescriptorUiSchema } from './descriptor-ui-renderers.tsx';
+import type {
+    DescriptorUiAnyOf,
+    DescriptorUiArray,
+    DescriptorUiNumber,
+    DescriptorUiObject,
+    DescriptorUiSchema,
+    DescriptorUiString,
+} from './descriptor-ui-schema.ts';
+import { useDescriptorUiRendererRegistry } from './descriptor-ui-renderers.tsx';
 
 type PathSegment = string | number;
 type Path = PathSegment[];
 type DescriptorUiSchemaMap = Record<string, DescriptorUiSchema>;
-type DescriptorUiObjectSchema = Omit<UiObject, 'fields' | 'shape'> & {
+type DescriptorUiObjectSchema = Omit<DescriptorUiObject, 'fields' | 'shape'> & {
     fields: DescriptorUiSchemaMap;
     shape?: DescriptorUiSchemaMap;
 };
-type DescriptorUiArraySchema = Omit<UiArray, 'item' | 'items' | 'shape'> & {
+type DescriptorUiArraySchema = Omit<DescriptorUiArray, 'item' | 'items' | 'shape'> & {
     item?: DescriptorUiSchema;
     items?: DescriptorUiSchema[];
     shape?: DescriptorUiSchemaMap;
@@ -48,13 +56,13 @@ const formatLabel = (value: string) =>
 const createDefaultValue = (schema: DescriptorUiSchema): unknown => {
     switch (schema.type) {
         case 'string':
-            return (schema as Extract<Ui, { type: 'string' }>).enum?.[0] ?? '';
+            return (schema as DescriptorUiString).enum?.[0] ?? '';
         case 'number':
-            return (schema as Extract<Ui, { type: 'number' }>).minimum ?? 0;
+            return (schema as DescriptorUiNumber).minimum ?? 0;
         case 'boolean':
             return false;
         case 'anyOf':
-            return (schema as Extract<Ui, { type: 'anyOf' }>).multiple ? [] : (schema as Extract<Ui, { type: 'anyOf' }>).items[0]?.value;
+            return (schema as DescriptorUiAnyOf).multiple ? [] : (schema as DescriptorUiAnyOf).items[0]?.value;
         case 'array':
             return [];
         case 'object':
@@ -185,7 +193,7 @@ const inferShapeKey = (shape: DescriptorUiSchemaMap | undefined, value: unknown)
             case 'object':
                 return isPlainObject(value);
             case 'anyOf':
-                return Array.isArray(value) === Boolean((schema as Extract<Ui, { type: 'anyOf' }>).multiple);
+                return Array.isArray(value) === Boolean((schema as DescriptorUiAnyOf).multiple);
             default:
                 return false;
         }
@@ -201,6 +209,7 @@ export const getDescriptorUiKeys = (schema?: DescriptorUiSchemaMap) => getDescri
 export interface DescriptorSettingsProps {
     schema: DescriptorUiSchemaMap;
     defaults: Record<string, unknown>;
+    inheritedDefaults?: Record<string, unknown>;
     onChange: (nextDefaults: Record<string, unknown> | undefined) => void;
 }
 
@@ -255,7 +264,7 @@ function DescriptorPrimitiveField({ schema, value, hasOverride, onSet, onClear, 
 
 function DescriptorObjectField({ schema, value, hasOverride, onSet, onClear, path, allowClear = true }: DescriptorObjectFieldProps) {
     const objectValue = asRecord(value);
-    const shapeEntries = useMemo(() => Object.entries(schema.shape ?? {}), [schema.shape]);
+    const shapeEntries = useMemo(() => Object.entries(schema.shape ?? {}).filter(([key]) => key !== ''), [schema.shape]);
     const [draftKey, setDraftKey] = useState('');
     const [draftShape, setDraftShape] = useState(shapeEntries[0]?.[0] ?? '');
     const [activeShapes, setActiveShapes] = useState<Record<string, string>>({});
@@ -353,10 +362,10 @@ function DescriptorObjectField({ schema, value, hasOverride, onSet, onClear, pat
                                     />
                                     {shapeEntries.length > 1 ? (
                                         <InputField
-                                            variant="select"
+                                            variant="select" autoCap
                                             label="Shape"
                                             value={shapeKey}
-                                            options={shapeEntries.map(([label]) => ({ label, value: label })) as any}
+                                            options={shapeEntries.map(([label]) => ({ label, value: label }))}
                                             onChange={(event) => {
                                                 const nextShape = String(event.value ?? '');
                                                 const nextSchema = schema.shape?.[nextShape];
@@ -414,10 +423,10 @@ function DescriptorObjectField({ schema, value, hasOverride, onSet, onClear, pat
                                 onChange={(event) => setDraftKey(String(event.value ?? ''))}
                             />
                             <InputField
-                                variant="select"
+                                variant="select" autoCap
                                 label="Shape"
                                 value={draftShape}
-                                options={shapeEntries.map(([label]) => ({ label, value: label })) as any}
+                                options={shapeEntries.map(([label]) => ({ label, value: label }))}
                                 onChange={(event) => setDraftShape(String(event.value ?? shapeEntries[0]?.[0] ?? ''))}
                             />
                             <div className="flex items-end">
@@ -435,9 +444,16 @@ function DescriptorObjectField({ schema, value, hasOverride, onSet, onClear, pat
 
 function DescriptorArrayField({ schema, value, hasOverride, onSet, onClear, path, allowClear = true }: DescriptorArrayFieldProps) {
     const arrayValue = asArray(value);
-    const shapeEntries = useMemo(() => Object.entries(schema.shape ?? {}), [schema.shape]);
+    const shapeEntries = useMemo(() => Object.entries(schema.shape ?? {}).filter(([key]) => key !== ''), [schema.shape]);
+    const displayItems = schema.items
+        ? schema.items.map((itemSchema, index) => index < arrayValue.length ? arrayValue[index] : createDefaultValue(itemSchema))
+        : arrayValue;
     const [draftShape, setDraftShape] = useState(shapeEntries[0]?.[0] ?? '');
     const [activeShapes, setActiveShapes] = useState<Record<number, string>>({});
+    const [editorOpen, setEditorOpen] = useState(false);
+    const [editingIndex, setEditingIndex] = useState<number | 'new'>('new');
+    const [draftValue, setDraftValue] = useState<unknown>();
+    const [editorShape, setEditorShape] = useState('');
 
     const commitArray = (nextArray: unknown[]) => {
         if (!nextArray.length) {
@@ -448,21 +464,90 @@ function DescriptorArrayField({ schema, value, hasOverride, onSet, onClear, path
         onSet(path, nextArray);
     };
 
-    const appendItem = () => {
-        if (schema.maxItems !== undefined && arrayValue.length >= schema.maxItems) return;
+    const getItemSchema = (index: number | 'new', item?: unknown, shapeKey = '') => {
+        if (index !== 'new' && schema.items?.[index]) return schema.items[index];
+        if (schema.item) return schema.item;
+        const resolvedShape = shapeKey || (index !== 'new' ? activeShapes[index] ?? inferShapeKey(schema.shape, item) : undefined);
+        return (resolvedShape ? schema.shape?.[resolvedShape] : undefined) ?? shapeEntries[0]?.[1];
+    };
 
-        const nextSchema = schema.item ?? (draftShape ? schema.shape?.[draftShape] : undefined) ?? shapeEntries[0]?.[1];
+    const startAdd = () => {
+        if (schema.maxItems !== undefined && arrayValue.length >= schema.maxItems) return;
+        const nextShape = draftShape || shapeEntries[0]?.[0] || '';
+        const nextSchema = getItemSchema('new', undefined, nextShape);
         if (!nextSchema) return;
 
-        const nextIndex = arrayValue.length;
-        commitArray([...arrayValue, createDefaultValue(nextSchema)]);
+        setEditingIndex('new');
+        setEditorShape(nextShape);
+        setDraftValue(createDefaultValue(nextSchema));
+        setEditorOpen(true);
+    };
 
-        if (!schema.item && draftShape) {
-            setActiveShapes((current) => ({ ...current, [nextIndex]: draftShape }));
+    const startEdit = (index: number, item: unknown) => {
+        const shapeKey = activeShapes[index] ?? inferShapeKey(schema.shape, item) ?? shapeEntries[0]?.[0] ?? '';
+        const itemSchema = getItemSchema(index, item, shapeKey);
+        if (!itemSchema) return;
+
+        setEditingIndex(index);
+        setEditorShape(shapeKey);
+        setDraftValue(cloneValue(item));
+        setEditorOpen(true);
+    };
+
+    const updateEditorShape = (shapeKey: string) => {
+        const nextSchema = getItemSchema(editingIndex, draftValue, shapeKey);
+        if (!nextSchema) return;
+        setEditorShape(shapeKey);
+        setDraftValue(createDefaultValue(nextSchema));
+    };
+
+    const closeEditor = () => {
+        setEditorOpen(false);
+        setDraftValue(undefined);
+        setEditingIndex('new');
+    };
+
+    const saveEditor = () => {
+        if (editingIndex === 'new') {
+            const nextIndex = arrayValue.length;
+            commitArray([...arrayValue, cloneValue(draftValue)]);
+            if (!schema.item && !schema.items && editorShape) {
+                setActiveShapes((current) => ({ ...current, [nextIndex]: editorShape }));
+            }
+        } else {
+            const nextArray = schema.items
+                ? schema.items.map((itemSchema, index) => index === editingIndex ? cloneValue(draftValue) : arrayValue[index] ?? createDefaultValue(itemSchema))
+                : arrayValue.slice();
+            if (!schema.items) nextArray[editingIndex] = cloneValue(draftValue);
+            commitArray(nextArray);
+            if (!schema.item && !schema.items && editorShape) {
+                setActiveShapes((current) => ({ ...current, [editingIndex]: editorShape }));
+            }
         }
+
+        if (editorShape) setDraftShape(editorShape);
+        closeEditor();
+    };
+
+    const editorSchema = getItemSchema(editingIndex, draftValue, editorShape);
+    const editorPath = [...path, editingIndex === 'new' ? arrayValue.length : editingIndex];
+    const editorTitle = editingIndex === 'new'
+        ? `Add ${formatLabel(schema.label).toLowerCase()} item`
+        : `Edit ${formatLabel(schema.label).toLowerCase()} item ${editingIndex + 1}`;
+
+    const summarizeItem = (item: unknown, index: number) => {
+        if (typeof item === 'string' || typeof item === 'number') return String(item) || `${formatLabel(schema.label)} ${index + 1}`;
+        if (isPlainObject(item)) {
+            const labelValue = item.label ?? item.name ?? item.value;
+            if (typeof labelValue === 'string' || typeof labelValue === 'number') {
+                return String(labelValue) || `${formatLabel(schema.label)} ${index + 1}`;
+            }
+        }
+        return `${formatLabel(schema.label)} ${index + 1}`;
     };
 
     return (
+        <Popover open={editorOpen} onOpenChange={(nextOpen) => { if (!nextOpen) closeEditor(); }}>
         <div className="rounded-xl border border-slate-200/80 p-3 dark:border-slate-800">
             <div className="space-y-2">
                 <div className="flex items-start justify-between gap-3">
@@ -477,117 +562,80 @@ function DescriptorArrayField({ schema, value, hasOverride, onSet, onClear, path
                     ) : null}
                 </div>
 
-                <div className="space-y-4">
-                    {schema.items
-                        ? schema.items.map((childSchema, index) => (
-                              <DescriptorNodeField
-                                  key={`${path.join('.')}:${index}`}
-                                  path={[...path, index]}
-                                  schema={childSchema}
-                                  value={arrayValue[index]}
-                                  hasOverride={index < arrayValue.length}
-                                  onSet={onSet}
-                                  onClear={onClear}
-                                  allowClear={false}
-                              />
-                          ))
-                        : arrayValue.map((item, index) => {
-                              const shapeKey = activeShapes[index] ?? inferShapeKey(schema.shape, item);
-                              const itemSchema = schema.item ?? (shapeKey ? schema.shape?.[shapeKey] : undefined) ?? shapeEntries[0]?.[1];
-
-                              if (!itemSchema) return null;
-
-                              return (
-                                  <div
-                                      key={`${path.join('.')}:${index}`}
-                                      className="space-y-3 rounded-lg border border-dashed border-slate-200 p-3 dark:border-slate-700"
-                                  >
-                                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
-                                          <div className="flex items-end text-xs text-slate-500 dark:text-slate-400">
-                                              {formatLabel(schema.label)} item {index + 1}
-                                          </div>
-                                          {!schema.item && shapeEntries.length > 1 ? (
-                                              <InputField
-                                                  variant="select"
-                                                  label="Shape"
-                                                  value={shapeKey}
-                                                  options={shapeEntries.map(([label]) => ({ label, value: label })) as any}
-                                                  onChange={(event) => {
-                                                      const nextShape = String(event.value ?? '');
-                                                      const nextSchema = schema.shape?.[nextShape];
-                                                      if (!nextSchema) return;
-
-                                                      setActiveShapes((current) => ({ ...current, [index]: nextShape }));
-                                                      const nextArray = arrayValue.slice();
-                                                      nextArray[index] = createDefaultValue(nextSchema);
-                                                      commitArray(nextArray);
-                                                  }}
-                                              />
-                                          ) : (
-                                              <div />
-                                          )}
-                                          <div className="flex items-end">
-                                              <Button
-                                                  type="button"
-                                                  variant="outline"
-                                                  size="sm"
-                                                  className="w-full"
-                                                  disabled={schema.minItems !== undefined && arrayValue.length <= schema.minItems}
-                                                  onClick={() => {
-                                                      const nextArray = arrayValue.slice();
-                                                      nextArray.splice(index, 1);
-                                                      commitArray(nextArray);
-                                                  }}
-                                              >
-                                                  Remove
-                                              </Button>
-                                          </div>
-                                      </div>
-
-                                      <DescriptorNodeField
-                                          path={[...path, index]}
-                                          schema={itemSchema}
-                                          value={item}
-                                          hasOverride
-                                          onSet={onSet}
-                                          onClear={onClear}
-                                          allowClear={false}
-                                      />
-                                  </div>
-                              );
-                          })}
-
-                    {!schema.items && (schema.editable ?? true) ? (
-                        <div className="grid gap-3 rounded-lg border border-dashed border-slate-200 p-3 md:grid-cols-[minmax(0,1fr)_180px_auto] dark:border-slate-700">
-                            <div className="flex items-end text-xs text-slate-500 dark:text-slate-400">Add another {schema.label.toLowerCase()}</div>
-                            {!schema.item && shapeEntries.length > 1 ? (
-                                <InputField
-                                    variant="select"
-                                    label="Shape"
-                                    value={draftShape}
-                                    options={shapeEntries.map(([label]) => ({ label, value: label })) as any}
-                                    onChange={(event) => setDraftShape(String(event.value ?? shapeEntries[0]?.[0] ?? ''))}
-                                />
-                            ) : (
-                                <div />
-                            )}
-                            <div className="flex items-end">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    className="w-full"
-                                    disabled={schema.maxItems !== undefined && arrayValue.length >= schema.maxItems}
-                                    onClick={appendItem}
-                                >
-                                    Add item
-                                </Button>
+                <PopoverAnchor asChild>
+                    <div className="space-y-2">
+                        {displayItems.map((item, index) => (
+                            <div key={`${path.join('.')}:${index}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200/80 px-3 py-2 dark:border-slate-700">
+                                <div className="min-w-0">
+                                    <div className="text-xs text-slate-500 dark:text-slate-400">{formatLabel(schema.label)} item {index + 1}</div>
+                                    <div className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{summarizeItem(item, index)}</div>
+                                </div>
+                                <div className="flex shrink-0 gap-2">
+                                    <Button type="button" variant="outline" size="sm" onClick={() => startEdit(index, item)}>Edit</Button>
+                                    {!schema.items ? (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            disabled={schema.minItems !== undefined && arrayValue.length <= schema.minItems}
+                                            onClick={() => {
+                                                const nextArray = arrayValue.slice();
+                                                nextArray.splice(index, 1);
+                                                commitArray(nextArray);
+                                            }}
+                                        >
+                                            Remove
+                                        </Button>
+                                    ) : null}
+                                </div>
                             </div>
-                        </div>
-                    ) : null}
-                </div>
+                        ))}
+                        {!arrayValue.length ? <p className="text-xs text-slate-500 dark:text-slate-400">No items yet.</p> : null}
+                        {!schema.items && (schema.editable ?? true) ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={schema.maxItems !== undefined && arrayValue.length >= schema.maxItems}
+                                onClick={startAdd}
+                            >
+                                Add item
+                            </Button>
+                        ) : null}
+                    </div>
+                </PopoverAnchor>
             </div>
         </div>
+        <PopoverContent align="start" side="bottom" className="max-h-[min(70vh,36rem)] w-[min(28rem,calc(100vw-2rem))] overflow-y-auto">
+            <div className="space-y-4">
+                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{editorTitle}</div>
+                {!schema.item && !schema.items && shapeEntries.length > 1 ? (
+                    <InputField
+                        variant="select" autoCap
+                        label="Shape"
+                        value={editorShape || undefined}
+                        options={shapeEntries.map(([label]) => ({ label, value: label }))}
+                        onChange={(event) => updateEditorShape(String(event.value ?? ''))}
+                    />
+                ) : null}
+                {editorSchema ? (
+                    <DescriptorNodeField
+                        path={editorPath}
+                        schema={editorSchema}
+                        value={draftValue}
+                        hasOverride={editingIndex !== 'new'}
+                        onSet={(nextPath, nextValue) => setDraftValue((current) => setAtPath(current, nextPath.slice(editorPath.length), nextValue))}
+                        onClear={(nextPath) => setDraftValue((current) => removeAtPath(current, nextPath.slice(editorPath.length)))}
+                        allowClear={false}
+                    />
+                ) : <p className="text-xs text-slate-500 dark:text-slate-400">Choose an item shape to continue.</p>}
+                <div className="flex justify-end gap-2">
+                    <Button type="button" variant="ghost" size="sm" onClick={closeEditor}>Cancel</Button>
+                    <Button type="button" size="sm" disabled={!editorSchema} onClick={saveEditor}>Save</Button>
+                </div>
+            </div>
+        </PopoverContent>
+        </Popover>
     );
 }
 
@@ -603,7 +651,7 @@ function DescriptorNodeField(props: DescriptorNodeProps) {
     return <DescriptorPrimitiveField {...props} />;
 }
 
-export function DescriptorSettings({ schema, defaults, onChange }: DescriptorSettingsProps) {
+export function DescriptorSettings({ schema, defaults, inheritedDefaults = {}, onChange }: DescriptorSettingsProps) {
     const entries = useMemo(() => getDescriptorUiEntries(schema), [schema]);
 
     const handleSet = (path: Path, value: unknown) => {
@@ -629,7 +677,7 @@ export function DescriptorSettings({ schema, defaults, onChange }: DescriptorSet
                         key={key}
                         path={path}
                         schema={fieldSchema}
-                        value={getAtPath(defaults, path)}
+                        value={getAtPath(defaults, path) ?? getAtPath(inheritedDefaults, path)}
                         hasOverride={hasOwn(defaults, key)}
                         onSet={handleSet}
                         onClear={handleClear}

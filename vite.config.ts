@@ -14,12 +14,14 @@ export default defineConfig({
         preserveSymlinks: true,
         dedupe: ['react', 'react-dom'],
     },
-    optimizeDeps: {
-        exclude: ['@timeax/digital-service-engine'],
-    },
     test: {
         environment: 'jsdom',
         globals: true,
         setupFiles: './src/test/setup.ts',
+        server: {
+            deps: {
+                inline: ['@elqora/dgp-ordering-form-palette', '@timeax/form-palette'],
+            },
+        },
     },
 });

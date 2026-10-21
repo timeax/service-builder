@@ -1,12 +1,23 @@
 import { Button } from '@/components/ui/button.tsx';
-import type { Ui, UiAnyOf, UiBoolean, UiNumber, UiString } from '@timeax/digital-service-engine/schema';
-import { InputField } from '@timeax/form-palette';
+import { InputField, type VariantKey } from '@timeax/form-palette';
 import { createContext, useContext, type ReactNode } from 'react';
 import { parseFiniteNumber } from './meta.ts';
+import type {
+    DescriptorUiAnyOf,
+    DescriptorUiBoolean,
+    DescriptorUiNumber,
+    DescriptorUiSchema,
+    DescriptorUiString,
+} from './descriptor-ui-schema.ts';
 
 export type DescriptorUiRenderValue = unknown;
 
-export type DescriptorUiSchema = Ui | { type: string; label?: string; description?: string };
+export type { DescriptorUiSchema } from './descriptor-ui-schema.ts';
+
+const formatPropertyLabel = (name: string) =>
+    name
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .replace(/^./, (letter) => letter.toUpperCase());
 
 export type DescriptorUiRendererProps<TSchema extends DescriptorUiSchema = DescriptorUiSchema, TValue = unknown> = {
     name: string;
@@ -61,8 +72,6 @@ export function createDescriptorUiRendererRegistry(): DescriptorUiRendererRegist
     };
 }
 
-const toInputText = (value: unknown) => (value === undefined || value === null ? '' : String(value));
-
 export function FieldDescription({ description, canReset, onReset }: { description?: string; canReset?: boolean; onReset?: () => void }) {
     if (!description && !canReset) return null;
 
@@ -78,7 +87,8 @@ export function FieldDescription({ description, canReset, onReset }: { descripti
     );
 }
 
-export const renderStringUiProperty: DescriptorUiRenderer<UiString & { label: string; description: string }, string> = ({
+export const renderStringUiProperty: DescriptorUiRenderer<DescriptorUiString, string> = ({
+    name,
     schema,
     value,
     hasOverride,
@@ -87,34 +97,48 @@ export const renderStringUiProperty: DescriptorUiRenderer<UiString & { label: st
     onBlur,
     disabled,
 }) => {
-    const options = schema.enum?.map((item) => ({ label: item, value: item }));
+    const options = schema.enum?.filter((item) => item !== '').map((item) => ({ label: item, value: item }));
+    const variant = schema.variant ?? (options?.length ? 'select' : 'text');
+    const label = schema.label ?? (formatPropertyLabel(name) || 'Value');
+    const inputValue = variant === 'date' && typeof value === 'string'
+        ? Number.isNaN(new Date(value).getTime()) ? undefined : new Date(value)
+        : variant === 'select'
+          ? typeof value === 'string' && value !== '' ? value : undefined
+          : typeof value === 'string' ? value : '';
 
     return (
         <div className="space-y-2">
             <FieldDescription description={schema.description} canReset={hasOverride} onReset={onClear} />
             <InputField
-                variant={options?.length ? 'select' : 'text'}
-                label={schema.label}
-                value={typeof value === 'string' ? value : ''}
-                options={options as any}
-                placeholder={options?.length ? undefined : `Enter ${schema.label.toLowerCase()}`}
+                variant={variant as VariantKey}
+                autoCap={['select', 'multi-select', 'treeselect'].includes(variant)}
+                label={label}
+                value={inputValue as never}
+                options={variant === 'select' ? options : undefined}
+                placeholder={variant === 'text' && !options?.length ? `Enter ${label.toLowerCase()}` : undefined}
                 disabled={disabled}
                 onBlur={onBlur}
                 onChange={(event) => {
                     const nextValue = event.value;
+                    if (nextValue instanceof Date) {
+                        if (Number.isNaN(nextValue.getTime())) onClear();
+                        else onChange(nextValue.toISOString());
+                        return;
+                    }
                     if (typeof nextValue === 'string' && nextValue.trim() === '' && !options?.length) {
                         onClear();
                         return;
                     }
 
-                    onChange(nextValue as string);
+                    if (typeof nextValue === 'string') onChange(nextValue);
+                    else onClear();
                 }}
             />
         </div>
     );
 };
 
-export const renderNumberUiProperty: DescriptorUiRenderer<UiNumber & { label: string; description: string }, number> = ({
+export const renderNumberUiProperty: DescriptorUiRenderer<DescriptorUiNumber & { label: string; description: string }, number> = ({
     schema,
     value,
     hasOverride,
@@ -126,15 +150,17 @@ export const renderNumberUiProperty: DescriptorUiRenderer<UiNumber & { label: st
     <div className="space-y-2">
         <FieldDescription description={schema.description} canReset={hasOverride} onReset={onClear} />
         <InputField
-            variant="text"
+            variant={(schema.variant ?? 'number') as VariantKey}
+            autoCap={['select', 'multi-select', 'treeselect'].includes(schema.variant ?? '')}
             label={schema.label}
-            value={toInputText(value)}
+            value={typeof value === 'number' ? value : undefined}
+            min={schema.minimum}
             placeholder="Enter a number"
             disabled={disabled}
             onBlur={onBlur}
             onChange={(event) => {
-                const nextValue = parseFiniteNumber(event.value);
-                if (nextValue === undefined) {
+                const nextValue = typeof event.value === 'number' ? event.value : parseFiniteNumber(event.value);
+                if (nextValue === undefined || !Number.isFinite(nextValue)) {
                     onClear();
                     return;
                 }
@@ -145,7 +171,7 @@ export const renderNumberUiProperty: DescriptorUiRenderer<UiNumber & { label: st
     </div>
 );
 
-export const renderBooleanUiProperty: DescriptorUiRenderer<UiBoolean & { label: string; description: string }, boolean> = ({
+export const renderBooleanUiProperty: DescriptorUiRenderer<DescriptorUiBoolean & { label: string; description: string }, boolean> = ({
     schema,
     value,
     hasOverride,
@@ -157,17 +183,21 @@ export const renderBooleanUiProperty: DescriptorUiRenderer<UiBoolean & { label: 
     <div className="space-y-2">
         <FieldDescription description={schema.description} canReset={hasOverride} onReset={onClear} />
         <InputField
-            variant="toggle"
+            variant={(schema.variant ?? 'toggle') as VariantKey}
+            autoCap={['select', 'multi-select', 'treeselect'].includes(schema.variant ?? '')}
             label={schema.label}
             value={typeof value === 'boolean' ? value : false}
             disabled={disabled}
             onBlur={onBlur}
-            onChange={(event) => onChange(Boolean(event.value))}
+            onChange={(event) => {
+                if (typeof event.value === 'boolean') onChange(event.value);
+                else onClear();
+            }}
         />
     </div>
 );
 
-export const renderAnyOfUiProperty: DescriptorUiRenderer<UiAnyOf & { label: string; description: string }> = ({
+export const renderAnyOfUiProperty: DescriptorUiRenderer<DescriptorUiAnyOf & { label: string; description: string }> = ({
     schema,
     value,
     hasOverride,
@@ -176,35 +206,51 @@ export const renderAnyOfUiProperty: DescriptorUiRenderer<UiAnyOf & { label: stri
     onBlur,
     disabled,
 }) => {
-    const options = schema.items.map((item) => ({
-        label: item.title ?? String(item.value),
-        value: item.value,
-        description: item.description,
-    }));
+    const isSelectPrimitive = (item: unknown): item is string | number => typeof item === 'string' || typeof item === 'number';
+    const options = schema.items
+        .filter((item): item is typeof item & { value: string | number } => isSelectPrimitive(item.value) && item.value !== '')
+        .map((item) => ({
+            label: item.title ?? String(item.value),
+            value: item.value,
+            description: item.description,
+        }));
+    const multipleValue = Array.isArray(value) ? value.filter((item) => isSelectPrimitive(item) && item !== '') : [];
+    const singleValue = isSelectPrimitive(value) && value !== '' ? value : undefined;
+    const handleChange = (event: { value: unknown }) => {
+        const nextValue = event.value;
+
+        if (schema.multiple && (!Array.isArray(nextValue) || !nextValue.length)) {
+            onClear();
+            return;
+        }
+
+        onChange(nextValue);
+    };
 
     return (
         <div className="space-y-2">
             <FieldDescription description={schema.description} canReset={hasOverride} onReset={onClear} />
-            <InputField
-                variant={schema.multiple ? 'multi-select' : 'select'}
-                label={schema.label}
-                value={(schema.multiple ? (Array.isArray(value) ? value : []) : value) as any}
-                options={options as any}
-                disabled={disabled}
-                onBlur={onBlur}
-                onChange={(event) => {
-                    const nextValue = event.value;
-
-                    if (schema.multiple) {
-                        if (!Array.isArray(nextValue) || !nextValue.length) {
-                            onClear();
-                            return;
-                        }
-                    }
-
-                    onChange(nextValue);
-                }}
-            />
+            {schema.multiple ? (
+                <InputField
+                    variant="multi-select" autoCap
+                    label={schema.label}
+                    value={multipleValue}
+                    options={options}
+                    disabled={disabled}
+                    onBlur={onBlur}
+                    onChange={handleChange}
+                />
+            ) : (
+                <InputField
+                    variant="select" autoCap
+                    label={schema.label}
+                    value={singleValue}
+                    options={options}
+                    disabled={disabled}
+                    onBlur={onBlur}
+                    onChange={handleChange}
+                />
+            )}
         </div>
     );
 };

@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
-import type { UseErrorsReturn } from '@timeax/digital-service-engine/workspace';
 import { FiAlertCircle, FiEye, FiEyeOff, FiMessageSquare, FiSave, FiTerminal } from 'react-icons/fi';
 import { LuGitCommitHorizontal, LuHistory, LuImport, LuRedo2, LuUndo2 } from 'react-icons/lu';
 import { toolbarIconButtonClass, toolbarSplitSurfaceClass, toolbarSurfaceClass } from './toolbar/styles.ts';
@@ -25,6 +24,8 @@ export function AppToolbar({
     onSave,
     onPublish,
     onRelayout,
+    historyOpen = false,
+    onHistoryToggle,
     onImportProps,
     onImportCatalog,
     onToggleCommentPlacement,
@@ -38,7 +39,7 @@ export function AppToolbar({
     editDisabledReason?: string;
     publishDisabledReason?: string;
     commentDisabledReason?: string;
-    errors: UseErrorsReturn;
+    errors: { merged: { counts: { total: number } } };
     bottomPanelOpen: boolean;
     onConsoleToggle: () => void;
     canUndo: boolean;
@@ -53,6 +54,8 @@ export function AppToolbar({
     onSave: () => void | Promise<void>;
     onPublish: () => void | Promise<void>;
     onRelayout: () => void;
+    historyOpen?: boolean;
+    onHistoryToggle?: () => void;
     onImportProps: () => void;
     onImportCatalog: () => void;
     onToggleCommentPlacement: () => void;
@@ -116,7 +119,7 @@ export function AppToolbar({
                 <Button size="icon" variant="ghost" className={toolbarIconButtonClass()} title="Redo" onClick={onRedo} disabled={!canRedo}>
                     <LuRedo2 />
                 </Button>
-                <Button size="icon" variant="ghost" className={toolbarIconButtonClass()} title="Relayout (coming soon)" onClick={onRelayout}>
+                <Button size="icon" variant="ghost" className={toolbarIconButtonClass(historyOpen)} title={onHistoryToggle ? 'History' : 'Relayout (coming soon)'} onClick={onHistoryToggle ?? onRelayout}>
                     <LuHistory />
                 </Button>
                 <Button
@@ -147,7 +150,7 @@ export function AppToolbar({
                 >
                     <FiTerminal />
                     {errors.merged.counts.total > 0 ? (
-                        <span className="absolute top-1.5 right-1.5 inline-flex h-2.5 w-2.5 rounded-full bg-rose-500" />
+                        <span data-testid="console-diagnostic-badge" className="absolute top-1.5 right-1.5 inline-flex h-2.5 w-2.5 rounded-full bg-rose-500" />
                     ) : null}
                 </Button>
                 <Button

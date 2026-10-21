@@ -166,7 +166,9 @@ export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(function Panel
 
             try {
                 (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-            } catch {}
+            } catch {
+                // Pointer capture may be unavailable after the pointer leaves the document.
+            }
 
             const rect = el.getBoundingClientRect();
             setDragEdge(edge);
@@ -202,7 +204,9 @@ export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(function Panel
             if (!dragEdge) return;
             try {
                 (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-            } catch {}
+            } catch {
+                // The browser may already have released pointer capture.
+            }
             const rect = panelRef.current?.getBoundingClientRect();
             const finalWidth = size.width ?? rect?.width ?? 0;
             const finalHeight = size.height ?? rect?.height ?? 0;
@@ -340,10 +344,10 @@ export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(function Panel
                 ...offsetStyle,
                 ...edgeStrokeStyle,
                 // expose custom property for children
-                ['--panel-width' as any]: panelWidth,
+                '--panel-width': panelWidth,
                 touchAction: resizable ? 'none' : undefined,
                 cursor: resizable ? cursor : undefined,
-            }}
+            } as React.CSSProperties}
             onPointerMove={onPointerMove}
             onPointerLeave={onPointerLeave}
             onPointerDown={onPointerDown}
