@@ -20,7 +20,7 @@ export default defineConfig({
         setupFiles: './src/test/setup.ts',
         server: {
             deps: {
-                inline: ['@elqora/dgp-ordering-form-palette', '@timeax/form-palette', '@toast-ui/editor'],
+                inline: ['@elqora/dgp-ordering-form-palette', '@timeax/form-palette'],
             },
         },
     },

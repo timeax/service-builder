@@ -16,6 +16,7 @@ describe('canonical service-builder header', () => {
         expect(await screen.findByText(/Active branch -/)).toHaveTextContent('main');
         fireEvent.click(screen.getByTitle('Menu'));
         fireEvent.click(await screen.findByRole('button', { name: 'Prompts' }));
+        await waitFor(() => expect(screen.queryByRole('button', { name: 'Prompts' })).not.toBeInTheDocument());
         expect(await screen.findByRole('heading', { name: 'Prompts' })).toBeInTheDocument();
         const instructions = screen.getByRole('textbox', { name: 'Optional instructions' });
         fireEvent.change(instructions, { target: { value: 'Create a birthday greeting service.' } });

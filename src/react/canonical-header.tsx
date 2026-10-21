@@ -24,6 +24,14 @@ Return one JSON object with exactly three keys: "definition" containing a comple
 
 The definition must use canonical schema_version "1" and complete required fields. Bind services only to supplied handler service IDs. The catalog must use version 1 and only supplied service IDs. Preserve policy_rules unchanged unless the user explicitly asks to create or change policy rules; do not infer business policy from service names or rates. Use registered input types and properties described by the guide. Do not invent handler rates, capabilities, availability, quantity bounds, or metadata. Do not output legacy flags, estimates, aliases, compatibility fields, or a ServiceProps wrapper. Do not add explanations or Markdown fences.`;
 
+function runAfterPaint(callback: () => void) {
+    if (typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(() => window.setTimeout(callback, 0));
+    } else {
+        window.setTimeout(callback, 0);
+    }
+}
+
 export function buildCanonicalServicePrompt(context: unknown, userInstructions: string) {
     return `${CANONICAL_SERVICE_GENERATION_PROMPT}
 
@@ -36,7 +44,7 @@ ${userInstructions.trim() || 'Create a coherent service draft using the availabl
 </user_instructions>`;
 }
 
-function MenuRenderer({ items, runtime }: { items: ServiceBuilderMenuItem[]; runtime: ReturnType<typeof useWorkspaceRuntime> }) {
+function MenuRenderer({ items, runtime, onCommand }: { items: ServiceBuilderMenuItem[]; runtime: ReturnType<typeof useWorkspaceRuntime>; onCommand: (command: NonNullable<ServiceBuilderMenuItem['command']>) => void }) {
     const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
     return (
         <ul className="flex flex-col gap-1">
@@ -46,12 +54,12 @@ function MenuRenderer({ items, runtime }: { items: ServiceBuilderMenuItem[]; run
                 if (item.render) return <li key={index}>{item.render()}</li>;
                 return (
                     <li key={index} className="flex flex-col">
-                        <button type="button" onClick={() => { if (hasChildren) setOpenSubmenus((current) => ({ ...current, [item.name]: !current[item.name] })); else if (item.command) void item.command(runtime); }} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+                        <button type="button" onClick={() => { if (hasChildren) setOpenSubmenus((current) => ({ ...current, [item.name]: !current[item.name] })); else if (item.command) onCommand(item.command); }} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
                             {item.icon ? <span className="flex h-4 w-4 items-center justify-center text-slate-500">{item.icon}</span> : null}
                             <span className="flex-1 text-left">{item.name}</span>
                             {hasChildren ? <span className={`transition-transform ${isOpen ? 'rotate-90' : ''}`}><BsChevronRight className="h-3 w-3" /></span> : null}
                         </button>
-                        {hasChildren && isOpen ? <div className="mt-1 ml-4 border-l border-slate-200 pl-2 dark:border-slate-800"><MenuRenderer items={item.children!} runtime={runtime} /></div> : null}
+                        {hasChildren && isOpen ? <div className="mt-1 ml-4 border-l border-slate-200 pl-2 dark:border-slate-800"><MenuRenderer items={item.children!} runtime={runtime} onCommand={onCommand} /></div> : null}
                     </li>
                 );
             })}
@@ -68,6 +76,7 @@ export function CanonicalHeader({ menu = [] }: CanonicalHeaderProps) {
     const state = useWorkspaceSelector((current) => current);
     const boot = useMemo(() => createCanonicalBootModel(state, runtime), [runtime, state]);
     const currentBranch = state.branches.find((branch) => branch.id === state.current_branch_id);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isPromptsDialogOpen, setIsPromptsDialogOpen] = useState(false);
     const [userInstructions, setUserInstructions] = useState('');
     const [copyError, setCopyError] = useState<string | null>(null);
@@ -109,9 +118,9 @@ export function CanonicalHeader({ menu = [] }: CanonicalHeaderProps) {
                             <CanonicalDrafts trigger={<button type="button" className="inline-flex cursor-pointer items-center gap-1 rounded-md text-xs text-slate-500 transition hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"><span>Active branch - <b>{currentBranch?.name ?? 'Main branch'}</b></span><BsChevronDown /></button>} />
                         </div>
                     </div>
-                    <Popover>
+                    <Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                         <PopoverTrigger asChild><span><BuilderIconButton title="Menu"><MdMenuOpen /></BuilderIconButton></span></PopoverTrigger>
-                        <PopoverContent className="w-56 p-2" align="end"><MenuRenderer items={fullMenu} runtime={runtime} /></PopoverContent>
+                        {isMenuOpen ? <PopoverContent className="w-56 p-2" align="end"><MenuRenderer items={fullMenu} runtime={runtime} onCommand={(command) => { setIsMenuOpen(false); runAfterPaint(() => void command(runtime)); }} /></PopoverContent> : null}
                     </Popover>
                 </div>
             </div>
