@@ -170,18 +170,20 @@ function CanvasToolbar({
                     {relationButton('exclude', 'Exclude', Icons.exclude(relation === 'exclude'))}
                 </div>
                 <Popover>
-                    <PopoverTrigger asChild>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            aria-label="Canvas view"
-                            title="Canvas view"
-                            className={toolbarIconButtonClass()}
-                        >
-                            {Icons.visibilityMenu(false)}
-                        </Button>
-                    </PopoverTrigger>
+                    <div className={toolbarSurfaceClass()}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                aria-label="Canvas view"
+                                title="Canvas view"
+                                className={toolbarIconButtonClass()}
+                            >
+                                {Icons.visibilityMenu(false)}
+                            </Button>
+                        </PopoverTrigger>
+                    </div>
                     <PopoverContent align="start" className="w-52 space-y-1 p-2">
                         <button
                             type="button"

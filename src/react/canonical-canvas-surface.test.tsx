@@ -239,7 +239,12 @@ describe('canonical canvas surface', () => {
         await waitFor(() => expect(screen.getByRole('button', { name: 'Bind' })).toBeInTheDocument());
         expect(screen.getByRole('button', { name: 'Include' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Exclude' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Canvas view' })).toHaveClass('pointer-events-auto');
+        const canvasView = screen.getByRole('button', { name: 'Canvas view' });
+        expect(canvasView).toHaveClass('pointer-events-auto');
+        expect(canvasView.parentElement).toHaveClass('rounded-lg', 'border-slate-200', 'bg-white/95', 'shadow-md');
+        expect(canvasView.parentElement).not.toContainElement(screen.getByRole('button', { name: 'Bind' }));
+        canvasView.focus();
+        expect(canvasView).toHaveFocus();
         expect(screen.getByTitle('Toggle console')).toBeInTheDocument();
         expect(screen.getByTitle('Undo')).toBeInTheDocument();
         expect(screen.getByTitle('History')).toBeInTheDocument();
@@ -247,6 +252,8 @@ describe('canonical canvas surface', () => {
         expect(screen.getByText('Active tag: Platform')).toBeInTheDocument();
         expect(screen.getByText(/Instagram Followers \[Refill: 30D\]/)).toBeInTheDocument();
         expect(document.querySelectorAll('.react-flow__node').length).toBeGreaterThan(0);
+        fireEvent.click(canvasView);
+        expect(await screen.findByRole('button', { name: 'Grid On' })).toBeInTheDocument();
     });
 
     it('routes undo, redo, save, and publish toolbar actions through canonical Workspace', async () => {
