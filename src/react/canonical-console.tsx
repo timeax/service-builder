@@ -64,6 +64,16 @@ function diagnosticNodeIds(diagnostic: Diagnostic, definition: ProductDefinition
     return [...ids];
 }
 
+function diagnosticValueType(path: string, definition: ProductDefinition | null): string | null {
+    if (!definition || !path.startsWith('/')) return null;
+    let value: unknown = definition;
+    for (const segment of path.slice(1).split('/').map((part) => part.replaceAll('~1', '/').replaceAll('~0', '~'))) {
+        if (value === null || typeof value !== 'object' || !(segment in value)) return null;
+        value = (value as Record<string, unknown>)[segment];
+    }
+    return value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
+}
+
 function errorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
     if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') return error.message;
@@ -159,9 +169,11 @@ export function CanonicalConsole({ validation, notices, definition, selectedIds,
         </div>
         {subTab === 'validation' ? validationRows.length ? <div className="space-y-3">{validationRows.map((row, index) => {
             const ids = diagnosticNodeIds(row, definition);
+            const actualType = row.code === 'schema_invalid_type' ? diagnosticValueType(row.path, definition) : null;
             return <div key={`${row.code}:${row.path}:${index}`} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/90">
                 <div className="flex items-start gap-3"><div className="mt-0.5">{severityIcon(row.severity)}</div><div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2"><span className={severityBadge(row.severity)}>{row.code.replaceAll('_', ' ')}</span><span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{row.message}</span></div>
+                    <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">Location: <code className="break-all font-mono text-slate-700 dark:text-slate-300">{row.path || '/'}</code>{actualType ? <span> · Found {actualType}</span> : null}</div>
                     {ids.length ? <div className="mt-3 flex flex-wrap gap-2">{ids.map((id) => <button key={id} type="button" onClick={() => focusNode(id)} className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-900 dark:text-slate-300">{chip(id)}</button>)}</div> : null}
                 </div></div>
             </div>;

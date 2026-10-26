@@ -175,6 +175,24 @@ describe('canonical bottom panel', () => {
         expect(screen.getByText('Filter label Platform is duplicated.')).toBeInTheDocument();
     }, 15_000);
 
+    it('shows the exact schema path and actual value type for an invalid property', async () => {
+        const definition = structuredClone(workspaceSeed.definition);
+        definition.filters[1]!.meta = 'unexpected text' as never;
+        const backend = new MemoryWorkspaceBackend({ ...workspaceSeed, definition, persistence: undefined });
+        render(
+            <ServiceBuilderProvider backend={backend} actor={workspaceActor}>
+                <CanonicalFallbackProvider><Harness /></CanonicalFallbackProvider>
+            </ServiceBuilderProvider>,
+        );
+        await waitFor(() => expect(screen.getByLabelText('Bottom panel state')).toHaveTextContent('closed|console'));
+        fireEvent.keyDown(window, { key: 'j', ctrlKey: true });
+        expect(await screen.findByText('Schema must be object.')).toBeInTheDocument();
+        expect(screen.getByText('/filters/1/meta')).toBeInTheDocument();
+        expect(screen.getByText(/Found string/)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Instagram' }));
+        expect(screen.getByLabelText('Selected canvas node')).toHaveTextContent('filter:instagram');
+    }, 15_000);
+
     it('restores the legacy notice subtab, severity and active-node filters, and node focus', async () => {
         const definition = structuredClone(workspaceSeed.definition);
         definition.notices = [
