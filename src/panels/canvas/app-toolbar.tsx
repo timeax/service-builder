@@ -106,10 +106,10 @@ export function AppToolbar({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-44">
                         <DropdownMenuItem onClick={onImportProps} disabled={!canImport} title={!canImport ? editDisabledReason : undefined}>
-                            Import props
+                            Edit product JSON
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={onImportCatalog} disabled={!canImport} title={!canImport ? editDisabledReason : undefined}>
-                            Import catalog
+                            Edit catalog JSON
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

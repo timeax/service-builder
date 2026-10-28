@@ -45,10 +45,10 @@ describe('AppToolbar', () => {
         );
 
         expect(screen.getByLabelText('Import JSON')).toBeInTheDocument();
-        fireEvent.click(await screen.findByText('Import props'));
+        fireEvent.click(await screen.findByText('Edit product JSON'));
         expect(onImportProps).toHaveBeenCalledTimes(1);
 
-        fireEvent.click(await screen.findByText('Import catalog'));
+        fireEvent.click(await screen.findByText('Edit catalog JSON'));
         expect(onImportCatalog).toHaveBeenCalledTimes(1);
     });
 });

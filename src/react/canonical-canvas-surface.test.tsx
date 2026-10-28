@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { createSeedPersistence, definition, workspaceSeed } from '../../backend/canonical/seed';
 import { MAIN_BRANCH_ID, workspaceActor } from '../../backend/canonical/seed/meta';
 import { CanonicalCanvasSurface } from './canonical-canvas-surface';
+import { CanonicalImportJsonModal } from './canonical-import-json-modal';
 import { CanonicalNodeContextMenuProvider, useCanonicalNodeContextMenu } from './canonical-node-context-menu';
 import { DRAG_MIME_ASSET_BUILTIN, DRAG_MIME_ASSET_TEMPLATE, DRAG_MIME_SERVICE } from './drag-contracts';
 import { ServiceBuilderProvider, useCanvasAPI, useWorkspaceRuntime, useWorkspaceSelector } from './workspace';
@@ -27,9 +28,20 @@ function ValidationMutationProbe() {
     return <><button type="button" onClick={() => runtime.mutate((current) => ({ ...current, fields: current.fields.map((field) => field.id === 'field:quantity' ? { ...field, name: 'link' } : field) }))}>Create duplicate field name</button><output aria-label="Validation diagnostic count">{validation === null ? 'pending' : validation.protocol.diagnostics.length + validation.policyDiagnostics.length}</output></>;
 }
 
-function ImportProbe() {
-    const name = useWorkspaceSelector((state) => state.definition?.name);
-    return <output aria-label="Imported product name">{name}</output>;
+function ImportIntegrationProbe() {
+    const runtime = useWorkspaceRuntime();
+    const api = useCanvasAPI();
+    const currentDefinition = useWorkspaceSelector((state) => state.definition);
+    const [open, setOpen] = useState(false);
+    return <>
+        <button type="button" onClick={() => setOpen(true)}>Edit product JSON</button>
+        <button type="button" onClick={() => api?.editor.undo()}>Undo import</button>
+        <output aria-label="Imported product name">{currentDefinition?.name}</output>
+        <CanonicalImportJsonModal open={open} target="props" currentDefinition={currentDefinition} currentCatalog={api?.editor.get_catalog()} onClose={() => setOpen(false)} onImportProps={(next) => {
+            const result = runtime.replace(next);
+            if (result.ok === false) throw new Error(result.error.message);
+        }} onImportCatalog={(next) => api?.editor.set_catalog(next)} />
+    </>;
 }
 
 function ContextSelectionProbe() {
@@ -116,6 +128,8 @@ function templateTransfer(templateId: string) {
 }
 
 beforeAll(() => {
+    Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+    Range.prototype.getBoundingClientRect = () => new DOMRect();
     vi.stubGlobal('DOMMatrixReadOnly', class { m22 = 1; });
     vi.stubGlobal(
         'ResizeObserver',
@@ -220,17 +234,17 @@ describe('canonical canvas surface', () => {
         }
     });
 
-    it('opens the preserved import dialog and applies a canonical product as an undoable change', async () => {
-        render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}><ImportProbe /><CanonicalCanvasSurface /></ServiceBuilderProvider></div>);
+    it('applies a canonical product from the JSON editor as an undoable change', async () => {
+        render(<ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}><ImportIntegrationProbe /></ServiceBuilderProvider>);
         await waitFor(() => expect(screen.getByLabelText('Imported product name')).toHaveTextContent(definition.name));
-        fireEvent.keyDown(screen.getByRole('button', { name: 'Import JSON' }), { key: 'ArrowDown' });
-        fireEvent.click(await screen.findByText('Import props'));
-        const dialog = await screen.findByRole('dialog', { name: 'Import props JSON' });
-        expect(dialog).toBeInTheDocument();
-        fireEvent.change(screen.getByLabelText('JSON payload'), { target: { value: JSON.stringify({ ...definition, name: 'Imported product' }) } });
-        fireEvent.click(screen.getByRole('button', { name: 'Import props' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Edit product JSON' }));
+        expect(await screen.findByRole('dialog', { name: 'Product definition JSON' })).toBeInTheDocument();
+        const file = new File([JSON.stringify({ ...definition, name: 'Imported product' })], 'product.json', { type: 'application/json' });
+        fireEvent.change(screen.getByLabelText('Load JSON file'), { target: { files: [file] } });
+        await screen.findByText('Source: File upload');
+        fireEvent.click(await screen.findByRole('button', { name: 'Apply definition' }));
         await waitFor(() => expect(screen.getByLabelText('Imported product name')).toHaveTextContent('Imported product'));
-        fireEvent.click(screen.getByTitle('Undo'));
+        fireEvent.click(screen.getByRole('button', { name: 'Undo import' }));
         await waitFor(() => expect(screen.getByLabelText('Imported product name')).toHaveTextContent(definition.name));
     });
 

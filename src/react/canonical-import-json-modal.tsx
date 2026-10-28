@@ -1,20 +1,25 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert.tsx';
 import { Button } from '@/components/ui/button.tsx';
+import { createDialog, DialogProvider, useDialog } from '@/components/ui/dialog-manager';
 import { cn } from '@/lib/utils.ts';
+import { json } from '@codemirror/lang-json';
+import { EditorView } from '@codemirror/view';
 import type { ProductDefinition } from '@elqora/dgp-spec';
 import { isProductDefinition, validateProductDefinitionStructure } from '@elqora/dgp-validation';
 import type { ServiceCatalogState } from '@elqora/dgp-workspace';
+import CodeMirror from '@uiw/react-codemirror';
 import { useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { FiUpload, FiX } from 'react-icons/fi';
 
 export type ImportTarget = 'props' | 'catalog';
-type ImportSource = 'paste' | 'file';
+type ImportSource = 'current' | 'paste' | 'file';
 
 interface ImportJsonModalProps {
     open: boolean;
     target: ImportTarget | null;
+    currentDefinition?: ProductDefinition;
+    currentCatalog?: ServiceCatalogState;
     onClose(): void;
     onImportProps(definition: ProductDefinition): void | Promise<void>;
     onImportCatalog(catalog: ServiceCatalogState): void | Promise<void>;
@@ -28,35 +33,39 @@ type ParseState =
     | { status: 'error'; message: string }
     | { status: 'ready'; source: ImportSource; payload: ProductDefinition | ServiceCatalogState; summary: ImportSummary };
 
-export function CanonicalImportJsonModal({ open, target, onClose, onImportProps, onImportCatalog }: ImportJsonModalProps) {
-    const [rawInput, setRawInput] = useState('');
-    const [source, setSource] = useState<ImportSource>('paste');
+type DialogProps = Omit<ImportJsonModalProps, 'open' | 'onClose'>;
+const EMPTY_CATALOG: ServiceCatalogState = { version: 1, nodes: [], expanded_ids: [], pinned_node_ids: [], view_mode: 'all' };
+
+const ImportDialog = createDialog<DialogProps>('canonical-import-json', ({ props, hide }) => (
+    <ImportJsonContent {...props} onDismiss={() => hide(false)} />
+));
+
+export function CanonicalImportJsonModal({ open, target, currentDefinition, currentCatalog, onClose, onImportProps, onImportCatalog }: ImportJsonModalProps) {
+    return <DialogProvider><ImportJsonModalController open={open} target={target} currentDefinition={currentDefinition} currentCatalog={currentCatalog} onClose={onClose} onImportProps={onImportProps} onImportCatalog={onImportCatalog} /></DialogProvider>;
+}
+
+function ImportJsonModalController({ open, target, currentDefinition, currentCatalog, onClose, onImportProps, onImportCatalog }: ImportJsonModalProps) {
+    const dialog = useDialog();
+    useEffect(() => {
+        if (open && target) dialog.open(ImportDialog, { target, currentDefinition, currentCatalog, onImportProps, onImportCatalog });
+        else dialog.hide(ImportDialog);
+    // Opening captures the current snapshot; rerenders must preserve in-progress edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, target]);
+    return <ImportDialog target={target} currentDefinition={currentDefinition} currentCatalog={currentCatalog} onImportProps={onImportProps} onImportCatalog={onImportCatalog} onClose={onClose} title={target === 'props' ? 'Product definition JSON' : 'Catalog JSON'} headless className="h-[min(90vh,52rem)] w-[min(96vw,56rem)] max-w-none rounded-[28px] border-slate-200 bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-950" maxVh={90} />;
+}
+
+function ImportJsonContent({ target, currentDefinition, currentCatalog, onImportProps, onImportCatalog, onDismiss }: DialogProps & { onDismiss(): void }) {
+    const current = target === 'props' ? currentDefinition : currentCatalog ?? EMPTY_CATALOG;
+    const [rawInput, setRawInput] = useState(() => current ? JSON.stringify(current, null, 2) : '');
+    const [source, setSource] = useState<ImportSource>(current ? 'current' : 'paste');
     const [fileName, setFileName] = useState<string | null>(null);
     const [pending, setPending] = useState(false);
     const [applyError, setApplyError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (!open) {
-            setRawInput('');
-            setSource('paste');
-            setFileName(null);
-            setPending(false);
-            setApplyError(null);
-        }
-    }, [open, target]);
-
-    useEffect(() => {
-        if (!open) return;
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape' && !pending) onClose();
-        };
-        window.addEventListener('keydown', onKeyDown);
-        return () => window.removeEventListener('keydown', onKeyDown);
-    }, [onClose, open, pending]);
-
     const parseState = useMemo<ParseState>(() => {
         const trimmed = rawInput.trim();
-        if (!open || !target || !trimmed) return { status: 'idle' };
+        if (!target || !trimmed) return { status: 'idle' };
         let parsed: unknown;
         try {
             parsed = JSON.parse(trimmed);
@@ -88,13 +97,13 @@ export function CanonicalImportJsonModal({ open, target, onClose, onImportProps,
                 activeNodeId: parsed.active_node_id ?? null, viewMode: parsed.view_mode,
             },
         };
-    }, [open, rawInput, source, target]);
+    }, [rawInput, source, target]);
 
-    if (!open || !target || typeof document === 'undefined') return null;
-    const title = target === 'props' ? 'Import props JSON' : 'Import catalog JSON';
+    if (!target) return null;
+    const title = target === 'props' ? 'Product definition JSON' : 'Catalog JSON';
     const subtitle = target === 'props'
-        ? 'Paste a ProductDefinition JSON payload or load it from a local file.'
-        : 'Paste a ServiceCatalogState JSON payload or load it from a local file.';
+        ? 'Review or edit the current ProductDefinition, or load JSON from a local file.'
+        : 'Review or edit the current catalog, or load JSON from a local file.';
 
     const handleApply = async () => {
         if (parseState.status !== 'ready' || pending) return;
@@ -103,7 +112,7 @@ export function CanonicalImportJsonModal({ open, target, onClose, onImportProps,
         try {
             if (target === 'props') await onImportProps(parseState.payload as ProductDefinition);
             else await onImportCatalog(parseState.payload as ServiceCatalogState);
-            onClose();
+            onDismiss();
         } catch (error) {
             setApplyError(error instanceof Error ? error.message : 'Import failed.');
         } finally {
@@ -111,17 +120,13 @@ export function CanonicalImportJsonModal({ open, target, onClose, onImportProps,
         }
     };
 
-    return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !pending) onClose();
-        }}>
-            <div role="dialog" aria-modal="true" aria-label={title} className="flex h-[min(90vh,52rem)] w-[min(96vw,56rem)] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+    return <div className="flex h-full min-h-0 flex-col overflow-hidden">
                 <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-4 dark:border-slate-800">
                     <div className="min-w-0">
                         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
                         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
                     </div>
-                    <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={pending} className="h-9 rounded-xl px-2" aria-label="Close import dialog"><FiX /></Button>
+                    <Button type="button" variant="ghost" size="sm" onClick={onDismiss} disabled={pending} className="h-9 rounded-xl px-2" aria-label="Close JSON editor"><FiX /></Button>
                 </div>
                 <div className="min-h-0 flex-1 overflow-auto px-6 py-5">
                     <div className="grid gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(18rem,1fr)]">
@@ -150,13 +155,15 @@ export function CanonicalImportJsonModal({ open, target, onClose, onImportProps,
                                 <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">You can also paste JSON directly below.</p>
                             </section>
                             <section>
-                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="import-json-textarea">JSON payload</label>
-                                <textarea id="import-json-textarea" value={rawInput} onChange={(event) => {
-                                    setRawInput(event.target.value);
+                                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="import-json-editor">JSON payload</label>
+                                <div id="import-json-editor" className="min-h-[22rem] overflow-hidden rounded-2xl border border-slate-200 bg-white font-mono text-sm text-slate-900 shadow-sm focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+                                <CodeMirror value={rawInput} extensions={[json(), EditorView.contentAttributes.of({ 'aria-label': 'JSON payload' })]} height="22rem" onChange={(value) => {
+                                    setRawInput(value);
                                     setSource('paste');
                                     setFileName(null);
                                     setApplyError(null);
-                                }} placeholder={target === 'props' ? '{\n  "schema_version": "1.0.0",\n  "filters": [],\n  "fields": []\n}' : '{\n  "version": 1,\n  "nodes": []\n}'} spellCheck={false} className="min-h-[22rem] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-500/10" />
+                                }} basicSetup={{ lineNumbers: true, foldGutter: true }} className="[&_.cm-editor]:min-h-[22rem] [&_.cm-editor]:bg-transparent [&_.cm-content]:px-3 [&_.cm-content]:py-2 dark:[&_.cm-editor]:text-slate-100" />
+                                </div>
                             </section>
                         </div>
                         <aside className="space-y-4">
@@ -169,22 +176,20 @@ export function CanonicalImportJsonModal({ open, target, onClose, onImportProps,
                     </div>
                 </div>
                 <div className="flex items-center justify-between gap-3 border-t border-slate-200 px-6 py-4 dark:border-slate-800">
-                    <div className="text-xs text-slate-500 dark:text-slate-400">{parseState.status === 'ready' ? `Ready to import from ${parseState.source === 'file' ? fileName ?? 'file' : 'pasted JSON'}.` : 'Import will stay disabled until the JSON is valid.'}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{parseState.status === 'ready' ? `Ready to apply ${parseState.source === 'file' ? `from ${fileName ?? 'file'}` : parseState.source === 'current' ? 'the current JSON' : 'from edited JSON'}.` : 'Apply will stay disabled until the JSON is valid.'}</div>
                     <div className="flex items-center gap-2">
-                        <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>Cancel</Button>
-                        <Button type="button" onClick={() => void handleApply()} disabled={parseState.status !== 'ready' || pending}>{pending ? 'Importing...' : target === 'props' ? 'Import props' : 'Import catalog'}</Button>
+                        <Button type="button" variant="ghost" onClick={onDismiss} disabled={pending}>Cancel</Button>
+                        <Button type="button" onClick={() => void handleApply()} disabled={parseState.status !== 'ready' || pending}>{pending ? 'Applying...' : target === 'props' ? 'Apply definition' : 'Apply catalog'}</Button>
                     </div>
                 </div>
-            </div>
-        </div>, document.body,
-    );
+    </div>;
 }
 
 function PreviewContent({ parseState }: { parseState: ParseState }) {
-    if (parseState.status === 'idle') return <p className="text-sm text-slate-500 dark:text-slate-400">Paste JSON or load a file to preview what will be imported.</p>;
+    if (parseState.status === 'idle') return <p className="text-sm text-slate-500 dark:text-slate-400">Edit JSON or load a file to preview what will be applied.</p>;
     if (parseState.status === 'error') return <Alert variant="destructive"><AlertTitle>Validation error</AlertTitle><AlertDescription>{parseState.message}</AlertDescription></Alert>;
     return <div className="space-y-3">
-        <div className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600 dark:bg-slate-900 dark:text-slate-300">Source: {parseState.source === 'file' ? 'File upload' : 'Pasted JSON'}</div>
+        <div className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600 dark:bg-slate-900 dark:text-slate-300">Source: {parseState.source === 'file' ? 'File upload' : parseState.source === 'current' ? 'Current data' : 'Edited JSON'}</div>
         {parseState.summary.kind === 'props' ? <dl className="grid grid-cols-2 gap-3 text-sm">
             <Metric label="Name" value={parseState.summary.name || 'Unnamed'} className="col-span-2" />
             <Metric label="Tags" value={String(parseState.summary.tagCount)} />
@@ -197,7 +202,7 @@ function PreviewContent({ parseState }: { parseState: ParseState }) {
             <Metric label="Active node" value={parseState.summary.activeNodeId ?? 'None'} className="col-span-2" />
             <Metric label="View mode" value={parseState.summary.viewMode} className="col-span-2" />
         </dl>}
-        <p className="text-xs text-slate-500 dark:text-slate-400">Applying this will replace the current {parseState.summary.kind}{parseState.summary.kind === 'props' ? ' as a single undoable change.' : '.'}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">Applying this will replace the current {parseState.summary.kind === 'props' ? 'product definition as a single undoable change.' : 'catalog.'}</p>
     </div>;
 }
 

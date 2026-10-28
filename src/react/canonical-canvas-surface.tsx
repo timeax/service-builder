@@ -559,6 +559,8 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
             <CanonicalImportJsonModal
                 open={importTarget !== null}
                 target={importTarget}
+                currentDefinition={workspaceState.definition}
+                currentCatalog={api.editor.get_catalog()}
                 onClose={() => setImportTarget(null)}
                 onImportProps={(definition: ProductDefinition) => {
                     const result = runtime.replace(definition);
