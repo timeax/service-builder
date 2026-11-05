@@ -240,7 +240,7 @@ function ServiceSection({ node, disabled }: { node: Exclude<CanonicalInspectorNo
     const supported = node.kind !== 'field' || node.raw.button === true;
     const connected = services.find((service) => String(service.id) === String(serviceId));
     return (
-        <PropertySection title="Service" description="Bind this node to a handler-owned catalog service." actions={!disabled && supported ? <CanonicalServicePicker nodeId={node.id} /> : null}>
+        <PropertySection title="Service" description="Bind this node to a handler-owned catalog service." actions={!disabled && supported ? <CanonicalServicePicker nodeId={node.id} hasService={serviceId !== undefined && serviceId !== null} /> : null}>
             {supported ? (
                 connected ? <>
                     <IncludesItem title={connected.name} badge={<span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold tracking-[0.16em] text-slate-600 uppercase dark:bg-slate-800 dark:text-slate-300">#{String(connected.id)}</span>} actions={disabled ? undefined : [{ kind: 'remove', title: 'Clear service', onClick: () => canvas.editor?.set_service(node.id, undefined) }]} />

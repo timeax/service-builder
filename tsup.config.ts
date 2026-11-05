@@ -20,5 +20,7 @@ export default defineConfig({
         'react-dom',
         '@xyflow/react',
         '@timeax/form-palette',
+        /^@codemirror\//,
+        '@uiw/react-codemirror',
     ],
 });

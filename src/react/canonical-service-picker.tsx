@@ -7,7 +7,7 @@ import { filterHandlerServices } from '@elqora/dgp-core';
 import type { ServiceCatalogState } from '@elqora/dgp-workspace';
 import { InputField } from '@timeax/form-palette';
 import { useEffect, useMemo, useState } from 'react';
-import { BsPlus } from 'react-icons/bs';
+import { BsPencil, BsPlus } from 'react-icons/bs';
 import { FiFilter } from 'react-icons/fi';
 import { buildCanonicalServiceSummaries } from './bottom-panel-model';
 import { DEFAULT_CANONICAL_FALLBACK_POLICY } from './canonical-fallbacks';
@@ -17,7 +17,7 @@ import { useWorkspaceSelector } from './workspace';
 
 const UNGROUPED_CATALOG_VALUE = '__catalog_ungrouped__';
 
-export function CanonicalServicePicker({ nodeId }: { nodeId: string }) {
+export function CanonicalServicePicker({ nodeId, hasService = false }: { nodeId: string; hasService?: boolean }) {
     const canvas = useServiceBuilderCanvasModel();
     const services = useWorkspaceSelector((state) => state.services);
     const [catalog, setCatalog] = useState<ServiceCatalogState | undefined>(() => canvas.editor?.get_catalog());
@@ -96,7 +96,7 @@ export function CanonicalServicePicker({ nodeId }: { nodeId: string }) {
     return (
         <Popover open={open} onOpenChange={(next) => { setOpen(next); if (next) setError(null); }}>
             <PopoverTrigger asChild>
-                <SectionActionTriggerButton icon={<BsPlus />} aria-label="Add service">Add</SectionActionTriggerButton>
+                <SectionActionTriggerButton icon={hasService ? <BsPencil /> : <BsPlus />} aria-label={hasService ? 'Change service' : 'Add service'}>{hasService ? 'Change' : 'Add'}</SectionActionTriggerButton>
             </PopoverTrigger>
             <PopoverContent className="w-96">
                 <div className="flex flex-col gap-3">

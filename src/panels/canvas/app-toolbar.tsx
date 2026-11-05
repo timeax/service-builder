@@ -98,7 +98,7 @@ export function AppToolbar({
             </div>
 
             <div className={toolbarSurfaceClass()}>
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
                         <Button size="icon" variant="ghost" className={toolbarIconButtonClass()} title="Import JSON" aria-label="Import JSON">
                             <LuImport />

@@ -2,6 +2,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ChevronDown } from 'lucide-react';
 import { MdOutlineOpenInNew, MdOutlineRemoveCircleOutline } from 'react-icons/md';
 import { TiWarning } from 'react-icons/ti';
 
@@ -79,20 +80,23 @@ type SectionTitleProps = React.PropsWithChildren<{
  * Default: renders a button with "text-sm font-semibold ..."
  */
 function SectionTitle({ className, children }: SectionTitleProps) {
+    const { open } = useSectionCtx();
     return (
         <CollapsibleTrigger asChild>
             <button
                 type="button"
                 className={cn(
-                    'inline-flex min-w-0 items-center gap-2 text-left',
-                    // title style
-                    'text-sm font-semibold text-gray-800 dark:text-gray-200',
-                    // affordance (no padding)
-                    'hover:opacity-90',
+                    'inline-flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-sm font-semibold transition-colors',
+                    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+                    open
+                        ? 'bg-primary/10 text-primary hover:bg-primary/15'
+                        : 'bg-slate-100 text-gray-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-gray-200 dark:hover:bg-slate-700',
                     className,
                 )}
             >
+                <ChevronDown aria-hidden="true" className={cn('size-4 shrink-0 transition-transform', !open && '-rotate-90')} />
                 {children}
+                <span aria-hidden="true" className="ml-1 text-[10px] font-medium uppercase tracking-wide opacity-70">{open ? 'Open' : 'Closed'}</span>
             </button>
         </CollapsibleTrigger>
     );

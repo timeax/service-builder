@@ -168,6 +168,15 @@ function CanonicalWireframeBody({
     };
 
     return (
+        <FormPaletteOrderingProvider
+            session={session}
+            definition={definition}
+            registry={canonicalInputRegistry}
+            template_context={{
+                preview: previewResult.ok ? previewResult.preview : undefined,
+                preview_result: previewResult,
+            }}
+        >
         <div className="flex h-full min-h-0 w-full flex-1 flex-col">
             <ScrollArea className="min-h-0 flex-1" viewportClassName="[&>div]:!block [&>div]:w-full">
                 <div className="w-full min-w-0 p-4">
@@ -260,6 +269,7 @@ function CanonicalWireframeBody({
                 ) : null}
             </div>
         </div>
+        </FormPaletteOrderingProvider>
     );
 }
 
@@ -282,9 +292,5 @@ export function CanonicalWireframe() {
                 />
             </div>
         );
-    return (
-        <FormPaletteOrderingProvider session={session} definition={definition} registry={canonicalInputRegistry}>
-            <CanonicalWireframeBody definition={definition} services={services} session={session} />
-        </FormPaletteOrderingProvider>
-    );
+    return <CanonicalWireframeBody definition={definition} services={services} session={session} />;
 }
