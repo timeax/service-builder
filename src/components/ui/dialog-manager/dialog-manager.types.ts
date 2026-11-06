@@ -119,8 +119,7 @@ export type DialogTitleProps = {
     children?: never;
 };
 
-export type DialogCloseProps = {
-    className?: string;
+export type DialogCloseProps = Omit<React.ComponentPropsWithoutRef<'button'>, 'children'> & {
     children?: never;
 };
 

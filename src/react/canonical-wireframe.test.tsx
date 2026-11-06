@@ -11,7 +11,12 @@ import { ServiceBuilderProvider } from './workspace';
 vi.mock('@elqora/dgp-ordering-form-palette', () => ({
     createDefaultFormPaletteRegistry: () => createInputRegistry(),
     FormPaletteOrderingProvider: ({ children }: { children: React.ReactNode }) => children,
-    OrderingInput: ({ field }: any) => <div>Input: {field.label}</div>,
+    OrderingInput: ({ field, extra_props }: any) => <div>
+        Input: {field.label}
+        {extra_props?.tags?.map((tag: { label: string; className: string }) => <span key={tag.label} data-testid={`field-tag:${field.id}`} className={tag.className}>{tag.label}</span>)}
+        {field.options?.map((option: { id: string; label: string; tags?: Array<{ label: string; className: string }> }) =>
+            <span key={option.id}>{option.label}{option.tags?.map((tag) => <span key={tag.label} data-testid={`option-tag:${option.id}`} className={tag.className}>{tag.label}</span>)}</span>)}
+    </div>,
 }));
 
 describe('canonical wireframe', () => {
@@ -27,6 +32,23 @@ describe('canonical wireframe', () => {
         const backend = new MemoryWorkspaceBackend({ ...workspaceSeed, definition: withNotice, persistence: undefined });
         render(<ServiceBuilderProvider backend={backend} actor={workspaceActor}><CanonicalWireframe /></ServiceBuilderProvider>);
         expect(await screen.findByText('Delivery note')).toHaveClass('bg-amber-100');
+    });
+
+    it('passes field and option notices as Form Palette tags', async () => {
+        const withNotice = structuredClone(definition);
+        withNotice.notices = [{
+            id: 'notice:option', type: 'public', kind: 'label', severity: 'info',
+            target: { scope: 'node', node_kind: 'option', node_id: 'option:instagram-followers' },
+            title: 'Recommended', meta: { color: 'amber' },
+        }, {
+            id: 'notice:field', type: 'public', kind: 'label', severity: 'info',
+            target: { scope: 'node', node_kind: 'field', node_id: 'field:service' },
+            title: 'Popular', meta: { color: 'blue' },
+        }];
+        const backend = new MemoryWorkspaceBackend({ ...workspaceSeed, definition: withNotice, persistence: undefined });
+        render(<ServiceBuilderProvider backend={backend} actor={workspaceActor}><CanonicalWireframe /></ServiceBuilderProvider>);
+        expect(await screen.findByTestId('option-tag:option:instagram-followers')).toHaveClass('bg-amber-100');
+        expect(screen.getByTestId('field-tag:field:service')).toHaveClass('bg-blue-100');
     });
 
     it('preserves visible inputs and the order preview footer over OrderingSession', async () => {

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { cn } from '@/lib/utils.ts';
+import { createDialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogProvider, DialogTitle, DialogWrapper, useDialog } from '@/components/ui/dialog-manager';
 import { walkOptions } from '@elqora/dgp-core';
 import type { ProductNotice, ProductNoticeKind, ProductNoticeSeverity, ProductNoticeTarget, ProductNoticeType } from '@elqora/dgp-spec';
 import { InputField } from '@timeax/form-palette';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useCanvasAPI, useWorkspacePermission, useWorkspaceSelector } from './workspace';
 
 export interface NoticeManagerRequest {
@@ -72,7 +72,26 @@ function noticeFromDraft(draft: NoticeDraft): ProductNotice {
     };
 }
 
+const NoticeDialog = createDialog<{ request: NoticeManagerRequest | null }>('canonical-notice-manager', ({ props, hide }) => (
+    <NoticeManagerContent request={props.request} onClose={() => hide(false)} />
+));
+
 export function CanonicalNoticeManager({ request, onClose }: { request: NoticeManagerRequest | null; onClose(): void }) {
+    return <DialogProvider><NoticeManagerController request={request} onClose={onClose} /></DialogProvider>;
+}
+
+function NoticeManagerController({ request, onClose }: { request: NoticeManagerRequest | null; onClose(): void }) {
+    const dialog = useDialog();
+    useEffect(() => {
+        if (request) dialog.open(NoticeDialog, { request });
+        else dialog.hide(NoticeDialog);
+    // The token identifies each opening; rerenders must preserve an in-progress draft.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [request?.token]);
+    return <NoticeDialog request={request} title="Notice Manager" headless outsideClosable className="h-[min(80vh,720px)] w-[min(96vw,1080px)] max-w-none rounded-none border-slate-200 bg-white p-0 shadow-2xl dark:border-slate-700 dark:bg-slate-950" onClose={onClose} />;
+}
+
+function NoticeManagerContent({ request, onClose }: { request: NoticeManagerRequest | null; onClose(): void }) {
     const dialogRef = useRef<HTMLDivElement>(null);
     const isOpen = request !== null;
     const canvas = useCanvasAPI();
@@ -210,25 +229,26 @@ export function CanonicalNoticeManager({ request, onClose }: { request: NoticeMa
         setError(null);
     };
 
-    if (!request || typeof document === 'undefined') return null;
+    if (!request) return null;
     const set = <K extends keyof NoticeDraft>(key: K, value: NoticeDraft[K]) => setDraft((current) => ({ ...current, [key]: value }));
     const select = <T extends string>(key: keyof NoticeDraft, value: T) => setDraft((current) => ({ ...current, [key]: value }));
-    return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" onMouseDown={(event) => {
-            if (event.target === event.currentTarget) onClose();
-        }}>
-            <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Notice Manager" onKeyDown={keepFocusInDialog} className="flex h-[min(80vh,720px)] w-[min(96vw,1080px)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-950">
-                <aside className="w-80 border-r border-slate-200 dark:border-slate-800">
-                    <div className="border-b border-slate-200 px-3 py-2 dark:border-slate-800">
-                        <div className="mb-2 flex items-center justify-between">
-                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Notice Manager</p>
+    return <DialogWrapper ref={dialogRef} onKeyDown={keepFocusInDialog}>
+                <DialogHeader className="flex-row items-center justify-between border-slate-200 px-4 py-3 dark:border-slate-800">
+                    <DialogTitle className="text-base text-slate-900 dark:text-slate-100" />
+                    <div className="flex items-center gap-2">
                             <button type="button" disabled={!canEdit} title={!canEdit ? 'Editing is disabled for this actor.' : undefined} className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900" onClick={() => {
                                 setMode('create'); setEditingId(null); setDraft(draftFromNotice()); setError(null);
                             }}>New</button>
-                        </div>
+                            <DialogClose aria-label="Close Notice Manager" />
+                    </div>
+                </DialogHeader>
+                <DialogContent innerClassName="p-0">
+                    <div className="grid min-h-full grid-cols-[20rem_minmax(0,1fr)]">
+                <aside className="border-r border-slate-200 dark:border-slate-800">
+                    <div className="border-b border-slate-200 px-3 py-2 dark:border-slate-800">
                         <InputField variant="text" placeholder="Search notices..." value={search} onChange={(event) => setSearch(String(event.value ?? ''))} />
                     </div>
-                    <div className="max-h-[calc(80vh-52px)] overflow-auto p-2">
+                    <div className="p-2">
                         {filteredNotices.length ? filteredNotices.map((notice) => (
                             <button key={notice.id} type="button" className={cn('mb-2 w-full rounded-lg border px-2 py-2 text-left', editingId === notice.id ? 'border-blue-300 bg-blue-50 dark:border-blue-500/40 dark:bg-blue-500/10' : 'border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900')} onClick={() => {
                                 setMode('edit'); setEditingId(notice.id); setDraft(draftFromNotice(notice)); setError(null);
@@ -239,7 +259,7 @@ export function CanonicalNoticeManager({ request, onClose }: { request: NoticeMa
                         )) : <p className="px-2 py-3 text-xs text-slate-500 dark:text-slate-400">No notices yet.</p>}
                     </div>
                 </aside>
-                <section className="min-w-0 flex-1 overflow-auto p-4">
+                <section className="min-w-0 p-4">
                     <div className="mb-3 flex items-center justify-between">
                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{mode === 'create' ? 'Create Notice' : mode === 'edit' ? 'Edit Notice' : 'Manage Notices'}</p>
                         <div className="flex items-center gap-2">
@@ -276,12 +296,12 @@ export function CanonicalNoticeManager({ request, onClose }: { request: NoticeMa
                         <div className="col-span-2"><InputField variant="textarea" label="Meta (JSON object)" value={draft.metaText} onChange={(event) => set('metaText', String(event.value ?? ''))} /></div>
                     </fieldset>
                     {error ? <p role="alert" className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">{error}</p> : null}
-                    <div className="mt-4 flex items-center justify-end gap-2">
+                </section>
+                    </div>
+                </DialogContent>
+                <DialogFooter className="items-center gap-2 border-slate-200 px-4 py-3 dark:border-slate-800">
                         <button type="button" className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900" onClick={onClose}>Cancel</button>
                         <button type="button" disabled={!canEdit} title={!canEdit ? 'Editing is disabled for this actor.' : undefined} className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50" onClick={save}>Save Notice</button>
-                    </div>
-                </section>
-            </div>
-        </div>, document.body,
-    );
+                </DialogFooter>
+    </DialogWrapper>;
 }

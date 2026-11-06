@@ -16,6 +16,7 @@ import { RxInput } from 'react-icons/rx';
 import { VscNewFolder } from 'react-icons/vsc';
 import { reorderCanonicalFieldForFilter, reorderCanonicalFilter, reorderCanonicalOption } from './layer-commands';
 import { canonicalAuthoringDescriptor } from './canonical-input-registry';
+import { useOptionalCanonicalNodeContextMenu } from './canonical-node-context-menu';
 import { useServiceBuilderCanvasModel } from './presentation';
 import { useWorkspacePermission } from './workspace';
 
@@ -41,6 +42,7 @@ function sameParentOnly(args: Parameters<NonNullable<SortTreeProps['canDrop']>>[
 
 export function CanonicalLayers() {
     const canvas = useServiceBuilderCanvasModel();
+    const contextMenu = useOptionalCanonicalNodeContextMenu();
     const canMutate = useWorkspacePermission('document.mutate');
     const mutationDeniedReason = canMutate ? undefined : 'You do not have permission to edit this definition.';
     const filtersRef = useRef<SortTreeRef<ProductFilter>>(null);
@@ -73,6 +75,20 @@ export function CanonicalLayers() {
         const primary = ids[0];
         if (primary === undefined) return;
         canvas.api.select(ids.map(String), String(primary));
+    };
+
+    const openNodeContextMenu: NonNullable<SortTreeProps['onContextMenu']> = ({ node, event }) => {
+        const graphNode = canvas.graph.nodes.find((candidate) => candidate.id === String(node.id));
+        if (!contextMenu || !graphNode) return;
+        if (graphNode.kind !== 'filter' && graphNode.kind !== 'field' && graphNode.kind !== 'option') return;
+        event.preventDefault();
+        event.stopPropagation();
+        contextMenu.open_node_menu({
+            node_id: String(node.id),
+            node_kind: graphNode.kind,
+            client_x: event.clientX,
+            client_y: event.clientY,
+        });
     };
 
     const changeFilter: ChangeHandler<ProductFilter> = (_next, detail) => {
@@ -240,6 +256,8 @@ export function CanonicalLayers() {
                                     selectedRowClassName="bg-blue-50! text-blue-700 dark:bg-blue-500/10! dark:text-blue-200"
                                     allSupportSubnodes
                                     onSelect={select}
+                                    onContextMenu={openNodeContextMenu}
+                                    preventNativeContextMenu={contextMenu !== null}
                                     value={canvas.selection.filter_ids as string[]}
                                     rowClassName="mb-1 rounded-xl border border-transparent px-1 hover:border-slate-200 hover:bg-slate-50 dark:hover:border-slate-800 dark:hover:bg-slate-900/70"
                                     data={filters}
@@ -336,6 +354,8 @@ export function CanonicalLayers() {
                                 selectedRowClassName="bg-blue-50! text-blue-700 dark:bg-blue-500/10! dark:text-blue-200"
                                 allSupportSubnodes
                                 onSelect={select}
+                                onContextMenu={openNodeContextMenu}
+                                preventNativeContextMenu={contextMenu !== null}
                                 value={[...canvas.selection.field_ids, ...canvas.selection.option_ids] as string[]}
                                 rowClassName="mb-1 rounded-xl border border-transparent px-1 hover:border-slate-200 hover:bg-slate-50 dark:hover:border-slate-800 dark:hover:bg-slate-900/70"
                                 data={fields}

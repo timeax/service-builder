@@ -30,6 +30,10 @@ describe('canonical Notice Manager', () => {
         opener.focus();
         fireEvent.click(opener);
         const dialog = await screen.findByRole('dialog', { name: 'Notice Manager' });
+        expect(dialog.querySelector('[data-slot="dialog-wrapper"]')).toBeInTheDocument();
+        expect(dialog.querySelector('[data-slot="dialog-header"]')).toBeInTheDocument();
+        expect(dialog.querySelector('[data-slot="dialog-content"] [data-slot="scroll-area-viewport"]')).toBeInTheDocument();
+        expect(dialog.querySelector('[data-slot="dialog-footer"]')).toBeInTheDocument();
         const first = screen.getByRole('button', { name: 'New' });
         const last = screen.getByRole('button', { name: 'Save Notice' });
         await waitFor(() => expect(first).toHaveFocus());

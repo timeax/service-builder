@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { definition } from '../../backend/canonical/seed';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { EditorView } from '@codemirror/view';
 import type { ServiceCatalogState } from '@elqora/dgp-workspace';
@@ -31,10 +31,27 @@ function editJson(value: string) {
 describe('canonical import JSON modal', () => {
     it('opens with the current definition in the editor and preview', () => {
         openModal();
-        expect(screen.getByRole('dialog', { name: 'Product definition JSON' })).toBeInTheDocument();
+        const dialog = screen.getByRole('dialog', { name: 'Product definition JSON' });
+        expect(dialog).toBeInTheDocument();
+        expect(dialog.querySelector('[data-slot="dialog-wrapper"]')).toBeInTheDocument();
+        expect(dialog.querySelector('[data-slot="dialog-header"]')).toBeInTheDocument();
+        expect(dialog.querySelector('[data-slot="dialog-content"]')).toBeInTheDocument();
+        expect(dialog.querySelector('[data-slot="dialog-footer"]')).toBeInTheDocument();
+        expect(dialog.querySelector('#import-json-editor [data-slot="scroll-area-viewport"]')).toBeInTheDocument();
         expect(EditorView.findFromDOM(screen.getByRole('textbox', { name: 'JSON payload' }))?.state.doc.toString()).toBe(JSON.stringify(definition, null, 2));
         expect(screen.getByText('Source: Current data')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Apply definition' })).toBeEnabled();
+    });
+
+    it('uses a dark CodeMirror theme when the application is dark', () => {
+        document.documentElement.classList.add('dark');
+        try {
+            openModal();
+            expect(screen.getByRole('textbox', { name: 'JSON payload' }).closest('.cm-theme-dark')).toBeInTheDocument();
+        } finally {
+            cleanup();
+            document.documentElement.classList.remove('dark');
+        }
     });
 
     it('opens with the current catalog in the editor and preview', () => {

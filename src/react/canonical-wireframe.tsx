@@ -2,10 +2,10 @@
 import { EmptyState } from '@/components/builder';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
-import WireframeTagsWidget, { type TagNotice } from '@/panels/right/components/wireframe-tags-widget.tsx';
+import WireframeTagsWidget, { noticeToneClass, type TagNotice } from '@/panels/right/components/wireframe-tags-widget.tsx';
 import { buildOrderPreview, createOrderingSession, type BuildOrderPreviewResult, type OrderingSession } from '@elqora/dgp-ordering';
 import { FormPaletteOrderingProvider, OrderingInput } from '@elqora/dgp-ordering-form-palette';
-import type { HandlerService, ProductDefinition } from '@elqora/dgp-spec';
+import type { FieldOption, HandlerService, ProductDefinition, ProductNotice } from '@elqora/dgp-spec';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { BsChevronDown } from 'react-icons/bs';
 import { primaryServiceAdvisoryAmounts } from '../ordering/advisory-pricing';
@@ -27,6 +27,29 @@ function formatPreviewFailure(result: BuildOrderPreviewResult): string | null {
     return result.issues.length
         ? `${result.issues.length} customer input issue${result.issues.length === 1 ? '' : 's'} in this preview.`
         : null;
+}
+
+function formPaletteNoticeTag(notice: ProductNotice) {
+    return {
+        label: notice.title,
+        className: `inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${noticeToneClass({
+            id: notice.id,
+            title: notice.title,
+            severity: notice.severity,
+            color: typeof notice.meta?.color === 'string' ? notice.meta.color : undefined,
+        })}`,
+    };
+}
+
+function optionsWithNoticeTags(options: FieldOption[], noticesByOptionId: Map<string, ProductNotice[]>): FieldOption[] {
+    if (noticesByOptionId.size === 0) return options;
+    const mapped = options.map((option) => {
+        const notices = noticesByOptionId.get(option.id) ?? [];
+        const children = option.children === undefined ? undefined : optionsWithNoticeTags(option.children, noticesByOptionId);
+        if (notices.length === 0 && children === option.children) return option;
+        return { ...option, ...(notices.length ? { tags: notices.map(formPaletteNoticeTag) } : {}), ...(children === undefined ? {} : { children }) };
+    });
+    return mapped.every((option, index) => option === options[index]) ? options : mapped;
 }
 
 function CanonicalWireframeBody({
@@ -101,6 +124,31 @@ function CanonicalWireframeBody({
         }
         return map;
     }, [definition.notices]);
+    const noticesByOptionId = useMemo(() => {
+        const map = new Map<string, ProductNotice[]>();
+        for (const notice of definition.notices) {
+            if (notice.target.scope !== 'node' || notice.target.node_kind !== 'option') continue;
+            const items = map.get(notice.target.node_id) ?? [];
+            items.push(notice);
+            map.set(notice.target.node_id, items);
+        }
+        return map;
+    }, [definition.notices]);
+    const noticesByFieldId = useMemo(() => {
+        const map = new Map<string, ProductNotice[]>();
+        for (const notice of definition.notices) {
+            if (notice.target.scope !== 'node' || notice.target.node_kind !== 'field') continue;
+            const items = map.get(notice.target.node_id) ?? [];
+            items.push(notice);
+            map.set(notice.target.node_id, items);
+        }
+        return map;
+    }, [definition.notices]);
+    const displayFields = visibleFields.map((field) => {
+        if (field.options === undefined) return field;
+        const options = optionsWithNoticeTags(field.options, noticesByOptionId);
+        return options === field.options ? field : { ...field, options };
+    });
     const select = useCallback(
         (id: string) => {
             if (definition.filters.some((filter) => filter.id === id)) session.set_filter_id(id);
@@ -191,8 +239,8 @@ function CanonicalWireframeBody({
                                 onSelect={select}
                             />
                             <div className="flex flex-col gap-2 border-t border-slate-200 pt-3 dark:border-slate-800">
-                                {visibleFields.length ? (
-                                    visibleFields.map((field) => (
+                                {displayFields.length ? (
+                                    displayFields.map((field) => (
                                         <div
                                             onDoubleClick={() => select(field.id)}
                                             onContextMenu={(event) => {
@@ -205,7 +253,10 @@ function CanonicalWireframeBody({
                                         >
                                             <OrderingInput
                                                 field={field}
-                                                extra_props={field.type === 'checkbox' && !field.options ? { single: true } : undefined}
+                                                extra_props={{
+                                                    ...(field.type === 'checkbox' && !field.options ? { single: true } : {}),
+                                                    tags: (noticesByFieldId.get(field.id) ?? []).map(formPaletteNoticeTag),
+                                                }}
                                             />
                                         </div>
                                     ))

@@ -406,3 +406,31 @@ describe('canonical wireframe browser inputs', () => {
         await waitFor(() => expect(field).toHaveTextContent('campaign.png'));
     }, 15_000);
 });
+
+describe('canonical wireframe notice tags', () => {
+    it('renders field and option notices through the real Form Palette tags', async () => {
+        const definition = structuredClone(workspaceSeed.definition);
+        definition.notices.push(
+            { id: 'notice:field', type: 'public', kind: 'label', severity: 'info', target: { scope: 'node', node_kind: 'field', node_id: 'field:service' }, title: 'Popular' },
+            { id: 'notice:option', type: 'public', kind: 'label', severity: 'warning', target: { scope: 'node', node_kind: 'option', node_id: 'option:instagram-followers' }, title: 'Recommended' },
+        );
+        const backend = new MemoryWorkspaceBackend({ ...workspaceSeed, definition, persistence: undefined });
+        render(
+            <VirtuosoMockContext.Provider value={{ viewportHeight: 240, itemHeight: 36 }}>
+                <ServiceBuilderProvider backend={backend} actor={workspaceActor}><CanonicalWireframe /></ServiceBuilderProvider>
+            </VirtuosoMockContext.Provider>,
+        );
+
+        expect((await screen.findByText('Popular')).parentElement).toHaveClass('bg-blue-100');
+        const serviceField = screen.getByText('Service', { selector: 'label *' });
+        const service = serviceField.closest('[data-variant="select"]')?.querySelector<HTMLElement>('[data-slot="select-trigger"]');
+        expect(service).toBeDefined();
+        fireEvent.pointerDown(service!, { button: 0, ctrlKey: false, pointerId: 1, pointerType: 'mouse' });
+        const optionTag = await screen.findByText('Recommended');
+        expect(optionTag.parentElement).toHaveClass('bg-amber-100');
+        const option = optionTag.closest('[role="option"]');
+        expect(option).not.toBeNull();
+        fireEvent.click(option!);
+        await waitFor(() => expect(screen.queryByText('Recommended')).not.toBeInTheDocument());
+    }, 15_000);
+});

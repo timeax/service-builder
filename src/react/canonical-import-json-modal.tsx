@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert.tsx';
 import { Button } from '@/components/ui/button.tsx';
-import { createDialog, DialogProvider, useDialog } from '@/components/ui/dialog-manager';
+import { createDialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogProvider, DialogTitle, DialogWrapper, useDialog } from '@/components/ui/dialog-manager';
+import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { cn } from '@/lib/utils.ts';
 import { json } from '@codemirror/lang-json';
 import { EditorView } from '@codemirror/view';
@@ -10,7 +11,7 @@ import { isProductDefinition, validateProductDefinitionStructure } from '@elqora
 import type { ServiceCatalogState } from '@elqora/dgp-workspace';
 import CodeMirror from '@uiw/react-codemirror';
 import { useEffect, useMemo, useState } from 'react';
-import { FiUpload, FiX } from 'react-icons/fi';
+import { FiUpload } from 'react-icons/fi';
 
 export type ImportTarget = 'props' | 'catalog';
 type ImportSource = 'current' | 'paste' | 'file';
@@ -52,10 +53,24 @@ function ImportJsonModalController({ open, target, currentDefinition, currentCat
     // Opening captures the current snapshot; rerenders must preserve in-progress edits.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, target]);
-    return <ImportDialog target={target} currentDefinition={currentDefinition} currentCatalog={currentCatalog} onImportProps={onImportProps} onImportCatalog={onImportCatalog} onClose={onClose} title={target === 'props' ? 'Product definition JSON' : 'Catalog JSON'} headless className="h-[min(90vh,52rem)] w-[min(96vw,56rem)] max-w-none rounded-[28px] border-slate-200 bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-950" maxVh={90} />;
+    return <ImportDialog target={target} currentDefinition={currentDefinition} currentCatalog={currentCatalog} onImportProps={onImportProps} onImportCatalog={onImportCatalog} onClose={onClose} title={target === 'props' ? 'Product definition JSON' : 'Catalog JSON'} headless className="h-[min(90vh,52rem)] w-[min(96vw,56rem)] max-w-none rounded-none border-slate-200 bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-950" maxVh={90} />;
+}
+
+function useDarkMode() {
+    const [dark, setDark] = useState(() => typeof document !== 'undefined' && (document.documentElement.classList.contains('dark') || document.body.classList.contains('dark')));
+    useEffect(() => {
+        const update = () => setDark(document.documentElement.classList.contains('dark') || document.body.classList.contains('dark'));
+        const observer = new MutationObserver(update);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        update();
+        return () => observer.disconnect();
+    }, []);
+    return dark;
 }
 
 function ImportJsonContent({ target, currentDefinition, currentCatalog, onImportProps, onImportCatalog, onDismiss }: DialogProps & { onDismiss(): void }) {
+    const dark = useDarkMode();
     const current = target === 'props' ? currentDefinition : currentCatalog ?? EMPTY_CATALOG;
     const [rawInput, setRawInput] = useState(() => current ? JSON.stringify(current, null, 2) : '');
     const [source, setSource] = useState<ImportSource>(current ? 'current' : 'paste');
@@ -100,7 +115,6 @@ function ImportJsonContent({ target, currentDefinition, currentCatalog, onImport
     }, [rawInput, source, target]);
 
     if (!target) return null;
-    const title = target === 'props' ? 'Product definition JSON' : 'Catalog JSON';
     const subtitle = target === 'props'
         ? 'Review or edit the current ProductDefinition, or load JSON from a local file.'
         : 'Review or edit the current catalog, or load JSON from a local file.';
@@ -120,15 +134,15 @@ function ImportJsonContent({ target, currentDefinition, currentCatalog, onImport
         }
     };
 
-    return <div className="flex h-full min-h-0 flex-col overflow-hidden">
-                <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+    return <DialogWrapper>
+                <DialogHeader className="flex-row items-start justify-between gap-4 border-slate-200 px-6 py-4 dark:border-slate-800">
                     <div className="min-w-0">
-                        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+                        <DialogTitle className="text-lg leading-6 text-slate-900 dark:text-slate-100" />
                         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
                     </div>
-                    <Button type="button" variant="ghost" size="sm" onClick={onDismiss} disabled={pending} className="h-9 rounded-xl px-2" aria-label="Close JSON editor"><FiX /></Button>
-                </div>
-                <div className="min-h-0 flex-1 overflow-auto px-6 py-5">
+                    <DialogClose disabled={pending} aria-label="Close JSON editor" className="shrink-0" />
+                </DialogHeader>
+                <DialogContent innerClassName="px-6 py-5">
                     <div className="grid gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(18rem,1fr)]">
                         <div className="space-y-4">
                             <section className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/60">
@@ -156,14 +170,14 @@ function ImportJsonContent({ target, currentDefinition, currentCatalog, onImport
                             </section>
                             <section>
                                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="import-json-editor">JSON payload</label>
-                                <div id="import-json-editor" className="min-h-[22rem] overflow-hidden rounded-2xl border border-slate-200 bg-white font-mono text-sm text-slate-900 shadow-sm focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
-                                <CodeMirror value={rawInput} extensions={[json(), EditorView.contentAttributes.of({ 'aria-label': 'JSON payload' })]} height="22rem" onChange={(value) => {
+                                <ScrollArea id="import-json-editor" className="h-[22rem] overflow-hidden rounded-2xl border border-slate-200 bg-white font-mono text-sm text-slate-900 shadow-sm focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" viewportClassName="[&>div]:!block [&>div]:w-full">
+                                <CodeMirror value={rawInput} theme={dark ? 'dark' : 'light'} extensions={[json(), EditorView.lineWrapping, EditorView.contentAttributes.of({ 'aria-label': 'JSON payload' })]} onChange={(value) => {
                                     setRawInput(value);
                                     setSource('paste');
                                     setFileName(null);
                                     setApplyError(null);
-                                }} basicSetup={{ lineNumbers: true, foldGutter: true }} className="[&_.cm-editor]:min-h-[22rem] [&_.cm-editor]:bg-transparent [&_.cm-content]:px-3 [&_.cm-content]:py-2 dark:[&_.cm-editor]:text-slate-100" />
-                                </div>
+                                }} basicSetup={{ lineNumbers: true, foldGutter: true }} className="[&_.cm-editor]:min-h-[22rem] [&_.cm-editor]:bg-transparent [&_.cm-scroller]:!overflow-visible [&_.cm-content]:px-3 [&_.cm-content]:py-2" />
+                                </ScrollArea>
                             </section>
                         </div>
                         <aside className="space-y-4">
@@ -174,15 +188,15 @@ function ImportJsonContent({ target, currentDefinition, currentCatalog, onImport
                             {applyError ? <Alert variant="destructive"><AlertTitle>Import failed</AlertTitle><AlertDescription>{applyError}</AlertDescription></Alert> : null}
                         </aside>
                     </div>
-                </div>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-200 px-6 py-4 dark:border-slate-800">
+                </DialogContent>
+                <DialogFooter className="items-center justify-between gap-3 border-slate-200 px-6 py-4 dark:border-slate-800">
                     <div className="text-xs text-slate-500 dark:text-slate-400">{parseState.status === 'ready' ? `Ready to apply ${parseState.source === 'file' ? `from ${fileName ?? 'file'}` : parseState.source === 'current' ? 'the current JSON' : 'from edited JSON'}.` : 'Apply will stay disabled until the JSON is valid.'}</div>
                     <div className="flex items-center gap-2">
                         <Button type="button" variant="ghost" onClick={onDismiss} disabled={pending}>Cancel</Button>
                         <Button type="button" onClick={() => void handleApply()} disabled={parseState.status !== 'ready' || pending}>{pending ? 'Applying...' : target === 'props' ? 'Apply definition' : 'Apply catalog'}</Button>
                     </div>
-                </div>
-    </div>;
+                </DialogFooter>
+    </DialogWrapper>;
 }
 
 function PreviewContent({ parseState }: { parseState: ParseState }) {

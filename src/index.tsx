@@ -31,6 +31,7 @@ export { CanonicalProperties } from './react/canonical-properties';
 export { CanonicalAdvancedPropertySections } from './react/canonical-property-sections';
 export { CanonicalComments } from './react/canonical-comments';
 export { CanonicalWireframe } from './react/canonical-wireframe';
+export { canonicalInputRegistry } from './react/canonical-input-registry';
 export { CanonicalRightPanel } from './react/canonical-right-panel';
 export { CanonicalAssets } from './react/canonical-assets';
 export { CanonicalHistoryPanel } from './react/canonical-history';

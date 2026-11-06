@@ -9,7 +9,7 @@ export type TagNotice = {
     color?: string;
 };
 
-function noticeToneClass(notice: TagNotice) {
+export function noticeToneClass(notice: TagNotice) {
     const color = (notice.color ?? '').toLowerCase();
 
     if (color.includes('red') || color.includes('rose') || color.includes('danger')) {
