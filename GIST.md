@@ -2,7 +2,7 @@
 
 This file is the stable, provider-neutral reference for AI-assisted authoring in Service Builder. It explains the canonical data contracts and the Builder behavior an AI must respect. Host-specific data and the user's request are supplied separately for each generation request; they do not belong in this file.
 
-The contracts below are transcribed from the currently installed `@elqora/dgp-spec`, `@elqora/dgp-workspace`, and `@elqora/dgp-validation` declarations. Keep them aligned with those package declarations when dependencies change. The available input list and wrapper behavior are from the currently installed `@elqora/dgp-ordering-form-palette` package and this Service Builder's current registry wiring.
+The contracts below are transcribed from the currently installed `@elqora/dgp-spec`, `@elqora/dgp-ordering`, `@elqora/dgp-workspace`, and `@elqora/dgp-validation` declarations. Keep them aligned with those package declarations when dependencies change. The available input list and wrapper behavior are from the currently installed `@elqora/dgp-ordering-form-palette` package and this Service Builder's current registry wiring.
 
 ## Authoritative type exports
 
@@ -15,6 +15,9 @@ import type {
     HandlerService,
 } from "@elqora/dgp-spec";
 import type {
+    OrderPreview,
+} from "@elqora/dgp-ordering";
+import type {
     ServiceCatalogState,
     FieldTemplate,
 } from "@elqora/dgp-workspace";
@@ -24,9 +27,9 @@ import type {
 import { BUILT_IN_INPUT_TYPES } from "@elqora/dgp-ordering-form-palette";
 ```
 
-`ProductDefinition`, `OrderSnapshot`, and `HandlerService` are defined by DGP Spec. The catalog and field-template shapes are Workspace editorial contracts. Service publication policy rules are defined by DGP Validation. The input list is an adapter registry constant, not a field of any of these data contracts.
+`ProductDefinition`, `OrderSnapshot`, and `HandlerService` are defined by DGP Spec. `OrderPreview` is defined by DGP Ordering. The catalog and field-template shapes are Workspace editorial contracts. Service publication policy rules are defined by DGP Validation. The input list is an adapter registry constant, not a field of any of these data contracts.
 
-This copy was checked against installed `@elqora/dgp-spec` 1.4.0, `@elqora/dgp-workspace` 1.0.2-validation.0, `@elqora/dgp-validation` 1.2.0, and `@elqora/dgp-ordering-form-palette` 1.0.2-validation.0. When any of those packages change, recheck both the copied declarations and the behavior notes before using this guide as AI context.
+This copy was checked against installed `@elqora/dgp-spec` 1.6.0, `@elqora/dgp-ordering` 1.1.1, `@elqora/dgp-workspace` 1.1.0, `@elqora/dgp-validation` 1.2.0, and `@elqora/dgp-ordering-form-palette` 1.1.1. When any of those packages change, recheck both the copied declarations and the behavior notes before using this guide as AI context.
 
 ## Instructions to the generation model
 
@@ -40,17 +43,18 @@ This copy was checked against installed `@elqora/dgp-spec` 1.4.0, `@elqora/dgp-w
 - For product fields, use input types present in the supplied registry capability data. If no registry manifest is supplied, use the built-in type list below, which describes this Service Builder's current default registry.
 - Put Form Palette input configuration in a field's `defaults` only when the requested input descriptor supports those properties. Do not put renderer/component identifiers in `ProductDefinition`.
 - Use host templates only when the needed context exists. Do not assume `snapshot` or custom host values are available merely because the template syntax can address them.
+- For `visibility_expression` on a product field or option, write a JavaScript expression that reads the supplied `preview` object and whose result is converted with JavaScript `Boolean(...)`. Do not write a function body or include a `return` statement. This visibility expression overrides the other visibility mechanisms for its field or option.
 - For policy generation, use the supplied policy rules and policy requirements as context. Do not put host publication policy rules inside `ProductDefinition`.
 
 ## Generation tasks
 
 ### Product definitions
 
-Create or update the canonical DGP v1 `ProductDefinition` contract below. `filters` describe service contexts; `fields` describe authored customer choices. Preserve recursive options, service bindings, relationships, validation, quantity rules, utility declarations, notices, and fallbacks as requested. Use explicit capability requirements on filters when needed; do not encode derived/inherited capability state into the authored document.
+Create or update the canonical DGP v1 `ProductDefinition` contract below. `filters` describe service contexts; `fields` describe authored customer choices. Preserve recursive options, service bindings, relationships, field and option visibility expressions, validation, quantity rules, utility declarations, notices, and fallbacks as requested. Use explicit capability requirements on filters when needed; do not encode derived/inherited capability state into the authored document.
 
 Use `meta` only for opaque host metadata. Do not hide protocol meaning such as quantity defaults, utility definitions, input variants, multiple selection, or capability requirements in `meta`.
 
-For `BrowserJavaScriptExpression`, use only trusted host-authored JavaScript function bodies when the user explicitly requests an expression. Expressions receive only the current field's `value` and `values`, not unrelated field values. Quantity expressions must return a finite number; customer-field expressions must return a JSON-compatible value. Do not generate arbitrary executable expressions as a substitute for declarative rules.
+`BrowserJavaScriptExpression` is a shared source shape whose execution mode depends on where it is used. Quantity rules and field-validation `eval` expressions are trusted JavaScript function bodies; they receive only the current field's `value` and `values`, not unrelated field values. Quantity expressions must return a finite number, and customer-field expressions must return a JSON-compatible value. Field and option `visibility_expression` values are trusted JavaScript expressions (not function bodies) evaluated with `preview` in scope; their results are converted to booleans with JavaScript truthiness. Only produce executable JavaScript when the user explicitly requests the relevant expression behavior, and do not substitute it for declarative rules.
 
 ### Service catalogs
 
@@ -69,6 +73,7 @@ The caller should send the live data needed for the requested task, as structure
 - Current `FieldTemplate[]` and the registered input/variant/property capabilities available to this Builder host.
 - Current `ServicePublicationPolicyRule[]` and the host's policy requirements.
 - Any `OrderSnapshot` or custom template-context values the host actually has and intends the model to use.
+- The `OrderPreview` object, when generating or reviewing preview-context visibility expressions.
 - The user's request and any explicit keep/change/remove constraints.
 
 If a context item is absent, do not invent it. The canonical types in this file describe valid shapes; they are not a substitute for the host's live values.
@@ -111,6 +116,8 @@ export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 
 export declare const BROWSER_JAVASCRIPT_EXPRESSION_ARGUMENTS: readonly ["value", "values"];
+export declare const VISIBILITY_EXPRESSION_ARGUMENTS: readonly ["preview"];
+export type VisibilityExpressionResult = boolean;
 export interface BrowserJavaScriptExpression {
     language: "javascript";
     body: string;
@@ -221,6 +228,7 @@ export type FieldValidationRule = (FieldValidationRuleBase & {
 export interface FieldOption {
     id: string;
     label: string;
+    visibility_expression?: BrowserJavaScriptExpression;
     value?: JsonPrimitive;
     service_id?: ServiceId;
     pricing_role?: PricingRole;
@@ -234,6 +242,7 @@ interface ProductFieldBase {
     type: string;
     variant?: string;
     label: string;
+    visibility_expression?: BrowserJavaScriptExpression;
     bind_id?: string | string[];
     name?: string;
     required?: boolean;
@@ -375,7 +384,17 @@ export interface OrderSnapshot {
     utilities: OrderSnapshotUtility[];
     meta: Record<string, any>;
 }
+
+export type OrderPreviewUtility = Omit<OrderSnapshotUtility, "advisory_amount"> & {
+    advisory_amount: number | null;
+};
+export type OrderPreview = Omit<OrderSnapshot, "utilities"> & {
+    utilities: OrderPreviewUtility[];
+    service_context: HandlerService[];
+};
 ```
+
+`OrderPreview` is exported by `@elqora/dgp-ordering`, not Spec. It contains the provisional order context plus `service_context`, the selected `HandlerService[]` supplied to preview-context visibility expressions. For example, `preview.service_context.some((service) => service.capabilities.drip_feed?.enabled === true)` evaluates whether a selected service enables that capability. Write an expression without `return`; Ordering converts its result using JavaScript truthiness.
 
 An `OrderSnapshot` is evidence of the customer-visible ordering decision, not a price or fulfillment authority. `advisory_amount` is a browser calculation; handlers determine actual charges. Canonical v1 wire names are snake_case and do not accept legacy camelCase aliases.
 
