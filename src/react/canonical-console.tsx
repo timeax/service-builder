@@ -6,7 +6,7 @@ import type { ProductDefinition, ProductDefinitionDiagnostic, ProductNotice } fr
 import type { HostPublicationDiagnostic, PublicationValidationResult } from '@elqora/dgp-validation';
 import type { BackendError, CanvasAPI } from '@elqora/dgp-workspace';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FiAlertCircle, FiInfo, FiTrash2, FiX } from 'react-icons/fi';
+import { FiAlertCircle, FiCheck, FiCopy, FiInfo, FiTrash2, FiX } from 'react-icons/fi';
 
 type ConsoleSubTab = 'validation' | 'logs' | 'notices';
 type ScopeFilter = 'all' | 'activeNode';
@@ -80,6 +80,45 @@ function errorMessage(error: unknown): string {
     return String(error);
 }
 
+async function writeClipboard(text: string): Promise<void> {
+    try {
+        if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+        await navigator.clipboard.writeText(text);
+        return;
+    } catch {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const copied = document.execCommand('copy');
+        textarea.remove();
+        if (!copied) throw new Error('Could not copy to clipboard');
+    }
+}
+
+function formatDiagnosticForCopy(row: Diagnostic, definition: ProductDefinition | null): string {
+    const actualType = row.code === 'schema_invalid_type' ? diagnosticValueType(row.path, definition) : null;
+    const ids = diagnosticNodeIds(row, definition);
+    return [
+        `[${row.severity.toUpperCase()}] ${row.code}`,
+        row.message,
+        `Location: ${row.path || '/'}`,
+        actualType ? `Found: ${actualType}` : null,
+        ids.length ? `Node IDs: ${ids.join(', ')}` : null,
+    ].filter(Boolean).join('\n');
+}
+
+function formatLogForCopy(row: ConsoleLog): string {
+    return [
+        `[${new Date(row.createdAt).toLocaleString()}] ${row.code}`,
+        row.message,
+        row.nodeId ? `Node ID: ${row.nodeId}` : null,
+    ].filter(Boolean).join('\n');
+}
+
 export function CanonicalConsole({ validation, notices, definition, selectedIds, api, workspaceError, shortcutLabel, onLogCountChange }: {
     validation: PublicationValidationResult | null;
     notices: readonly ProductNotice[];
@@ -99,6 +138,8 @@ export function CanonicalConsole({ validation, notices, definition, selectedIds,
         notices: { minimized: false, closed: false },
     });
     const [logs, setLogs] = useState<ConsoleLog[]>([]);
+    const [copiedKey, setCopiedKey] = useState<string | null>(null);
+    const [copyError, setCopyError] = useState(false);
     useEffect(() => onLogCountChange(logs.length), [logs.length, onLogCountChange]);
     const nextLogId = useRef(0);
     const appendLog = useCallback((code: string, message: string, nodeId?: string) => {
@@ -130,6 +171,16 @@ export function CanonicalConsole({ validation, notices, definition, selectedIds,
         ?? definition?.fields.find((item) => item.id === id)?.label ?? id;
     const toggleIntro = () => setIntro((current) => ({ ...current, [subTab]: { ...current[subTab], minimized: !current[subTab].minimized } }));
     const closeIntro = () => setIntro((current) => ({ ...current, [subTab]: { ...current[subTab], closed: true } }));
+    const copyToClipboard = async (key: string, text: string) => {
+        try {
+            await writeClipboard(text);
+            setCopiedKey(key);
+            setCopyError(false);
+            window.setTimeout(() => setCopiedKey((current) => current === key ? null : current), 1800);
+        } catch {
+            setCopyError(true);
+        }
+    };
     return <div className="space-y-4">
         {!intro[subTab].closed ? <div className="rounded-2xl border border-sky-200/80 bg-sky-50/70 p-3 dark:border-sky-500/20 dark:bg-sky-500/10">
             <div className="flex items-start justify-between gap-3">
@@ -155,7 +206,13 @@ export function CanonicalConsole({ validation, notices, definition, selectedIds,
                 <div className="flex flex-wrap items-center gap-2">
                     {tabs.map((tab) => <button key={tab.id} type="button" onClick={() => setSubTab(tab.id)} className={cn('inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold tracking-[0.14em] uppercase transition-colors', subTab === tab.id ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800')}><span>{tab.label}</span><span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] dark:bg-white/10">{tab.count}</span></button>)}
                 </div>
-                {subTab === 'logs' && logRows.length ? <Button type="button" variant="ghost" size="sm" onClick={() => setLogs([])} className="h-8 rounded-xl px-3 text-xs"><FiTrash2 /> Clear logs</Button> : null}
+                <div className="flex items-center gap-1">
+                    {subTab === 'validation' && validationRows.length ? <Button type="button" variant="ghost" size="sm" onClick={() => void copyToClipboard('validation:all', validationRows.map((row) => formatDiagnosticForCopy(row, definition)).join('\n\n'))} className="h-8 rounded-xl px-3 text-xs">{copiedKey === 'validation:all' ? <FiCheck /> : <FiCopy />}{copiedKey === 'validation:all' ? 'Copied' : `Copy all (${validationRows.length})`}</Button> : null}
+                    {subTab === 'logs' && logRows.length ? <>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => void copyToClipboard('logs:all', logRows.map(formatLogForCopy).join('\n\n'))} className="h-8 rounded-xl px-3 text-xs">{copiedKey === 'logs:all' ? <FiCheck /> : <FiCopy />}{copiedKey === 'logs:all' ? 'Copied' : `Copy all (${logRows.length})`}</Button>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => setLogs([])} className="h-8 rounded-xl px-3 text-xs"><FiTrash2 /> Clear logs</Button>
+                    </> : null}
+                </div>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="text-[11px] font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">Scope</span>
@@ -166,22 +223,24 @@ export function CanonicalConsole({ validation, notices, definition, selectedIds,
                 </> : null}
             </div>
             {scope === 'activeNode' && !activeIds.size ? <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">No active node selected. Select a node to filter by active scope.</p> : null}
+            {copyError ? <p role="alert" className="mt-2 text-xs text-rose-700 dark:text-rose-300">Could not copy to the clipboard. Check browser clipboard permissions and try again.</p> : null}
         </div>
         {subTab === 'validation' ? validationRows.length ? <div className="space-y-3">{validationRows.map((row, index) => {
             const ids = diagnosticNodeIds(row, definition);
             const actualType = row.code === 'schema_invalid_type' ? diagnosticValueType(row.path, definition) : null;
+            const copyKey = `validation:${row.code}:${row.path}:${index}`;
             return <div key={`${row.code}:${row.path}:${index}`} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/90">
-                <div className="flex items-start gap-3"><div className="mt-0.5">{severityIcon(row.severity)}</div><div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-3"><div className="flex min-w-0 flex-1 items-start gap-3"><div className="mt-0.5">{severityIcon(row.severity)}</div><div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2"><span className={severityBadge(row.severity)}>{row.code.replaceAll('_', ' ')}</span><span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{row.message}</span></div>
                     <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">Location: <code className="break-all font-mono text-slate-700 dark:text-slate-300">{row.path || '/'}</code>{actualType ? <span> · Found {actualType}</span> : null}</div>
                     {ids.length ? <div className="mt-3 flex flex-wrap gap-2">{ids.map((id) => <button key={id} type="button" onClick={() => focusNode(id)} className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-900 dark:text-slate-300">{chip(id)}</button>)}</div> : null}
-                </div></div>
+                </div></div><Button type="button" variant="ghost" size="sm" onClick={() => void copyToClipboard(copyKey, formatDiagnosticForCopy(row, definition))} className="h-7 shrink-0 rounded-lg px-2 text-xs" aria-label={copiedKey === copyKey ? 'Copied validation log' : 'Copy validation log'}>{copiedKey === copyKey ? <FiCheck /> : <FiCopy />}{copiedKey === copyKey ? 'Copied' : 'Copy'}</Button></div>
             </div>;
         })}</div> : <EmptyState title="No validation rows for this filter" description={scope === 'activeNode' ? 'No validation rows match the current active node scope.' : 'No validation rows match the current severity filter.'} /> : null}
         {subTab === 'logs' ? logRows.length ? <div className="space-y-3">{logRows.map((row) => <div key={row.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/90">
             <div className="flex items-start gap-3"><FiInfo className="mt-0.5 text-lg text-sky-500" /><div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-sky-100 px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em] text-sky-700 uppercase dark:bg-sky-500/15 dark:text-sky-200">{row.code}</span><span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{row.message}</span></div>
-                <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400"><span>{new Date(row.createdAt).toLocaleTimeString()}</span><Button type="button" variant="ghost" size="sm" onClick={() => setLogs((current) => current.filter((item) => item.id !== row.id))} className="h-7 rounded-xl px-2 text-xs"><FiX /> Dismiss</Button></div>
+                <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400"><span>{new Date(row.createdAt).toLocaleTimeString()}</span><span className="flex items-center gap-1"><Button type="button" variant="ghost" size="sm" onClick={() => void copyToClipboard(`log:${row.id}`, formatLogForCopy(row))} className="h-7 rounded-xl px-2 text-xs" aria-label={copiedKey === `log:${row.id}` ? 'Copied log' : 'Copy log'}>{copiedKey === `log:${row.id}` ? <FiCheck /> : <FiCopy />}{copiedKey === `log:${row.id}` ? 'Copied' : 'Copy'}</Button><Button type="button" variant="ghost" size="sm" onClick={() => setLogs((current) => current.filter((item) => item.id !== row.id))} className="h-7 rounded-xl px-2 text-xs"><FiX /> Dismiss</Button></span></div>
             </div></div>
         </div>)}</div> : <EmptyState title="No logs for this filter" description={scope === 'activeNode' ? 'No logs are linked to the current active node scope.' : 'No logs have been captured yet.'} /> : null}
         {subTab === 'notices' ? noticeRows.length ? <div className="space-y-3">{noticeRows.map((row) => <div key={row.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/90">
