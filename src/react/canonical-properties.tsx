@@ -7,8 +7,10 @@ import { Section } from '@/panels/right/components/sections.tsx';
 import { FieldLabel } from '@/panels/right/components/text.tsx';
 import { DescriptorSettings } from '@/panels/right/partials/properties/components/descriptor-settings.tsx';
 import type { DescriptorUiSchema } from '@/panels/right/partials/properties/components/descriptor-ui-schema.ts';
+import { walkFieldOptions } from '@elqora/dgp-core';
 import { BUILT_IN_INPUT_TYPES } from '@elqora/dgp-ordering-form-palette';
-import type { FieldOption, JsonPrimitive, JsonValue, ProductField } from '@elqora/dgp-spec';
+import { createBrowserVisibilityExpressionExecutor } from '@elqora/dgp-ordering';
+import type { BrowserJavaScriptExpression, FieldOption, JsonPrimitive, JsonValue, ProductField } from '@elqora/dgp-spec';
 import { InputField } from '@timeax/form-palette';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
@@ -279,6 +281,97 @@ function OptionProperties({ node, disabled }: { node: Extract<CanonicalInspector
     );
 }
 
+type VisibilityNode = Extract<CanonicalInspectorNode, { kind: 'field' | 'option' }>;
+type VisibilityExpression = BrowserJavaScriptExpression;
+
+const visibilityExpressionExecutor = createBrowserVisibilityExpressionExecutor();
+
+function PreviewContextVisibilitySection({ node, disabled }: { node: VisibilityNode; disabled: boolean }) {
+    const canvas = useServiceBuilderCanvasModel();
+    const [previewSource, setPreviewSource] = useState('{\n  "service_context": []\n}');
+    const [result, setResult] = useState<string | null>(null);
+    const visibilityExpression = (node.raw as typeof node.raw & { visibility_expression?: VisibilityExpression }).visibility_expression;
+    const expression = visibilityExpression?.body ?? '';
+    const expressionPath = node.kind === 'field'
+        ? `/fields/${node.id}/visibility_expression`
+        : `/fields/${canvas.definition?.fields.find((field) => walkFieldOptions(field).some((visit) => visit.optionId === node.id))?.id ?? 'unknown'}/options/${node.id}/visibility_expression`;
+
+    const updateExpression = (nextExpression: string) => {
+        setResult(null);
+        const visibility_expression = nextExpression === '' ? undefined : { language: 'javascript' as const, body: nextExpression };
+        if (node.kind === 'field') {
+            canvas.editor?.update_field(node.id, { visibility_expression });
+        } else {
+            canvas.editor?.update_option(node.id, { visibility_expression });
+        }
+    };
+
+    const testExpression = () => {
+        let preview: unknown;
+        try {
+            preview = JSON.parse(previewSource) as unknown;
+        } catch {
+            setResult('Preview context must be valid JSON.');
+            return;
+        }
+        const tested = visibilityExpressionExecutor.execute(
+            visibilityExpression,
+            preview,
+            expressionPath,
+        );
+        setResult('failure' in tested ? `${tested.failure.code}: ${tested.failure.message}` : `Visible: ${tested.value}`);
+    };
+
+    return (
+        <>
+            <Separator />
+            <Section defaultOpen={false}>
+                <Section.Header>
+                    <Section.Title>Preview-context visibility</Section.Title>
+                </Section.Header>
+                <Section.Content>
+                    <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+                        Trusted JavaScript expression. It can read the current preview as <code>preview</code>; its result uses JavaScript truthiness and decides this {node.kind}'s visibility.
+                    </p>
+                    <div className="space-y-3">
+                        <InputField
+                            variant="textarea"
+                            label="Visibility expression"
+                            aria-label="Visibility expression"
+                            disabled={disabled}
+                            value={expression}
+                            onChange={({ value }) => updateExpression(String(value ?? ''))}
+                            rows={5}
+                            spellCheck={false}
+                            placeholder="preview.service_context.length > 0"
+                            variantClassName="font-mono text-xs"
+                        />
+                        <InputField
+                            variant="textarea"
+                            label="Preview object for testing"
+                            aria-label="Visibility test preview"
+                            value={previewSource}
+                            onChange={({ value }) => {
+                                setPreviewSource(String(value ?? ''));
+                                setResult(null);
+                            }}
+                            rows={5}
+                            spellCheck={false}
+                            variantClassName="font-mono text-xs"
+                        />
+                        <div className="flex items-center justify-between gap-3">
+                            <Button type="button" size="sm" variant="outline" onClick={testExpression} disabled={!expression.trim()}>
+                                Test visibility
+                            </Button>
+                            {result ? <output role="status" className="text-xs text-slate-600 dark:text-slate-300">{result}</output> : null}
+                        </div>
+                    </div>
+                </Section.Content>
+            </Section>
+        </>
+    );
+}
+
 export function CanonicalProperties() {
     const canvas = useServiceBuilderCanvasModel();
     const canMutate = useWorkspacePermission('document.mutate');
@@ -411,6 +504,7 @@ export function CanonicalProperties() {
                     ) : (
                         <OptionProperties node={node} disabled={!canMutate} />
                     )}
+                    {node.kind === 'field' || node.kind === 'option' ? <PreviewContextVisibilitySection node={node} disabled={!canMutate} /> : null}
                     <CanonicalAdvancedPropertySections node={node} disabled={!canMutate} />
                 </div>
             </ScrollArea>

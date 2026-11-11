@@ -11,6 +11,7 @@ import { BsChevronDown } from 'react-icons/bs';
 import { primaryServiceAdvisoryAmounts } from '../ordering/advisory-pricing';
 import { CanonicalWorkspaceBootInlineNotice } from './canonical-boot-status';
 import { canonicalInputRegistry } from './canonical-input-registry';
+import { fieldsVisibleInPreview } from './canonical-preview-visibility';
 import { useOptionalCanonicalNodeContextMenu } from './canonical-node-context-menu';
 import { useServiceBuilderCanvasModel } from './presentation';
 import { useWorkspaceSelector } from './workspace';
@@ -75,8 +76,6 @@ function CanonicalWireframeBody({
     const children = currentFilter
         ? definition.filters.filter((filter) => filter.bind_id === currentFilter.id)
         : definition.filters.filter((filter) => !filter.bind_id);
-    const visibleIds = new Set(context?.visibility.fieldIds ?? []);
-    const visibleFields = definition.fields.filter((field) => visibleIds.has(field.id));
     const selectedOptionsCount = Object.values(orderingState.selections).reduce((sum, ids) => sum + ids.length, 0);
     const previewResult = useMemo(
         () =>
@@ -92,6 +91,8 @@ function CanonicalWireframeBody({
         [definition, orderingState, services, session],
     );
     const preview = previewResult.ok ? previewResult.preview : undefined;
+    const previewVisibility = previewResult.ok ? previewResult.visibility : context?.visibility;
+    const visibleFields = fieldsVisibleInPreview(definition.fields, previewVisibility);
     const serviceById = useMemo(() => new Map(services.map((service) => [String(service.id), service])), [services]);
     const base = previewResult.ok ? previewResult.pricing.base_amount : undefined;
     const utilities = previewResult.ok ? previewResult.pricing.utility_amount : undefined;

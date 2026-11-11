@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { createProductIndex, matchingServicesForFilter, walkFieldOptions } from '@elqora/dgp-core';
-import type { HandlerService, ProductDefinition, ServiceId } from '@elqora/dgp-spec';
+import type { HandlerService, HandlerServiceState, ProductDefinition, ServiceId } from '@elqora/dgp-spec';
 
 export interface CanonicalServiceSummary {
     id: ServiceId;
@@ -9,6 +9,7 @@ export interface CanonicalServiceSummary {
     rate?: number;
     min: number;
     max: number;
+    state: HandlerServiceState;
     platformId?: string;
     enabledCapabilityIds: string[];
     attachmentCount: number;
@@ -58,6 +59,7 @@ export function buildCanonicalServiceSummaries(
                 rate: service.rate ?? undefined,
                 min: service.min,
                 max: service.max,
+                state: service.state,
                 platformId: typeof service.meta.platform_id === 'string' ? service.meta.platform_id : undefined,
                 enabledCapabilityIds: Object.values(service.capabilities)
                     .filter((capability) => capability.enabled)

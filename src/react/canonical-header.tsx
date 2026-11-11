@@ -6,6 +6,7 @@ import { BsChevronDown, BsChevronRight } from 'react-icons/bs';
 import { MdMenuOpen, MdOutlineSpaceDashboard } from 'react-icons/md';
 import { createCanonicalBootModel, getCanonicalBootHeadline } from './boot';
 import { CanonicalDrafts } from './canonical-drafts';
+import { useOptionalCanonicalFallbacks } from './canonical-fallbacks';
 import type { ServiceBuilderMenuItem } from './contracts';
 import { useWorkspaceRuntime, useWorkspaceSelector } from './workspace';
 
@@ -45,6 +46,7 @@ export interface CanonicalHeaderProps {
 }
 
 export function CanonicalHeader({ menu = [] }: CanonicalHeaderProps) {
+    const fallbacks = useOptionalCanonicalFallbacks();
     const runtime = useWorkspaceRuntime();
     const state = useWorkspaceSelector((current) => current);
     const boot = useMemo(() => createCanonicalBootModel(state, runtime), [runtime, state]);
@@ -53,6 +55,7 @@ export function CanonicalHeader({ menu = [] }: CanonicalHeaderProps) {
 
     const fullMenu: ServiceBuilderMenuItem[] = [
         { name: 'Status', render: () => <div className="px-2 py-1.5 text-xs font-medium tracking-wider text-slate-500 uppercase">{getCanonicalBootHeadline(boot)}</div> },
+        ...(fallbacks ? [{ name: 'Fallback editor', command: () => fallbacks.open_editor() }] : []),
         ...menu,
     ];
 

@@ -92,7 +92,6 @@ export function CatalogToolbar({
             <InputField
                 variant="treeselect" autoCap
                 mode="button"
-                label="Catalog group selector"
                 className="w-fit!"
                 multiple={false}
                 value={treeValue}
@@ -103,7 +102,12 @@ export function CatalogToolbar({
                     const next = value == null ? null : String(value);
                     onSelectGroup(next === UNGROUPED_TREE_VALUE ? null : next);
                 }}
-                button={<FaFolderOpen />}
+                button={
+                    <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                        <FaFolderOpen className="shrink-0" />
+                        <span>Groups</span>
+                    </span>
+                }
             />
         </div>
     );

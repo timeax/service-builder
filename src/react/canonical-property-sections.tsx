@@ -19,6 +19,7 @@ import { MdDeleteOutline, MdOutlineRemoveCircleOutline } from 'react-icons/md';
 import { TiDelete } from 'react-icons/ti';
 import { ArrowUpRight } from 'lucide-react';
 import { useServiceBuilderCanvasModel } from './presentation';
+import { CanonicalNodeFallbacks, clearNodeServiceWithFallbackPromotion } from './canonical-fallbacks';
 import { CanonicalServicePicker } from './canonical-service-picker';
 import type { CanonicalInspectorNode } from './property-model';
 import { useWorkspaceSelector } from './workspace';
@@ -229,6 +230,7 @@ function OptionMappingSection({ node }: { node: Extract<CanonicalInspectorNode, 
 function ServiceSection({ node, disabled }: { node: Exclude<CanonicalInspectorNode, { kind: 'none' }>; disabled: boolean }) {
     const canvas = useServiceBuilderCanvasModel();
     const services = useWorkspaceSelector((state) => state.services);
+    const [serviceMessage, setServiceMessage] = useState<string | null>(null);
     const serviceId =
         node.kind === 'filter'
             ? node.raw.service_id
@@ -239,11 +241,22 @@ function ServiceSection({ node, disabled }: { node: Exclude<CanonicalInspectorNo
                 : undefined;
     const supported = node.kind !== 'field' || node.raw.button === true;
     const connected = services.find((service) => String(service.id) === String(serviceId));
+    const clearService = () => {
+        if (!canvas.definition || !canvas.editor) return;
+        try {
+            const result = clearNodeServiceWithFallbackPromotion(canvas.definition, services, node.id);
+            canvas.editor.replace(result.definition, result.promoted ? 'Promote node fallback' : 'Clear node service');
+            const retained = canvas.definition.fallbacks?.nodes?.[node.id]?.length ?? 0;
+            setServiceMessage(result.promoted ? `${result.promoted.name} is now the primary service.` : retained ? 'No available fallback could be promoted; the saved fallback list was retained.' : null);
+        } catch (reason) {
+            setServiceMessage(reason instanceof Error ? reason.message : 'Could not update the node service. Try again.');
+        }
+    };
     return (
         <PropertySection title="Service" description="Bind this node to a handler-owned catalog service." actions={!disabled && supported ? <CanonicalServicePicker nodeId={node.id} hasService={serviceId !== undefined && serviceId !== null} /> : null}>
             {supported ? (
                 connected ? <>
-                    <IncludesItem title={connected.name} badge={<span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold tracking-[0.16em] text-slate-600 uppercase dark:bg-slate-800 dark:text-slate-300">#{String(connected.id)}</span>} actions={disabled ? undefined : [{ kind: 'remove', title: 'Clear service', onClick: () => canvas.editor?.set_service(node.id, undefined) }]} />
+                    <IncludesItem title={connected.name} badge={<span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold tracking-[0.16em] text-slate-600 uppercase dark:bg-slate-800 dark:text-slate-300">#{String(connected.id)}</span>} actions={disabled ? undefined : [{ kind: 'remove', title: 'Clear service', onClick: clearService }]} />
                     <div className="rounded-md bg-gray-50 p-3 text-sm dark:bg-gray-800/50">
                         <div className="mb-2 flex justify-end"><ServiceMetaPopover meta={connected.meta} className="h-6 w-6" /></div>
                         <div className="space-y-1 text-xs text-gray-600 dark:text-gray-300">
@@ -251,12 +264,14 @@ function ServiceSection({ node, disabled }: { node: Exclude<CanonicalInspectorNo
                             <p><span className="font-medium text-gray-800 dark:text-gray-200">Rate:</span> {connected.rate ?? 'Not set'}</p>
                             <p><span className="font-medium text-gray-800 dark:text-gray-200">Range:</span> {connected.min} - {connected.max}</p>
                         </div>
-                        {!disabled ? <div className="mt-3 flex justify-end"><button type="button" onClick={() => canvas.editor?.set_service(node.id, undefined)} className="text-xs font-medium text-red-500 transition hover:text-red-600 dark:hover:text-red-400">Clear</button></div> : null}
+                        {!disabled ? <div className="mt-3 flex justify-end"><button type="button" onClick={clearService} className="text-xs font-medium text-red-500 transition hover:text-red-600 dark:hover:text-red-400">Clear</button></div> : null}
                     </div>
                 </> : <p className="text-sm text-slate-500">None</p>
             ) : (
                 <p className="text-xs text-slate-500">Enable Button mode to attach a service directly. Choice services belong to options.</p>
             )}
+            {supported ? <CanonicalNodeFallbacks nodeId={node.id} primaryServiceId={serviceId} disabled={disabled} /> : null}
+            {serviceMessage ? <p role="status" className="text-xs text-slate-500">{serviceMessage}</p> : null}
         </PropertySection>
     );
 }

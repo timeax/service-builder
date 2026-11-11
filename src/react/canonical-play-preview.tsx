@@ -4,6 +4,7 @@ import { buildOrderPreview, createOrderingSession } from '@elqora/dgp-ordering';
 import { FormPaletteOrderingProvider, OrderingInput } from '@elqora/dgp-ordering-form-palette';
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import { canonicalInputRegistry } from './canonical-input-registry';
+import { fieldsVisibleInPreview } from './canonical-preview-visibility';
 import type { ServiceBuilderPlayPayload } from './contracts';
 
 export function CanonicalPlayPreviewBody({ payload }: { payload: ServiceBuilderPlayPayload }) {
@@ -30,10 +31,11 @@ export function CanonicalPlayPreviewBody({ payload }: { payload: ServiceBuilderP
     );
     const preview = previewResult.ok ? previewResult.preview : undefined;
     const context = session.get_context();
+    const previewVisibility = previewResult.ok ? previewResult.visibility : context?.visibility;
     const filter = context?.filter.filter;
     const lineage = context?.filter.lineage ?? [];
     const children = definition.filters.filter((candidate) => candidate.bind_id === filter?.id);
-    const visibleFields = definition.fields.filter((field) => context?.visibility.fieldIds.includes(field.id));
+    const visibleFields = fieldsVisibleInPreview(definition.fields, previewVisibility);
 
     return (
         <FormPaletteOrderingProvider

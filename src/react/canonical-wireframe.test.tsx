@@ -59,6 +59,29 @@ describe('canonical wireframe', () => {
         expect(screen.getByText('Visible fields:')).toBeInTheDocument();
     });
 
+    it('renders fields and recursive options using the visibility returned by the OrderPreview', async () => {
+        const hiddenFieldDefinition = structuredClone(definition);
+        hiddenFieldDefinition.fields.find((field) => field.id === 'field:service')!.visibility_expression = {
+            language: 'javascript',
+            body: 'false',
+        };
+        const hiddenFieldBackend = new MemoryWorkspaceBackend({ ...workspaceSeed, definition: hiddenFieldDefinition, persistence: undefined });
+        const { unmount } = render(<ServiceBuilderProvider backend={hiddenFieldBackend} actor={workspaceActor}><CanonicalWireframe /></ServiceBuilderProvider>);
+        expect(await screen.findByText('Input: Target URL')).toBeInTheDocument();
+        expect(screen.queryByText('Input: Service')).not.toBeInTheDocument();
+        unmount();
+
+        const hiddenOptionDefinition = structuredClone(definition);
+        hiddenOptionDefinition.fields.find((field) => field.id === 'field:service')!.options![0]!.visibility_expression = {
+            language: 'javascript',
+            body: 'false',
+        };
+        const hiddenOptionBackend = new MemoryWorkspaceBackend({ ...workspaceSeed, definition: hiddenOptionDefinition, persistence: undefined });
+        render(<ServiceBuilderProvider backend={hiddenOptionBackend} actor={workspaceActor}><CanonicalWireframe /></ServiceBuilderProvider>);
+        expect(await screen.findByText('Input: Service')).toBeInTheDocument();
+        expect(screen.queryByText('Instagram followers - fast')).not.toBeInTheDocument();
+    });
+
     it('keeps known preview values while an unresolved utility leaves the total unavailable', async () => {
         const partialDefinition = structuredClone(definition);
         partialDefinition.fields.push({

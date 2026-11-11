@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { Button } from '@/components/ui/button.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
 import { cn } from '@/lib/utils.ts';
+import { SectionActionTriggerButton } from '@/panels/right/components/sections.tsx';
 import { DetailRow, EmptyState, ModalShell, SectionCard, SectionHeader, ToneBadge } from '@/workspace/fallback-editor/shared.tsx';
 import { createProductIndex, resolveFallbackEligibilityForNode, walkOptions } from '@elqora/dgp-core';
-import type { HandlerService, ProductDefinition, ServiceFallbacks, ServiceId, ServiceRatePolicy } from '@elqora/dgp-spec';
+import type { FieldOption, HandlerService, ProductDefinition, ServiceFallbacks, ServiceId, ServiceRatePolicy } from '@elqora/dgp-spec';
 import { InputField } from '@timeax/form-palette';
 import { Plus, RotateCcw, Save, Search, ShieldCheck, Trash2, X } from 'lucide-react';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -32,16 +34,19 @@ export const DEFAULT_CANONICAL_FALLBACK_POLICY: CanonicalFallbackPolicy = {
 type NodeKind = 'filter' | 'field' | 'option';
 type Launch =
     | { source: 'node'; node_id: string; node_kind: NodeKind; node_label: string; primary_service_id: ServiceId }
-    | { source: 'service'; primary_service_id: ServiceId; service_name?: string };
+    | { source: 'service'; primary_service_id: ServiceId; service_name?: string }
+    | { source: 'workspace' };
 type Target = { scope: 'global'; primary: ServiceId } | { scope: 'node'; node_id: string; primary: ServiceId };
 
 interface FallbackContextValue {
+    open_editor(): void;
     open_editor_for_node(input: { node_id: string; node_kind: NodeKind; node_label?: string; service_id: ServiceId }): void;
     open_editor_for_service(input: { service_id: ServiceId; service_name?: string }): void;
     open_quick_add_for_node(input: { node_id: string; node_kind: NodeKind; node_label?: string; service_id: ServiceId }): void;
     open_quick_add_for_service(input: { service_id: ServiceId; service_name?: string }): void;
     close(): void;
     is_open: boolean;
+    policy: CanonicalFallbackPolicy;
 }
 
 const FallbackContext = createContext<FallbackContextValue | null>(null);
@@ -81,14 +86,16 @@ export function CanonicalFallbackProvider({ children, policy = DEFAULT_CANONICAL
     });
     const value = useMemo<FallbackContextValue>(
         () => ({
+            open_editor: () => setEditorLaunch({ source: 'workspace' }),
             open_editor_for_node: (input) => setEditorLaunch(nodeLaunch(input)),
             open_editor_for_service: (input) => setEditorLaunch(serviceLaunch(input)),
             open_quick_add_for_node: (input) => setQuickLaunch(nodeLaunch(input)),
             open_quick_add_for_service: (input) => setQuickLaunch(serviceLaunch(input)),
             close,
             is_open: editorLaunch !== null || quickLaunch !== null,
+            policy,
         }),
-        [close, editorLaunch, quickLaunch],
+        [close, editorLaunch, policy, quickLaunch],
     );
     return (
         <FallbackContext.Provider value={value}>
@@ -163,6 +170,173 @@ function removeTarget(fallbacks: ServiceFallbacks, target: Target) {
     }
 }
 
+export function clearNodeServiceWithFallbackPromotion(
+    definition: ProductDefinition,
+    services: readonly HandlerService[],
+    nodeId: string,
+): { definition: ProductDefinition; promoted?: HandlerService } {
+    const currentPrimary = nodeService(definition, nodeId);
+    const fallbacks = definition.fallbacks?.nodes?.[nodeId] ?? [];
+    const promoted = fallbacks
+        .map((id) => services.find((service) => sameService(service.id, id)))
+        .find((service) => service?.state === 'enabled' && !sameService(service.id, currentPrimary));
+    const nextFallbacks = cloneFallbacks(definition.fallbacks);
+    if (promoted) {
+        nextFallbacks.nodes = { ...(nextFallbacks.nodes ?? {}), [nodeId]: fallbacks.filter((id) => !sameService(id, promoted.id)) };
+        if (nextFallbacks.nodes[nodeId]?.length === 0) delete nextFallbacks.nodes[nodeId];
+    }
+    const nextDefinition = setNodeService({ ...definition, fallbacks: nextFallbacks }, nodeId, promoted?.id);
+    return promoted ? { definition: nextDefinition, promoted } : { definition: nextDefinition };
+}
+
+function setNodeService(definition: ProductDefinition, nodeId: string, serviceId: ServiceId | undefined): ProductDefinition {
+    const setOption = (option: FieldOption): FieldOption => ({
+        ...option,
+        ...(option.id === nodeId ? { service_id: serviceId } : {}),
+        ...(option.children ? { children: option.children.map(setOption) } : {}),
+    });
+    return {
+        ...definition,
+        filters: definition.filters.map((filter) => filter.id === nodeId ? { ...filter, service_id: serviceId } : filter),
+        fields: definition.fields.map((field) => ({
+            ...field,
+            ...(field.id === nodeId ? { service_id: serviceId } : {}),
+            ...(field.options ? { options: field.options.map(setOption) } : {}),
+        })),
+    };
+}
+
+export function CanonicalNodeFallbacks({
+    nodeId,
+    primaryServiceId,
+    disabled,
+}: {
+    nodeId: string;
+    primaryServiceId: ServiceId | undefined | null;
+    disabled: boolean;
+}) {
+    const canvas = useServiceBuilderCanvasModel();
+    const services = useWorkspaceSelector((state) => state.services);
+    const { policy } = useCanonicalFallbacks();
+    const [catalog, setCatalog] = useState(() => canvas.editor?.get_catalog());
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState('');
+    const [catalogGroupId, setCatalogGroupId] = useState('all');
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [error, setError] = useState<string | null>(null);
+    const fallbackIds = canvas.definition?.fallbacks?.nodes?.[nodeId] ?? [];
+    const serviceById = useMemo(() => new Map(services.map((service) => [String(service.id), service])), [services]);
+    const groups = (catalog?.nodes ?? []).filter((node) => node.kind === 'group');
+    const groupedIds = new Set(groups.flatMap((group) => group.service_ids.map(String)));
+    const target = primaryServiceId == null ? null : { scope: 'node' as const, node_id: nodeId, primary: primaryServiceId };
+    const candidates = target && canvas.definition ? candidatesFor(canvas.definition, services, target, policy, fallbackIds) : [];
+    const filteredCandidates = candidates.filter((service) => {
+        const id = String(service.id);
+        if (query.trim() && !`${service.name} ${service.category ?? ''} ${id}`.toLowerCase().includes(query.trim().toLowerCase())) return false;
+        if (catalogGroupId === 'ungrouped') return !groupedIds.has(id);
+        if (catalogGroupId !== 'all') return groups.find((group) => group.id === catalogGroupId)?.service_ids.some((entry) => String(entry) === id) ?? false;
+        return true;
+    });
+
+    useEffect(() => {
+        setCatalog(canvas.editor?.get_catalog());
+        if (!canvas.api) return;
+        return canvas.api.on('catalog:change', ({ catalog: next }) => setCatalog(next));
+    }, [canvas.api, canvas.editor]);
+    useEffect(() => {
+        if (!open) {
+            setSelectedIds([]);
+            setError(null);
+        }
+    }, [open]);
+
+    const addSelected = () => {
+        if (!canvas.definition || !canvas.editor || !target || disabled) return;
+        const added = filteredCandidates.filter((service) => selectedIds.includes(String(service.id)));
+        if (!added.length) return;
+        try {
+            const next = cloneFallbacks(canvas.definition.fallbacks);
+            writeTarget(next, target, [...fallbackIds, ...added.map((service) => service.id)]);
+            canvas.editor.replace({ ...canvas.definition, fallbacks: next }, 'Add node fallbacks');
+            setOpen(false);
+        } catch (reason) {
+            setError(reason instanceof Error ? reason.message : 'Could not add fallback services. Try again.');
+        }
+    };
+    const remove = (id: ServiceId) => {
+        if (!canvas.definition || !canvas.editor || disabled) return;
+        try {
+            const next = cloneFallbacks(canvas.definition.fallbacks);
+            const remaining = fallbackIds.filter((candidate) => !sameService(candidate, id));
+            if (remaining.length) writeTarget(next, { scope: 'node', node_id: nodeId, primary: primaryServiceId ?? id }, remaining);
+            else {
+                const nodeFallbacks = { ...(next.nodes ?? {}) };
+                delete nodeFallbacks[nodeId];
+                next.nodes = nodeFallbacks;
+            }
+            canvas.editor.replace({ ...canvas.definition, fallbacks: next }, 'Remove node fallback');
+            setError(null);
+        } catch (reason) {
+            setError(reason instanceof Error ? reason.message : 'Could not remove fallback service. Try again.');
+        }
+    };
+
+    return (
+        <div className="space-y-2" aria-label="Node fallbacks">
+            <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">Fallbacks</p>
+                {target ? (
+                <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                        <SectionActionTriggerButton icon={<Plus className="size-3.5" />} disabled={disabled} aria-label="Add fallback">Add fallback</SectionActionTriggerButton>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-96">
+                        <div className="space-y-3">
+                            <div>
+                                <h4 className="text-sm font-semibold">Add fallback services</h4>
+                                <p className="mt-1 text-xs text-slate-500">
+                                    {policy.mode === 'strict'
+                                        ? 'Only candidates that meet this node’s capability and rate rules are shown.'
+                                        : 'Development mode shows enabled candidates, including ones outside the strict capability and rate rules.'}
+                                </p>
+                            </div>
+                            <InputField variant="text" value={query} onChange={({ value }) => setQuery(String(value ?? ''))} placeholder="Search services" aria-label="Search fallback services" />
+                            {groups.length ? <InputField variant="select" label="Catalog group" value={catalogGroupId} options={[{ value: 'all', label: 'All services' }, { value: 'ungrouped', label: 'Ungrouped' }, ...groups.map((group) => ({ value: group.id, label: group.label }))]} onChange={({ value }) => setCatalogGroupId(String(value ?? 'all'))} /> : null}
+                            <ScrollArea className="h-64 pr-1">
+                                <div className="space-y-2 pr-2">
+                                    {filteredCandidates.length ? filteredCandidates.map((service) => (
+                                        <label key={String(service.id)} className="flex cursor-pointer items-center gap-3 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800">
+                                            <input type="checkbox" checked={selectedIds.includes(String(service.id))} onChange={() => setSelectedIds((current) => current.includes(String(service.id)) ? current.filter((id) => id !== String(service.id)) : [...current, String(service.id)])} />
+                                            <span><span className="block font-medium">{service.name}</span><span className="text-xs text-slate-500">#{String(service.id)} · {service.category ?? 'Uncategorised'} · Rate {service.rate ?? 'unset'}</span></span>
+                                        </label>
+                                    )) : <p className="rounded-md border border-dashed border-slate-300 px-3 py-6 text-center text-sm text-slate-500">{target ? 'No additional eligible fallback services found.' : 'Add a primary service before choosing fallbacks.'}</p>}
+                                </div>
+                            </ScrollArea>
+                            {error ? <p role="alert" className="text-xs text-rose-600">{error}</p> : null}
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-slate-500">{selectedIds.length} selected</span>
+                                <Button type="button" size="sm" disabled={disabled || !selectedIds.length} onClick={addSelected}>Add selected</Button>
+                            </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+                ) : null}
+            </div>
+            {fallbackIds.length ? <div className="space-y-1">
+                {fallbackIds.map((id, index) => {
+                    const service = serviceById.get(String(id));
+                    return <div key={`${String(id)}-${index}`} className="flex items-center justify-between gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm dark:border-slate-800">
+                        <span className="min-w-0 truncate">{service?.name ?? `Unknown service #${String(id)}`}</span>
+                        <span className="flex shrink-0 items-center gap-2 text-xs text-slate-500">#{String(id)}<button type="button" aria-label={`Remove fallback ${String(id)}`} disabled={disabled} onClick={() => remove(id)} className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-rose-600 disabled:opacity-50 dark:hover:bg-slate-800"><Trash2 className="size-3.5" /></button></span>
+                    </div>;
+                })}
+            </div> : <p className="text-xs text-slate-500">No fallback services added for this node.</p>}
+            {primaryServiceId == null ? <p className="text-xs text-amber-700 dark:text-amber-400">Add a primary service to choose eligible fallbacks.</p> : null}
+            {error && !open ? <p role="alert" className="text-xs text-rose-600">{error}</p> : null}
+        </div>
+    );
+}
+
 function CanonicalFallbackQuickAdd({ launch, close, policy }: { launch: Launch | null; close(): void; policy: CanonicalFallbackPolicy }) {
     const canvas = useServiceBuilderCanvasModel();
     const services = useWorkspaceSelector((state) => state.services);
@@ -173,7 +347,7 @@ function CanonicalFallbackQuickAdd({ launch, close, policy }: { launch: Launch |
         setSelected([]);
         setError(null);
     }, [launch]);
-    const target: Target | null = launch
+    const target: Target | null = launch && launch.source !== 'workspace'
         ? launch.source === 'node'
             ? { scope: 'node', node_id: launch.node_id, primary: launch.primary_service_id }
             : { scope: 'global', primary: launch.primary_service_id }
@@ -201,7 +375,9 @@ function CanonicalFallbackQuickAdd({ launch, close, policy }: { launch: Launch |
     };
     if (!launch || !target || typeof document === 'undefined') return null;
     const title =
-        launch.source === 'node'
+        launch.source === 'workspace'
+            ? 'Add fallback services'
+            : launch.source === 'node'
             ? `Add fallbacks for ${launch.node_label}`
             : `Add fallbacks for ${launch.service_name ?? `service #${String(launch.primary_service_id)}`}`;
     return createPortal(
@@ -320,7 +496,7 @@ function CanonicalFallbackEditorModal({
         }
         if (!canvas.definition || initializedLaunch.current === launch) return;
         initializedLaunch.current = launch;
-        setActiveId(launch.primary_service_id);
+        setActiveId(launch.source === 'workspace' ? undefined : launch.primary_service_id);
         setDraft(cloneFallbacks(canvas.definition.fallbacks));
         setActiveTab('registrations');
         setQuery('');
@@ -373,7 +549,9 @@ function CanonicalFallbackEditorModal({
         setMessage('Fallback registrations saved.');
     };
     const title =
-        launch?.source === 'node'
+        launch?.source === 'workspace'
+            ? 'Fallback editor'
+            : launch?.source === 'node'
             ? `Fallback editor for ${launch.node_label}`
             : launch?.source === 'service'
               ? `Fallback editor for ${launch.service_name ?? `service #${String(launch.primary_service_id)}`}`

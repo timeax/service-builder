@@ -19,6 +19,7 @@ vi.mock('@elqora/dgp-ordering-form-palette', () => ({
                 slotChar: { type: 'any', label: 'Slot char', description: 'Mask placeholder character.' },
             },
         }),
+        register_many: () => undefined,
     }),
 }));
 
@@ -33,8 +34,24 @@ vi.mock('@timeax/form-palette', () => ({
             {children}
         </form>
     ),
-    InputField: ({ label, value, disabled, onChange, onFocus, onBlur, onKeyDown, placeholder }: any) => {
-        const ariaLabel = typeof label === 'string' ? label : (label?.props?.children ?? 'input-field');
+    InputField: ({ variant, label, value, disabled, onChange, onFocus, onBlur, onKeyDown, placeholder, rows, spellCheck, 'aria-label': explicitAriaLabel }: any) => {
+        const ariaLabel = explicitAriaLabel ?? (typeof label === 'string' ? label : (label?.props?.children ?? 'input-field'));
+        if (variant === 'textarea') {
+            return (
+                <textarea
+                    aria-label={ariaLabel}
+                    value={value ?? ''}
+                    placeholder={placeholder}
+                    disabled={disabled}
+                    rows={rows}
+                    spellCheck={spellCheck}
+                    onChange={(event) => onChange?.({ value: event.target.value })}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                    onKeyDown={onKeyDown}
+                />
+            );
+        }
         return (
             <input
                 aria-label={ariaLabel}
@@ -97,6 +114,14 @@ function CurrentDefaults() {
     return <output aria-label="Current field defaults">{JSON.stringify(defaults ?? {})}</output>;
 }
 
+function CurrentVisibilityExpressions() {
+    const expressions = useWorkspaceSelector((state) => {
+        const field = state.definition?.fields.find((candidate) => candidate.id === 'field:service');
+        return { field: field?.visibility_expression ?? null, option: field?.options?.[0]?.visibility_expression ?? null };
+    });
+    return <pre aria-label="Current visibility expressions">{JSON.stringify(expressions)}</pre>;
+}
+
 function SelectFilter() {
     const canvas = useCanvasAPI();
     return (
@@ -111,6 +136,15 @@ function SelectServiceField() {
     return (
         <button type="button" onClick={() => canvas?.select(['field:service'], 'field:service')}>
             Select service field
+        </button>
+    );
+}
+
+function SelectServiceOption() {
+    const canvas = useCanvasAPI();
+    return (
+        <button type="button" onClick={() => canvas?.select(['option:instagram-followers'], 'option:instagram-followers')}>
+            Select service option
         </button>
     );
 }
@@ -157,7 +191,74 @@ describe('canonical properties', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Select service field' }));
         const heading = await screen.findByText('Selection overview');
         expect(screen.getByLabelText('Label')).toBeDisabled();
+        fireEvent.click(screen.getByRole('button', { name: 'Preview-context visibility' }));
+        expect(screen.getByLabelText('Visibility expression')).toBeDisabled();
         expect(heading.closest('[title]')).toHaveAttribute('title', 'You do not have permission to edit this definition.');
+    });
+
+    it('edits and tests preview-context field visibility and reports invalid test input or execution', async () => {
+        render(
+            <ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}>
+                <CanonicalProperties />
+                <CurrentVisibilityExpressions />
+            </ServiceBuilderProvider>,
+        );
+
+        await screen.findByText('Selection overview');
+        fireEvent.click(screen.getByRole('button', { name: 'Preview-context visibility' }));
+        const body = screen.getByLabelText('Visibility expression');
+        const preview = screen.getByLabelText('Visibility test preview');
+        const test = screen.getByRole('button', { name: 'Test visibility' });
+        expect(body.tagName).toBe('TEXTAREA');
+        expect(body).toHaveAttribute('placeholder', 'preview.service_context.length > 0');
+        body.focus();
+        expect(body).toHaveFocus();
+        preview.focus();
+        expect(preview).toHaveFocus();
+        fireEvent.change(body, { target: { value: 'preview.service_context.length > 0' } });
+        test.focus();
+        expect(test).toHaveFocus();
+        await waitFor(() => expect(screen.getByLabelText('Current visibility expressions')).toHaveTextContent('preview.service_context.length > 0'));
+
+        fireEvent.click(test);
+        expect(await screen.findByRole('status')).toHaveTextContent('Visible: false');
+        fireEvent.change(preview, { target: { value: '{"service_context":[{}]}' } });
+        fireEvent.click(test);
+        expect(await screen.findByRole('status')).toHaveTextContent('Visible: true');
+
+        fireEvent.change(body, { target: { value: "'truthy'" } });
+        fireEvent.click(test);
+        expect(await screen.findByRole('status')).toHaveTextContent('Visible: true');
+
+        fireEvent.change(preview, { target: { value: '{' } });
+        fireEvent.click(test);
+        expect(await screen.findByRole('status')).toHaveTextContent('Preview context must be valid JSON.');
+
+        fireEvent.change(preview, { target: { value: '{}' } });
+        fireEvent.change(body, { target: { value: "(() => { throw new Error('test failure'); })()" } });
+        fireEvent.click(test);
+        expect(await screen.findByRole('status')).toHaveTextContent('expression_execution_failed');
+
+        fireEvent.change(body, { target: { value: '' } });
+        await waitFor(() => expect(screen.getByLabelText('Current visibility expressions')).toHaveTextContent('"field":null'));
+        expect(test).toBeDisabled();
+    });
+
+    it('edits preview-context visibility for a selected option', async () => {
+        render(
+            <ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}>
+                <SelectServiceOption />
+                <CanonicalProperties />
+                <CurrentVisibilityExpressions />
+            </ServiceBuilderProvider>,
+        );
+
+        await screen.findByText('No active node selected');
+        fireEvent.click(screen.getByRole('button', { name: 'Select service option' }));
+        await screen.findByText('Selection overview');
+        fireEvent.click(screen.getByRole('button', { name: 'Preview-context visibility' }));
+        fireEvent.change(screen.getByLabelText('Visibility expression'), { target: { value: 'Boolean(preview.allowed)' } });
+        await waitFor(() => expect(screen.getByLabelText('Current visibility expressions')).toHaveTextContent('"option":{"language":"javascript","body":"Boolean(preview.allowed)"}'));
     });
 
     it('edits canonical quantity behavior through the preserved collapsible section', async () => {

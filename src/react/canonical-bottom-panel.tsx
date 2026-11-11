@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils.ts';
 import { CatalogToolbar, type CatalogGroupView } from '@/workspace/bottom-panel/catalog-toolbar.tsx';
 import { ServicePickerDialog } from '@/workspace/bottom-panel/service-picker-dialog.tsx';
 import { filterHandlerServices } from '@elqora/dgp-core';
-import type { HandlerService } from '@elqora/dgp-spec';
+import { HANDLER_SERVICE_STATES, type HandlerService, type HandlerServiceState } from '@elqora/dgp-spec';
 import type { ServiceCatalogState } from '@elqora/dgp-workspace';
 import { InputField } from '@timeax/form-palette';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
@@ -167,6 +167,7 @@ export function CanonicalBottomConsolePanel({ controller }: { controller: Canoni
     const setSearch = controller.activeTab === 'activeServices' ? setActiveSearch : setAllSearch;
     const [hideActiveServices, setHideActiveServices] = useState(false);
     const [hideNonEligibleServices, setHideNonEligibleServices] = useState(false);
+    const [handlerStates, setHandlerStates] = useState<HandlerServiceState[]>(() => [...HANDLER_SERVICE_STATES]);
     const [compatibleOnly, setCompatibleOnly] = useState(false);
     const [strictSafety, setStrictSafety] = useState(true);
     const effectiveStrictSafety = contextLinked || strictSafety;
@@ -300,6 +301,7 @@ export function CanonicalBottomConsolePanel({ controller }: { controller: Canoni
     const visibleSource = catalogSource
         .filter((service) => !hideActiveServices || service.attachmentCount === 0)
         .filter((service) => !hideNonEligibleServices || !effectiveStrictSafety || service.matchesSelectedFilter !== false)
+        .filter((service) => handlerStates.includes(service.state))
         .filter(
             (service) =>
                 !compatibleOnly ||
@@ -476,8 +478,10 @@ export function CanonicalBottomConsolePanel({ controller }: { controller: Canoni
                                 <HideServicesMenu
                                     hideActiveServices={hideActiveServices}
                                     hideNonEligibleServices={hideNonEligibleServices}
+                                    handlerStates={handlerStates}
                                     onHideActiveServicesChange={setHideActiveServices}
                                     onHideNonEligibleServicesChange={setHideNonEligibleServices}
+                                    onHandlerStatesChange={setHandlerStates}
                                 />
                                 {controller.activeTab === 'allServices' ? (
                                 <CatalogContextPopover
@@ -492,13 +496,8 @@ export function CanonicalBottomConsolePanel({ controller }: { controller: Canoni
                                     contextState={{ filterId: contextFilterId, triggerIds: [...contextTriggerIds] }}
                                     contextSnapshot={contextSnapshot}
                                     onFilterChange={(filterId) => setDraftContext({ filterId, triggerIds: [] })}
-                                    onTriggerToggle={(triggerId) =>
-                                        setDraftContext((current) => ({
-                                            ...current,
-                                            triggerIds: current.triggerIds.includes(triggerId)
-                                                ? current.triggerIds.filter((id) => id !== triggerId)
-                                                : [...current.triggerIds, triggerId],
-                                        }))
+                                    onTriggerSelectionChange={(triggerIds) =>
+                                        setDraftContext((current) => ({ ...current, triggerIds }))
                                     }
                                     compatibleOnly={compatibleOnly}
                                     onCompatibleOnlyChange={setCompatibleOnly}
@@ -634,7 +633,7 @@ function CatalogContextPopover({
     contextState,
     contextSnapshot,
     onFilterChange,
-    onTriggerToggle,
+    onTriggerSelectionChange,
     compatibleOnly,
     onCompatibleOnlyChange,
     strictSafety,
@@ -655,7 +654,7 @@ function CatalogContextPopover({
     contextState: CatalogContextState;
     contextSnapshot: CatalogContextSnapshot;
     onFilterChange(id: string): void;
-    onTriggerToggle(id: string): void;
+    onTriggerSelectionChange(ids: string[]): void;
     compatibleOnly: boolean;
     onCompatibleOnlyChange(value: boolean): void;
     strictSafety: boolean;
@@ -691,7 +690,7 @@ function CatalogContextPopover({
                 align="end"
                 sideOffset={8}
                 collisionPadding={16}
-                className="max-h-[32rem] w-[min(24rem,calc(100vw-2rem))] overflow-auto rounded-2xl p-0"
+                className="flex max-h-[min(32rem,var(--radix-popper-available-height))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl p-0"
             >
                 <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-800">
                     <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Catalog context</div>
@@ -699,127 +698,141 @@ function CatalogContextPopover({
                         Control compatibility checks here, or link them to the current workspace context.
                     </p>
                 </div>
-                <div className="space-y-4 p-4">
-                    <label className="flex items-start justify-between gap-3 text-sm text-slate-900 dark:text-slate-100">
-                        <span className="min-w-0">
-                            <span className="block font-medium">Compatible only</span>
-                            <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                                Show services matching checked capabilities and the configured rate rule. Host policies are not checked yet.
-                            </span>
-                        </span>
-                        <input type="checkbox" checked={compatibleOnly} onChange={(event) => onCompatibleOnlyChange(event.target.checked)} />
-                    </label>
-                    <label className="flex items-start justify-between gap-3 text-sm text-slate-900 dark:text-slate-100">
-                        <span className="min-w-0">
-                            <span className="block font-medium">Link to current context</span>
-                            <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                                Mirror the current canvas tag and selected buttons while linked.
-                            </span>
-                        </span>
-                        <input type="checkbox" checked={contextLinked} onChange={(event) => onContextLinkedChange(event.target.checked)} />
-                    </label>
-                    <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/40">
-                        <div className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">Tags</div>
-                        {contextSnapshot.filters.map((filter) => (
-                            <label key={filter.id} className="flex items-start gap-3 text-sm text-slate-900 dark:text-slate-100">
-                                <input
-                                    type="radio"
-                                    name="catalog-context-filter"
-                                    disabled={contextLinked}
-                                    checked={contextState.filterId === filter.id}
-                                    onChange={() => onFilterChange(filter.id)}
-                                />
-                                <span className="font-medium">{filter.label}</span>
-                            </label>
-                        ))}
-                    </div>
-                    {contextSnapshot.buttonGroups.length ? (
-                        <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/40">
-                            <div className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">Buttons</div>
-                            {contextSnapshot.buttonGroups.map((group) => (
-                                <div key={group.id} className="space-y-1">
-                                    <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{group.label}</div>
-                                    {group.options.map((option) => (
-                                        <label key={option.id} className="flex items-start gap-3 text-sm text-slate-900 dark:text-slate-100">
-                                            <input
-                                                type="checkbox"
-                                                disabled={contextLinked}
-                                                checked={contextState.triggerIds.includes(option.id)}
-                                                onChange={() => onTriggerToggle(option.id)}
-                                            />
-                                            <span>{option.label}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            ))}
-                        </div>
-                    ) : null}
-                    <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/40">
-                        <div className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">Safety</div>
-                        <label className="flex items-center justify-between gap-3 text-sm text-slate-900 dark:text-slate-100">
-                            <span>Strict safety</span>
-                            <input
-                                type="checkbox"
-                                disabled={contextLinked}
-                                checked={strictSafety}
-                                onChange={(event) => onStrictSafetyChange(event.target.checked)}
-                            />
-                        </label>
-                    </div>
-                    <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/40">
-                        <div className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">
-                            Rate compatibility mode
-                        </div>
+                <ScrollArea className="h-[max(0px,calc(var(--radix-popper-available-height)-5.1rem))] max-h-[27rem] min-h-0 flex-none">
+                    <div className="space-y-4 p-4">
                         <InputField
-                            variant="radio"
-                            value={rateContextMode}
-                            options={[
-                                { value: 'context', label: 'Context coherence', description: 'Use current tag and triggers; context-rate checks are not yet available.' },
-                                {
-                                    value: 'custom_primary_rate',
-                                    label: 'Custom primary rate',
-                                    description: 'Use a chosen service or manual rate as primary.',
-                                },
-                            ]}
-                            onChange={({ value }) => onRateContextModeChange(value as 'context' | 'custom_primary_rate')}
+                            variant="checkbox"
+                            fullWidth
+                            className="w-full min-w-0"
+                            variantClassName="w-full min-w-0"
+                            groupClassName="w-full"
+                            optionClassName="w-full"
+                            labelClassName="min-w-0"
+                            descriptionClassName="min-w-0 break-words"
+                            options={[{ value: 'compatible-only', label: 'Compatible only', description: 'Show services matching checked capabilities and the configured rate rule. Host policies are not checked yet.' }]}
+                            value={compatibleOnly ? ['compatible-only'] : []}
+                            onChange={({ value }) => onCompatibleOnlyChange(Array.isArray(value) && value.includes('compatible-only'))}
                         />
-                        {rateContextMode === 'custom_primary_rate' ? (
-                            <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-950/40">
-                                <InputField
-                                    variant="radio"
-                                    value={rateContextSource}
-                                    options={[
-                                        { value: 'service', label: 'From context service', description: 'Use a catalog service rate.' },
-                                        { value: 'manual', label: 'Manual rate', description: 'Provide a numeric primary rate.' },
-                                    ]}
-                                    onChange={({ value }) => onRateContextSourceChange(value as 'service' | 'manual')}
-                                />
-                                {rateContextSource === 'service' ? (
-                                    <InputField
-                                        variant="select" autoCap
-                                        label="Primary context service"
-                                        options={services.map((service) => ({
-                                            value: String(service.id),
-                                            label: `#${String(service.id)} - ${service.name}`,
-                                        }))}
-                                        value={primaryServiceId || undefined}
-                                        onChange={({ value }) => onPrimaryServiceIdChange(String(value ?? ''))}
-                                        placeholder="Select service"
-                                    />
-                                ) : (
-                                    <InputField
-                                        variant="number"
-                                        label="Primary rate"
-                                        value={manualPrimaryRate === '' ? undefined : Number(manualPrimaryRate)}
-                                        onChange={({ value }) => onManualPrimaryRateChange(String(value ?? ''))}
-                                        placeholder="Enter rate"
-                                    />
-                                )}
-                                {customRateError ? <p className="text-xs text-amber-700 dark:text-amber-300">{customRateError}</p> : null}
+                        <InputField
+                            variant="checkbox"
+                            fullWidth
+                            className="w-full min-w-0"
+                            variantClassName="w-full min-w-0"
+                            groupClassName="w-full"
+                            optionClassName="w-full"
+                            labelClassName="min-w-0"
+                            descriptionClassName="min-w-0 break-words"
+                            options={[{ value: 'link-context', label: 'Link to current context', description: 'Mirror the current canvas tag and selected buttons while linked.' }]}
+                            value={contextLinked ? ['link-context'] : []}
+                            onChange={({ value }) => onContextLinkedChange(Array.isArray(value) && value.includes('link-context'))}
+                        />
+                        <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                            <div className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">Tags</div>
+                            <InputField
+                                variant="radio"
+                                fullWidth
+                                aria-label="Tags"
+                                name="catalog-context-filter"
+                                disabled={contextLinked}
+                                value={contextState.filterId}
+                                options={contextSnapshot.filters.map((filter) => ({ value: filter.id, label: filter.label }))}
+                                onChange={({ value }) => { if (value) onFilterChange(String(value)); }}
+                            />
+                        </div>
+                        {contextSnapshot.buttonGroups.length ? (
+                            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                                <div className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">Buttons</div>
+                                {contextSnapshot.buttonGroups.map((group) => (
+                                    <div key={group.id} className="space-y-1">
+                                        <InputField
+                                            variant="checkbox"
+                                            fullWidth
+                                            label={group.label}
+                                            disabled={contextLinked}
+                                            value={contextState.triggerIds.filter((id) => group.options.some((option) => option.id === id))}
+                                            options={group.options.map((option) => ({ value: option.id, label: option.label }))}
+                                            onChange={({ value }) => {
+                                                const selected = Array.isArray(value) ? value.map(String) : [];
+                                                const otherGroupIds = contextState.triggerIds.filter((id) => !group.options.some((option) => option.id === id));
+                                                onTriggerSelectionChange([...otherGroupIds, ...selected]);
+                                            }}
+                                        />
+                                    </div>
+                                ))}
                             </div>
                         ) : null}
+                        <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                            <div className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">Safety</div>
+                            <InputField
+                                variant="checkbox"
+                                fullWidth
+                                groupClassName="w-full"
+                                options={[{ value: 'strict-safety', label: 'Strict safety' }]}
+                                labelClassName="min-w-0"
+                                disabled={contextLinked}
+                                value={strictSafety ? ['strict-safety'] : []}
+                                onChange={({ value }) => onStrictSafetyChange(Array.isArray(value) && value.includes('strict-safety'))}
+                            />
+                        </div>
+                        <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                            <div className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">
+                                Rate compatibility mode
+                            </div>
+                            <InputField
+                                variant="radio"
+                                fullWidth
+                                value={rateContextMode}
+                                options={[
+                                    { value: 'context', label: 'Context coherence', description: 'Use current tag and triggers; context-rate checks are not yet available.' },
+                                    {
+                                        value: 'custom_primary_rate',
+                                        label: 'Custom primary rate',
+                                        description: 'Use a chosen service or manual rate as primary.',
+                                    },
+                                ]}
+                                onChange={({ value }) => onRateContextModeChange(value as 'context' | 'custom_primary_rate')}
+                            />
+                            {rateContextMode === 'custom_primary_rate' ? (
+                                <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-950/40">
+                                    <InputField
+                                        variant="radio"
+                                        fullWidth
+                                        value={rateContextSource}
+                                        options={[
+                                            { value: 'service', label: 'From context service', description: 'Use a catalog service rate.' },
+                                            { value: 'manual', label: 'Manual rate', description: 'Provide a numeric primary rate.' },
+                                        ]}
+                                        onChange={({ value }) => onRateContextSourceChange(value as 'service' | 'manual')}
+                                    />
+                                    {rateContextSource === 'service' ? (
+                                        <InputField
+                                            variant="select" autoCap
+                                            fullWidth
+                                            label="Primary context service"
+                                            options={services.map((service) => ({
+                                                value: String(service.id),
+                                                label: `#${String(service.id)} - ${service.name}`,
+                                            }))}
+                                            value={primaryServiceId || undefined}
+                                            onChange={({ value }) => onPrimaryServiceIdChange(String(value ?? ''))}
+                                            placeholder="Select service"
+                                        />
+                                    ) : (
+                                        <InputField
+                                            variant="number"
+                                            fullWidth
+                                            label="Primary rate"
+                                            value={manualPrimaryRate === '' ? undefined : Number(manualPrimaryRate)}
+                                            onChange={({ value }) => onManualPrimaryRateChange(String(value ?? ''))}
+                                            placeholder="Enter rate"
+                                        />
+                                    )}
+                                    {customRateError ? <p className="text-xs text-amber-700 dark:text-amber-300">{customRateError}</p> : null}
+                                </div>
+                            ) : null}
+                        </div>
                     </div>
-                </div>
+                </ScrollArea>
             </PopoverContent>
         </Popover>
     );
@@ -828,15 +841,19 @@ function CatalogContextPopover({
 function HideServicesMenu({
     hideActiveServices,
     hideNonEligibleServices,
+    handlerStates,
     onHideActiveServicesChange,
     onHideNonEligibleServicesChange,
+    onHandlerStatesChange,
 }: {
     hideActiveServices: boolean;
     hideNonEligibleServices: boolean;
+    handlerStates: HandlerServiceState[];
     onHideActiveServicesChange(value: boolean): void;
     onHideNonEligibleServicesChange(value: boolean): void;
+    onHandlerStatesChange(value: HandlerServiceState[]): void;
 }) {
-    const active = hideActiveServices || hideNonEligibleServices;
+    const active = hideActiveServices || hideNonEligibleServices || handlerStates.length !== HANDLER_SERVICE_STATES.length;
     return (
         <Popover>
             <Tooltip>
@@ -861,29 +878,53 @@ function HideServicesMenu({
                 </TooltipContent>
             </Tooltip>
             <PopoverContent align="end" sideOffset={8} collisionPadding={16} className="w-80 rounded-2xl p-4">
-                <div className="space-y-3">
-                    <label className="flex items-start justify-between gap-3 text-sm text-slate-900 dark:text-slate-100">
-                        <span className="min-w-0">
-                            <span className="block font-medium">Hide active services</span>
-                            <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                                Hide services already active in the current context.
-                            </span>
-                        </span>
-                        <input type="checkbox" checked={hideActiveServices} onChange={(event) => onHideActiveServicesChange(event.target.checked)} />
-                    </label>
-                    <label className="flex items-start justify-between gap-3 text-sm text-slate-900 dark:text-slate-100">
-                        <span className="min-w-0">
-                            <span className="block font-medium">Hide non-eligible for context</span>
-                            <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                                Hide services currently marked as incompatible with this context.
-                            </span>
-                        </span>
-                        <input
-                            type="checkbox"
-                            checked={hideNonEligibleServices}
-                            onChange={(event) => onHideNonEligibleServicesChange(event.target.checked)}
+                <div className="space-y-4">
+                    <InputField
+                        variant="checkbox"
+                        fullWidth
+                        className="w-full min-w-0"
+                        variantClassName="w-full min-w-0"
+                        groupClassName="w-full"
+                        optionClassName="w-full"
+                        labelClassName="min-w-0"
+                        descriptionClassName="min-w-0 break-words"
+                        options={[
+                            { value: 'hide-active', label: 'Hide active services', description: 'Hide services already active in the current context.' },
+                            {
+                                value: 'hide-non-eligible',
+                                label: 'Hide non-eligible for context',
+                                description: 'Hide services currently marked as incompatible with this context.',
+                            },
+                        ]}
+                        value={[
+                            ...(hideActiveServices ? ['hide-active'] : []),
+                            ...(hideNonEligibleServices ? ['hide-non-eligible'] : []),
+                        ]}
+                        onChange={({ value }) => {
+                            const selected = Array.isArray(value) ? value.map(String) : [];
+                            onHideActiveServicesChange(selected.includes('hide-active'));
+                            onHideNonEligibleServicesChange(selected.includes('hide-non-eligible'));
+                        }}
+                    />
+                    <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                        <div className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">Handler state</div>
+                        <InputField
+                            variant="checkbox"
+                            fullWidth
+                            className="w-full min-w-0"
+                            variantClassName="w-full min-w-0"
+                            groupClassName="w-full"
+                            optionClassName="w-full"
+                            labelClassName="min-w-0"
+                            options={HANDLER_SERVICE_STATES.map((state) => ({ value: state, label: state[0]!.toUpperCase() + state.slice(1) }))}
+                            value={handlerStates}
+                            onChange={({ value }) =>
+                                onHandlerStatesChange(
+                                    HANDLER_SERVICE_STATES.filter((state) => Array.isArray(value) && value.includes(state)),
+                                )
+                            }
                         />
-                    </label>
+                    </div>
                 </div>
             </PopoverContent>
         </Popover>

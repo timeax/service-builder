@@ -11,9 +11,61 @@ import { DRAG_MIME_SERVICE } from './drag-contracts';
 import { ServiceBuilderProvider, useCanvasAPI } from './workspace';
 
 vi.mock('@timeax/form-palette', () => ({
-    InputField: ({ label, value, onChange }: any) => (
-        <input aria-label={label ?? 'Fallback setting'} value={value ?? ''} onChange={(event) => onChange?.({ value: event.target.value })} />
-    ),
+    InputField: ({ label, value, onChange, variant, options, placeholder, disabled }: any) => {
+        if (variant === 'checkbox') {
+            const selected = Array.isArray(value) ? value.map(String) : [];
+            return (
+                <fieldset>
+                    {label ? <legend>{label}</legend> : null}
+                    {(options ?? []).map((option: any) => (
+                        <label key={option.value}>
+                            <input
+                                type="checkbox"
+                                checked={selected.includes(String(option.value))}
+                                disabled={disabled}
+                                onChange={(event) =>
+                                    onChange?.({
+                                        value: event.target.checked
+                                            ? [...selected, String(option.value)]
+                                            : selected.filter((item) => item !== String(option.value)),
+                                    })
+                                }
+                            />
+                            {option.label}
+                            {option.description ? <span>{option.description}</span> : null}
+                        </label>
+                    ))}
+                </fieldset>
+            );
+        }
+        if (variant === 'radio') {
+            return (
+                <fieldset>
+                    {label ? <legend>{label}</legend> : null}
+                    {(options ?? []).map((option: any) => (
+                        <label key={option.value}>
+                            <input
+                                type="radio"
+                                checked={String(value ?? '') === String(option.value)}
+                                disabled={disabled}
+                                onChange={() => onChange?.({ value: option.value })}
+                            />
+                            {option.label}
+                        </label>
+                    ))}
+                </fieldset>
+            );
+        }
+        return (
+            <input
+                aria-label={label ?? 'Fallback setting'}
+                placeholder={placeholder}
+                disabled={disabled}
+                value={value ?? ''}
+                onChange={(event) => onChange?.({ value: event.target.value })}
+            />
+        );
+    },
 }));
 
 beforeAll(() => {
@@ -348,6 +400,53 @@ describe('canonical bottom panel', () => {
         expect(screen.getAllByText('#10147').length).toBeGreaterThan(0);
     }, 15_000);
 
+    it('filters handler states across active and all services while allowing multiple states', async () => {
+        const stateById = new Map([
+            ['10147', 'disabled'],
+            ['2946', 'enabled'],
+            ['3456', 'locked'],
+        ]);
+        const services = workspaceSeed.services
+            .filter((service) => stateById.has(String(service.id)))
+            .map((service) => ({ ...service, state: stateById.get(String(service.id)) as 'enabled' | 'disabled' | 'locked' }));
+        const backend = new MemoryWorkspaceBackend({ ...workspaceSeed, services, persistence: undefined });
+        render(
+            <ServiceBuilderProvider backend={backend} actor={workspaceActor}>
+                <CanonicalFallbackProvider>
+                    <Harness />
+                </CanonicalFallbackProvider>
+            </ServiceBuilderProvider>,
+        );
+
+        await waitFor(() => expect(screen.getByLabelText('Bottom panel state')).toHaveTextContent('closed|console'));
+        fireEvent.keyDown(window, { key: 'j', ctrlKey: true });
+        fireEvent.click(screen.getByRole('button', { name: /^All Services/ }));
+        expect(await screen.findByRole('button', { name: /#10147/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /#2946/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /#3456/ })).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Hide services options' }));
+        const enabled = screen.getByRole('checkbox', { name: 'Enabled' });
+        const disabled = screen.getByRole('checkbox', { name: 'Disabled' });
+        const locked = screen.getByRole('checkbox', { name: 'Locked' });
+        expect(enabled).toBeChecked();
+        expect(disabled).toBeChecked();
+        expect(locked).toBeChecked();
+
+        fireEvent.click(disabled);
+        await waitFor(() => expect(screen.queryByRole('button', { name: /#10147/ })).not.toBeInTheDocument());
+        expect(screen.getByRole('button', { name: /#2946/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /#3456/ })).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('checkbox', { name: 'Enabled' }));
+        fireEvent.click(screen.getByRole('checkbox', { name: 'Locked' }));
+        await waitFor(() => expect(screen.getByText('No services match this view')).toBeInTheDocument());
+
+        fireEvent.click(screen.getByRole('button', { name: /^Active Services/ }));
+        await waitFor(() => expect(screen.getByText('No active services yet')).toBeInTheDocument());
+        expect(screen.queryByRole('button', { name: /#10147/ })).not.toBeInTheDocument();
+    }, 15_000);
+
     it('keeps catalogue browsing available while explaining denied fallback mutations', async () => {
         const backend = new MemoryWorkspaceBackend({
             ...workspaceSeed,
@@ -464,8 +563,8 @@ describe('canonical bottom panel', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Catalog context filter' }));
         fireEvent.click(await screen.findByRole('checkbox', { name: /Compatible only/ }));
-        fireEvent.change(screen.getByDisplayValue('context'), { target: { value: 'custom_primary_rate' } });
-        fireEvent.change(screen.getByDisplayValue('service'), { target: { value: 'manual' } });
+        fireEvent.click(screen.getByRole('radio', { name: /Custom primary rate/ }));
+        fireEvent.click(screen.getByRole('radio', { name: /Manual rate/ }));
         expect(await screen.findByText('Provide a primary service or valid primary rate to apply compatibility filtering.')).toBeInTheDocument();
         fireEvent.change(await screen.findByLabelText('Primary rate'), { target: { value: '0.7' } });
 
