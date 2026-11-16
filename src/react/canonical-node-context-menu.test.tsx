@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { MemoryWorkspaceBackend } from '@elqora/dgp-workspace';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { workspaceSeed } from '../../backend/canonical/seed';
 import { workspaceActor } from '../../backend/canonical/seed/meta';
 import { DRAG_MIME_ASSET_TEMPLATE } from './drag-contracts';
@@ -14,6 +14,10 @@ vi.mock('@timeax/form-palette', async (importOriginal) => ({
         <input aria-label={label} value={value ?? ''} onChange={(event) => onChange?.({ value: event.target.value })} />
     ),
 }));
+
+beforeAll(() => {
+    vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
+});
 
 function Harness() {
     const menu = useCanonicalNodeContextMenu();
@@ -144,13 +148,12 @@ describe('canonical node context menu', () => {
         await waitFor(() => expect(screen.getByLabelText('Field count')).toHaveTextContent('3'));
         fireEvent.contextMenu(screen.getByRole('button', { name: 'Open node menu' }));
         fireEvent.click(await screen.findByText('Save as template'));
-        const dialog = await screen.findByRole('alertdialog', { name: 'Save as template' });
-        expect(dialog).toBeInTheDocument();
+        expect(await screen.findByLabelText('Template name')).toBeInTheDocument();
         fireEvent.change(screen.getByLabelText('Template name'), { target: { value: 'Custom field' } });
         fireEvent.click(screen.getByRole('button', { name: 'Save template' }));
         await waitFor(() => expect(save).toHaveBeenCalled());
         expect(save.mock.calls.at(-1)?.[0]).toMatchObject({ name: 'Custom field', branch_id: 'branch:main' });
-        await waitFor(() => expect(screen.queryByRole('alertdialog', { name: 'Save as template' })).not.toBeInTheDocument());
+        await waitFor(() => expect(screen.queryByLabelText('Template name')).not.toBeInTheDocument());
     });
 
     it('saves connected fields and relationships through the canonical capture API', async () => {
@@ -188,7 +191,7 @@ describe('canonical node context menu', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Save template' }));
         await waitFor(() => expect(save).toHaveBeenCalled());
         expect(save.mock.calls.at(-1)?.[0].branch_id).toBeNull();
-        await waitFor(() => expect(screen.queryByRole('alertdialog', { name: 'Save as template' })).not.toBeInTheDocument());
+        await waitFor(() => expect(screen.queryByLabelText('Template name')).not.toBeInTheDocument());
     });
 
     it('shows template save failures and retains the name for retry', async () => {
@@ -205,7 +208,7 @@ describe('canonical node context menu', () => {
         expect(screen.getByLabelText('Template name')).toHaveValue('Retry field');
         expect(screen.getByRole('checkbox', { name: 'Copy options from Service' })).not.toBeChecked();
         fireEvent.click(screen.getByRole('button', { name: 'Save template' }));
-        await waitFor(() => expect(screen.queryByRole('alertdialog', { name: 'Save as template' })).not.toBeInTheDocument());
+        await waitFor(() => expect(screen.queryByLabelText('Template name')).not.toBeInTheDocument());
     });
 
     it('opens the preserved Notice Manager with the node preselected without creating a notice early', async () => {

@@ -13,10 +13,10 @@ import {
 } from '@/components/ui/alert-dialog.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
 import { Button } from '@/components/ui/button.tsx';
-import { ScrollArea } from '@/components/ui/scroll-area.tsx';
+import { createDialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogProvider, DialogTitle, DialogWrapper, useDialog } from '@/components/ui/dialog-manager';
 import { InputField } from '@timeax/form-palette';
 import { walkOptions } from '@elqora/dgp-core';
-import type { NodeReference } from '@elqora/dgp-workspace';
+import type { FieldTemplate, NodeReference } from '@elqora/dgp-workspace';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useOptionalCanonicalFallbacks } from './canonical-fallbacks';
@@ -52,6 +52,149 @@ const slug = (value: string) =>
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '') || 'field-template';
 
+type TemplatePreview = Pick<FieldTemplate, 'field' | 'connected_fields'>;
+
+interface SaveTemplateDialogProps {
+    preview: TemplatePreview | null;
+    requestId: number;
+    initialName: string;
+    initialGroupLabel: string;
+    onSave(draft: SaveTemplateDraft): Promise<string | null>;
+    onDialogClose?(): void;
+}
+
+interface SaveTemplateDraft {
+    name: string;
+    inBranch: boolean;
+    includeConnected: boolean;
+    groupLabel: string;
+    fields: Record<string, boolean>;
+    properties: Record<string, Record<string, boolean>>;
+}
+
+const SaveTemplateDialog = createDialog<SaveTemplateDialogProps>('canonical-save-field-template', ({ props, hide }) => (
+    <SaveTemplateDialogContent key={props.requestId} props={props} hide={hide} />
+));
+
+function SaveTemplateDialogHost({ request }: { request: SaveTemplateDialogProps | null }) {
+    return <DialogProvider><SaveTemplateDialogController request={request} /></DialogProvider>;
+}
+
+function SaveTemplateDialogController({ request }: { request: SaveTemplateDialogProps | null }) {
+    const dialog = useDialog();
+    useEffect(() => {
+        if (request) dialog.open(SaveTemplateDialog, request);
+    // Each request opens once; state inside the dialog must survive its own rerenders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [request?.requestId]);
+    return (
+        <SaveTemplateDialog
+            preview={request?.preview ?? null}
+            requestId={request?.requestId ?? 0}
+            initialName={request?.initialName ?? ''}
+            initialGroupLabel={request?.initialGroupLabel ?? ''}
+            onSave={request?.onSave ?? (async () => null)}
+            onDialogClose={request?.onDialogClose}
+            title="Save as template"
+            headless
+            className="h-[min(90vh,52rem)] w-[min(96vw,42rem)] max-w-none rounded-xl border-border bg-background p-0 shadow-2xl"
+            maxVh={90}
+        />
+    );
+}
+
+function SaveTemplateDialogContent({ props, hide }: { props: SaveTemplateDialogProps; hide: (resolve?: boolean) => void }) {
+    const [name, setName] = useState(props.initialName);
+    const [inBranch, setInBranch] = useState(true);
+    const [includeConnected, setIncludeConnected] = useState(false);
+    const [groupLabel, setGroupLabel] = useState(props.initialGroupLabel);
+    const [fields, setFields] = useState<Record<string, boolean>>({});
+    const [properties, setProperties] = useState<Record<string, Record<string, boolean>>>({});
+    const [error, setError] = useState<string | null>(null);
+    const [pending, setPending] = useState(false);
+
+    const submit = async () => {
+        if (!name.trim() || pending) return;
+        setPending(true);
+        setError(null);
+        try {
+            const message = await props.onSave({ name, inBranch, includeConnected, groupLabel, fields, properties });
+            if (message) setError(message);
+            else hide(true);
+        } catch (caught) {
+            setError(caught instanceof Error ? caught.message : 'Could not save the template.');
+        } finally {
+            setPending(false);
+        }
+    };
+
+    return (
+        <DialogWrapper>
+            <DialogHeader className="flex-row items-start justify-between gap-4 px-6 py-5">
+                <div className="min-w-0">
+                    <DialogTitle className="text-lg leading-6" />
+                    <p className="mt-1 text-sm text-muted-foreground">Name this field template and choose its scope.</p>
+                </div>
+                <DialogClose disabled={pending} aria-label="Close save template dialog" className="shrink-0" />
+            </DialogHeader>
+            <DialogContent innerClassName="px-6 py-5">
+                <form id="save-field-template-form" onSubmit={(event) => { event.preventDefault(); void submit(); }} className="space-y-4">
+                    <InputField variant="text" label="Template name" value={name} onChange={(event) => setName(String(event.value ?? ''))} />
+                    <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={inBranch} onChange={(event) => setInBranch(event.target.checked)} />
+                        <span>Save to current branch</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={includeConnected} onChange={(event) => setIncludeConnected(event.target.checked)} />
+                        <span>Include connected fields</span>
+                    </label>
+                    <p className="text-xs text-muted-foreground">The template preserves its fields, nested options, and supported relationships.</p>
+                    {props.preview ? (
+                        <div className="space-y-3 rounded-lg border border-border p-3">
+                            {includeConnected ? (
+                                <div className="space-y-2">
+                                    <InputField variant="text" label="Template label" value={groupLabel} onChange={(event) => setGroupLabel(String(event.value ?? ''))} />
+                                    <p className="text-sm font-medium">Fields in group</p>
+                                    {[props.preview.field, ...(props.preview.connected_fields ?? [])].map((field) => (
+                                        <label key={field.id} className="flex items-center gap-2 text-sm">
+                                            <input type="checkbox" checked={field.id === props.preview!.field.id || fields[field.id] !== false} disabled={field.id === props.preview!.field.id} onChange={(event) => setFields((current) => ({ ...current, [field.id]: event.target.checked }))} />
+                                            <span>{field.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            ) : null}
+                            <div className="space-y-2">
+                                <p className="text-sm font-medium">Copied properties</p>
+                                {[props.preview.field, ...(includeConnected ? props.preview.connected_fields ?? [] : [])]
+                                    .filter((field) => field.id === props.preview!.field.id || fields[field.id] !== false)
+                                    .map((field) => (
+                                        <details key={field.id} open className="rounded-md border border-border p-2">
+                                            <summary className="cursor-pointer text-sm font-medium">{field.label} ({field.id})</summary>
+                                            <div className="mt-2 grid grid-cols-1 gap-1">
+                                                {Object.keys(field).map((key) => {
+                                                    const required = ['id', 'type', 'label'].includes(key);
+                                                    return <label key={key} className="flex items-center gap-2 text-xs">
+                                                        <input type="checkbox" aria-label={`Copy ${key} from ${field.label}`} checked={required || properties[field.id]?.[key] !== false} disabled={required} onChange={(event) => setProperties((current) => ({ ...current, [field.id]: { ...(current[field.id] ?? {}), [key]: event.target.checked } }))} />
+                                                        <span className="font-mono">{key}</span>
+                                                    </label>;
+                                                })}
+                                            </div>
+                                        </details>
+                                    ))}
+                            </div>
+                        </div>
+                    ) : null}
+                    {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
+                </form>
+            </DialogContent>
+            <DialogFooter className="px-6 py-4">
+                <Button type="button" variant="outline" disabled={pending} onClick={() => hide(false)}>Cancel</Button>
+                <Button type="submit" form="save-field-template-form" disabled={!name.trim() || pending}>{pending ? 'Saving…' : 'Save template'}</Button>
+            </DialogFooter>
+        </DialogWrapper>
+    );
+}
+
 export function useCanonicalNodeContextMenu(): ContextValue {
     const value = useContext(Context);
     if (!value) throw new Error('useCanonicalNodeContextMenu requires CanonicalNodeContextMenuProvider.');
@@ -63,6 +206,10 @@ export function useOptionalCanonicalNodeContextMenu(): ContextValue | null {
 }
 
 export function CanonicalNodeContextMenuProvider({ children }: { children: ReactNode }) {
+    return <CanonicalNodeContextMenuInner>{children}</CanonicalNodeContextMenuInner>;
+}
+
+function CanonicalNodeContextMenuInner({ children }: { children: ReactNode }) {
     const canvas = useCanvasAPI();
     const runtime = useWorkspaceRuntime();
     const fallbacks = useOptionalCanonicalFallbacks();
@@ -74,16 +221,10 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
     const [target, setTarget] = useState<OpenCanonicalNodeContextMenuInput | null>(null);
     const [dropIntent, setDropIntent] = useState<DropIntent | null>(null);
     const [dropError, setDropError] = useState<string | null>(null);
-    const [dialog, setDialog] = useState<'rename' | 'delete' | 'template' | 'batch-target' | 'batch-labels' | null>(null);
+    const [dialog, setDialog] = useState<'rename' | 'delete' | 'batch-target' | 'batch-labels' | null>(null);
     const [renameValue, setRenameValue] = useState('');
-    const [templateName, setTemplateName] = useState('');
-    const [templateInBranch, setTemplateInBranch] = useState(true);
-    const [templateIncludeConnected, setTemplateIncludeConnected] = useState(false);
-    const [templateGroupLabel, setTemplateGroupLabel] = useState('');
-    const [templateFields, setTemplateFields] = useState<Record<string, boolean>>({});
-    const [templateProperties, setTemplateProperties] = useState<Record<string, Record<string, boolean>>>({});
-    const [templateError, setTemplateError] = useState<string | null>(null);
-    const [templatePending, setTemplatePending] = useState(false);
+    const templateDialogRequest = useRef(0);
+    const [saveTemplateRequest, setSaveTemplateRequest] = useState<SaveTemplateDialogProps | null>(null);
     const [batchMode, setBatchMode] = useState<'rebind' | 'include' | 'exclude'>('rebind');
     const [batchTargetId, setBatchTargetId] = useState('');
     const [batchPrefix, setBatchPrefix] = useState('');
@@ -97,11 +238,6 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
     const toggleNoticeManager = useCallback(() => setNoticeRequest((current) => current ? null : { mode: 'manage', token: ++noticeToken.current }), []);
     const dialRef = useRef<HTMLDivElement>(null);
     const node = target && canvas ? canvas.editor.get_node(target.node_id) : undefined;
-    const templatePreview = useMemo(() => {
-        if (dialog !== 'template' || target?.node_kind !== 'field' || !canTemplate) return null;
-        const result = runtime.capture_field_template(target.node_id, true);
-        return result.ok ? result.value : null;
-    }, [canTemplate, dialog, runtime, target]);
     const label =
         node?.kind === 'filter'
             ? node.filter.label
@@ -161,41 +297,33 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
         });
         setTarget(null);
     };
-    const saveTemplate = async () => {
-        if (!target || target.node_kind !== 'field' || !canvas || !canTemplate || !templateName.trim() || templatePending) return;
-        setTemplatePending(true);
-        setTemplateError(null);
+    const saveTemplate = async (targetId: string, targetLabel: string, preview: TemplatePreview | null, draft: SaveTemplateDraft) => {
+        if (!canvas || !canTemplate || !draft.name.trim()) return 'You do not have permission to manage templates.';
         try {
-            const available = templatePreview ? [templatePreview.field, ...(templatePreview.connected_fields ?? [])] : [];
-            const selected = available.filter((field) => field.id === target.node_id || (templateIncludeConnected && templateFields[field.id] !== false));
-            const captured = runtime.capture_field_template(target.node_id, {
-                include_connected: templateIncludeConnected,
+            const availableResult = runtime.capture_field_template(targetId, true);
+            if (availableResult.ok === false) return availableResult.error.message;
+            const availablePreview = preview ?? availableResult.value;
+            const available = [availablePreview.field, ...(availablePreview.connected_fields ?? [])];
+            const selected = available.filter((field) => field.id === targetId || (draft.includeConnected && draft.fields[field.id] !== false));
+            const captured = runtime.capture_field_template(targetId, {
+                include_connected: draft.includeConnected,
                 field_ids: selected.map((field) => field.id),
-                property_keys: Object.fromEntries(selected.map((field) => [field.id, Object.keys(field).filter((key) => ['id', 'type', 'label'].includes(key) || templateProperties[field.id]?.[key] !== false)])),
+                property_keys: Object.fromEntries(selected.map((field) => [field.id, Object.keys(field).filter((key) => ['id', 'type', 'label'].includes(key) || draft.properties[field.id]?.[key] !== false)])),
             });
-            if (captured.ok === false) {
-                setTemplateError(captured.error.message);
-                return;
-            }
+            if (captured.ok === false) return captured.error.message;
             const result = await runtime.create_template({
-                key: slug(`${templateName.trim()}-${target.node_id}`),
-                name: templateName.trim(),
-                ...(templateIncludeConnected ? { group_label: templateGroupLabel.trim() || `${label} group` } : {}),
+                key: slug(`${draft.name.trim()}-${targetId}`),
+                name: draft.name.trim(),
+                ...(draft.includeConnected ? { group_label: draft.groupLabel.trim() || `${targetLabel} group` } : {}),
                 ...captured.value,
-                branch_id: templateInBranch ? branchId : null,
+                branch_id: draft.inBranch ? branchId : null,
                 published: false,
                 meta: {},
             });
-            if (result.ok === false) {
-                setTemplateError(result.error.message);
-                return;
-            }
-            setDialog(null);
-            setTarget(null);
+            if (result.ok === false) return result.error.message;
+            return null;
         } catch (error) {
-            setTemplateError(error instanceof Error ? error.message : 'Could not save the template.');
-        } finally {
-            setTemplatePending(false);
+            return error instanceof Error ? error.message : 'Could not save the template.';
         }
     };
     const rename = () => {
@@ -540,14 +668,19 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
                                                   disabled={!canTemplate}
                                                   title={templateDeniedReason}
                                                   onSelect={() => {
-                                                      setTemplateName(`${label} Template`);
-                                                      setTemplateInBranch(true);
-                                                      setTemplateIncludeConnected(false);
-                                                      setTemplateGroupLabel(`${label} group`);
-                                                      setTemplateFields({});
-                                                      setTemplateProperties({});
-                                                      setTemplateError(null);
-                                                      setDialog('template');
+                                                      const result = runtime.capture_field_template(target.node_id, true);
+                                                      const preview = result.ok ? result.value : null;
+                                                      setSaveTemplateRequest({
+                                                          preview,
+                                                          requestId: ++templateDialogRequest.current,
+                                                          initialName: `${label} Template`,
+                                                          initialGroupLabel: `${label} group`,
+                                                          onSave: (draft) => saveTemplate(target.node_id, label, preview, draft),
+                                                          onDialogClose: () => {
+                                                              setTarget(null);
+                                                              setSaveTemplateRequest(null);
+                                                          },
+                                                      });
                                                   }}
                                               >
                                                   Save as template
@@ -615,71 +748,6 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
                               </AlertDialogContent>
                           </AlertDialog>
                           <AlertDialog
-                              open={dialog === 'template'}
-                              onOpenChange={(open) => {
-                                  if (!open && !templatePending) setDialog(null);
-                              }}
-                          >
-                              <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                      <AlertDialogTitle>Save as template</AlertDialogTitle>
-                                      <AlertDialogDescription>Name this field template and choose its scope.</AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <form onSubmit={(event) => { event.preventDefault(); void saveTemplate(); }} className="space-y-4">
-                                      <InputField variant="text" label="Template name" value={templateName} onChange={(event) => setTemplateName(String(event.value ?? ''))} />
-                                      <label className="flex items-center gap-2 text-sm">
-                                          <input type="checkbox" checked={templateInBranch} onChange={(event) => setTemplateInBranch(event.target.checked)} />
-                                          <span>Save to current branch</span>
-                                      </label>
-                                      <label className="flex items-center gap-2 text-sm">
-                                          <input type="checkbox" checked={templateIncludeConnected} onChange={(event) => setTemplateIncludeConnected(event.target.checked)} />
-                                          <span>Include connected fields</span>
-                                      </label>
-                                      <p className="text-xs text-slate-500">The template preserves its fields, nested options, and supported relationships.</p>
-                                      {templatePreview ? (
-                                          <ScrollArea className="max-h-72 rounded-md border border-slate-200 p-3 dark:border-slate-700">
-                                              {templateIncludeConnected ? (
-                                                  <div className="space-y-2">
-                                                      <InputField variant="text" label="Template label" value={templateGroupLabel} onChange={(event) => setTemplateGroupLabel(String(event.value ?? ''))} />
-                                                      <p className="text-sm font-medium">Fields in group</p>
-                                                      {[templatePreview.field, ...(templatePreview.connected_fields ?? [])].map((field) => (
-                                                          <label key={field.id} className="flex items-center gap-2 text-sm">
-                                                              <input type="checkbox" checked={field.id === templatePreview.field.id || templateFields[field.id] !== false} disabled={field.id === templatePreview.field.id} onChange={(event) => setTemplateFields((current) => ({ ...current, [field.id]: event.target.checked }))} />
-                                                              <span>{field.label}</span>
-                                                          </label>
-                                                      ))}
-                                                  </div>
-                                              ) : null}
-                                              <div className="mt-3 space-y-2">
-                                                  <p className="text-sm font-medium">Copied properties</p>
-                                                  {[templatePreview.field, ...(templateIncludeConnected ? templatePreview.connected_fields ?? [] : [])]
-                                                      .filter((field) => field.id === templatePreview.field.id || templateFields[field.id] !== false)
-                                                      .map((field) => (
-                                                          <details key={field.id} open className="rounded border border-slate-200 p-2 dark:border-slate-700">
-                                                              <summary className="cursor-pointer text-sm font-medium">{field.label} ({field.id})</summary>
-                                                              <div className="mt-2 grid grid-cols-1 gap-1">
-                                                                  {Object.keys(field).map((key) => {
-                                                                      const required = ['id', 'type', 'label'].includes(key);
-                                                                      return <label key={key} className="flex items-center gap-2 text-xs">
-                                                                          <input type="checkbox" aria-label={`Copy ${key} from ${field.label}`} checked={required || templateProperties[field.id]?.[key] !== false} disabled={required} onChange={(event) => setTemplateProperties((current) => ({ ...current, [field.id]: { ...(current[field.id] ?? {}), [key]: event.target.checked } }))} />
-                                                                          <span className="font-mono">{key}</span>
-                                                                      </label>;
-                                                                  })}
-                                                              </div>
-                                                          </details>
-                                                      ))}
-                                              </div>
-                                          </ScrollArea>
-                                      ) : null}
-                                      {templateError ? <p role="alert" className="text-sm text-rose-600">{templateError}</p> : null}
-                                      <AlertDialogFooter>
-                                          <AlertDialogCancel type="button" disabled={templatePending}>Cancel</AlertDialogCancel>
-                                          <Button type="submit" disabled={!templateName.trim() || templatePending}>{templatePending ? 'Saving…' : 'Save template'}</Button>
-                                      </AlertDialogFooter>
-                                  </form>
-                              </AlertDialogContent>
-                          </AlertDialog>
-                          <AlertDialog
                               open={dialog === 'rename'}
                               onOpenChange={(open) => {
                                   if (!open) setDialog(null);
@@ -733,6 +801,7 @@ export function CanonicalNodeContextMenuProvider({ children }: { children: React
                       document.body,
                   )
                 : null}
+            <SaveTemplateDialogHost request={saveTemplateRequest} />
         </Context.Provider>
     );
 }
