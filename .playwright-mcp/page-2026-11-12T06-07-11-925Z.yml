@@ -1,0 +1,362 @@
+- generic [ref=e3]:
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - heading "Ready" [level=3] [ref=e12]
+      - paragraph [ref=e13]: All required workspace sections finished loading and the editor is ready.
+      - generic [ref=e14]:
+        - generic [ref=e15]: 10/10 complete
+        - generic [ref=e16]: 10 ok
+    - generic [ref=e17]:
+      - button "Retry all" [ref=e18]
+      - button "Dismiss workspace boot status" [ref=e19]
+  - generic [ref=e23]:
+    - generic [ref=e25]:
+      - generic [ref=e27]:
+        - generic [ref=e33]:
+          - heading "Service Builder" [level=1] [ref=e34]
+          - button "Active branch - Main" [ref=e35] [cursor=pointer]
+        - button "Menu" [ref=e40]
+      - generic [ref=e45]:
+        - tablist [ref=e46]:
+          - tab "Layers" [selected] [ref=e47]
+          - tab "Assets" [ref=e50]
+        - tabpanel "Layers" [ref=e53]:
+          - generic [ref=e54]:
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - generic [ref=e58]:
+                  - heading "Tag hierarchy" [level=3] [ref=e59]
+                  - paragraph [ref=e60]: Structure the visible groups and inheritance tree.
+                - generic [ref=e61]:
+                  - button "Add tag" [ref=e62] [cursor=pointer]
+                  - button [ref=e65] [cursor=pointer]
+              - generic [ref=e72]:
+                - button "Root Expand" [ref=e79]:
+                  - generic [ref=e80]:
+                    - generic [ref=e81]: Root
+                    - button "Expand" [ref=e89] [cursor=pointer]
+                - status [ref=e91]
+            - generic [ref=e92]:
+              - generic [ref=e93]:
+                - generic [ref=e94]:
+                  - heading "Fields in view" [level=3] [ref=e95]
+                  - paragraph [ref=e96]: Under Root
+                - generic [ref=e97]:
+                  - button [ref=e98] [cursor=pointer]
+                  - button "Add option" [disabled] [ref=e102] [cursor=pointer]
+                  - button "Add field" [ref=e105] [cursor=pointer]
+              - generic [ref=e112]:
+                - generic [ref=e113]:
+                  - button "Link Expand" [ref=e119]:
+                    - generic [ref=e120]:
+                      - generic [ref=e121]: Link
+                      - button "Expand" [ref=e127] [cursor=pointer]
+                  - button "Quantity Expand" [ref=e134]:
+                    - generic [ref=e135]:
+                      - generic [ref=e136]: Quantity
+                      - button "Expand" [ref=e142] [cursor=pointer]
+                  - button "Drip feed Expand" [ref=e149]:
+                    - generic [ref=e150]:
+                      - generic [ref=e151]: Drip feed
+                      - button "Expand" [ref=e157] [cursor=pointer]
+                - status [ref=e159]
+    - application [ref=e162]:
+      - generic [ref=e164]:
+        - generic:
+          - generic:
+            - img:
+              - group "Edge from t:root to t:standard"
+            - img:
+              - group "Edge from t:root to t:quality"
+            - img:
+              - group "Edge from t:root to t:bot"
+            - img:
+              - group "Edge from t:root to t:target" [ref=e165] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:gender" [ref=e168] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:refill" [ref=e171] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:retention" [ref=e174] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:priority" [ref=e177] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:controlled" [ref=e180] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:bundle" [ref=e183] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:bundle_controlled" [ref=e186] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to f:link" [ref=e189] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to f:quantity" [ref=e192] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to f:drip_feed" [ref=e195] [cursor=pointer]
+            - img:
+              - group "Edge from t:quality to f:quality" [ref=e198] [cursor=pointer]
+            - img:
+              - group "Edge from t:bot to f:bot" [ref=e201] [cursor=pointer]
+            - img:
+              - group "Edge from t:target to f:target" [ref=e204] [cursor=pointer]
+            - img:
+              - group "Edge from t:gender to f:gender" [ref=e207] [cursor=pointer]
+            - img:
+              - group "Edge from t:refill to f:refill" [ref=e210] [cursor=pointer]
+            - img:
+              - group "Edge from t:retention to f:retention" [ref=e213] [cursor=pointer]
+            - img:
+              - group "Edge from t:priority to f:priority" [ref=e216] [cursor=pointer]
+            - img:
+              - group "Edge from t:controlled to f:controlled" [ref=e219] [cursor=pointer]
+            - img:
+              - group "Edge from t:bundle to f:bundle" [ref=e222] [cursor=pointer]
+            - img:
+              - group "Edge from t:bundle_controlled to f:bundle_controlled" [ref=e225] [cursor=pointer]
+            - img:
+              - group "Edge from f:drip_feed to f:runs"
+            - img:
+              - group "Edge from f:drip_feed to f:interval" [ref=e228] [cursor=pointer]
+          - generic:
+            - group [ref=e231]:
+              - generic [ref=e233]: Root
+            - group [ref=e242]:
+              - generic [ref=e244]: Standard Likes
+            - group [ref=e253]:
+              - generic [ref=e255]: Quality
+            - group [ref=e264]:
+              - generic [ref=e266]: Bot Likes
+            - group [ref=e275]:
+              - generic [ref=e277]: Targeted Likes
+            - group [ref=e286]:
+              - generic [ref=e288]: Gender-Targeted Likes
+            - group [ref=e297]:
+              - generic [ref=e299]: Refill-Eligible Likes
+            - group [ref=e308]:
+              - generic [ref=e310]: Retention
+            - group [ref=e319]:
+              - generic [ref=e321]: Priority Delivery
+            - group [ref=e330]:
+              - generic [ref=e332]: Controlled-Speed Likes
+            - group [ref=e341]:
+              - generic [ref=e343]: Combined Engagement
+            - group [ref=e352]:
+              - generic [ref=e354]: Controlled Likes + Impressions
+            - group [ref=e363]:
+              - generic [ref=e365]: Link
+            - group [ref=e372]:
+              - generic [ref=e374]: Quantity
+            - group [ref=e381]:
+              - generic [ref=e383]: Drip feed
+            - group [ref=e390]:
+              - generic [ref=e392]: Runs
+            - group [ref=e399]:
+              - generic [ref=e401]: Interval (minutes)
+            - group [ref=e408]:
+              - generic [ref=e410]: Quality
+            - group [ref=e417]:
+              - generic [ref=e419]: Bot Type
+            - group [ref=e426]:
+              - generic [ref=e428]: Location
+            - group [ref=e435]:
+              - generic [ref=e437]: Audience
+            - group [ref=e444]:
+              - generic [ref=e446]: Refill Duration
+            - group [ref=e453]:
+              - generic [ref=e455]: Advertised Retention
+            - group [ref=e462]:
+              - generic [ref=e464]: Delivery
+            - group [ref=e471]:
+              - generic [ref=e473]: Delivery Rate
+            - group [ref=e480]:
+              - generic [ref=e482]: Package
+            - group [ref=e489]:
+              - generic [ref=e491]: Delivery Rate
+            - group [ref=e498]:
+              - generic [ref=e499]:
+                - generic [ref=e500]: Service context
+                - generic [ref=e501]: "Active tag: Root"
+                - generic [ref=e502]: "Selected buttons: 0"
+                - generic [ref=e504]:
+                  - generic [ref=e505]:
+                    - generic [ref=e506]: "Instagram Likes [Refill: No] [Max: 1M] [Start Time: 0-1 Hr] [Speed: Up to 300K/D]💧"
+                    - generic [ref=e507]: Rate 0.125
+                  - generic [ref=e508]: Meets filter capabilities
+      - generic:
+        - generic:
+          - generic [ref=e509]:
+            - button "Bind" [ref=e510]
+            - button "Include" [ref=e511]
+            - button "Exclude" [ref=e512]
+          - button "Canvas view" [ref=e514]
+          - button "Switch to vertical toolbar" [ref=e516]
+      - generic:
+        - generic [ref=e517]:
+          - button "Save snapshot" [ref=e518]
+          - button "Publish commit" [ref=e520]
+        - generic [ref=e521]:
+          - button "Import JSON" [ref=e522]
+          - button "Undo" [disabled]
+          - button "Redo" [disabled]
+          - button "History" [ref=e523]
+          - button "Add comment on canvas" [ref=e524]
+          - button "Toggle error markers" [ref=e525]
+          - button "Toggle console" [ref=e526]
+          - button "Toggle notices manager" [ref=e527]
+      - link "React Flow attribution" [ref=e529] [cursor=pointer]:
+        - /url: https://reactflow.dev
+        - text: React Flow
+    - generic [ref=e532]:
+      - generic [ref=e533]:
+        - generic [ref=e534]:
+          - button [ref=e535]
+          - button "Preview current branch" [ref=e538]
+        - button "Share branch" [ref=e542]
+      - generic [ref=e545]:
+        - tablist [ref=e546]:
+          - tab "Comments" [ref=e547]
+          - tab "Properties" [ref=e548]
+          - tab "Wireframe" [selected] [ref=e549]
+        - tabpanel "Wireframe" [ref=e550]:
+          - generic [ref=e552]:
+            - generic [ref=e558]:
+              - generic [ref=e559]:
+                - generic [ref=e560] [cursor=pointer]: "Tags:"
+                - generic [ref=e561]:
+                  - button "Root" [ref=e562] [cursor=pointer]
+                  - button "Standard Likes" [ref=e567] [cursor=pointer]
+                  - button "Quality" [ref=e569] [cursor=pointer]
+                  - button "Bot Likes" [ref=e571] [cursor=pointer]
+                  - button "Targeted Likes" [ref=e573] [cursor=pointer]
+                  - button "Gender-Targeted Likes" [ref=e575] [cursor=pointer]
+                  - button "Refill-Eligible Likes" [ref=e577] [cursor=pointer]
+                  - button "Retention" [ref=e579] [cursor=pointer]
+                  - button "Priority Delivery" [ref=e581] [cursor=pointer]
+                  - button "Controlled-Speed Likes" [ref=e583] [cursor=pointer]
+                  - button "Combined Engagement" [ref=e585] [cursor=pointer]
+                  - button "Controlled Likes + Impressions" [ref=e587] [cursor=pointer]
+              - generic [ref=e589]:
+                - group [ref=e592] [cursor=pointer]:
+                  - generic [ref=e595]:
+                    - text: Link
+                    - generic [ref=e596]: "*"
+                  - textbox "Link *" [ref=e599]:
+                    - /placeholder: https://example.com/post
+                  - paragraph [ref=e600]: The post or page that should receive the service.
+                - group [ref=e603] [cursor=pointer]:
+                  - generic [ref=e604]:
+                    - generic [ref=e606]:
+                      - text: Quantity
+                      - generic [ref=e607]: "*"
+                    - generic [ref=e609]:
+                      - generic [ref=e610]: "Min: 10"
+                      - generic [ref=e612]: "Max: 10,000,000"
+                      - generic [ref=e614]: "Min: 10"
+                      - generic [ref=e616]: "Max: 10,000,000"
+                  - spinbutton "Quantity *" [ref=e620]
+                  - paragraph [ref=e621]: The number of units requested for this order.
+                - group [ref=e624] [cursor=pointer]:
+                  - generic [ref=e625]:
+                    - generic [ref=e630]:
+                      - switch "Drip feed" [ref=e631]
+                      - checkbox [aria-hidden]
+                    - generic [ref=e632]:
+                      - generic [ref=e633]: Drip feed
+                      - paragraph [ref=e636]: Turn on to deliver in multiple runs. Runs and interval are then required.
+              - generic [ref=e637]: 2 customer input issues in this preview.
+            - generic [ref=e638]:
+              - button "Order preview summary" [expanded] [ref=e639]
+              - generic [ref=e643]:
+                - generic [ref=e645]:
+                  - generic [ref=e646]: "Tag:"
+                  - generic [ref=e647]: Root
+                - generic [ref=e649]:
+                  - generic [ref=e650]: "Visible fields:"
+                  - generic [ref=e651]: "3"
+                - generic [ref=e653]:
+                  - generic [ref=e654]: "Selected options:"
+                  - generic [ref=e655]: "0"
+                - generic [ref=e657]:
+                  - generic [ref=e658]: "Quantity:"
+                  - generic [ref=e659]: "1"
+                - generic [ref=e661]:
+                  - generic [ref=e662]: "Min/Max:"
+                  - generic [ref=e663]: 10 - 10,000,000
+                - button "Services details" [ref=e664]:
+                  - generic [ref=e665]:
+                    - generic [ref=e666]: "Services:"
+                    - generic [ref=e667]: "1"
+                - button "Base details" [ref=e668]:
+                  - generic [ref=e669]:
+                    - generic [ref=e670]: "Base:"
+                    - generic [ref=e671]: "0.125"
+                - button "Utilities details" [ref=e672]:
+                  - generic [ref=e673]:
+                    - generic [ref=e674]: "Utilities:"
+                    - generic [ref=e675]: "0"
+                - button "Total details" [ref=e676]:
+                  - generic [ref=e677]:
+                    - generic [ref=e678]: "Total:"
+                    - generic [ref=e679]: "0.125"
+                - button "Utility lines details" [ref=e680]:
+                  - generic [ref=e681]:
+                    - generic [ref=e682]: "Utility lines:"
+                    - generic [ref=e683]: "0"
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - button "Console 3":
+              - generic: Console
+              - generic: "3"
+            - button "Active Services 61":
+              - generic: Active Services
+              - generic: "61"
+            - button "All Services 202":
+              - generic: All Services
+              - generic: "202"
+          - generic:
+            - button "Drag panel"
+            - button "Close"
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - paragraph: Validation Console
+                          - paragraph: Validation rows reflect canonical definition and publication consistency checks.
+                          - generic:
+                            - generic: Validating...
+                            - generic: Ctrl/Cmd + J
+                            - generic: Press Escape to close
+                        - generic:
+                          - button "Minimize"
+                          - button "Dismiss"
+                    - generic:
+                      - generic:
+                        - generic:
+                          - button "Validation 0":
+                            - generic: Validation
+                            - generic: "0"
+                          - button "Logs 0":
+                            - generic: Logs
+                            - generic: "0"
+                          - button "Notices 3":
+                            - generic: Notices
+                            - generic: "3"
+                      - generic:
+                        - generic: Scope
+                        - button "All items"
+                        - button "Active node"
+                        - generic: Severity
+                        - button "all"
+                        - button "error"
+                        - button "warning"
+                        - button "info"
+                    - generic:
+                      - heading "No validation rows for this filter" [level=4]
+                      - paragraph: No validation rows match the current severity filter.

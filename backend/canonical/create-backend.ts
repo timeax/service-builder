@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { MemoryWorkspaceBackend } from "@elqora/dgp-workspace";
 
-import { workspaceSeed } from "./seed/index.js";
+import {
+  instagramLikesWorkspaceSeed,
+  workspaceSeed,
+} from "./seed/index.js";
 
-/**
- * Development backend used by the standalone Studio application.
- *
- * All document, branch, revision, template, comment, and publication behavior
- * is owned by dgp-workspace. Studio only supplies deterministic demonstration
- * data through the canonical memory persistence port.
- */
-export const workspaceBackend = new MemoryWorkspaceBackend(workspaceSeed);
+/** Existing general-purpose demo backend, retained for focused UI fixtures. */
+export const studioDemoWorkspaceBackend = new MemoryWorkspaceBackend(workspaceSeed);
+
+/** Active backend used by the standalone app, seeded with Instagram Likes. */
+export const workspaceBackend = new MemoryWorkspaceBackend(
+  instagramLikesWorkspaceSeed,
+);
+
+/** Explicit alias for callers that need the product-specific seed. */
+export const instagramLikesWorkspaceBackend = workspaceBackend;

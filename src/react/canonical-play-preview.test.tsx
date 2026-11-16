@@ -43,6 +43,35 @@ it('updates Play bounds when a tag option binds a different service', async () =
     expect(screen.getByLabelText('Order preview summary')).toHaveTextContent('Services: 141');
 });
 
+it('does not present the unbounded fallback as a real service maximum', async () => {
+    const definition = structuredClone(lab.definition) as unknown as ProductDefinition;
+    const root = definition.filters.find((filter) => filter.id === 't:root');
+    const quantity = definition.fields.find((field) => field.id === 'f:quantity');
+    if (!root || !quantity) throw new Error('The Play fixture must include its root tag and quantity field.');
+    delete root.service_id;
+    quantity.defaults = {
+        ...quantity.defaults,
+        tags: [
+            { label: 'Min: {preview.min ?? "—"}' },
+            { label: 'Max: {preview.max ?? "—"}' },
+        ],
+    };
+
+    render(
+        <CanonicalPlayPreviewBody
+            payload={{
+                definition,
+                services: lab.services as unknown as HandlerService[],
+                workspace_id: 'instagram-likes-lab',
+            }}
+        />,
+    );
+
+    expect(await screen.findByText('Max: —')).toBeInTheDocument();
+    expect(screen.queryByText('Max: 9007199254740991')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Order preview summary')).toHaveTextContent('Min: 1 Max: —');
+});
+
 it('renders the fields and options resolved by the OrderPreview visibility result', async () => {
     const definition = structuredClone(lab.definition) as unknown as ProductDefinition;
     const linkField = definition.fields.find((field) => field.id === 'f:link');

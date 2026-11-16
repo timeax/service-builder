@@ -214,3 +214,8 @@ export const workspaceSeed: MemoryWorkspaceSeed = {
 };
 
 export { definition, services };
+export {
+  instagramLikesDefinition,
+  instagramLikesServices,
+  instagramLikesWorkspaceSeed,
+} from "./instagram-likes.js";

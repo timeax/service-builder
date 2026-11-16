@@ -91,6 +91,7 @@ function CanonicalWireframeBody({
         [definition, orderingState, services, session],
     );
     const preview = previewResult.ok ? previewResult.preview : undefined;
+    const templatePreview = preview && preview.service_context.length === 0 ? { ...preview, max: null } : preview;
     const previewVisibility = previewResult.ok ? previewResult.visibility : context?.visibility;
     const visibleFields = fieldsVisibleInPreview(definition.fields, previewVisibility);
     const serviceById = useMemo(() => new Map(services.map((service) => [String(service.id), service])), [services]);
@@ -102,7 +103,7 @@ function CanonicalWireframeBody({
         { label: 'Visible fields', value: String(visibleFields.length) },
         { label: 'Selected options', value: String(selectedOptionsCount) },
         { label: 'Quantity', value: formatMetricNumber(preview?.quantity) },
-        { label: 'Min/Max', value: preview ? `${formatMetricNumber(preview.min)} - ${formatMetricNumber(preview.max)}` : '--' },
+        { label: 'Min/Max', value: preview ? `${formatMetricNumber(preview.min)} - ${formatMetricNumber(preview.service_context.length ? preview.max : undefined)}` : '--' },
         { label: 'Services', value: String(preview?.service_ids.length ?? 0), detailsKind: 'services' },
         { label: 'Base', value: formatMetricNumber(base), detailsKind: 'pricing' },
         { label: 'Utilities', value: formatMetricNumber(utilities), detailsKind: 'pricing' },
@@ -222,7 +223,7 @@ function CanonicalWireframeBody({
             definition={definition}
             registry={canonicalInputRegistry}
             template_context={{
-                preview: previewResult.ok ? previewResult.preview : undefined,
+                preview: templatePreview,
                 preview_result: previewResult,
             }}
         >

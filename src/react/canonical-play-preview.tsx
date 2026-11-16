@@ -31,6 +31,7 @@ export function CanonicalPlayPreviewBody({ payload }: { payload: ServiceBuilderP
         [definition, services, session, state],
     );
     const preview = previewResult.ok ? previewResult.preview : undefined;
+    const templatePreview = preview && preview.service_context.length === 0 ? { ...preview, max: null } : preview;
     const context = session.get_context();
     const previewVisibility = previewResult.ok ? previewResult.visibility : context?.visibility;
     const filter = context?.filter.filter;
@@ -51,7 +52,7 @@ export function CanonicalPlayPreviewBody({ payload }: { payload: ServiceBuilderP
             session={session}
             definition={definition}
             registry={canonicalInputRegistry}
-            template_context={{ preview, preview_result: previewResult }}
+            template_context={{ preview: templatePreview, preview_result: previewResult }}
         >
             <div className="flex h-full min-h-0 flex-1 flex-col">
                 <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
@@ -138,7 +139,7 @@ export function CanonicalPlayPreviewBody({ payload }: { payload: ServiceBuilderP
                             <summary className="text-muted-foreground cursor-pointer">Preview details</summary>
                             <div className="mt-2 space-y-1">
                                 <div>Tag: {filter?.label ?? 'None'}</div>
-                                <div>Min: {preview?.min ?? '—'} Max: {preview?.max ?? '—'}</div>
+                                <div>Min: {preview?.min ?? '—'} Max: {preview?.service_context.length ? preview.max : '—'}</div>
                                 <div>Services: {preview?.service_ids.join(', ') ?? '—'}</div>
                                 <div>Selected options: {selectedOptionIds}</div>
                             </div>

@@ -1,0 +1,365 @@
+- generic [ref=f3e3]:
+  - generic [ref=f3e6]:
+    - generic [ref=f3e7]:
+      - heading "Ready" [level=3] [ref=f3e12]
+      - paragraph [ref=f3e13]: All required workspace sections finished loading and the editor is ready.
+      - generic [ref=f3e14]:
+        - generic [ref=f3e15]: 10/10 complete
+        - generic [ref=f3e16]: 10 ok
+    - generic [ref=f3e17]:
+      - button "Retry all" [ref=f3e18]
+      - button "Dismiss workspace boot status" [ref=f3e19]
+  - generic [ref=f3e23]:
+    - generic [ref=f3e25]:
+      - generic [ref=f3e27]:
+        - generic [ref=f3e33]:
+          - heading "Service Builder" [level=1] [ref=f3e34]
+          - button "Active branch - main" [ref=f3e35] [cursor=pointer]
+        - button "Menu" [ref=f3e40]
+      - generic [ref=f3e45]:
+        - tablist [ref=f3e46]:
+          - tab "Layers" [selected] [ref=f3e47]
+          - tab "Assets" [ref=f3e50]
+        - tabpanel "Layers" [ref=f3e53]:
+          - generic [ref=f3e54]:
+            - generic [ref=f3e56]:
+              - generic [ref=f3e57]:
+                - generic [ref=f3e58]:
+                  - heading "Tag hierarchy" [level=3] [ref=f3e59]
+                  - paragraph [ref=f3e60]: Structure the visible groups and inheritance tree.
+                - generic [ref=f3e61]:
+                  - button "Add tag" [ref=f3e62] [cursor=pointer]
+                  - button [ref=f3e65] [cursor=pointer]
+              - generic [ref=f3e72]:
+                - button "Instagram Likes Expand" [ref=f3e79]:
+                  - generic [ref=f3e80]:
+                    - generic [ref=f3e81]: Instagram Likes
+                    - button "Expand" [ref=f3e89] [cursor=pointer]
+                - status [ref=f3e91]
+            - generic [ref=f3e92]:
+              - generic [ref=f3e93]:
+                - generic [ref=f3e94]:
+                  - heading "Fields in view" [level=3] [ref=f3e95]
+                  - paragraph [ref=f3e96]: Under Instagram Likes
+                - generic [ref=f3e97]:
+                  - button [ref=f3e98] [cursor=pointer]
+                  - button "Add option" [disabled] [ref=f3e102] [cursor=pointer]
+                  - button "Add field" [ref=f3e105] [cursor=pointer]
+              - generic [ref=f3e112]:
+                - generic [ref=f3e113]:
+                  - button "Instagram Post URL Expand" [ref=f3e119]:
+                    - generic [ref=f3e120]:
+                      - generic [ref=f3e121]: Instagram Post URL
+                      - button "Expand" [ref=f3e127] [cursor=pointer]
+                  - button "Quantity Expand" [ref=f3e134]:
+                    - generic [ref=f3e135]:
+                      - generic [ref=f3e136]: Quantity
+                      - button "Expand" [ref=f3e142] [cursor=pointer]
+                  - button "Drip feed Expand" [ref=f3e149]:
+                    - generic [ref=f3e150]:
+                      - generic [ref=f3e151]: Drip feed
+                      - button "Expand" [ref=f3e157] [cursor=pointer]
+                - status [ref=f3e159]
+    - application [ref=f3e162]:
+      - generic [ref=f3e164]:
+        - generic:
+          - generic:
+            - img:
+              - group "Edge from t:root to t:standard"
+            - img:
+              - group "Edge from t:root to t:quality"
+            - img:
+              - group "Edge from t:root to t:bot"
+            - img:
+              - group "Edge from t:root to t:target" [ref=f3e165] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:gender" [ref=f3e168] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:refill" [ref=f3e171] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:retention" [ref=f3e174] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:priority" [ref=f3e177] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:controlled" [ref=f3e180] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:bundle" [ref=f3e183] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:bundle_controlled" [ref=f3e186] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:account" [ref=f3e189] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to t:power" [ref=f3e192] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to f:link" [ref=f3e195] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to f:quantity" [ref=f3e198] [cursor=pointer]
+            - img:
+              - group "Edge from t:root to f:drip_feed" [ref=f3e201] [cursor=pointer]
+            - img:
+              - group "Edge from t:quality to f:quality" [ref=f3e204] [cursor=pointer]
+            - img:
+              - group "Edge from t:bot to f:bot" [ref=f3e207] [cursor=pointer]
+            - img:
+              - group "Edge from t:target to f:target" [ref=f3e210] [cursor=pointer]
+            - img:
+              - group "Edge from t:gender to f:gender" [ref=f3e213] [cursor=pointer]
+            - img:
+              - group "Edge from t:refill to f:refill" [ref=f3e216] [cursor=pointer]
+            - img:
+              - group "Edge from t:retention to f:retention" [ref=f3e219] [cursor=pointer]
+            - img:
+              - group "Edge from t:priority to f:priority" [ref=f3e222] [cursor=pointer]
+            - img:
+              - group "Edge from t:controlled to f:controlled" [ref=f3e225] [cursor=pointer]
+            - img:
+              - group "Edge from t:bundle to f:bundle" [ref=f3e228] [cursor=pointer]
+            - img:
+              - group "Edge from t:bundle_controlled to f:bundle_controlled" [ref=f3e231] [cursor=pointer]
+            - img:
+              - group "Edge from t:account to f:verified" [ref=f3e234] [cursor=pointer]
+            - img:
+              - group "Edge from t:power to f:power" [ref=f3e237] [cursor=pointer]
+            - img:
+              - group "Edge from f:drip_feed to f:runs"
+            - img:
+              - group "Edge from f:drip_feed to f:interval"
+          - generic:
+            - group [ref=f3e240]:
+              - generic [ref=f3e242]: Instagram Likes
+            - group [ref=f3e251]:
+              - generic [ref=f3e253]: Standard Likes
+            - group [ref=f3e262]:
+              - generic [ref=f3e264]: Quality
+            - group [ref=f3e273]:
+              - generic [ref=f3e275]: Bot Likes
+            - group [ref=f3e284]:
+              - generic [ref=f3e286]: Targeted Likes
+            - group [ref=f3e295]:
+              - generic [ref=f3e297]: Gender-Targeted Likes
+            - group [ref=f3e306]:
+              - generic [ref=f3e308]: Refill-Eligible Likes
+            - group [ref=f3e317]:
+              - generic [ref=f3e319]: Retention
+            - group [ref=f3e328]:
+              - generic [ref=f3e330]: Priority Delivery
+            - group [ref=f3e339]:
+              - generic [ref=f3e341]: Controlled-Speed Likes
+            - group [ref=f3e350]:
+              - generic [ref=f3e352]: Combined Engagement
+            - group [ref=f3e361]:
+              - generic [ref=f3e363]: Controlled Likes + Impressions
+            - group [ref=f3e372]:
+              - generic [ref=f3e374]: Account Type
+            - group [ref=f3e383]:
+              - generic [ref=f3e385]: POWER-Labeled Likes
+            - group [ref=f3e394]:
+              - generic [ref=f3e396]: Instagram Post URL
+            - group [ref=f3e403]:
+              - generic [ref=f3e405]: Quantity
+            - group [ref=f3e412]:
+              - generic [ref=f3e414]: Drip feed
+            - group [ref=f3e421]:
+              - generic [ref=f3e423]: Runs
+            - group [ref=f3e430]:
+              - generic [ref=f3e432]: Interval (minutes)
+            - group [ref=f3e439]:
+              - generic [ref=f3e441]: Quality label
+            - group [ref=f3e448]:
+              - generic [ref=f3e450]: Bot Likes type
+            - group [ref=f3e457]:
+              - generic [ref=f3e459]: Location
+            - group [ref=f3e466]:
+              - generic [ref=f3e468]: Audience
+            - group [ref=f3e475]:
+              - generic [ref=f3e477]: Refill
+            - group [ref=f3e484]:
+              - generic [ref=f3e486]: Retention claim
+            - group [ref=f3e493]:
+              - generic [ref=f3e495]: Delivery
+            - group [ref=f3e502]:
+              - generic [ref=f3e504]: Delivery rate
+            - group [ref=f3e511]:
+              - generic [ref=f3e513]: Engagement bundle
+            - group [ref=f3e520]:
+              - generic [ref=f3e522]: Delivery rate
+            - group [ref=f3e529]:
+              - generic [ref=f3e531]: Account type
+            - group [ref=f3e538]:
+              - generic [ref=f3e540]: POWER label
+            - group [ref=f3e547]:
+              - generic [ref=f3e548]:
+                - generic [ref=f3e549]: Service context
+                - generic [ref=f3e550]: "Active tag: Instagram Likes"
+                - generic [ref=f3e551]: "Selected buttons: 0"
+                - generic [ref=f3e552]: No active services in current context
+      - generic:
+        - generic:
+          - generic [ref=f3e554]:
+            - button "Bind" [ref=f3e555]
+            - button "Include" [ref=f3e556]
+            - button "Exclude" [ref=f3e557]
+          - button "Canvas view" [ref=f3e559]
+          - button "Switch to vertical toolbar" [ref=f3e561]
+      - generic:
+        - generic [ref=f3e562]:
+          - button "Save snapshot" [ref=f3e563]
+          - button "Publish commit" [ref=f3e565]
+        - generic [ref=f3e566]:
+          - button "Import JSON" [ref=f3e567]
+          - button "Undo" [disabled]
+          - button "Redo" [disabled]
+          - button "History" [ref=f3e568]
+          - button "Add comment on canvas" [ref=f3e569]
+          - button "Toggle error markers" [ref=f3e570]
+          - button "Toggle console" [ref=f3e571]
+          - button "Toggle notices manager" [ref=f3e572]
+      - link "React Flow attribution" [ref=f3e574] [cursor=pointer]:
+        - /url: https://reactflow.dev
+        - text: React Flow
+    - generic [ref=f3e577]:
+      - generic [ref=f3e578]:
+        - generic [ref=f3e579]:
+          - button [ref=f3e580]
+          - button "Preview current branch" [ref=f3e583]
+        - button "Share branch" [ref=f3e587]
+      - generic [ref=f3e590]:
+        - tablist [ref=f3e591]:
+          - tab "Comments" [ref=f3e592]
+          - tab "Properties" [ref=f3e593]
+          - tab "Wireframe" [selected] [ref=f3e594]
+        - tabpanel "Wireframe" [ref=f3e595]:
+          - generic [ref=f3e597]:
+            - generic [ref=f3e603]:
+              - generic [ref=f3e604]:
+                - generic [ref=f3e605] [cursor=pointer]: "Tags:"
+                - generic [ref=f3e606]:
+                  - button "Instagram Likes" [ref=f3e607] [cursor=pointer]
+                  - button "Standard Likes" [ref=f3e612] [cursor=pointer]
+                  - button "Quality" [ref=f3e614] [cursor=pointer]
+                  - button "Bot Likes" [ref=f3e616] [cursor=pointer]
+                  - button "Targeted Likes" [ref=f3e618] [cursor=pointer]
+                  - button "Gender-Targeted Likes" [ref=f3e620] [cursor=pointer]
+                  - button "Refill-Eligible Likes" [ref=f3e622] [cursor=pointer]
+                  - button "Retention" [ref=f3e624] [cursor=pointer]
+                  - button "Priority Delivery" [ref=f3e626] [cursor=pointer]
+                  - button "Controlled-Speed Likes" [ref=f3e628] [cursor=pointer]
+                  - button "Combined Engagement" [ref=f3e630] [cursor=pointer]
+                  - button "Controlled Likes + Impressions" [ref=f3e632] [cursor=pointer]
+                  - button "Account Type" [ref=f3e634] [cursor=pointer]
+                  - button "POWER-Labeled Likes" [ref=f3e636] [cursor=pointer]
+              - generic [ref=f3e638]:
+                - group [ref=f3e641] [cursor=pointer]:
+                  - generic [ref=f3e644]:
+                    - text: Instagram Post URL
+                    - generic [ref=f3e645]: "*"
+                  - textbox "Instagram Post URL *" [ref=f3e648]
+                  - paragraph [ref=f3e649]: Link to the Instagram post to receive Likes.
+                - group [ref=f3e652] [cursor=pointer]:
+                  - generic [ref=f3e653]:
+                    - generic [ref=f3e655]:
+                      - text: Quantity
+                      - generic [ref=f3e656]: "*"
+                    - generic [ref=f3e658]:
+                      - generic [ref=f3e659]: "Min: 1"
+                      - generic [ref=f3e661]: "Max: —"
+                  - spinbutton "Quantity *" [ref=f3e665]
+                  - paragraph [ref=f3e666]: The number of Likes requested for this order.
+              - generic [ref=f3e667]: 2 customer input issues in this preview.
+            - generic [ref=f3e668]:
+              - button "Order preview summary" [expanded] [ref=f3e669]
+              - generic [ref=f3e673]:
+                - generic [ref=f3e675]:
+                  - generic [ref=f3e676]: "Tag:"
+                  - generic [ref=f3e677]: Instagram Likes
+                - generic [ref=f3e679]:
+                  - generic [ref=f3e680]: "Visible fields:"
+                  - generic [ref=f3e681]: "2"
+                - generic [ref=f3e683]:
+                  - generic [ref=f3e684]: "Selected options:"
+                  - generic [ref=f3e685]: "0"
+                - generic [ref=f3e687]:
+                  - generic [ref=f3e688]: "Quantity:"
+                  - generic [ref=f3e689]: "1"
+                - generic [ref=f3e691]:
+                  - generic [ref=f3e692]: "Min/Max:"
+                  - generic [ref=f3e693]: 1 - --
+                - button "Services details" [ref=f3e694]:
+                  - generic [ref=f3e695]:
+                    - generic [ref=f3e696]: "Services:"
+                    - generic [ref=f3e697]: "0"
+                - button "Base details" [ref=f3e698]:
+                  - generic [ref=f3e699]:
+                    - generic [ref=f3e700]: "Base:"
+                    - generic [ref=f3e701]: "0"
+                - button "Utilities details" [ref=f3e702]:
+                  - generic [ref=f3e703]:
+                    - generic [ref=f3e704]: "Utilities:"
+                    - generic [ref=f3e705]: "0"
+                - button "Total details" [ref=f3e706]:
+                  - generic [ref=f3e707]:
+                    - generic [ref=f3e708]: "Total:"
+                    - generic [ref=f3e709]: "0"
+                - button "Utility lines details" [ref=f3e710]:
+                  - generic [ref=f3e711]:
+                    - generic [ref=f3e712]: "Utility lines:"
+                    - generic [ref=f3e713]: "0"
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - button "Console 0":
+              - generic: Console
+              - generic: "0"
+            - button "Active Services 60":
+              - generic: Active Services
+              - generic: "60"
+            - button "All Services 226":
+              - generic: All Services
+              - generic: "226"
+          - generic:
+            - button "Drag panel"
+            - button "Close"
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - paragraph: Validation Console
+                          - paragraph: Validation rows reflect canonical definition and publication consistency checks.
+                          - generic:
+                            - generic: Validating...
+                            - generic: Ctrl/Cmd + J
+                            - generic: Press Escape to close
+                        - generic:
+                          - button "Minimize"
+                          - button "Dismiss"
+                    - generic:
+                      - generic:
+                        - generic:
+                          - button "Validation 0":
+                            - generic: Validation
+                            - generic: "0"
+                          - button "Logs 0":
+                            - generic: Logs
+                            - generic: "0"
+                          - button "Notices 0":
+                            - generic: Notices
+                            - generic: "0"
+                      - generic:
+                        - generic: Scope
+                        - button "All items"
+                        - button "Active node"
+                        - generic: Severity
+                        - button "all"
+                        - button "error"
+                        - button "warning"
+                        - button "info"
+                    - generic:
+                      - heading "No validation rows for this filter" [level=4]
+                      - paragraph: No validation rows match the current severity filter.

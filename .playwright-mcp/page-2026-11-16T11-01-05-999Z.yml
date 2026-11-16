@@ -1,0 +1,233 @@
+- generic [ref=e3]:
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - heading "Ready" [level=3] [ref=e12]
+      - paragraph [ref=e13]: All required workspace sections finished loading and the editor is ready.
+      - generic [ref=e14]:
+        - generic [ref=e15]: 10/10 complete
+        - generic [ref=e16]: 10 ok
+    - generic [ref=e17]:
+      - button "Retry all" [ref=e18]
+      - button "Dismiss workspace boot status" [ref=e19]
+  - generic [ref=e23]:
+    - generic [ref=e25]:
+      - generic [ref=e27]:
+        - generic [ref=e33]:
+          - heading "Service Builder" [level=1] [ref=e34]
+          - button "Active branch - main" [ref=e35] [cursor=pointer]
+        - button "Menu" [ref=e40]
+      - generic [ref=e45]:
+        - tablist [ref=e46]:
+          - tab "Layers" [selected] [ref=e47]
+          - tab "Assets" [ref=e50]
+        - tabpanel "Layers" [ref=e53]:
+          - generic [ref=e54]:
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - generic [ref=e58]:
+                  - heading "Tag hierarchy" [level=3] [ref=e59]
+                  - paragraph [ref=e60]: Structure the visible groups and inheritance tree.
+                - generic [ref=e61]:
+                  - button "Add tag" [ref=e62] [cursor=pointer]
+                  - button [ref=e65] [cursor=pointer]
+              - generic [ref=e72]:
+                - button "Instagram Likes Expand" [ref=e79]:
+                  - generic [ref=e80]:
+                    - generic [ref=e81]: Instagram Likes
+                    - button "Expand" [ref=e89] [cursor=pointer]
+                - status [ref=e91]
+            - generic [ref=e92]:
+              - generic [ref=e93]:
+                - generic [ref=e94]:
+                  - heading "Fields in view" [level=3] [ref=e95]
+                  - paragraph [ref=e96]: Under Instagram Likes
+                - generic [ref=e97]:
+                  - button [ref=e98] [cursor=pointer]
+                  - button "Add option" [disabled] [ref=e102] [cursor=pointer]
+                  - button "Add field" [ref=e105] [cursor=pointer]
+              - generic [ref=e112]:
+                - generic [ref=e113]:
+                  - button "Instagram Post URL Expand" [ref=e119]:
+                    - generic [ref=e120]:
+                      - generic [ref=e121]: Instagram Post URL
+                      - button "Expand" [ref=e127] [cursor=pointer]
+                  - button "Quantity Expand" [ref=e134]:
+                    - generic [ref=e135]:
+                      - generic [ref=e136]: Quantity
+                      - button "Expand" [ref=e142] [cursor=pointer]
+                  - button "Drip feed Expand" [ref=e149]:
+                    - generic [ref=e150]:
+                      - generic [ref=e151]: Drip feed
+                      - button "Expand" [ref=e157] [cursor=pointer]
+                - status [ref=e159]
+    - application [ref=e162]:
+      - generic:
+        - generic:
+          - generic [ref=e165]:
+            - button "Bind" [ref=e166]
+            - button "Include" [ref=e167]
+            - button "Exclude" [ref=e168]
+          - button "Canvas view" [ref=e170]
+          - button "Switch to vertical toolbar" [ref=e172]
+      - generic:
+        - generic [ref=e173]:
+          - button "Save snapshot" [ref=e174]
+          - button "Publish commit" [ref=e176]
+        - generic [ref=e177]:
+          - button "Import JSON" [ref=e178]
+          - button "Undo" [disabled]
+          - button "Redo" [disabled]
+          - button "History" [ref=e179]
+          - button "Add comment on canvas" [ref=e180]
+          - button "Toggle error markers" [ref=e181]
+          - button "Toggle console" [ref=e182]
+          - button "Toggle notices manager" [ref=e183]
+      - link "React Flow attribution" [ref=e185] [cursor=pointer]:
+        - /url: https://reactflow.dev
+        - text: React Flow
+    - generic [ref=e188]:
+      - generic [ref=e189]:
+        - generic [ref=e190]:
+          - button [ref=e191]
+          - button "Preview current branch" [ref=e194]
+        - button "Share branch" [ref=e198]
+      - generic [ref=e201]:
+        - tablist [ref=e202]:
+          - tab "Comments" [ref=e203]
+          - tab "Properties" [ref=e204]
+          - tab "Wireframe" [selected] [ref=e205]
+        - tabpanel "Wireframe" [ref=e206]:
+          - generic [ref=e208]:
+            - generic [ref=e214]:
+              - generic [ref=e215]:
+                - generic [ref=e216] [cursor=pointer]: "Tags:"
+                - generic [ref=e217]:
+                  - button "Instagram Likes" [ref=e218] [cursor=pointer]
+                  - button "Standard Likes" [ref=e223] [cursor=pointer]
+                  - button "Quality" [ref=e225] [cursor=pointer]
+                  - button "Bot Likes" [ref=e227] [cursor=pointer]
+                  - button "Targeted Likes" [ref=e229] [cursor=pointer]
+                  - button "Gender-Targeted Likes" [ref=e231] [cursor=pointer]
+                  - button "Refill-Eligible Likes" [ref=e233] [cursor=pointer]
+                  - button "Retention" [ref=e235] [cursor=pointer]
+                  - button "Priority Delivery" [ref=e237] [cursor=pointer]
+                  - button "Controlled-Speed Likes" [ref=e239] [cursor=pointer]
+                  - button "Combined Engagement" [ref=e241] [cursor=pointer]
+                  - button "Controlled Likes + Impressions" [ref=e243] [cursor=pointer]
+                  - button "Account Type" [ref=e245] [cursor=pointer]
+                  - button "POWER-Labeled Likes" [ref=e247] [cursor=pointer]
+              - generic [ref=e249]:
+                - group [ref=e252] [cursor=pointer]:
+                  - generic [ref=e255]:
+                    - text: Instagram Post URL
+                    - generic [ref=e256]: "*"
+                  - textbox "Instagram Post URL *" [ref=e259]
+                  - paragraph [ref=e260]: Link to the Instagram post to receive Likes.
+                - group [ref=e263] [cursor=pointer]:
+                  - generic [ref=e264]:
+                    - generic [ref=e266]:
+                      - text: Quantity
+                      - generic [ref=e267]: "*"
+                    - generic [ref=e269]:
+                      - generic [ref=e270]: "Min: 1"
+                      - generic [ref=e272]: "Max: 9007199254740991"
+                  - spinbutton "Quantity *" [ref=e276]
+                  - paragraph [ref=e277]: The number of Likes requested for this order.
+              - generic [ref=e278]: 2 customer input issues in this preview.
+            - generic [ref=e279]:
+              - button "Order preview summary" [expanded] [ref=e280]
+              - generic [ref=e284]:
+                - generic [ref=e286]:
+                  - generic [ref=e287]: "Tag:"
+                  - generic [ref=e288]: Instagram Likes
+                - generic [ref=e290]:
+                  - generic [ref=e291]: "Visible fields:"
+                  - generic [ref=e292]: "2"
+                - generic [ref=e294]:
+                  - generic [ref=e295]: "Selected options:"
+                  - generic [ref=e296]: "0"
+                - generic [ref=e298]:
+                  - generic [ref=e299]: "Quantity:"
+                  - generic [ref=e300]: "1"
+                - generic [ref=e302]:
+                  - generic [ref=e303]: "Min/Max:"
+                  - generic [ref=e304]: 1 - 9,007,199,254,740,991
+                - button "Services details" [ref=e305]:
+                  - generic [ref=e306]:
+                    - generic [ref=e307]: "Services:"
+                    - generic [ref=e308]: "0"
+                - button "Base details" [ref=e309]:
+                  - generic [ref=e310]:
+                    - generic [ref=e311]: "Base:"
+                    - generic [ref=e312]: "0"
+                - button "Utilities details" [ref=e313]:
+                  - generic [ref=e314]:
+                    - generic [ref=e315]: "Utilities:"
+                    - generic [ref=e316]: "0"
+                - button "Total details" [ref=e317]:
+                  - generic [ref=e318]:
+                    - generic [ref=e319]: "Total:"
+                    - generic [ref=e320]: "0"
+                - button "Utility lines details" [ref=e321]:
+                  - generic [ref=e322]:
+                    - generic [ref=e323]: "Utility lines:"
+                    - generic [ref=e324]: "0"
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - button "Console 0":
+              - generic: Console
+              - generic: "0"
+            - button "Active Services 60":
+              - generic: Active Services
+              - generic: "60"
+            - button "All Services 226":
+              - generic: All Services
+              - generic: "226"
+          - generic:
+            - button "Drag panel"
+            - button "Close"
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - paragraph: Validation Console
+                          - paragraph: Validation rows reflect canonical definition and publication consistency checks.
+                          - generic:
+                            - generic: Console idle
+                            - generic: Ctrl/Cmd + J
+                            - generic: Press Escape to close
+                        - generic:
+                          - button "Minimize"
+                          - button "Dismiss"
+                    - generic:
+                      - generic:
+                        - generic:
+                          - button "Validation 0":
+                            - generic: Validation
+                            - generic: "0"
+                          - button "Logs 0":
+                            - generic: Logs
+                            - generic: "0"
+                          - button "Notices 0":
+                            - generic: Notices
+                            - generic: "0"
+                      - generic:
+                        - generic: Scope
+                        - button "All items"
+                        - button "Active node"
+                        - generic: Severity
+                        - button "all"
+                        - button "error"
+                        - button "warning"
+                        - button "info"
+                    - generic:
+                      - heading "No validation rows for this filter" [level=4]
+                      - paragraph: No validation rows match the current severity filter.
