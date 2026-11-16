@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { Separator } from '@/components/ui/separator.tsx';
 import { PropertyList } from '@/components/builder/index.tsx';
+import { CommitInputField } from '@/components/builder/commit-input-field.tsx';
 import { ServiceMetaPopover } from '@/components/service-meta-popover.tsx';
 import { cn } from '@/lib/utils.ts';
 import { RenderIf } from '@/panels/right/components/renderif.tsx';
@@ -349,19 +350,19 @@ function QuantitySection({ node, disabled }: { node: Exclude<CanonicalInspectorN
                                     ))}
                                 </div>
                                 {rule.value_by === 'eval' ? (
-                                    <InputField variant="textarea" label="Eval code" value={rule.expression.body} placeholder="return Number(value) * 2;" onChange={({ value }) => patchRule({ expressionBody: String(value ?? '') })} />
+                                    <CommitInputField variant="textarea" label="Eval code" value={rule.expression.body} placeholder="return Number(value) * 2;" onCommit={(value) => patchRule({ expressionBody: String(value ?? '') })} />
                                 ) : null}
                                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                    <InputField variant="text" label="Multiply" value={String(rule.multiply ?? '')} placeholder="Optional multiplier" onChange={({ value }) => patchRule({ multiply: numberOrUndefined(value) })} />
-                                    <InputField variant="text" label="Fallback" value={String(rule.fallback ?? '')} placeholder="Optional fallback quantity" onChange={({ value }) => patchRule({ fallback: numberOrUndefined(value) })} />
-                                    <InputField variant="text" label="Clamp min" value={String(rule.clamp?.min ?? '')} placeholder="Optional minimum" onChange={({ value }) => patchRule({ clamp: { ...rule.clamp, min: numberOrUndefined(value) } })} />
-                                    <InputField variant="text" label="Clamp max" value={String(rule.clamp?.max ?? '')} placeholder="Optional maximum" onChange={({ value }) => patchRule({ clamp: { ...rule.clamp, max: numberOrUndefined(value) } })} />
+                                    <CommitInputField variant="text" label="Multiply" value={String(rule.multiply ?? '')} placeholder="Optional multiplier" onCommit={(value) => patchRule({ multiply: numberOrUndefined(value) })} />
+                                    <CommitInputField variant="text" label="Fallback" value={String(rule.fallback ?? '')} placeholder="Optional fallback quantity" onCommit={(value) => patchRule({ fallback: numberOrUndefined(value) })} />
+                                    <CommitInputField variant="text" label="Clamp min" value={String(rule.clamp?.min ?? '')} placeholder="Optional minimum" onCommit={(value) => patchRule({ clamp: { ...rule.clamp, min: numberOrUndefined(value) } })} />
+                                    <CommitInputField variant="text" label="Clamp max" value={String(rule.clamp?.max ?? '')} placeholder="Optional maximum" onCommit={(value) => patchRule({ clamp: { ...rule.clamp, max: numberOrUndefined(value) } })} />
                                 </div>
                             </div>
                         ) : null}
                         {hasDefault ? (
                             <div className="space-y-2 rounded-xl border border-slate-200 p-3 dark:border-slate-800">
-                                <InputField variant="text" label="Quantity default" value={String(quantityDefault ?? '')} placeholder={node.kind === 'field' ? 'Leave blank to fall back' : 'Leave blank to inherit/fall back'} onChange={({ value }) => updateDefault(value)} />
+                                <CommitInputField variant="text" label="Quantity default" value={String(quantityDefault ?? '')} placeholder={node.kind === 'field' ? 'Leave blank to fall back' : 'Leave blank to inherit/fall back'} onCommit={updateDefault} />
                             </div>
                         ) : null}
                     </fieldset>
@@ -408,7 +409,7 @@ function UtilitySection({ node, disabled }: { node: Extract<CanonicalInspectorNo
                         <fieldset disabled={disabled} className="m-0 min-w-0 space-y-3 border-0 p-0">
                             {!hasStoredUtility ? <p className="text-xs text-slate-500 dark:text-slate-400">This node is marked as utility-priced, but its utility marker is missing. Fill in the values below to repair it.</p> : null}
                             {hasStoredUtility && !isActiveUtility ? <p className="text-xs text-slate-500 dark:text-slate-400">This node still has utility marker values stored, but its pricing role is base. Activate utility to apply these charges, or clear the marker.</p> : null}
-                            <InputField variant="text" label="Rate" value={String(base.rate)} placeholder="Enter utility rate" onChange={({ value }) => update({ rate: numberOrUndefined(value) ?? 0 })} />
+                            <CommitInputField variant="text" label="Rate" value={String(base.rate)} placeholder="Enter utility rate" onCommit={(value) => update({ rate: numberOrUndefined(value) ?? 0 })} />
                             <InputField
                                 variant="select" autoCap
                                 label="Mode"
@@ -449,7 +450,7 @@ function UtilitySection({ node, disabled }: { node: Extract<CanonicalInspectorNo
                             clearable={false}
                         />
                             ) : null}
-                            <InputField variant="text" label="Label" value={base.label ?? ''} placeholder="Optional utility label" onChange={({ value }) => update({ label: String(value ?? '').trim() || undefined })} />
+                            <CommitInputField variant="text" label="Label" value={base.label ?? ''} placeholder="Optional utility label" onCommit={(value) => update({ label: String(value ?? '').trim() || undefined })} />
                         </fieldset>
                     ) : null}
                 </Section.Content>

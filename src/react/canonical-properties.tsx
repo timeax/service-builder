@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { EmptyState, PropertyList, SelectionBadge } from '@/components/builder/index.tsx';
+import { CommitInputField } from '@/components/builder/commit-input-field.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
@@ -92,12 +93,12 @@ function FieldProperties({ node, disabled }: { node: Extract<CanonicalInspectorN
                         Core field metadata used by the service engine and preview form.
                     </p>
                     <div className="space-y-3">
-                        <InputField
+                        <CommitInputField
                             variant="text"
                             label="Name"
                             disabled={disabled}
                             value={field.name ?? ''}
-                            onChange={(event) => canvas.editor?.set_field_name(node.id, String(event.value ?? '') || undefined)}
+                            onCommit={(value) => canvas.editor?.set_field_name(node.id, String(value ?? '') || undefined)}
                         />
                         <InputField
                             variant="select" autoCap
@@ -177,12 +178,12 @@ function FieldProperties({ node, disabled }: { node: Extract<CanonicalInspectorN
                         />
                     ) : (
                         <div className="space-y-2">
-                            <InputField
+                            <CommitInputField
                                 variant="text"
                                 label="Default value"
                                 disabled={disabled}
                                 value={String(field.default_value ?? '')}
-                                onChange={(event) => canvas.editor?.set_field_default(node.id, parsePrimitive(event.value) as JsonValue | undefined)}
+                                onCommit={(value) => canvas.editor?.set_field_default(node.id, parsePrimitive(value) as JsonValue | undefined)}
                             />
                             {field.default_value !== undefined ? (
                                 <Button
@@ -207,19 +208,19 @@ function FieldProperties({ node, disabled }: { node: Extract<CanonicalInspectorN
                 <Section.Content>
                     <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">Preview-oriented defaults passed to the form palette.</p>
                     <div className="space-y-3">
-                        <InputField
+                        <CommitInputField
                             variant="text"
                             label="Placeholder"
                             disabled={disabled}
                             value={String(defaults.placeholder ?? '')}
-                            onChange={(event) => updateGenericDefault('placeholder', event.value)}
+                            onCommit={(value) => updateGenericDefault('placeholder', value)}
                         />
-                        <InputField
+                        <CommitInputField
                             variant="textarea"
                             label="Help text"
                             disabled={disabled}
                             value={String(defaults.helpText ?? '')}
-                            onChange={(event) => updateGenericDefault('helpText', event.value)}
+                            onCommit={(value) => updateGenericDefault('helpText', value)}
                         />
                     </div>
                 </Section.Content>
@@ -261,19 +262,19 @@ function OptionProperties({ node, disabled }: { node: Extract<CanonicalInspector
             <Section.Content>
                 <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">Edit the currently focused option node.</p>
                 <div className="space-y-3">
-                    <InputField
+                    <CommitInputField
                         variant="text"
                         label="Label"
                         disabled={disabled}
                         value={node.raw.label}
-                        onChange={(event) => canvas.editor?.update_option(node.id, { label: String(event.value ?? '') })}
+                        onCommit={(value) => canvas.editor?.update_option(node.id, { label: String(value ?? '') })}
                     />
-                    <InputField
+                    <CommitInputField
                         variant="text"
                         label="Value"
                         disabled={disabled}
                         value={String(node.raw.value ?? '')}
-                        onChange={(event) => canvas.editor?.update_option(node.id, { value: parsePrimitive(event.value) })}
+                        onCommit={(value) => canvas.editor?.update_option(node.id, { value: parsePrimitive(value) })}
                     />
                 </div>
             </Section.Content>
@@ -334,13 +335,13 @@ function PreviewContextVisibilitySection({ node, disabled }: { node: VisibilityN
                         Trusted JavaScript expression. It can read the current preview as <code>preview</code>; its result uses JavaScript truthiness and decides this {node.kind}'s visibility.
                     </p>
                     <div className="space-y-3">
-                        <InputField
+                        <CommitInputField
                             variant="textarea"
                             label="Visibility expression"
                             aria-label="Visibility expression"
                             disabled={disabled}
                             value={expression}
-                            onChange={({ value }) => updateExpression(String(value ?? ''))}
+                            onCommit={(value) => updateExpression(String(value ?? ''))}
                             rows={5}
                             spellCheck={false}
                             placeholder="preview.service_context.length > 0"
@@ -381,8 +382,6 @@ export function CanonicalProperties() {
     const selectedRawLabel = node.kind === 'none' ? '' : node.raw.label;
     const [copying, setCopying] = useState(false);
     const lastLoadedLabelByNodeId = useRef<Record<string, string>>({});
-    const labelDraftNodeId = useRef('');
-    const isEditingLabel = useRef(false);
     const [labelDraft, setLabelDraft] = useState(selectedRawLabel || selectedNodeId);
 
     useEffect(() => {
@@ -391,17 +390,11 @@ export function CanonicalProperties() {
     useEffect(() => {
         if (!selectedNodeId) {
             setLabelDraft('');
-            labelDraftNodeId.current = '';
             return;
         }
         const loaded = selectedRawLabel.trim() ? selectedRawLabel : (lastLoadedLabelByNodeId.current[selectedNodeId] ?? selectedNodeId);
-        if (labelDraftNodeId.current !== selectedNodeId || !isEditingLabel.current) setLabelDraft(loaded);
-        labelDraftNodeId.current = selectedNodeId;
+        setLabelDraft(loaded);
     }, [selectedNodeId, selectedRawLabel]);
-    const resetEmptyLabelDraft = () => {
-        if (!selectedNodeId || labelDraft.trim()) return;
-        setLabelDraft(selectedRawLabel.trim() ? selectedRawLabel : (lastLoadedLabelByNodeId.current[selectedNodeId] ?? selectedNodeId));
-    };
 
     if (node.kind === 'none')
         return (
@@ -436,29 +429,16 @@ export function CanonicalProperties() {
                                 <SelectionBadge active selected />
                             </div>
                             <div className="mt-3 space-y-3">
-                                <InputField
+                                <CommitInputField
+                                    key={node.id}
                                     variant="text"
                                     label={<FieldLabel>Label</FieldLabel>}
+                                    commitLabel="Label"
                                     disabled={!canMutate}
                                     value={labelDraft}
-                                    onFocus={() => {
-                                        isEditingLabel.current = true;
-                                    }}
-                                    onChange={(event) => {
-                                        const next = String(event.value ?? '');
-                                        setLabelDraft(next);
+                                    onCommit={(value) => {
+                                        const next = String(value ?? '');
                                         if (next.trim()) canvas.editor?.relabel(node.id, next);
-                                    }}
-                                    onBlur={() => {
-                                        isEditingLabel.current = false;
-                                        resetEmptyLabelDraft();
-                                    }}
-                                    onKeyDown={(event) => {
-                                        if (event.key !== 'Enter') return;
-                                        event.preventDefault();
-                                        isEditingLabel.current = false;
-                                        resetEmptyLabelDraft();
-                                        event.currentTarget.blur();
                                     }}
                                     placeholder={`Enter ${node.kind === 'filter' ? 'tag' : node.kind} display label`}
                                 />
@@ -498,14 +478,14 @@ export function CanonicalProperties() {
                     </Section>
                     <Separator />
                     {node.kind === 'filter' ? (
-                        <FilterProperties node={node} disabled={!canMutate} />
+                        <FilterProperties key={`filter-properties-${node.id}`} node={node} disabled={!canMutate} />
                     ) : node.kind === 'field' ? (
-                        <FieldProperties node={node} disabled={!canMutate} />
+                        <FieldProperties key={`field-properties-${node.id}`} node={node} disabled={!canMutate} />
                     ) : (
-                        <OptionProperties node={node} disabled={!canMutate} />
+                        <OptionProperties key={`option-properties-${node.id}`} node={node} disabled={!canMutate} />
                     )}
-                    {node.kind === 'field' || node.kind === 'option' ? <PreviewContextVisibilitySection node={node} disabled={!canMutate} /> : null}
-                    <CanonicalAdvancedPropertySections node={node} disabled={!canMutate} />
+                    {node.kind === 'field' || node.kind === 'option' ? <PreviewContextVisibilitySection key={`visibility-${node.id}`} node={node} disabled={!canMutate} /> : null}
+                    <CanonicalAdvancedPropertySections key={`advanced-${node.id}`} node={node} disabled={!canMutate} />
                 </div>
             </ScrollArea>
         </div>

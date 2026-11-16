@@ -9,7 +9,7 @@ import {
 } from './descriptor-ui-renderers.tsx';
 
 vi.mock('@timeax/form-palette', () => ({
-    InputField: ({ variant, label, value, options, onChange, onBlur, placeholder, disabled, autoComplete, autoCap }: any) => {
+    InputField: ({ variant, label, value, options, onChange, onBlur, placeholder, disabled, autoComplete, autoCap, trailingControl }: any) => {
         const ariaLabel = label ?? placeholder ?? 'input-field';
 
         if (variant === 'select') {
@@ -70,6 +70,7 @@ vi.mock('@timeax/form-palette', () => ({
         }
 
         return (
+            <div>
             <input
                 aria-label={ariaLabel}
                 data-variant={variant}
@@ -84,6 +85,8 @@ vi.mock('@timeax/form-palette', () => ({
                         : event.target.value,
                 })}
             />
+                {trailingControl}
+            </div>
         );
     },
 }));
@@ -150,6 +153,8 @@ describe('DescriptorSettings', () => {
         expect(readDefaults()).toEqual({});
         fireEvent.change(screen.getByLabelText('Label'), { target: { value: 'Limited offer' } });
         fireEvent.change(screen.getByLabelText('Text color'), { target: { value: '#ffffff' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Save Label' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Save Text color' }));
         fireEvent.click(screen.getByRole('button', { name: 'Save' }));
         expect(readDefaults()).toEqual({ tags: [{ label: 'Limited offer', color: '#ffffff' }] });
     });
@@ -170,6 +175,7 @@ describe('DescriptorSettings', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
         fireEvent.change(screen.getByLabelText('Label'), { target: { value: 'Saved change' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Save Label' }));
         fireEvent.click(screen.getByRole('button', { name: 'Save' }));
         expect(readDefaults()).toEqual({ tags: [{ label: 'Saved change', color: '#111111' }] });
     });
@@ -219,9 +225,12 @@ describe('DescriptorSettings', () => {
         render(<Harness schema={{ title: { type: 'string', label: 'Title', description: 'Title text.' } }} />);
 
         fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Hello' } });
+        expect(readDefaults()).toEqual({});
+        fireEvent.click(screen.getByRole('button', { name: 'Save Title' }));
         expect(readDefaults()).toEqual({ title: 'Hello' });
 
         fireEvent.change(screen.getByLabelText('Title'), { target: { value: '   ' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Save Title' }));
         expect(readDefaults()).toEqual({});
     });
 
@@ -237,9 +246,11 @@ describe('DescriptorSettings', () => {
         render(<Harness schema={{ count: { type: 'number', label: 'Count', description: 'Count value.' } }} />);
 
         fireEvent.change(screen.getByLabelText('Count'), { target: { value: '12.5' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Save Count' }));
         expect(readDefaults()).toEqual({ count: 12.5 });
 
         fireEvent.change(screen.getByLabelText('Count'), { target: { value: 'nope' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Save Count' }));
         expect(readDefaults()).toEqual({});
     });
 
@@ -249,6 +260,7 @@ describe('DescriptorSettings', () => {
         const input = screen.getByLabelText('Accent');
         expect(input).toHaveAttribute('data-variant', 'color');
         fireEvent.change(input, { target: { value: '#336699' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Save Accent' }));
 
         expect(readDefaults()).toEqual({ accent: '#336699' });
     });
@@ -259,6 +271,7 @@ describe('DescriptorSettings', () => {
         const input = screen.getByLabelText('Date');
         expect(input).toHaveAttribute('data-variant', 'date');
         fireEvent.change(input, { target: { value: '2026-04-10' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Save Date' }));
 
         expect(readDefaults()).toEqual({ date: '2026-04-10T00:00:00.000Z' });
     });

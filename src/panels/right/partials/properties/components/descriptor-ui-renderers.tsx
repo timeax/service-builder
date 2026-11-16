@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button.tsx';
+import { CommitInputField } from '@/components/builder/commit-input-field.tsx';
 import { InputField, type VariantKey } from '@timeax/form-palette';
 import { createContext, useContext, type ReactNode } from 'react';
 import { parseFiniteNumber } from './meta.ts';
@@ -18,6 +19,8 @@ const formatPropertyLabel = (name: string) =>
     name
         .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
         .replace(/^./, (letter) => letter.toUpperCase());
+
+const NON_TEXT_ENTRY_VARIANTS = new Set(['select', 'multi-select', 'treeselect', 'toggle', 'toggle-group', 'checkbox', 'radio', 'slider', 'file', 'image-icon']);
 
 export type DescriptorUiRendererProps<TSchema extends DescriptorUiSchema = DescriptorUiSchema, TValue = unknown> = {
     name: string;
@@ -105,35 +108,46 @@ export const renderStringUiProperty: DescriptorUiRenderer<DescriptorUiString, st
         : variant === 'select'
           ? typeof value === 'string' && value !== '' ? value : undefined
           : typeof value === 'string' ? value : '';
+    const onCommit = (nextValue: unknown) => {
+        if (nextValue instanceof Date) {
+            if (Number.isNaN(nextValue.getTime())) onClear();
+            else onChange(nextValue.toISOString());
+            return;
+        }
+        if (typeof nextValue === 'string' && nextValue.trim() === '' && !options?.length) {
+            onClear();
+            return;
+        }
+        if (typeof nextValue === 'string') onChange(nextValue);
+        else onClear();
+    };
+    const isTypedVariant = !NON_TEXT_ENTRY_VARIANTS.has(variant);
 
     return (
         <div className="space-y-2">
             <FieldDescription description={schema.description} canReset={hasOverride} onReset={onClear} />
-            <InputField
-                variant={variant as VariantKey}
-                autoCap={['select', 'multi-select', 'treeselect'].includes(variant)}
-                label={label}
-                value={inputValue as never}
-                options={variant === 'select' ? options : undefined}
-                placeholder={variant === 'text' && !options?.length ? `Enter ${label.toLowerCase()}` : undefined}
-                disabled={disabled}
-                onBlur={onBlur}
-                onChange={(event) => {
-                    const nextValue = event.value;
-                    if (nextValue instanceof Date) {
-                        if (Number.isNaN(nextValue.getTime())) onClear();
-                        else onChange(nextValue.toISOString());
-                        return;
-                    }
-                    if (typeof nextValue === 'string' && nextValue.trim() === '' && !options?.length) {
-                        onClear();
-                        return;
-                    }
-
-                    if (typeof nextValue === 'string') onChange(nextValue);
-                    else onClear();
-                }}
-            />
+            {isTypedVariant ? (
+                <CommitInputField
+                    variant={variant as VariantKey}
+                    label={label}
+                    value={inputValue}
+                    placeholder={variant === 'text' && !options?.length ? `Enter ${label.toLowerCase()}` : undefined}
+                    disabled={disabled}
+                    onCommit={onCommit}
+                />
+            ) : (
+                <InputField
+                    variant={variant as VariantKey}
+                    autoCap={['select', 'multi-select', 'treeselect'].includes(variant)}
+                    label={label}
+                    value={inputValue as never}
+                    options={variant === 'select' ? options : undefined}
+                    placeholder={variant === 'text' && !options?.length ? `Enter ${label.toLowerCase()}` : undefined}
+                    disabled={disabled}
+                    onBlur={onBlur}
+                    onChange={(event) => onCommit(event.value)}
+                />
+            )}
         </div>
     );
 };
@@ -146,30 +160,43 @@ export const renderNumberUiProperty: DescriptorUiRenderer<DescriptorUiNumber & {
     onClear,
     onBlur,
     disabled,
-}) => (
-    <div className="space-y-2">
-        <FieldDescription description={schema.description} canReset={hasOverride} onReset={onClear} />
-        <InputField
-            variant={(schema.variant ?? 'number') as VariantKey}
-            autoCap={['select', 'multi-select', 'treeselect'].includes(schema.variant ?? '')}
-            label={schema.label}
-            value={typeof value === 'number' ? value : undefined}
-            min={schema.minimum}
-            placeholder="Enter a number"
-            disabled={disabled}
-            onBlur={onBlur}
-            onChange={(event) => {
-                const nextValue = typeof event.value === 'number' ? event.value : parseFiniteNumber(event.value);
-                if (nextValue === undefined || !Number.isFinite(nextValue)) {
-                    onClear();
-                    return;
-                }
+}) => {
+    const variant = schema.variant ?? 'number';
+    const handleCommit = (nextValue: unknown) => {
+        const parsed = typeof nextValue === 'number' ? nextValue : parseFiniteNumber(nextValue);
+        if (parsed === undefined || !Number.isFinite(parsed)) onClear();
+        else onChange(parsed);
+    };
 
-                onChange(nextValue);
-            }}
-        />
-    </div>
-);
+    return (
+        <div className="space-y-2">
+            <FieldDescription description={schema.description} canReset={hasOverride} onReset={onClear} />
+            {NON_TEXT_ENTRY_VARIANTS.has(variant) ? (
+                <InputField
+                    variant={variant as VariantKey}
+                    autoCap={['select', 'multi-select', 'treeselect'].includes(variant)}
+                    label={schema.label}
+                    value={typeof value === 'number' ? value : undefined}
+                    min={schema.minimum}
+                    placeholder="Enter a number"
+                    disabled={disabled}
+                    onBlur={onBlur}
+                    onChange={(event) => handleCommit(event.value)}
+                />
+            ) : (
+                <CommitInputField
+                    variant={variant as VariantKey}
+                    label={schema.label}
+                    value={typeof value === 'number' ? value : undefined}
+                    min={schema.minimum}
+                    placeholder="Enter a number"
+                    disabled={disabled}
+                    onCommit={handleCommit}
+                />
+            )}
+        </div>
+    );
+};
 
 export const renderBooleanUiProperty: DescriptorUiRenderer<DescriptorUiBoolean & { label: string; description: string }, boolean> = ({
     schema,

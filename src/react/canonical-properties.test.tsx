@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { describe, expect, it, vi } from 'vitest';
 import { createSeedPersistence, workspaceSeed } from '../../backend/canonical/seed';
 import { workspaceActor } from '../../backend/canonical/seed/meta';
+import { CanonicalFallbackProvider } from './canonical-fallbacks';
 import { CanonicalProperties } from './canonical-properties';
 import { ServiceBuilderProvider, useCanvasAPI, useWorkspaceSelector } from './workspace';
 
@@ -34,10 +35,11 @@ vi.mock('@timeax/form-palette', () => ({
             {children}
         </form>
     ),
-    InputField: ({ variant, label, value, disabled, onChange, onFocus, onBlur, onKeyDown, placeholder, rows, spellCheck, 'aria-label': explicitAriaLabel }: any) => {
+    InputField: ({ variant, label, value, disabled, onChange, onFocus, onBlur, onKeyDown, placeholder, rows, spellCheck, trailingControl, 'aria-label': explicitAriaLabel }: any) => {
         const ariaLabel = explicitAriaLabel ?? (typeof label === 'string' ? label : (label?.props?.children ?? 'input-field'));
         if (variant === 'textarea') {
             return (
+                <div>
                 <textarea
                     aria-label={ariaLabel}
                     value={value ?? ''}
@@ -50,9 +52,12 @@ vi.mock('@timeax/form-palette', () => ({
                     onBlur={onBlur}
                     onKeyDown={onKeyDown}
                 />
+                    {trailingControl}
+                </div>
             );
         }
         return (
+            <div>
             <input
                 aria-label={ariaLabel}
                 value={value ?? ''}
@@ -63,6 +68,8 @@ vi.mock('@timeax/form-palette', () => ({
                 onBlur={onBlur}
                 onKeyDown={onKeyDown}
             />
+                {trailingControl}
+            </div>
         );
     },
 }));
@@ -70,6 +77,11 @@ vi.mock('@timeax/form-palette', () => ({
 function CurrentLabel() {
     const label = useWorkspaceSelector((state) => state.definition?.fields.find((field) => field.id === 'field:service')?.label);
     return <output aria-label="Current field label">{label}</output>;
+}
+
+function CurrentFieldName() {
+    const name = useWorkspaceSelector((state) => state.definition?.fields.find((field) => field.id === 'field:service')?.name);
+    return <output aria-label="Current field name">{name ?? 'unset'}</output>;
 }
 
 function CurrentQuantity() {
@@ -158,20 +170,46 @@ function createIsolatedBackend() {
     return new MemoryWorkspaceBackend({ ...workspaceSeed, persistence: createSeedPersistence() });
 }
 
+function saveInput(label: string) {
+    fireEvent.click(screen.getByRole('button', { name: `Save ${label}` }));
+}
+
 describe('canonical properties', () => {
     it('preserves the inspector surface while mutating the canonical Editor', async () => {
         render(
             <ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}>
                 <CanonicalProperties />
                 <CurrentLabel />
+                <CurrentFieldName />
             </ServiceBuilderProvider>,
         );
         expect(await screen.findByText('Selection overview')).toBeInTheDocument();
         expect(screen.getByText('Field identity')).toBeInTheDocument();
         const label = screen.getByLabelText('Label');
         fireEvent.change(label, { target: { value: 'Delivery service' } });
+        expect(screen.getByLabelText('Current field label')).not.toHaveTextContent('Delivery service');
+        expect(label).toHaveValue('Delivery service');
+        saveInput('Label');
         await waitFor(() => expect(screen.getByLabelText('Current field label')).toHaveTextContent('Delivery service'));
         expect(screen.getByLabelText('ID')).toHaveValue('field:service');
+    });
+
+    it('keeps spaces in a typing draft and writes the field name only from its check control', async () => {
+        render(
+            <ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}>
+                <CanonicalProperties />
+                <CurrentFieldName />
+            </ServiceBuilderProvider>,
+        );
+        await screen.findByText('Selection overview');
+
+        const name = screen.getByLabelText('Name');
+        fireEvent.change(name, { target: { value: 'delivery quantity name' } });
+        expect(name).toHaveValue('delivery quantity name');
+        expect(screen.getByLabelText('Current field name')).not.toHaveTextContent('delivery quantity name');
+
+        saveInput('Name');
+        await waitFor(() => expect(screen.getByLabelText('Current field name')).toHaveTextContent('delivery quantity name'));
     });
 
     it('keeps selected properties readable while explaining denied edits', async () => {
@@ -216,6 +254,7 @@ describe('canonical properties', () => {
         preview.focus();
         expect(preview).toHaveFocus();
         fireEvent.change(body, { target: { value: 'preview.service_context.length > 0' } });
+        saveInput('Visibility expression');
         test.focus();
         expect(test).toHaveFocus();
         await waitFor(() => expect(screen.getByLabelText('Current visibility expressions')).toHaveTextContent('preview.service_context.length > 0'));
@@ -227,6 +266,7 @@ describe('canonical properties', () => {
         expect(await screen.findByRole('status')).toHaveTextContent('Visible: true');
 
         fireEvent.change(body, { target: { value: "'truthy'" } });
+        saveInput('Visibility expression');
         fireEvent.click(test);
         expect(await screen.findByRole('status')).toHaveTextContent('Visible: true');
 
@@ -236,13 +276,15 @@ describe('canonical properties', () => {
 
         fireEvent.change(preview, { target: { value: '{}' } });
         fireEvent.change(body, { target: { value: "(() => { throw new Error('test failure'); })()" } });
+        saveInput('Visibility expression');
         fireEvent.click(test);
         expect(await screen.findByRole('status')).toHaveTextContent('expression_execution_failed');
 
         fireEvent.change(body, { target: { value: '' } });
+        saveInput('Visibility expression');
         await waitFor(() => expect(screen.getByLabelText('Current visibility expressions')).toHaveTextContent('"field":null'));
         expect(test).toBeDisabled();
-    });
+    }, 15_000);
 
     it('edits preview-context visibility for a selected option', async () => {
         render(
@@ -258,8 +300,9 @@ describe('canonical properties', () => {
         await screen.findByText('Selection overview');
         fireEvent.click(screen.getByRole('button', { name: 'Preview-context visibility' }));
         fireEvent.change(screen.getByLabelText('Visibility expression'), { target: { value: 'Boolean(preview.allowed)' } });
+        saveInput('Visibility expression');
         await waitFor(() => expect(screen.getByLabelText('Current visibility expressions')).toHaveTextContent('"option":{"language":"javascript","body":"Boolean(preview.allowed)"}'));
-    });
+    }, 15_000);
 
     it('edits canonical quantity behavior through the preserved collapsible section', async () => {
         render(
@@ -272,11 +315,13 @@ describe('canonical properties', () => {
         await screen.findByText('Selection overview');
         fireEvent.click(screen.getByRole('button', { name: 'Add quantity default' }));
         fireEvent.change(screen.getByLabelText('Quantity default'), { target: { value: '25' } });
+        saveInput('Quantity default');
         await waitFor(() => expect(screen.getByLabelText('Current field quantity')).toHaveTextContent('25'));
         fireEvent.click(screen.getByRole('button', { name: 'Add quantity rule' }));
         fireEvent.click(await screen.findByRole('button', { name: 'Eval' }));
         await waitFor(() => expect(screen.getByLabelText('Current field quantity rule')).toHaveTextContent('"value_by":"eval"'));
         fireEvent.change(await screen.findByLabelText('Eval code'), { target: { value: 'return Number(value) * 2;' } });
+        saveInput('Eval code');
         expect(screen.getByLabelText('Current field quantity rule')).toHaveTextContent('return Number(value) * 2;');
         expect(screen.getByLabelText('Current field quantity rule')).not.toHaveTextContent('expressionBody');
     }, 15_000);
@@ -293,14 +338,17 @@ describe('canonical properties', () => {
         fireEvent.click(appearance);
         expect(screen.getByLabelText('Slot char')).toHaveValue('_');
         fireEvent.change(screen.getByLabelText('Slot char'), { target: { value: '#' } });
+        saveInput('Slot char');
         await waitFor(() => expect(screen.getByLabelText('Current field defaults')).toHaveTextContent('"slotChar":"#"'));
     });
 
     it('binds the selected field to a canonical service through the preserved service section', async () => {
         render(
             <ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}>
-                <CanonicalProperties />
-                <CurrentService />
+                <CanonicalFallbackProvider>
+                    <CanonicalProperties />
+                    <CurrentService />
+                </CanonicalFallbackProvider>
             </ServiceBuilderProvider>,
         );
         await screen.findByText('Selection overview');
@@ -330,6 +378,7 @@ describe('canonical properties', () => {
         fireEvent.click(screen.getAllByRole('button', { name: 'Add validation' })[0]);
         await waitFor(() => expect(screen.getByLabelText('Current advanced properties')).toHaveTextContent('"op":"truthy"'));
         fireEvent.change(await screen.findByLabelText('Message'), { target: { value: 'Required for delivery' } });
+        saveInput('Message');
         await waitFor(() => expect(screen.getByLabelText('Current advanced properties')).toHaveTextContent('Required for delivery'));
         fireEvent.change(await screen.findByLabelText('Show message'), { target: { value: 'change' } });
         await waitFor(() => expect(screen.getByLabelText('Current advanced properties')).toHaveTextContent('"error_message_on":"change"'));
@@ -395,6 +444,7 @@ describe('canonical properties', () => {
         expect(current).toHaveTextContent('"code":"quantity_too_small"');
         expect(current).toHaveTextContent('"body":"return Number(value);"');
         fireEvent.change(await screen.findByLabelText('Eval code'), { target: { value: 'return Number(value) * 2;' } });
+        saveInput('Eval code');
         await waitFor(() => expect(current).toHaveTextContent('"body":"return Number(value) * 2;"'));
         expect(current).toHaveTextContent('"code":"quantity_too_small"');
         expect(current).not.toHaveTextContent('"code":"return Number(value) * 2;"');
@@ -410,6 +460,7 @@ describe('canonical properties', () => {
         await screen.findByText('Selection overview');
         fireEvent.click(screen.getByRole('button', { name: 'Add utility' }));
         fireEvent.change(await screen.findByLabelText('Rate'), { target: { value: '2.5' } });
+        saveInput('Rate');
         await waitFor(() => expect(screen.getByLabelText('Current utility')).toHaveTextContent('"rate":2.5'));
         expect(screen.getByLabelText('Current utility')).toHaveTextContent('"mode":"flat"');
         fireEvent.click(screen.getByRole('button', { name: 'Clear utility' }));

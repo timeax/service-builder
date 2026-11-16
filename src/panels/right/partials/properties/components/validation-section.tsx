@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button.tsx';
+import { CommitInputField } from '@/components/builder/commit-input-field.tsx';
 import { Section, SectionActionButton } from '@/panels/right/components/sections.tsx';
 import { InputField } from '@timeax/form-palette';
 import type { FieldValidationErrorMessageOn } from '@elqora/dgp-spec';
@@ -150,18 +151,14 @@ function TypedScalarEditor({
                         onChange={(event) => onChange(Boolean(event.value))}
                     />
                 ) : (
-                    <InputField
+                    <CommitInputField
                         variant="text"
                         label={label}
                         value={scalarType === 'number' ? String(castScalarValue(value, 'number')) : String(castScalarValue(value, 'string'))}
                         placeholder={scalarType === 'number' ? 'Enter a number' : `Enter ${label.toLowerCase()}`}
-                        onChange={(event) => {
-                            if (scalarType === 'number') {
-                                onChange(parseFiniteNumber(event.value) ?? 0);
-                                return;
-                            }
-
-                            onChange(String(event.value ?? ''));
+                        onCommit={(nextValue) => {
+                            if (scalarType === 'number') onChange(parseFiniteNumber(nextValue) ?? 0);
+                            else onChange(String(nextValue ?? ''));
                         }}
                     />
                 )}
@@ -284,16 +281,16 @@ function ValidationRuleCard({
                 />
             </div>
 
-            <InputField
+            <CommitInputField
                 variant="text"
                 label="Message"
                 value={rule.message ?? ''}
                 placeholder="Shown when this rule fails"
-                onChange={(event) =>
+                onCommit={(value) =>
                     onChange(
                         sanitizeRule({
                             ...rule,
-                            message: String(event.value ?? ''),
+                            message: String(value ?? ''),
                         }),
                     )
                 }
@@ -331,30 +328,30 @@ function ValidationRuleCard({
 
             {rule.op === 'between' ? (
                 <div className="grid gap-3 md:grid-cols-2">
-                    <InputField
+                    <CommitInputField
                         variant="text"
                         label="Minimum"
                         value={rule.min === undefined ? '' : String(rule.min)}
                         placeholder="Enter minimum"
-                        onChange={(event) =>
+                        onCommit={(value) =>
                             onChange(
                                 sanitizeRule({
                                     ...rule,
-                                    min: parseFiniteNumber(event.value),
+                                    min: parseFiniteNumber(value),
                                 }),
                             )
                         }
                     />
-                    <InputField
+                    <CommitInputField
                         variant="text"
                         label="Maximum"
                         value={rule.max === undefined ? '' : String(rule.max)}
                         placeholder="Enter maximum"
-                        onChange={(event) =>
+                        onCommit={(value) =>
                             onChange(
                                 sanitizeRule({
                                     ...rule,
-                                    max: parseFiniteNumber(event.value),
+                                    max: parseFiniteNumber(value),
                                 }),
                             )
                         }
@@ -378,30 +375,30 @@ function ValidationRuleCard({
 
             {rule.op === 'match' ? (
                 <div className="grid gap-3 md:grid-cols-2">
-                    <InputField
+                    <CommitInputField
                         variant="text"
                         label="Pattern"
                         value={rule.pattern ?? ''}
                         placeholder="Regular expression"
-                        onChange={(event) =>
+                        onCommit={(value) =>
                             onChange(
                                 sanitizeRule({
                                     ...rule,
-                                    pattern: String(event.value ?? ''),
+                                    pattern: String(value ?? ''),
                                 }),
                             )
                         }
                     />
-                    <InputField
+                    <CommitInputField
                         variant="text"
                         label="Flags"
                         value={rule.flags ?? ''}
                         placeholder="e.g. i, gm"
-                        onChange={(event) =>
+                        onCommit={(value) =>
                             onChange(
                                 sanitizeRule({
                                     ...rule,
-                                    flags: String(event.value ?? ''),
+                                    flags: String(value ?? ''),
                                 }),
                             )
                         }
@@ -410,16 +407,16 @@ function ValidationRuleCard({
             ) : null}
 
             {valueBy === 'eval' ? (
-                <InputField
+                <CommitInputField
                     variant="textarea"
                     label="Eval code"
                     value={rule.expressionBody ?? ''}
                     placeholder="return typeof value === 'string' ? value.length : 0;"
-                    onChange={(event) =>
+                    onCommit={(value) =>
                         onChange(
                             sanitizeRule({
                                 ...rule,
-                                expressionBody: String(event.value ?? ''),
+                                expressionBody: String(value ?? ''),
                             }),
                         )
                     }

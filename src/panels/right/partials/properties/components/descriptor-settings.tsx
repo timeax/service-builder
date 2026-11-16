@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button.tsx';
+import { CommitInputField } from '@/components/builder/commit-input-field.tsx';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover.tsx';
 import { InputField } from '@timeax/form-palette';
 import { useMemo, useState } from 'react';
@@ -350,12 +351,12 @@ function DescriptorObjectField({ schema, value, hasOverride, onSet, onClear, pat
                         return (
                             <div key={key} className="space-y-3 rounded-lg border border-dashed border-slate-200 p-3 dark:border-slate-700">
                                 <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
-                                    <InputField
+                                    <CommitInputField
                                         variant="text"
                                         label="Key"
                                         value={key}
-                                        onChange={(event) => {
-                                            const nextValue = String(event.value ?? '');
+                                        onCommit={(value) => {
+                                            const nextValue = String(value ?? '');
                                             if (!nextValue.trim()) return;
                                             renameDynamicKey(key, nextValue);
                                         }}
