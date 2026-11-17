@@ -1,5 +1,9 @@
 # Canonical Service Builder migration
 
+## Instagram Comments quantity visibility
+
+The Instagram Comments seed has four root-bound quantity fields whose `visibility_expression` values depend on distinct `provider_payload_type` values. Validation `1.2.0` reported four definite `quantity_source_conflict` errors because its structural reachability check did not account for dynamic field visibility. Validation `1.2.1` excludes dynamically visible quantity sources from definite conflicts. Service Builder pins and installs `1.2.1`; the same seed now produces zero quantity conflicts and zero total publication diagnostics.
+
 ## Current scope — UI integration, clarified 2026-09-29
 
 The goal was paused when the 2026-09-29 scope revision was written; the user subsequently resumed it with `GOAL-OBJECTIVE.md` as the replacement objective. Preserve the interface and visible workflows from `0fba74f`, while current canonical DGP packages govern domain behavior. The separate `dgp-studio` UI remains deferred.

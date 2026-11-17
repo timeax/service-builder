@@ -40,7 +40,7 @@
         "@elqora/dgp-ordering": "1.1.1",
         "@elqora/dgp-ordering-form-palette": "1.1.5",
         "@elqora/dgp-spec": "1.6.0",
-        "@elqora/dgp-validation": "1.2.0",
+        "@elqora/dgp-validation": "1.2.1",
         "@elqora/dgp-workspace": "1.1.0",
         "@radix-ui/react-alert-dialog": "^1.1.15",
         "@radix-ui/react-avatar": "^1.1.11",
