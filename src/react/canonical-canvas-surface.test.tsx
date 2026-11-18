@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { MemoryWorkspaceBackend } from '@elqora/dgp-workspace';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { useEffect, useState } from 'react';
 import { createSeedPersistence, definition, workspaceSeed } from '../../backend/canonical/seed';
 import { MAIN_BRANCH_ID, workspaceActor } from '../../backend/canonical/seed/meta';
@@ -157,6 +157,8 @@ beforeAll(() => {
 });
 
 describe('canonical canvas surface', () => {
+    afterEach(() => window.localStorage.removeItem('service-builder.canvas.visibility'));
+
     it('shows validation diagnostics in the toolbar before the bottom panel opens and refreshes after an edit', async () => {
         render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}><ValidationMutationProbe /><CanonicalCanvasSurface /></ServiceBuilderProvider></div>);
         await waitFor(() => expect(screen.getByLabelText('Validation diagnostic count')).not.toHaveTextContent('pending'));
@@ -209,11 +211,20 @@ describe('canonical canvas surface', () => {
         await waitFor(() => expect(screen.getByText('Active tag: Instagram')).toBeInTheDocument());
     });
 
-    it('toggles the Service context card from Canvas view without losing its saved position', async () => {
-        const storageKey = `service-builder.canvas.system-node.service-context.${workspaceSeed.workspace_id}.${MAIN_BRANCH_ID}`;
-        window.localStorage.setItem(storageKey, JSON.stringify({ x: 321, y: 123 }));
+    it('restores Canvas view toggles and retains the Service context card position', async () => {
+        const positionKey = `service-builder.canvas.system-node.service-context.${workspaceSeed.workspace_id}.${MAIN_BRANCH_ID}`;
+        window.localStorage.setItem(positionKey, JSON.stringify({ x: 321, y: 123 }));
+        const renderCanvas = () => render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}><CanonicalCanvasSurface /></ServiceBuilderProvider></div>);
+        const toggles = [
+            ['Grid', 'On', 'Off'],
+            ['Mini map', 'Off', 'On'],
+            ['Bind edges', 'On', 'Off'],
+            ['Include edges', 'On', 'Off'],
+            ['Exclude edges', 'Off', 'On'],
+            ['Comments', 'Off', 'On'],
+        ];
         try {
-            render(<div style={{ width: 1000, height: 700 }}><ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}><CanonicalCanvasSurface /></ServiceBuilderProvider></div>);
+            const { unmount } = renderCanvas();
             const card = await screen.findByTestId('rf__node-sys::service-context');
             expect(card.style.transform).toBe('translate(321px,123px)');
             fireEvent.click(screen.getByRole('button', { name: 'Canvas view' }));
@@ -224,15 +235,26 @@ describe('canonical canvas surface', () => {
             fireEvent.click(hide);
             await waitFor(() => expect(screen.queryByTestId('rf__node-sys::service-context')).not.toBeInTheDocument());
             expect(screen.getByTestId('rf__node-filter:platform')).toBeInTheDocument();
-            const show = screen.getByRole('button', { name: 'Service context Off' });
+            for (const [label, initial] of toggles) {
+                fireEvent.click(screen.getByRole('button', { name: `${label} ${initial}` }));
+            }
+            unmount();
+
+            renderCanvas();
+            fireEvent.click(await screen.findByRole('button', { name: 'Canvas view' }));
+            const show = await screen.findByRole('button', { name: 'Service context Off' });
             expect(show).toHaveAttribute('aria-pressed', 'false');
+            expect(screen.queryByTestId('rf__node-sys::service-context')).not.toBeInTheDocument();
+            for (const [label, , restored] of toggles) {
+                expect(screen.getByRole('button', { name: `${label} ${restored}` })).toBeInTheDocument();
+            }
             fireEvent.click(show);
             expect((await screen.findByTestId('rf__node-sys::service-context')).style.transform).toBe('translate(321px,123px)');
-            expect(window.localStorage.getItem(storageKey)).toBe(JSON.stringify({ x: 321, y: 123 }));
+            expect(window.localStorage.getItem(positionKey)).toBe(JSON.stringify({ x: 321, y: 123 }));
         } finally {
-            window.localStorage.removeItem(storageKey);
+            window.localStorage.removeItem(positionKey);
         }
-    });
+    }, 20_000);
 
     it('applies a canonical product from the JSON editor as an undoable change', async () => {
         render(<ServiceBuilderProvider backend={createIsolatedBackend()} actor={workspaceActor}><ImportIntegrationProbe /></ServiceBuilderProvider>);

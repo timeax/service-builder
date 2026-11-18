@@ -27,6 +27,40 @@ import { useServiceContextPosition } from './service-context-position';
 import { useCanvasAPI, useCanvasSelector, useWorkspacePermission, useWorkspaceRuntime, useWorkspaceSelector } from './workspace';
 
 const SERVICE_CONTEXT_NODE_ID = 'sys::service-context';
+const CANVAS_VIEW_STORAGE_KEY = 'service-builder.canvas.visibility';
+const DEFAULT_CANVAS_VISIBILITY = {
+    showGrid: true,
+    showMiniMap: false,
+    showBind: true,
+    showInclude: true,
+    showExclude: false,
+    showComments: false,
+    showServiceContext: true,
+};
+type CanvasVisibility = typeof DEFAULT_CANVAS_VISIBILITY;
+const CANVAS_VISIBILITY_CONTROLS = [
+    ['showGrid', 'Grid'],
+    ['showMiniMap', 'Mini map'],
+    ['showBind', 'Bind edges'],
+    ['showInclude', 'Include edges'],
+    ['showExclude', 'Exclude edges'],
+    ['showComments', 'Comments'],
+    ['showServiceContext', 'Service context'],
+] as const satisfies ReadonlyArray<readonly [keyof CanvasVisibility, string]>;
+
+function readCanvasVisibility(): CanvasVisibility {
+    const visibility = { ...DEFAULT_CANVAS_VISIBILITY };
+    try {
+        const stored = JSON.parse(window.localStorage.getItem(CANVAS_VIEW_STORAGE_KEY) ?? 'null');
+        for (const [key] of CANVAS_VISIBILITY_CONTROLS) {
+            const value = stored?.[key];
+            if (typeof value === 'boolean') visibility[key] = value;
+        }
+    } catch {
+        // Use the defaults when browser storage is unavailable or invalid.
+    }
+    return visibility;
+}
 
 function hasPersistedViewport(viewport: { x: number; y: number; zoom: number }) {
     return Math.abs(viewport.x) > 0.5 || Math.abs(viewport.y) > 0.5 || Math.abs(viewport.zoom - 1) > 1e-4;
@@ -112,35 +146,11 @@ export function CanonicalEdgeMenu({ relation, position, can_edit, disabled_reaso
 }
 
 function CanvasToolbar({
-    showGrid,
-    setShowGrid,
-    showMiniMap,
-    setShowMiniMap,
-    showBind,
-    setShowBind,
-    showInclude,
-    setShowInclude,
-    showExclude,
-    setShowExclude,
-    showComments,
-    setShowComments,
-    showServiceContext,
-    setShowServiceContext,
+    visibility,
+    onToggleVisibility,
 }: {
-    showGrid: boolean;
-    setShowGrid(value: boolean): void;
-    showMiniMap: boolean;
-    setShowMiniMap(value: boolean): void;
-    showBind: boolean;
-    setShowBind(value: boolean): void;
-    showInclude: boolean;
-    setShowInclude(value: boolean): void;
-    showExclude: boolean;
-    setShowExclude(value: boolean): void;
-    showComments: boolean;
-    setShowComments(value: boolean): void;
-    showServiceContext: boolean;
-    setShowServiceContext(value: boolean): void;
+    visibility: CanvasVisibility;
+    onToggleVisibility(key: keyof CanvasVisibility): void;
 }) {
     const api = useCanvasAPI()!;
     const flow = useReactFlow();
@@ -185,56 +195,17 @@ function CanvasToolbar({
                         </PopoverTrigger>
                     </div>
                     <PopoverContent align="start" className="w-52 space-y-1 p-2">
-                        <button
-                            type="button"
-                            className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
-                            onClick={() => setShowGrid(!showGrid)}
-                        >
-                            Grid <span>{showGrid ? 'On' : 'Off'}</span>
-                        </button>
-                        <button
-                            type="button"
-                            className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
-                            onClick={() => setShowMiniMap(!showMiniMap)}
-                        >
-                            Mini map <span>{showMiniMap ? 'On' : 'Off'}</span>
-                        </button>
-                        <button
-                            type="button"
-                            className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
-                            onClick={() => setShowBind(!showBind)}
-                        >
-                            Bind edges <span>{showBind ? 'On' : 'Off'}</span>
-                        </button>
-                        <button
-                            type="button"
-                            className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
-                            onClick={() => setShowInclude(!showInclude)}
-                        >
-                            Include edges <span>{showInclude ? 'On' : 'Off'}</span>
-                        </button>
-                        <button
-                            type="button"
-                            className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
-                            onClick={() => setShowExclude(!showExclude)}
-                        >
-                            Exclude edges <span>{showExclude ? 'On' : 'Off'}</span>
-                        </button>
-                        <button
-                            type="button"
-                            className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
-                            onClick={() => setShowComments(!showComments)}
-                        >
-                            Comments <span>{showComments ? 'On' : 'Off'}</span>
-                        </button>
-                        <button
-                            type="button"
-                            aria-pressed={showServiceContext}
-                            className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
-                            onClick={() => setShowServiceContext(!showServiceContext)}
-                        >
-                            Service context <span>{showServiceContext ? 'On' : 'Off'}</span>
-                        </button>
+                        {CANVAS_VISIBILITY_CONTROLS.map(([key, label]) => (
+                            <button
+                                key={key}
+                                type="button"
+                                aria-pressed={visibility[key]}
+                                className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+                                onClick={() => onToggleVisibility(key)}
+                            >
+                                {label} <span>{visibility[key] ? 'On' : 'Off'}</span>
+                            </button>
+                        ))}
                         <button
                             type="button"
                             className="w-full rounded-lg px-2 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -280,13 +251,17 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
     const workspaceId = useWorkspaceSelector((state) => state.workspace_id);
     const branchId = useWorkspaceSelector((state) => state.current_branch_id);
     const selectionKey = useCanvasSelector((state) => `${[...state.selection].sort().join('\u0000')}\u0001${api.selection.primary() ?? ''}`, '\u0001');
-    const [showGrid, setShowGrid] = useState(true);
-    const [showMiniMap, setShowMiniMap] = useState(false);
-    const [showBind, setShowBind] = useState(true);
-    const [showInclude, setShowInclude] = useState(true);
-    const [showExclude, setShowExclude] = useState(false);
-    const [showComments, setShowComments] = useState(false);
-    const [showServiceContext, setShowServiceContext] = useState(true);
+    const [visibility, setVisibility] = useState(readCanvasVisibility);
+    const { showGrid, showMiniMap, showBind, showInclude, showExclude, showComments, showServiceContext } = visibility;
+    const toggleVisibility = (key: keyof CanvasVisibility) => {
+        const next = { ...visibility, [key]: !visibility[key] };
+        setVisibility(next);
+        try {
+            window.localStorage.setItem(CANVAS_VIEW_STORAGE_KEY, JSON.stringify(next));
+        } catch {
+            // Visibility can still change when browser storage is unavailable.
+        }
+    };
     const [showErrorBadges, setShowErrorBadges] = useState(true);
     const [localNoticeRequest, setLocalNoticeRequest] = useState<NoticeManagerRequest | null>(null);
     const localNoticeToken = useRef(0);
@@ -457,22 +432,7 @@ function CanonicalCanvasReady({ api, on_node_context_menu, on_node_drop, bottom_
                 <InitialFitController enabled={!hasPersistedViewport(initialViewport)} nodeIds={fitNodeIds} />
                 {showGrid ? <Background gap={18} size={1} /> : null}
                 {showMiniMap ? <MiniMap position="bottom-right" pannable zoomable /> : null}
-                <CanvasToolbar
-                    showGrid={showGrid}
-                    setShowGrid={setShowGrid}
-                    showMiniMap={showMiniMap}
-                    setShowMiniMap={setShowMiniMap}
-                    showBind={showBind}
-                    setShowBind={setShowBind}
-                    showInclude={showInclude}
-                    setShowInclude={setShowInclude}
-                    showExclude={showExclude}
-                    setShowExclude={setShowExclude}
-                    showComments={showComments}
-                    setShowComments={setShowComments}
-                    showServiceContext={showServiceContext}
-                    setShowServiceContext={setShowServiceContext}
-                />
+                <CanvasToolbar visibility={visibility} onToggleVisibility={toggleVisibility} />
                 <AppToolbar
                     bootActionReason={getCanonicalBootActionReason(boot)}
                     editDisabledReason="Editing is disabled for this actor."

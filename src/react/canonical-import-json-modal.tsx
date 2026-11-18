@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { cn } from '@/lib/utils.ts';
 import { json } from '@codemirror/lang-json';
 import { EditorView } from '@codemirror/view';
+import { resolveServiceBindings } from '@elqora/dgp-core';
 import type { ProductDefinition } from '@elqora/dgp-spec';
 import { isProductDefinition, validateProductDefinitionStructure } from '@elqora/dgp-validation';
 import type { ServiceCatalogState } from '@elqora/dgp-workspace';
@@ -27,7 +28,7 @@ interface ImportJsonModalProps {
 }
 
 type ImportSummary =
-    | { kind: 'props'; name: string; tagCount: number; fieldCount: number; noticeCount: number; fallbackCount: number }
+    | { kind: 'props'; name: string; tagCount: number; fieldCount: number; noticeCount: number; fallbackCount: number; primaryServiceCount: number }
     | { kind: 'catalog'; groupCount: number; smartGroupCount: number; activeNodeId: string | null; viewMode: string };
 type ParseState =
     | { status: 'idle' }
@@ -98,6 +99,7 @@ function ImportJsonContent({ target, currentDefinition, currentCatalog, onImport
                     kind: 'props', name: parsed.name, tagCount: parsed.filters.length, fieldCount: parsed.fields.length,
                     noticeCount: parsed.notices.length,
                     fallbackCount: Object.keys(parsed.fallbacks?.nodes ?? {}).length + Object.keys(parsed.fallbacks?.global ?? {}).length,
+                    primaryServiceCount: resolveServiceBindings(parsed).serviceIds.length,
                 },
             };
         }
@@ -210,6 +212,7 @@ function PreviewContent({ parseState }: { parseState: ParseState }) {
             <Metric label="Fields" value={String(parseState.summary.fieldCount)} />
             <Metric label="Notices" value={String(parseState.summary.noticeCount)} />
             <Metric label="Fallbacks" value={String(parseState.summary.fallbackCount)} />
+            <Metric label="Primary services" value={String(parseState.summary.primaryServiceCount)} className="col-span-2" />
         </dl> : <dl className="grid grid-cols-2 gap-3 text-sm">
             <Metric label="Groups" value={String(parseState.summary.groupCount)} />
             <Metric label="Smart groups" value={String(parseState.summary.smartGroupCount)} />

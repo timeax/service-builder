@@ -71,9 +71,20 @@ describe('canonical import JSON modal', () => {
 
     it('previews pasted canonical product JSON and imports it', async () => {
         const callbacks = openModal();
-        const imported = { ...structuredClone(definition), name: 'Imported product' };
+        const imported = {
+            ...structuredClone(definition),
+            name: 'Imported product',
+            filters: [
+                ...definition.filters,
+                { id: 'filter:followers', label: 'Followers', service_id: '10147' },
+                { id: 'filter:likes', label: 'Likes', service_id: 10148 },
+            ],
+            fallbacks: { global: { '10147': [10149] } },
+        };
+        expect(screen.getByText('Primary services').nextElementSibling).toHaveTextContent(/^1$/);
         editJson(JSON.stringify(imported));
         expect(screen.getByText('Imported product')).toBeInTheDocument();
+        expect(screen.getByText('Primary services').nextElementSibling).toHaveTextContent(/^2$/);
         expect(screen.getByText('Ready to apply from edited JSON.')).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'Apply definition' }));
         await waitFor(() => expect(callbacks.onImportProps).toHaveBeenCalledWith(imported));
